@@ -4,7 +4,9 @@
 name: "Publish"
 
 on:
-  workflow_dispatch:
+  release:
+    types:
+      - published
 
 concurrency:
   # Preserve release order on PyPI: publish runs execute one-by-one.
@@ -13,6 +15,7 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write
 
 env:
   PYTHON_VERSION: "3.11"
