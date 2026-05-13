@@ -4,7 +4,17 @@
 name: Check
 
 on:
-  workflow_dispatch:
+  push:
+    # Mainline and merge-queue refs are covered by other workflows.
+    branches-ignore:
+      - main
+      - master
+      - merge/**
+      - gh-readonly-queue/**
+      - release-please--branches--**
+      - dependabot/**
+  pull_request:
+    branches: [main]
 
 concurrency:
   # Cancel superseded runs for the same ref.
