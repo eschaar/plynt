@@ -12,7 +12,7 @@ fallback_version = "0.2.0"
 name = "plynth"
 dynamic = ["version"]
 description = "Framework-agnostic Python library for building external HTTP API clients and service integrations"
-readme = "README.md"
+readme = "README-pypi.md"
 authors = [{ name = "Erik Schaareman", email = "erik@schaareman.org" }]
 requires-python = ">=3.11"
 license = "MIT"

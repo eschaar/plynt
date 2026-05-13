@@ -88,7 +88,11 @@ ______________________________________________________________________
 pip install plynth
 ```
 
-(Package will be published once the initial core is stable.)
+Current status:
+
+- GitHub releases exist for `0.1.0` (core baseline) and `0.2.0` (Salesforce connector).
+- PyPI publishing is configured but currently intentionally disabled in CI until
+  release automation is re-enabled.
 
 ______________________________________________________________________
 
