@@ -1,0 +1,15 @@
+extends: default
+
+# GitHub Actions workflow files use `on:` as a trigger key, which is valid
+# YAML but flagged by the truthy rule. Exclude them entirely — yamllint is
+# not the right tool for validating GitHub Actions syntax.
+ignore: |
+  .github/
+  tests/_mock/
+
+rules:
+  line-length:
+    max: 120
+  truthy:
+    allowed-values: ["true", "false"]
+    check-keys: true

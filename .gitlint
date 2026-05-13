@@ -1,0 +1,7 @@
+[general]
+ignore = body-is-missing
+
+[rules]
+# Enforce Conventional Commits format: type(scope)!: description
+[title-match-regex]
+regex = ^(feat|fix|perf|refactor|docs|test|chore|ci|style|revert)(\([a-z0-9_/-]+\))?!?: .{1,100}$

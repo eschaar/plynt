@@ -1,0 +1,185 @@
+[build-system]
+requires = ["setuptools>=82.0.1", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+# Derive version from git tags at build time.
+# fallback_version is used in environments without a git checkout (e.g. CI
+# source tarballs, editable installs before the first tag).
+fallback_version = "0.2.0"
+
+[project]
+name = "plynth"
+dynamic = ["version"]
+description = "Framework-agnostic Python library for building external HTTP API clients and service integrations"
+readme = "README.md"
+authors = [{ name = "Erik Schaareman", email = "erik@schaareman.org" }]
+requires-python = ">=3.11"
+license = "MIT"
+keywords = [
+  "api",
+  "client",
+  "http",
+  "rest",
+  "salesforce",
+  "async",
+  "framework-agnostic",
+  "integration",
+  "service",
+  "connector",
+]
+license-files = ["LICENSE"]
+dependencies = ["pydantic-settings>=2.14.1"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Internet :: WWW/HTTP",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/eschaar/plynth"
+Repository = "https://github.com/eschaar/plynth"
+Issues = "https://github.com/eschaar/plynth/issues"
+Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+httpx = ["httpx>=0.28.1"]
+salesforce = ["httpx>=0.28.1", "PyJWT>=2.12.1", "cryptography>=48.0.0"]
+test = ["pytest", "pytest-cov", "pytest-asyncio", "fakeredis", "vcrpy"]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "pytest-asyncio",
+  "fakeredis",
+  "vcrpy",
+  "ruff",
+  "mypy",
+  "httpx>=0.28.1",
+  "build",
+  "twine",
+  "pip-audit",
+  "pre-commit",
+  "tox",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=plynth --cov-report=term-missing --tb=short"
+asyncio_mode = "auto"
+junit_family = "xunit2"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.coverage.run]
+omit = ["*/__init__.py", "*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "if __name__ == '__main__':"]
+
+# ---------------------------------------------------------------------------
+# Tooling (optional but recommended)
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+exclude = [
+  ".git",
+  "__pycache__",
+  "build",
+  "dist",
+  ".venv",
+  "venv",
+  "migrations",
+]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "W",   # pycodestyle warnings
+  "C90", # mccabe (complexity)
+  "I",   # isort
+  "N",   # pep8-naming
+  "D",   # pydocstyle (docstrings)
+  "UP",  # pyupgrade
+  "S",   # bandit (security)
+  "B",   # flake8-bugbear
+  "A",   # flake8-builtins
+  "C4",  # flake8-comprehensions
+  "T20", # flake8-print
+  "Q",   # flake8-quotes
+  "RUF", # ruff-specific
+]
+ignore = [
+  "D100", # Missing docstring in public module
+  "D104", # Missing docstring in public package
+  "D107", # Missing docstring in __init__
+  "D105", # Missing docstring in magic method
+  "D203", # Incompatible with D211 (no-blank-line-before-class); D211 preferred
+  "D205", # 1 blank line required between summary line and description
+  "D213", # Incompatible with D212 (multi-line-summary-first-line); D212 preferred
+  "D400", # First line should end with a period
+  "D401", # First line should be in imperative mood
+  "D415", # First line should end with a period, question mark, or exclamation point
+  "D417", # Missing argument descriptions — project convention: omit self-explanatory args
+]
+per-file-ignores = { "tests/*" = [
+  "D",
+  "ARG001",
+  "ARG002",
+  "ARG005",
+  "S101",
+  "S105",
+  "S106",
+  "S107",
+], "examples/**" = [
+  "D",
+  "T20",
+] }
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = false
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+warn_return_any = true
+no_implicit_optional = true
+ignore_missing_imports = true
+allow_untyped_globals = true
+
+# ---------------------------------------------------------------------------
+# Tox — multi-version test matrix
+# ---------------------------------------------------------------------------
+
+[tool.tox]
+requires = ["tox>=4"]
+env_list = ["3.11", "3.12", "3.13", "3.14"]
+
+[tool.tox.env_run_base]
+description = "Run test suite under {env_name}"
+extras = ["test", "httpx", "salesforce"]
+commands = [["pytest", "--tb=short", "-q"]]
+
+# ---------------------------------------------------------------------------
+# Pyright / Pylance (VS Code)
+# ---------------------------------------------------------------------------
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+
+[tool.pylint.main]
+ignore-paths = ["^tests/.*$"]

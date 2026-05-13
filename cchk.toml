@@ -1,0 +1,55 @@
+# Commit and branch naming policy for plynth.
+# Consumed by commit-check-action in the commit quality workflow.
+# See: https://github.com/commit-check/commit-check-action
+
+[commit]
+conventional_commits = true
+subject_capitalized = false
+subject_imperative = false
+subject_max_length = 100
+allow_commit_types = [
+  "feat",
+  "feature",
+  "fix",
+  "bugfix",
+  "hotfix",
+  "docs",
+  "perf",
+  "refactor",
+  "chore",
+  "revert",
+  "test",
+  "tests",
+  "ci",
+  "build",
+  "style",
+]
+allow_merge_commits = true
+allow_revert_commits = true
+allow_empty_commits = false
+allow_fixup_commits = true
+allow_wip_commits = false
+require_body = false
+require_signed_off_by = false
+
+[branch]
+conventional_branch = true
+allow_branch_types = [
+  "feat",
+  "feature",
+  "fix",
+  "bugfix",
+  "hotfix",
+  "release",
+  "chore",
+  "docs",
+  "refactor",
+  "perf",
+  "test",
+  "ci",
+  "build",
+  "style",
+  "opt",
+  "patch",
+  "dependabot",
+]
