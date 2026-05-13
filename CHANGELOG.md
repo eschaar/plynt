@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.6.0](https://github.com/eschaar/plynth/compare/0.5.0...0.6.0) (2026-05-13)
+
+
+### Features
+
+* **core:** release clean foundation ([a1deca8](https://github.com/eschaar/plynth/commit/a1deca8c3b20f42863ac370214261d88a2baff81))
+* **salesforce:** add connector package ([c4f2423](https://github.com/eschaar/plynth/commit/c4f2423ea65cc817e6b3e3d4f61f7f53c55f3cca))
+
+
+### Maintenance
+
+* **repo:** initialize clean plynth foundation ([33bdcff](https://github.com/eschaar/plynth/commit/33bdcff6f274efb4428dab680d6f3f51fa44098d))
+
 ## [0.2.0] - 2026-05-14
 
 ### Added
