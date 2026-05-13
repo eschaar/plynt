@@ -1,0 +1,128 @@
+# Automerge workflow.
+# Purpose: automatically merge safe Dependabot pull requests without manual review.
+# Policy: auto-merge is enabled for:
+#   - github-actions ecosystem: patch and minor version updates
+#   - pip ecosystem: patch version updates only
+# Major version bumps and non-Dependabot PRs are never auto-merged.
+# Requires the repository setting "Allow auto-merge" to be enabled.
+name: "Dependabot Safe Auto-merge for Patch and Minor Updates"
+
+on:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Decide if this PR is eligible
+        id: decision
+        env:
+          PACKAGE_ECOSYSTEM: ${{ steps.metadata.outputs.package-ecosystem }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+        run: |
+          should_automerge=false
+
+          if [[ "$PACKAGE_ECOSYSTEM" == "github-actions" ]]; then
+            if [[ "$UPDATE_TYPE" == "version-update:semver-patch" || "$UPDATE_TYPE" == "version-update:semver-minor" ]]; then
+              should_automerge=true
+            fi
+          fi
+
+          if [[ "$PACKAGE_ECOSYSTEM" == "pip" ]]; then
+            if [[ "$UPDATE_TYPE" == "version-update:semver-patch" ]]; then
+              should_automerge=true
+            fi
+          fi
+
+          echo "should_automerge=$should_automerge" >> "$GITHUB_OUTPUT"
+          echo "package_ecosystem=$PACKAGE_ECOSYSTEM" >> "$GITHUB_OUTPUT"
+          echo "update_type=$UPDATE_TYPE" >> "$GITHUB_OUTPUT"
+
+      - name: Approve eligible PR
+        if: steps.decision.outputs.should_automerge == 'true'
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              event: "APPROVE",
+              body: "Auto-approved for safe Dependabot update policy."
+            })
+
+      - name: Update branch for eligible PR
+        if: steps.decision.outputs.should_automerge == 'true'
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Intentional strategy:
+            // - Always request an update for eligible PRs instead of pre-checking merge state.
+            // - GitHub may report transient/unknown merge state during event handling.
+            // - updateBranch is idempotent; if already current, GitHub returns a benign 422/no-op.
+            // This keeps automerge flow deterministic without relying on flaky preconditions.
+            try {
+              await github.rest.pulls.updateBranch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number
+              })
+              core.info("Requested branch update from base branch.")
+            } catch (error) {
+              const msg = String(error.message || "")
+              if (error.status === 422 || msg.includes("not behind")) {
+                // Expected no-op path when branch is already up to date.
+                core.info("Branch already up to date; continuing.")
+              } else {
+                core.setFailed("Could not update branch before automerge. " + msg)
+              }
+            }
+
+      - name: Enable auto-merge for eligible PR
+        if: steps.decision.outputs.should_automerge == 'true'
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              await github.graphql(
+                `mutation($pullRequestId: ID!) {
+                  enablePullRequestAutoMerge(input: {pullRequestId: $pullRequestId, mergeMethod: SQUASH}) {
+                    pullRequest { number }
+                  }
+                }`,
+                { pullRequestId: context.payload.pull_request.node_id }
+              )
+            } catch (error) {
+              core.setFailed(
+                "Could not enable auto-merge. Ensure repository auto-merge is enabled and branch protections are satisfied.\n" +
+                error.message
+              )
+            }
+
+      - name: Log skipped PR
+        if: steps.decision.outputs.should_automerge != 'true'
+        run: |
+          echo "Automerge skipped by policy."
+          echo "ecosystem=${{ steps.decision.outputs.package_ecosystem }}"
+          echo "update_type=${{ steps.decision.outputs.update_type }}"

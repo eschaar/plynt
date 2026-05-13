@@ -1,0 +1,45 @@
+# Pull request verification workflow.
+# Purpose: cross-version test matrix as required PR merge gate.
+# This is the primary merge gate for all PRs to main.
+name: Verify
+
+on:
+  # Run on PRs targeting main so merge decisions are based on full verification.
+  pull_request:
+    branches: [main]
+
+concurrency:
+  # Cancel superseded verification runs for the same PR.
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  # Verify jobs only read repository contents.
+  contents: read
+
+jobs:
+  test-matrix:
+    # Cross-version test coverage for all supported Python runtimes.
+    # Runs on all PRs to main as a required merge gate.
+    name: Tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e .[httpx,salesforce,test]
+
+      - name: Test
+        run: pytest --tb=short -q

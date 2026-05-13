@@ -1,0 +1,48 @@
+# Check workflow.
+# Purpose: run fast single-version unit tests for branch and PR feedback.
+# This complements verify.yml, which runs the full cross-version matrix.
+name: Check
+
+on:
+  push:
+    # Mainline and merge-queue refs are covered by other workflows.
+    branches-ignore:
+      - main
+      - master
+      - merge/**
+      - gh-readonly-queue/**
+  pull_request:
+    branches: [main]
+
+concurrency:
+  # Cancel superseded runs for the same ref.
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  test:
+    # Single-version unit test run for fast feedback.
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e .[httpx,salesforce,test]
+
+      - name: Test
+        run: pytest --tb=short -q

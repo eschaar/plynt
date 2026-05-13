@@ -1,0 +1,150 @@
+# Commit workflow.
+# Purpose: enforce commit policy and quality checks (format/lint/typecheck).
+# Runs on branch pushes and PRs so commit/quality policy can be merge-blocking.
+# Unit tests are split into check.yml (single-version) and verify.yml (matrix).
+name: Commit
+
+on:
+  push:
+    # Mainline, merge-queue, and release-please refs are covered by other workflows.
+    branches-ignore:
+      - main
+      - master
+      - merge/**
+      - gh-readonly-queue/**
+      - release-please--branches--**
+  pull_request:
+    branches: [main]
+
+concurrency:
+  # Cancel superseded runs on the same branch.
+  group: commit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  validate:
+    # Validates commit message format and branch naming policy.
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          # Full history is required to inspect the full pushed commit range.
+          fetch-depth: 0
+
+      - name: Validate commits with commit-check
+        if: github.event_name == 'push'
+        uses: commit-check/commit-check-action@v2
+        with:
+          # Commit message and branch policy is read from cchk.toml in the repo root.
+          message: true
+          branch: true
+          author-name: false
+          author-email: false
+          job-summary: true
+          pr-comments: false
+
+      - name: Validate commit messages with commit-check
+        if: github.event_name == 'pull_request'
+        uses: commit-check/commit-check-action@v2
+        with:
+          # On PR events, validate commit messages only (branch refs are pull/*,
+          # so branch validation is done separately in the next step).
+          message: true
+          branch: false
+          author-name: false
+          author-email: false
+          job-summary: true
+          pr-comments: false
+
+      - name: Validate PR branch name
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          BRANCH="${{ github.head_ref }}"
+
+          # Release-please uses its own generated branch naming format.
+          if [[ "$BRANCH" =~ ^release-please--branches--.+$ ]]; then
+            echo "release-please branch is allowed: $BRANCH"
+            exit 0
+          fi
+
+          if [[ ! "$BRANCH" =~ ^([a-z0-9-]+)/.+$ ]]; then
+            echo "ERROR: invalid branch name '$BRANCH'. Expected 'type/description'."
+            exit 1
+          fi
+
+          TYPE="${BASH_REMATCH[1]}"
+          case "$TYPE" in
+              feature|bugfix|hotfix|release|chore|feat|fix|docs|refactor|perf|test|ci|build|style|opt|patch|dependabot)
+                echo "branch type '$TYPE' is allowed."
+                ;;
+              *)
+                echo "ERROR: branch type '$TYPE' is not allowed."
+                echo "Allowed types: feature bugfix hotfix release chore feat fix docs refactor perf test ci build style opt patch dependabot"
+                exit 1
+              ;;
+          esac
+
+      - name: Reserve docs(changelog) scope for automation
+        shell: bash
+        run: |
+          TRUSTED_AUTHORS='^(github-actions\[bot\]|prime-releasebot\[bot\])$'
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            COMMITS="$(git log --format='%h%x09%s%x09%an' "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}")"
+          else
+            if [[ "${GITHUB_ACTOR}" =~ $TRUSTED_AUTHORS ]]; then
+              echo "docs(changelog) scope allowed for automation actor."
+              exit 0
+            fi
+            COMMITS="$(git log -1 --format='%h%x09%s%x09%an' "${{ github.sha }}")"
+          fi
+
+          VIOLATION_FOUND=false
+          while IFS=$'\t' read -r SHA SUBJECT AUTHOR; do
+            [[ "$SUBJECT" =~ ^docs\(changelog\): ]] || continue
+            [[ "$AUTHOR" =~ $TRUSTED_AUTHORS ]] && continue
+            echo "ERROR: commit $SHA uses reserved docs(changelog) scope (author: $AUTHOR)."
+            VIOLATION_FOUND=true
+          done <<< "$COMMITS"
+
+          if [[ "$VIOLATION_FOUND" == "true" ]]; then
+            echo "ERROR: docs(changelog) scope is reserved for automated changelog/release commits."
+            echo "Use another scope for manual documentation commits."
+            exit 1
+          fi
+
+  quality:
+    # Lint, format check, and typecheck on the baseline Python version.
+    name: Format Lint Typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e .[dev]
+
+      - name: Format check
+        run: ruff format --check src tests
+
+      - name: Lint
+        run: ruff check src tests
+
+      - name: Typecheck
+        run: mypy src tests

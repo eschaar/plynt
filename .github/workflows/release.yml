@@ -1,0 +1,74 @@
+# Release orchestration workflow.
+# Purpose: maintain a release PR and, once merged, create the real tag/release.
+# This workflow owns versioning, changelog, and GitHub release notes via release-please.
+name: "Release"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  # Serialize release orchestration to avoid overlapping release-please runs.
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    name: Release Please (PR + Tag + Notes)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          # v3 requires the GitHub App client ID.
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout repository metadata
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Validate release-please manifest matches latest tag
+        shell: bash
+        run: |
+          git fetch --tags --force
+
+          latest_tag="$(git tag --list | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)"
+          manifest_version="$(jq -r '.["."]' .release-please-manifest.json)"
+
+          if [[ -z "$latest_tag" ]]; then
+            echo "No SemVer tags found; skipping manifest drift check."
+            exit 0
+          fi
+
+          if [[ ! "$manifest_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: invalid .release-please-manifest.json version: $manifest_version"
+            exit 1
+          fi
+
+          # A merged release-please PR can make manifest_version temporarily newer than latest_tag.
+          # That state is valid; only fail if manifest_version is behind the newest existing tag.
+          if [[ "$(printf '%s\n%s\n' "$latest_tag" "$manifest_version" | sort -V | tail -n 1)" == "$latest_tag" && "$manifest_version" != "$latest_tag" ]]; then
+            echo "ERROR: .release-please-manifest.json is stale (behind latest tag)."
+            echo "manifest version: $manifest_version"
+            echo "latest git tag:   $latest_tag"
+            echo "Update .release-please-manifest.json before running release orchestration."
+            exit 1
+          fi
+
+      - name: Run release-please
+        uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json

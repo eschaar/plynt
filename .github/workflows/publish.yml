@@ -1,0 +1,116 @@
+# Publish workflow.
+# Purpose: build and publish the distribution to PyPI when a GitHub release is published.
+# This workflow does not compute versions or create tags — that is release.yml's job.
+name: "Publish"
+
+on:
+  release:
+    types:
+      - published
+
+concurrency:
+  # Preserve release order on PyPI: publish runs execute one-by-one.
+  group: publish-pypi
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+  TRUSTED_RELEASE_ACTORS: "prime-releasebot[bot],github-actions[bot],eschaar"
+  ENABLE_PYPI_PUBLISH: "false"
+
+jobs:
+  publish:
+    name: Build and Publish to PyPI
+    if: "${{ github.event.release.prerelease == false }}"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate release tag format
+        # Fail fast before checkout if the tag is not a plain SemVer X.Y.Z.
+        # Prevents non-versioned or pre-release tags from triggering a publish.
+        shell: bash
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: release tag '$TAG' is not in expected SemVer X.Y.Z format."
+            echo "Only plain version tags (e.g. 1.2.3) are permitted to trigger publish."
+            exit 1
+          fi
+          echo "tag=$TAG format is valid."
+
+      - name: Validate release actor
+        # Only allow trusted actors to trigger a PyPI publish.
+        # prime-releasebot[bot] covers release-please GitHub App automation.
+        # github-actions[bot] is kept as a compatibility fallback.
+        # eschaar covers direct maintainer releases.
+        shell: bash
+        run: |
+          ACTOR="${{ github.event.release.author.login }}"
+          IFS=',' read -r -a ALLOWED <<< "$TRUSTED_RELEASE_ACTORS"
+
+          TRUSTED=false
+          for allowed_actor in "${ALLOWED[@]}"; do
+            if [[ "$ACTOR" == "$allowed_actor" ]]; then
+              TRUSTED=true
+              break
+            fi
+          done
+
+          if [[ "$TRUSTED" != "true" ]]; then
+            echo "ERROR: release created by '$ACTOR' which is not in the trusted actor list."
+            echo "Allowed: $TRUSTED_RELEASE_ACTORS"
+            echo "Releases must be created by release automation or a trusted maintainer."
+            exit 1
+          fi
+
+          echo "release_actor='$ACTOR' is trusted."
+
+      - name: Checkout release tag
+        uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+
+      - name: Validate release tag checkout
+        # Verify that HEAD is at the expected release tag before building.
+        shell: bash
+        run: |
+          EXPECTED="${{ github.event.release.tag_name }}"
+          ACTUAL_TAG="$(git tag --points-at HEAD | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
+          echo "expected_tag=$EXPECTED"
+          echo "head_tag=$ACTUAL_TAG"
+          if [[ "$ACTUAL_TAG" != "$EXPECTED" ]]; then
+            echo "ERROR: HEAD is not at the expected release tag."
+            echo "This prevents publishing from an unverified commit."
+            exit 1
+          fi
+
+      - name: Install build tools
+        run: pip install --upgrade build twine
+
+      - name: Build distribution
+        # setuptools_scm derives the version from the checked-out git tag.
+        run: python -m build
+
+      - name: Verify distribution
+        # Smoke-test the built wheel and sdist metadata before uploading.
+        run: twine check dist/*
+
+      - name: Publish to PyPI
+        # Uses OIDC trusted publisher (id-token: write) — no API token required.
+        if: "${{ env.ENABLE_PYPI_PUBLISH == 'true' }}"
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+
+      - name: Skip PyPI publish
+        if: "${{ env.ENABLE_PYPI_PUBLISH != 'true' }}"
+        run: echo "PyPI publish is disabled (ENABLE_PYPI_PUBLISH=false)."
