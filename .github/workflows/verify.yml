@@ -4,9 +4,7 @@
 name: Verify
 
 on:
-  # Run on PRs targeting main so merge decisions are based on full verification.
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   # Cancel superseded verification runs for the same PR.

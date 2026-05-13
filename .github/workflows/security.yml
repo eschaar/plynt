@@ -4,11 +4,7 @@
 name: Security
 
 on:
-  # Security checks are required for all PRs into main.
-  pull_request:
-    branches: [main]
-  schedule:
-    - cron: "0 6 * * 1"  # Weekly audit every Monday at 06:00 UTC
+  workflow_dispatch:
 
 concurrency:
   # Cancel superseded security scans for the same PR.

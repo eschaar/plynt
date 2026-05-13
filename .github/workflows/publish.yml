@@ -4,9 +4,7 @@
 name: "Publish"
 
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
 
 concurrency:
   # Preserve release order on PyPI: publish runs execute one-by-one.

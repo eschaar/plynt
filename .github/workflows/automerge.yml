@@ -8,13 +8,7 @@
 name: "Dependabot Safe Auto-merge for Patch and Minor Updates"
 
 on:
-  pull_request_target:
-    branches:
-      - main
-    types:
-      - opened
-      - synchronize
-      - reopened
+  workflow_dispatch:
 
 permissions:
   contents: write

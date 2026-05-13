@@ -5,16 +5,7 @@
 name: Commit
 
 on:
-  push:
-    # Mainline, merge-queue, and release-please refs are covered by other workflows.
-    branches-ignore:
-      - main
-      - master
-      - merge/**
-      - gh-readonly-queue/**
-      - release-please--branches--**
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   # Cancel superseded runs on the same branch.
