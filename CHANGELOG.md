@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.2.1](https://github.com/eschaar/plynth/compare/0.2.0...0.2.1) (2026-05-14)
+
+
+### Documentation
+
+* **readme:** align project and PyPI readme for release baseline ([4376b06](https://github.com/eschaar/plynth/commit/4376b066982f96e6513cac3ae18e0f60ff020335))
+
+
+### Maintenance
+
+* **ci:** disable workflows and stabilize release baseline ([51dcaba](https://github.com/eschaar/plynth/commit/51dcaba39100183ce984786e6748fd94c27e57d5))
+
 ## [0.2.0] - 2026-05-14
 
 ### Added
