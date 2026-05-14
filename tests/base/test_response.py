@@ -1,12 +1,54 @@
 """Tests for plynth.base.response (Response, ResponseProtocol)
 and plynth.http.response (HttpResponse)."""
 
+from collections.abc import AsyncIterator, Iterator
+
 import pytest
 
 from plynth.base.errors import StatusError
-from plynth.base.response import Response, ResponseProtocol
+from plynth.base.response import (
+    AsyncStreamingResponse,
+    Response,
+    ResponseProtocol,
+    StreamingResponse,
+)
 from plynth.http.errors import HttpStatusError
 from plynth.http.response import HttpResponse
+
+
+class _FakeRawStream:
+    """Minimal sync raw stream stub used by streaming response tests."""
+
+    def __init__(self, chunks: list[bytes]) -> None:
+        """Initialize fake sync stream."""
+        self._chunks = chunks
+        self.closed = False
+
+    def iter_bytes(self) -> Iterator[bytes]:
+        """Yield configured byte chunks."""
+        yield from self._chunks
+
+    def close(self) -> None:
+        """Mark stream as closed."""
+        self.closed = True
+
+
+class _FakeAsyncRawStream:
+    """Minimal async raw stream stub used by streaming response tests."""
+
+    def __init__(self, chunks: list[bytes]) -> None:
+        """Initialize fake async stream."""
+        self._chunks = chunks
+        self.closed = False
+
+    async def aiter_bytes(self) -> AsyncIterator[bytes]:
+        """Yield configured byte chunks asynchronously."""
+        for chunk in self._chunks:
+            yield chunk
+
+    async def aclose(self) -> None:
+        """Mark stream as closed."""
+        self.closed = True
 
 
 class TestResponse:
@@ -163,3 +205,54 @@ class TestHttpResponse:
         resp_a = HttpResponse(status_code=200, method="GET", url="/")
         resp_b = HttpResponse(status_code=200, method="GET", url="/", _raw=sentinel)
         assert resp_a == resp_b
+
+
+class TestStreamingResponse:
+    """Test suite for StreamingResponse."""
+
+    def test_iter_bytes_yields_raw_chunks(self) -> None:
+        """Validate iter bytes yields chunks from underlying raw stream."""
+        raw = _FakeRawStream([b"ab", b"cd"])
+        resp = StreamingResponse(status_code=200, _raw=raw)
+        assert list(resp.iter_bytes()) == [b"ab", b"cd"]
+
+    def test_iter_lines_splits_newlines(self) -> None:
+        """Validate iter lines yields newline-delimited byte lines."""
+        raw = _FakeRawStream([b"line1\nline", b"2\r\nline3"])
+        resp = StreamingResponse(status_code=200, _raw=raw)
+        assert list(resp.iter_lines()) == [b"line1", b"line2", b"line3"]
+
+    def test_context_manager_closes_raw_stream(self) -> None:
+        """Validate context manager closes underlying raw stream."""
+        raw = _FakeRawStream([b"chunk"])
+        with StreamingResponse(status_code=200, _raw=raw):
+            pass
+        assert raw.closed is True
+
+
+class TestAsyncStreamingResponse:
+    """Test suite for AsyncStreamingResponse."""
+
+    @pytest.mark.anyio
+    async def test_aiter_bytes_yields_raw_chunks(self) -> None:
+        """Validate aiter bytes yields chunks from underlying raw stream."""
+        raw = _FakeAsyncRawStream([b"ab", b"cd"])
+        resp = AsyncStreamingResponse(status_code=200, _raw=raw)
+        chunks = [chunk async for chunk in resp.aiter_bytes()]
+        assert chunks == [b"ab", b"cd"]
+
+    @pytest.mark.anyio
+    async def test_aiter_lines_splits_newlines(self) -> None:
+        """Validate aiter lines yields newline-delimited byte lines."""
+        raw = _FakeAsyncRawStream([b"line1\nline", b"2\r\nline3"])
+        resp = AsyncStreamingResponse(status_code=200, _raw=raw)
+        lines = [line async for line in resp.aiter_lines()]
+        assert lines == [b"line1", b"line2", b"line3"]
+
+    @pytest.mark.anyio
+    async def test_async_context_manager_closes_raw_stream(self) -> None:
+        """Validate async context manager closes underlying raw stream."""
+        raw = _FakeAsyncRawStream([b"chunk"])
+        async with AsyncStreamingResponse(status_code=200, _raw=raw):
+            pass
+        assert raw.closed is True

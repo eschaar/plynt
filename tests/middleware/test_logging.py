@@ -8,7 +8,7 @@ import pytest
 
 from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynth.base.request import Request
-from plynth.base.response import Response
+from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynth.middleware.logging import AsyncLoggingMiddleware, LoggingMiddleware
 
 # ---------------------------------------------------------------------------
@@ -182,6 +182,18 @@ class TestLoggingMiddleware:
         res_idx = next(i for i, m in enumerate(messages) if "<--" in m)
         assert req_idx < res_idx
 
+    def test_streaming_response_log_contains_streaming_marker(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Validate streaming responses are explicitly marked in logs."""
+        streaming_response = StreamingResponse(status_code=200, _raw=object())
+
+        with caplog.at_level(logging.INFO, logger="plynth.http"):
+            LoggingMiddleware().handle(_REQUEST, lambda _r: streaming_response)
+
+        response_record = next(r for r in caplog.records if "<--" in r.message)
+        assert "(streaming)" in response_record.message
+
 
 # ---------------------------------------------------------------------------
 # TestAsyncLoggingMiddleware
@@ -292,3 +304,20 @@ class TestAsyncLoggingMiddleware:
             custom_logger.removeHandler(handler)
 
         assert len(records) == 2
+
+    @pytest.mark.anyio
+    async def test_streaming_response_log_contains_streaming_marker(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Validate async streaming responses are explicitly marked in logs."""
+        streaming_response = AsyncStreamingResponse(status_code=200, _raw=object())
+
+        async def _return_streaming(_req: Request) -> Response:
+            """Return streaming response for async middleware test."""
+            return streaming_response
+
+        with caplog.at_level(logging.INFO, logger="plynth.http"):
+            await AsyncLoggingMiddleware().handle(_REQUEST, _return_streaming)
+
+        response_record = next(r for r in caplog.records if "<--" in r.message)
+        assert "(streaming)" in response_record.message

@@ -45,3 +45,13 @@ class TestRequest:
         """Validate timeout can be set."""
         req = Request(method="GET", url="https://example.com", timeout=120.0)
         assert req.timeout == 120.0
+
+    def test_stream_defaults_to_false(self) -> None:
+        """Validate stream defaults to false."""
+        req = Request(method="GET", url="https://example.com")
+        assert req.stream is False
+
+    def test_stream_can_be_enabled(self) -> None:
+        """Validate stream can be enabled."""
+        req = Request(method="GET", url="https://example.com", stream=True)
+        assert req.stream is True

@@ -21,7 +21,7 @@ from plynth.base.cache import (
 )
 from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynth.base.request import Request
-from plynth.base.response import Response
+from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynth.middleware.cache import (
     AsyncCacheMiddleware,
     CacheMiddleware,
@@ -505,6 +505,31 @@ class TestCacheMiddleware:
         second = mw.handle(req, _CountingNextHandler(_resp(500)))
         assert second.headers["X-Test"] == "v1"
 
+    def test_stream_request_bypasses_cache_read_and_write(self) -> None:
+        """Validate stream requests always bypass cache lookup and storage."""
+        cache = _RecordingCache()
+        request = _req("GET")
+        request.stream = True
+        mw = CacheMiddleware(cache)
+        handler = _CountingNextHandler(_resp(200))
+
+        mw.handle(request, handler)
+
+        assert handler.calls == 1
+        assert cache.get_calls == []
+        assert cache.set_calls == []
+
+    def test_streaming_response_is_not_cached(self) -> None:
+        """Validate streaming responses are not written to cache."""
+        cache = _RecordingCache()
+        mw = CacheMiddleware(cache)
+        streaming = StreamingResponse(status_code=200, _raw=object())
+
+        result = mw.handle(_req("GET"), _CountingNextHandler(streaming))
+
+        assert result is streaming
+        assert cache.set_calls == []
+
 
 # ---------------------------------------------------------------------------
 # AsyncCacheMiddleware
@@ -601,3 +626,28 @@ class TestAsyncCacheMiddleware:
 
         second = await mw.handle(req, _AsyncCountingNextHandler(_resp(500)))
         assert second.headers["X-Test"] == "v1"
+
+    async def test_stream_request_bypasses_cache_read_and_write(self) -> None:
+        """Validate async stream requests always bypass cache lookup/storage."""
+        cache = _RecordingCache()
+        request = _req("GET")
+        request.stream = True
+        mw = AsyncCacheMiddleware(cache)
+        handler = _AsyncCountingNextHandler(_resp(200))
+
+        await mw.handle(request, handler)
+
+        assert handler.calls == 1
+        assert cache.get_calls == []
+        assert cache.set_calls == []
+
+    async def test_streaming_response_is_not_cached(self) -> None:
+        """Validate async streaming responses are not written to cache."""
+        cache = _RecordingCache()
+        mw = AsyncCacheMiddleware(cache)
+        streaming = AsyncStreamingResponse(status_code=200, _raw=object())
+
+        result = await mw.handle(_req("GET"), _AsyncCountingNextHandler(streaming))
+
+        assert result is streaming
+        assert cache.set_calls == []
