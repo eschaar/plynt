@@ -1,3 +1,4 @@
+# pyright: reportPrivateUsage=false
 """VCR cassette smoke tests for the Salesforce integration.
 
 These tests mirror the demo flow in ``examples/salesforce/_demo.py``:
@@ -9,7 +10,7 @@ How to use
 
     pytest tests/connectors/salesforce/test_smoke.py
 
-Cassettes stored under ``tests/cassettes/`` are committed to the repo and
+Cassettes stored under ``tests/_mock/cassettes/`` are committed to the repo and
 replayed without any real HTTP calls.  This works in CI out of the box.
 
 **Record against a real Salesforce org**::
@@ -18,22 +19,18 @@ replayed without any real HTTP calls.  This works in CI out of the box.
 
 Before recording, set real credentials through ``RECORD_*`` environment
 variables. VCR will make live HTTP calls and overwrite the cassettes.
-After recording, run the anonymisation script (see below) and clear those
-environment variables before committing.
-
-Anonymise after recording::
-
-    python scripts/anonymise_cassettes.py <real-host> <fake-host>
+After recording, anonymise sensitive values in the recorded cassette files
+and clear those environment variables before committing.
 
 Cassette layout
 ---------------
 Cassettes are stored at a deterministic path derived from the test node id::
 
-    tests/cassettes/connectors/salesforce/smoke/salesforcevcrsmoke/
+    tests/_mock/cassettes/connectors/salesforce/smoke/salesforcevcrsmoke/
         <test_name>__<hash>.yaml
 
 This matches the default ``DeterministicCassettePathResolver`` root
-(``tests/cassettes``).
+(``tests/_mock/cassettes``).
 
 .. note::
     Sensitive data (``Authorization`` headers, access tokens) are
@@ -153,7 +150,7 @@ def _facade(cassette_path: Path, *, path_only: bool = False) -> SalesforceAPIFac
     )
     # Route the auth token exchange through VCR so instance_url is derived
     # from the cassette response, not from a hardcoded configuration value.
-    auth._transport = HttpxSyncTransport(middlewares=[mw])
+    auth._transport = HttpxSyncTransport(middlewares=[mw])  # pylint: disable=protected-access
 
     if _vcr_mode() is VCRMode.NONE and not any(_CASSETTE_ROOT.rglob("*.yaml")):
         pytest.skip(
