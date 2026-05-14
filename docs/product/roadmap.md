@@ -628,6 +628,16 @@ Anticipated scope:
 1. Consider whether this lives in `plynth.connectors.llm` (generic)
    or as a separate `plynth-openai` package from the start.
 
+**Roadmap note:**
+
+- This work can proceed in parallel with Salesforce Models API and Agent API
+  as long as the connector implementations remain independent.
+- Share only neutral core capabilities such as streaming response support,
+  transport primitives, and middleware; do not introduce connector-to-
+  connector dependencies.
+- If a shared AI abstraction emerges, keep it generic and connector-agnostic
+  so that Salesforce-specific behavior stays in the Salesforce connector.
+
 ______________________________________________________________________
 
 ### 8. SOAP transport (`plynth[soap]`)

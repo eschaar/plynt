@@ -141,6 +141,15 @@ items (not Conditional or Deferred). This reflects three strategic factors:
 **Implication:** Streaming support (ADR-0017) adoption is now front-and-center
 in core roadmap prioritization.
 
+**Roadmap note:**
+
+- Salesforce Models API and Agent API can be developed in parallel with the
+  generic LLM connector, but the two tracks must stay independent.
+- Do not make either connector depend on the other; only share neutral core
+  streaming and transport capabilities.
+- Salesforce-specific AI orchestration stays in the Salesforce connector,
+  while generic provider-agnostic AI abstractions belong in `plynth.connectors.llm`.
+
 ## Priorities
 
 Near-term priority order for REST capability growth:
