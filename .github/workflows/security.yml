@@ -7,6 +7,8 @@ on:
   # Security checks are required for all PRs into main.
   pull_request:
     branches: [main]
+  merge_group:
+    branches: [main]
   schedule:
     - cron: "0 6 * * 1"  # Weekly audit every Monday at 06:00 UTC
 
