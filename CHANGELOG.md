@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.3.0](https://github.com/eschaar/plynth/compare/0.2.1...0.3.0) (2026-05-14)
+
+
+### Features
+
+* adr-0017 streaming response ([#4](https://github.com/eschaar/plynth/issues/4)) ([22619d7](https://github.com/eschaar/plynth/commit/22619d71191fcd2c22116c64cd518a596f67990b))
+
 ## [0.2.1](https://github.com/eschaar/plynth/compare/0.2.0...0.2.1) (2026-05-14)
 
 
