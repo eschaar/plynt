@@ -116,7 +116,7 @@ class SalesforceAPIClient(APIClient):
             payload = _API_VERSION_LIST.validate_json(response.content)
         except ValidationError:
             return DEFAULT_API_VERSION
-        if not isinstance(payload, list) or not payload:
+        if not payload:
             return DEFAULT_API_VERSION
 
         latest = payload[-1]
@@ -288,7 +288,7 @@ class AsyncSalesforceAPIClient(AsyncAPIClient):
             payload = _API_VERSION_LIST.validate_json(response.content)
         except ValidationError:
             return DEFAULT_API_VERSION
-        if not isinstance(payload, list) or not payload:
+        if not payload:
             return DEFAULT_API_VERSION
 
         latest = payload[-1]

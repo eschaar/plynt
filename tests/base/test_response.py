@@ -334,7 +334,7 @@ class TestStreamingResponse:
         resp.close()
         assert raw.closed
 
-    def test_close_without_raw_is_noop(self) -> None:
+    def test_close_without_raw_raises_clear_runtime_error(self) -> None:
         """Validate close without raw raises a clear RuntimeError."""
         with pytest.raises(RuntimeError, match="has no bound raw stream"):
             StreamingResponse(status_code=200).close()
@@ -458,7 +458,7 @@ class TestAsyncStreamingResponse:
         assert raw.closed
 
     @pytest.mark.anyio
-    async def test_aclose_without_raw_is_noop(self) -> None:
+    async def test_aclose_without_raw_raises_clear_runtime_error(self) -> None:
         """Validate aclose without raw raises a clear RuntimeError."""
         with pytest.raises(RuntimeError, match="has no bound raw stream"):
             await AsyncStreamingResponse(status_code=200).aclose()
