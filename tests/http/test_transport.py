@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from plynth.base.request import Request
-from plynth.base.response import Response
+from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynth.base.transport import BaseAsyncTransport, BaseSyncTransport
 from plynth.cache import DummyCacheConfig, LocMemCacheConfig
 from plynth.http.auth import (
@@ -247,6 +247,21 @@ class TestHttpxSyncTransport:
         # transport-level timeout is still applied by httpx itself
         assert seen["timeout"] is not None
 
+    def test_stream_request_returns_streaming_response(self) -> None:
+        """A stream request returns StreamingResponse with unbuffered content."""
+        body = b"chunk-1\nchunk-2\n"
+        client = _make_sync_client(_mock_response(200, body))
+        transport = HttpxSyncTransport(client=client)
+
+        response = transport.send(
+            Request(method="GET", url="https://example.com", stream=True)
+        )
+
+        assert isinstance(response, StreamingResponse)
+        assert response.content == b""
+        assert b"".join(response.iter_bytes()) == body
+        response.close()
+
 
 class TestHttpxAsyncTransport:
     """Tests for HttpxAsyncTransport."""
@@ -371,6 +386,22 @@ class TestHttpxAsyncTransport:
         )
 
         assert seen["timeout"] is not None
+
+    async def test_stream_request_returns_async_streaming_response(self) -> None:
+        """A stream request returns AsyncStreamingResponse with unbuffered content."""
+        body = b"chunk-1\nchunk-2\n"
+        client = _make_async_client(_mock_response(200, body))
+        transport = HttpxAsyncTransport(client=client)
+
+        response = await transport.send(
+            Request(method="GET", url="https://example.com", stream=True)
+        )
+
+        assert isinstance(response, AsyncStreamingResponse)
+        assert response.content == b""
+        chunks = [chunk async for chunk in response.aiter_bytes()]
+        assert b"".join(chunks) == body
+        await response.aclose()
 
 
 class TestHttpxSyncTransportStatusCodes:
@@ -744,13 +775,13 @@ class TestHttpxTransportMiddlewaresParam:
 
 
 class TestScrubHeaders:
-    """Tests for the _scrub_headers helper (ADR-0014 § 4)."""
+    """Tests for the scrub_headers helper (ADR-0014 § 4)."""
 
     def setup_method(self) -> None:
         """Return setup method."""
-        from plynth.http.transport import _scrub_headers
+        from plynth.http.transport import scrub_headers
 
-        self._scrub = _scrub_headers
+        self._scrub = scrub_headers
 
     def test_authorization_is_redacted(self) -> None:
         """Validate authorization is redacted."""

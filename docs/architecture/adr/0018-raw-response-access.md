@@ -6,9 +6,10 @@ Proposed
 
 ## Context
 
-Plynth's `APIClient` and `AsyncAPIClient` (ADR-0008) always call
-`raise_for_status()` after each request and return fully-parsed typed
-response models. Callers never see the underlying `Response` object.
+Plynth's `APIClient` and `AsyncAPIClient` (ADR-0008) return raw `Response`
+objects on successful responses, but they always raise typed exceptions for
+4xx/5xx responses. This makes non-success raw-response inspection possible
+only by catching exceptions and extracting the attached response object.
 
 This is the right default for the happy path. However, certain scenarios
 require access to the raw response:
@@ -21,8 +22,9 @@ require access to the raw response:
 - Escape-hatch integrations — e.g., forwarding upstream headers to a
   calling service or logging the full response for audit purposes.
 
-Currently the only workaround is to bypass `APIClient` and use `HTTPClient`
-directly, losing error mapping and JSON content-type headers in the process.
+Currently the alternatives are either catching typed errors and inspecting the
+attached response, or bypassing `APIClient` and using `HTTPClient` directly
+(losing APIClient defaults such as JSON header conventions and typed mapping).
 
 The need appears across connectors and service layers. It belongs at the
 `APIClient` level, not in individual service methods or connector packages.

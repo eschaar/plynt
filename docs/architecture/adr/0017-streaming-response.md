@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -96,7 +96,7 @@ class StreamingResponse(Response):
     to read the body.
     """
 
-    def iter_lines(self) -> Iterator[bytes]: ...
+    def iter_lines(self) -> Iterator[str]: ...
     def iter_bytes(self) -> Iterator[bytes]: ...
     def close(self) -> None: ...
 
@@ -109,7 +109,7 @@ The async variant:
 ```python
 @dataclass
 class AsyncStreamingResponse(Response):
-    async def aiter_lines(self) -> AsyncIterator[bytes]: ...
+    async def aiter_lines(self) -> AsyncIterator[str]: ...
     async def aiter_bytes(self) -> AsyncIterator[bytes]: ...
     async def aclose(self) -> None: ...
 
@@ -138,8 +138,8 @@ caller is responsible for closing it.
 ```python
 with transport.send(Request("GET", url, stream=True)) as response:
     for line in response.iter_lines():
-        if line.startswith(b"data: "):
-            chunk = json.loads(line[6:])
+        if line.startswith("data: "):
+          chunk = json.loads(line[6:])
             print(chunk["choices"][0]["delta"]["content"], end="", flush=True)
 ```
 
@@ -245,32 +245,21 @@ This mirrors non-streaming exactly — the client already absorbs
 Streaming extends that contract: the client also absorbs raw transport
 iterator exceptions, and the service absorbs embedded application errors.
 
-A `StreamService` / `AsyncStreamService` base class in `plynth.http` should
-provide the standard scaffolding (connection lifecycle, `StreamInterruptedError`
-mapping hook) so individual streaming integrations do not repeat it.
-See the "Out of scope" section below.
+A `StreamService` / `AsyncStreamService` base class in `plynth.http` remains a
+possible future enhancement for reducing integration boilerplate.
 
-### Out of scope for this ADR
+### Implemented follow-up
 
-- **`StreamInterruptedError`**: a typed exception raised by the **client
-  layer** when a network-level error occurs during stream iteration (wrapping
-  raw `httpx.ReadError` / `httpx.RemoteProtocolError`). Consistent with how
-  `raise_for_status()` already absorbs HTTP errors at the client layer.
-  Should live in `plynth.base.errors` or `plynth.http`. Requires a small
-  amendment to ADR-0008 (Client Layer) or a follow-up ADR before
-  implementation.
-- **`HTTPClient.stream()` / `AsyncHTTPClient.stream()`**: the client-layer
-  entry point for streaming requests. Calls `transport.send(..., stream=True)`,
-  calls `raise_for_status()`, and returns a `StreamingResponse` whose
-  iterators are wrapped to map transport exceptions to
-  `StreamInterruptedError`. Requires an amendment to ADR-0008 before
-  implementation.
-- **`StreamService` / `AsyncStreamService` base class**: a thin service base
-  in `plynth.http` that delegates to `self._client.stream()` and provides a
-  hook for subclasses to implement chunk parsing — analogous to how
-  `APIService._get()` delegates to `self._client.get()`. Prevents streaming
-  integrations from repeating the connection-lifecycle pattern. Requires a
-  follow-up ADR before implementation.
+The original proposal listed two follow-ups that are now implemented:
+
+- `StreamInterruptedError` exists in `plynth.base.errors`.
+- Client-layer `stream()` methods are available on `HTTPClient`,
+  `AsyncHTTPClient`, `APIClient`, and `AsyncAPIClient` with close-before-raise
+  behavior on 4xx/5xx responses.
+
+### Still out of scope
+
+- `StreamService` / `AsyncStreamService` base classes in `plynth.http`.
 - **WebSockets** — full-duplex persistent connections. Different protocol
   model; the middleware chain contract does not apply. Requires a separate ADR
   and likely a dedicated transport.

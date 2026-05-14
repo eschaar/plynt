@@ -17,14 +17,19 @@ layers, not in this module.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import AsyncIterator, Iterator, Mapping
 from dataclasses import dataclass, field
 from http import HTTPStatus
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
-from plynth.base.errors import StatusError
+from plynth.base.errors import StatusError, StreamInterruptedError
 
-__all__ = ["Response", "ResponseProtocol"]
+__all__ = [
+    "AsyncStreamingResponse",
+    "Response",
+    "ResponseProtocol",
+    "StreamingResponse",
+]
 
 
 @dataclass
@@ -66,6 +71,181 @@ class Response:
         """
         if self.status_code >= HTTPStatus.BAD_REQUEST:
             raise StatusError(status_code=self.status_code)
+
+
+@dataclass
+class StreamingResponse(Response):
+    """Response whose body is consumed lazily via iteration.
+
+    Holds a reference to the underlying httpx response as an entered
+    context manager. The response body is not buffered; instead, callers
+    iterate over lines or bytes on demand via ``iter_lines()`` or
+    ``iter_bytes()``.
+
+    The connection remains open until ``close()`` is called or the response
+    exits its context manager (ADR-0017, Step A).
+
+    Attributes:
+        status_code: HTTP response status (e.g. 200, 404).
+        headers: Response headers as a mapping.
+        content: Always ``b""`` for streaming responses (body not buffered).
+        _raw: An entered ``httpx.Response`` object. Call methods on this via
+            the public iteration interface (``iter_lines()``, etc.).
+
+    Example::
+
+        resp = client.stream(Request("GET", "https://api.example.com/events"))
+        for line in resp.iter_lines():
+            if line.startswith("data: "):
+                event = json.loads(line[6:])
+                print(f"Event: {event}")
+        resp.close()
+
+        # Or use as a context manager:
+        with client.stream(...) as resp:
+            for line in resp.iter_lines():
+                ...
+
+    """
+
+    content: bytes = b""
+
+    def _raw_response(self) -> Any:
+        """Return the underlying transport response object."""
+        if self._raw is None:
+            raise RuntimeError(
+                "StreamingResponse has no bound raw stream; "
+                "ensure transport returns a streaming _raw response"
+            )
+        return self._raw
+
+    def iter_lines(self) -> Iterator[str]:
+        """Yield newline-delimited body lines as text."""
+        raw = self._raw_response()
+
+        def _iter_lines() -> Iterator[str]:
+            try:
+                yield from raw.iter_lines()
+            except Exception as exc:
+                raise StreamInterruptedError(underlying_error=exc) from exc
+
+        return _iter_lines()
+
+    def iter_bytes(self, chunk_size: int | None = None) -> Iterator[bytes]:
+        """Yield raw body chunks as bytes."""
+        raw = self._raw_response()
+
+        def _iter_bytes() -> Iterator[bytes]:
+            try:
+                if chunk_size is not None:
+                    yield from raw.iter_bytes(chunk_size)
+                    return
+                yield from raw.iter_bytes()
+            except Exception as exc:
+                raise StreamInterruptedError(underlying_error=exc) from exc
+
+        return _iter_bytes()
+
+    def close(self) -> None:
+        """Close the underlying transport response stream."""
+        raw = self._raw_response()
+        raw.close()
+
+    def __enter__(self) -> StreamingResponse:
+        """Enter context manager and return this response."""
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        """Close the streaming response on context exit."""
+        if self._raw is not None:
+            self.close()
+
+
+@dataclass
+class AsyncStreamingResponse(Response):
+    """Async response whose body is consumed lazily via async iteration.
+
+    Holds a reference to the underlying httpx async response as an entered
+    context manager. The response body is not buffered; instead, callers
+    iterate asynchronously over lines or bytes on demand via ``aiter_lines()``
+    or ``aiter_bytes()``.
+
+    The connection remains open until ``aclose()`` is called or the response
+    exits its async context manager (ADR-0017, Step A).
+
+    Attributes:
+        status_code: HTTP response status (e.g. 200, 404).
+        headers: Response headers as a mapping.
+        content: Always ``b""`` for streaming responses (body not buffered).
+        _raw: An entered ``httpx.AsyncResponse`` object. Call methods on this
+            via the public async iteration interface (``aiter_lines()``, etc.).
+
+    Example::
+
+        resp = await client.stream(Request("GET", "https://api.example.com/events"))
+        async with resp:
+            async for line in resp.aiter_lines():
+                if line.startswith("data: "):
+                    event = json.loads(line[6:])
+                    print(f"Event: {event}")
+
+    """
+
+    content: bytes = b""
+
+    def _raw_response(self) -> Any:
+        """Return the underlying transport response object."""
+        if self._raw is None:
+            raise RuntimeError(
+                "AsyncStreamingResponse has no bound raw stream; "
+                "ensure transport returns a streaming _raw response"
+            )
+        return self._raw
+
+    def aiter_lines(self) -> AsyncIterator[str]:
+        """Yield newline-delimited body lines as text."""
+        raw = self._raw_response()
+
+        async def _aiter_lines() -> AsyncIterator[str]:
+            try:
+                async for line in raw.aiter_lines():
+                    yield line
+            except Exception as exc:
+                raise StreamInterruptedError(underlying_error=exc) from exc
+
+        return _aiter_lines()
+
+    def aiter_bytes(self, chunk_size: int | None = None) -> AsyncIterator[bytes]:
+        """Yield raw body chunks as bytes."""
+        raw = self._raw_response()
+
+        async def _aiter_bytes() -> AsyncIterator[bytes]:
+            try:
+                iterator = (
+                    raw.aiter_bytes(chunk_size)
+                    if chunk_size is not None
+                    else raw.aiter_bytes()
+                )
+                async for chunk in iterator:
+                    yield chunk
+            except Exception as exc:
+                raise StreamInterruptedError(underlying_error=exc) from exc
+
+        return _aiter_bytes()
+
+    async def aclose(self) -> None:
+        """Close the underlying async response stream."""
+        raw = self._raw_response()
+        await raw.aclose()
+
+    async def __aenter__(self) -> AsyncStreamingResponse:
+        """Enter async context manager and return this response."""
+        return self
+
+    async def __aexit__(self, *args: object) -> None:
+        """Close the streaming response on async context exit."""
+        if self._raw is not None:
+            await self.aclose()
 
 
 @runtime_checkable

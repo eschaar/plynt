@@ -19,10 +19,11 @@ The `Request` class is implemented as a standalone module (`request.py`) within
 the `base/` namespace: `plynth.base.request`.
 
 It lives in `base/` rather than `http/` for a deliberate structural reason: the
-Transport ABCs (`SyncTransport`, `AsyncTransport`) in `core/base.py` reference
+Transport ABCs (`SyncTransport`, `AsyncTransport`) in `base/transport.py` reference
 `Request` as their parameter type. If `Request` were placed in `http/`, a
-circular import would result (`core/base.py` → `http/` → `http/transport.py` →
-`core/base.py`). Moving `Request` to `base/` breaks this cycle while keeping
+circular import would result (`base/transport.py` → `http/` →
+`http/transport.py` → `base/transport.py`). Moving `Request` to `base/` breaks
+this cycle while keeping
 the type available across all layers.
 
 This placement reinforces the reality that `Request` is a protocol-agnostic data
@@ -94,6 +95,30 @@ considered but rejected: it would either affect all requests equally
 (same as transport-level settings already do) or require
 framework-specific extension points. A plain field on `Request` is
 simpler, testable, and keeps the override close to the call site.
+
+## Amendment — streaming request intent flag (ADR-0005-A2)
+
+Decision: Add an opt-in `stream` field to `Request`:
+
+```python
+@dataclass
+class Request:
+  method: str
+  url: str
+  headers: dict[str, str] = field(default_factory=dict)
+  params: dict[str, Any] = field(default_factory=dict)
+  content: bytes | None = None
+  timeout: float | None = None
+  stream: bool = False
+```
+
+When `stream=True`, transports may return streaming response objects instead
+of fully buffered responses. The default remains `False`, preserving existing
+behavior for all callers.
+
+Rationale: streaming is an execution-mode concern at the request boundary and
+belongs on the transport-neutral `Request` abstraction, not in protocol-
+specific transport kwargs.
 
 ## Consequences
 

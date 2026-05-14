@@ -5,7 +5,10 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import pytest
+
 from plynth.base.response import Response
+from plynth.connectors.salesforce.errors import SalesforceQueryResponseError
 from plynth.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
@@ -267,6 +270,43 @@ class TestSalesforceUtilityService:
         util = facade.utility()
         assert isinstance(util, SalesforceUtilityService)
 
+    def test_is_sandbox_returns_true_for_sandbox_org(self) -> None:
+        """Validate is_sandbox() returns True when org is a sandbox."""
+        payload = {"totalSize": 1, "done": True, "records": [{"IsSandbox": True}]}
+        svc, transport = _make_service(content=_json_bytes(payload))
+
+        result = svc.is_sandbox()
+
+        sent = transport.send.call_args[0][0]
+        assert "/query" in sent.url
+        assert sent.params.get("q") == "SELECT IsSandbox FROM Organization LIMIT 1"
+        assert result is True
+
+    def test_is_sandbox_returns_false_for_production_org(self) -> None:
+        """Validate is_sandbox() returns False when org is a production org."""
+        payload = {"totalSize": 1, "done": True, "records": [{"IsSandbox": False}]}
+        svc, _ = _make_service(content=_json_bytes(payload))
+
+        result = svc.is_sandbox()
+
+        assert result is False
+
+    def test_is_sandbox_raises_typed_error_for_empty_records(self) -> None:
+        """Validate is_sandbox() raises a typed error for empty records."""
+        payload = {"totalSize": 0, "done": True, "records": []}
+        svc, _ = _make_service(content=_json_bytes(payload))
+
+        with pytest.raises(SalesforceQueryResponseError, match="no records"):
+            svc.is_sandbox()
+
+    def test_is_sandbox_raises_typed_error_for_missing_field(self) -> None:
+        """Validate is_sandbox() raises a typed error for missing field."""
+        payload = {"totalSize": 1, "done": True, "records": [{}]}
+        svc, _ = _make_service(content=_json_bytes(payload))
+
+        with pytest.raises(SalesforceQueryResponseError, match="missing IsSandbox"):
+            svc.is_sandbox()
+
 
 class TestAsyncSalesforceUtilityService:
     """Test suite for AsyncSalesforceUtilityService."""
@@ -454,6 +494,43 @@ class TestAsyncSalesforceUtilityService:
             method="DELETE",
         )
         assert result is None
+
+    async def test_is_sandbox_returns_true_for_sandbox_org(self) -> None:
+        """Validate async is_sandbox() returns True when org is a sandbox."""
+        payload = {"totalSize": 1, "done": True, "records": [{"IsSandbox": True}]}
+        svc, transport = _make_async_service(content=_json_bytes(payload))
+
+        result = await svc.is_sandbox()
+
+        sent = transport.send.call_args[0][0]
+        assert "/query" in sent.url
+        assert sent.params.get("q") == "SELECT IsSandbox FROM Organization LIMIT 1"
+        assert result is True
+
+    async def test_is_sandbox_returns_false_for_production_org(self) -> None:
+        """Validate async is_sandbox() returns False when org is a production org."""
+        payload = {"totalSize": 1, "done": True, "records": [{"IsSandbox": False}]}
+        svc, _ = _make_async_service(content=_json_bytes(payload))
+
+        result = await svc.is_sandbox()
+
+        assert result is False
+
+    async def test_is_sandbox_raises_typed_error_for_empty_records(self) -> None:
+        """Validate async is_sandbox() raises a typed error for empty records."""
+        payload = {"totalSize": 0, "done": True, "records": []}
+        svc, _ = _make_async_service(content=_json_bytes(payload))
+
+        with pytest.raises(SalesforceQueryResponseError, match="no records"):
+            await svc.is_sandbox()
+
+    async def test_is_sandbox_raises_typed_error_for_missing_field(self) -> None:
+        """Validate async is_sandbox() raises a typed error for missing field."""
+        payload = {"totalSize": 1, "done": True, "records": [{}]}
+        svc, _ = _make_async_service(content=_json_bytes(payload))
+
+        with pytest.raises(SalesforceQueryResponseError, match="missing IsSandbox"):
+            await svc.is_sandbox()
 
     def test_facade_utility_returns_service(self, salesforce_base_url: str) -> None:
         """Validate facade utility returns service."""

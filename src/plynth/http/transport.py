@@ -45,7 +45,7 @@ except ImportError as exc:  # pragma: no cover
 
 from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynth.base.request import Request
-from plynth.base.response import Response
+from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynth.base.transport import BaseAsyncTransport, BaseSyncTransport
 from plynth.http.policies import HttpRetryPolicy
 from plynth.http.response import HttpResponse
@@ -54,7 +54,12 @@ from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
 if TYPE_CHECKING:  # pragma: no cover
     from plynth.http.settings import HTTPSettings
 
-__all__ = ["HttpxAsyncTransport", "HttpxSyncTransport"]
+__all__ = [
+    "HttpxAsyncTransport",
+    "HttpxSyncTransport",
+    "scrub_headers",
+    "scrub_url",
+]
 
 _logger = logging.getLogger(__name__)
 
@@ -83,14 +88,22 @@ _SENSITIVE_QUERY_KEYS: frozenset[str] = frozenset(
 )
 
 
-def _scrub_headers(headers: dict[str, str]) -> dict[str, str]:
+def scrub_headers(headers: dict[str, str]) -> dict[str, str]:
     """Return a copy of *headers* with sensitive values replaced.
 
-    Any header whose lowercased name appears in ``_SCRUBBED_HEADERS`` is
+    Any header whose lowercased name appears in the redaction list is
     replaced with ``"[REDACTED]"``. The original dict is never mutated.
 
+    Args:
+        headers: HTTP headers to sanitize.
+
     Returns:
-        A new dict safe for inclusion in log records.
+        A new dict safe for inclusion in log records or error messages.
+
+    Example::
+
+        logged_headers = scrub_headers({"authorization": "Bearer token123"})
+        # Result: {"authorization": "[REDACTED]"}
 
     """
     return {
@@ -99,8 +112,24 @@ def _scrub_headers(headers: dict[str, str]) -> dict[str, str]:
     }
 
 
-def _scrub_url(url: str) -> str:
-    """Return URL with sensitive query parameter values redacted."""
+def scrub_url(url: str) -> str:
+    """Return URL with sensitive query parameter values redacted.
+
+    Query parameters whose names match the redaction list are replaced with
+    ``"[REDACTED]"``. The rest of the URL is unchanged.
+
+    Args:
+        url: Full URL (with or without query string).
+
+    Returns:
+        The same URL with sensitive query parameter values replaced.
+
+    Example::
+
+        redacted = scrub_url("https://api.example.com?token=abc&user=john")
+        # Result: "https://api.example.com?token=%5BREDACTED%5D&user=john"
+
+    """
     split = urlsplit(url)
     if not split.query:
         return url
@@ -259,7 +288,10 @@ class HttpxSyncTransport(BaseSyncTransport):
             httpx.HTTPError: If a network or protocol error occurs.
 
         """
-        safe_url = _scrub_url(str(request.url))
+        if request.stream:
+            return self._send_stream(request)
+
+        safe_url = scrub_url(str(request.url))
 
         _logger.debug(
             "--> %s %s",
@@ -276,7 +308,7 @@ class HttpxSyncTransport(BaseSyncTransport):
                 "--> %s %s body — headers: %s body: %s",
                 request.method,
                 safe_url,
-                _scrub_headers(request.headers),
+                scrub_headers(request.headers),
                 request.content,
                 extra={"body_logging": True},
             )
@@ -308,7 +340,7 @@ class HttpxSyncTransport(BaseSyncTransport):
                 r.status_code,
                 request.method,
                 safe_url,
-                _scrub_headers(dict(r.headers)),
+                scrub_headers(dict(r.headers)),
                 r.content,
                 extra={"body_logging": True},
             )
@@ -319,6 +351,56 @@ class HttpxSyncTransport(BaseSyncTransport):
             method=request.method,
             url=str(request.url),
             _raw=r,
+        )
+
+    def _send_stream(self, request: Request) -> StreamingResponse:
+        """Send a request in streaming mode and return a streaming response."""
+        safe_url = scrub_url(str(request.url))
+
+        _logger.debug(
+            "--> %s %s",
+            request.method,
+            safe_url,
+            extra={
+                "event.action": "http-request",
+                "http.request.method": request.method,
+                "url.full": safe_url,
+            },
+        )
+
+        request_kwargs: dict[str, object] = {
+            "method": request.method,
+            "url": request.url,
+            "headers": request.headers,
+            "params": request.params,
+            "content": request.content,
+        }
+        raw_request = self._client.build_request(**request_kwargs)  # type: ignore[arg-type]
+
+        send_kwargs: dict[str, object] = {"stream": True}
+        if request.timeout is not None:
+            send_kwargs["timeout"] = request.timeout
+
+        raw_response = self._client.send(raw_request, **send_kwargs)  # type: ignore[arg-type]
+
+        _logger.debug(
+            "<-- %d %s %s (streaming, no body)",
+            raw_response.status_code,
+            request.method,
+            safe_url,
+            extra={
+                "event.action": "http-response",
+                "http.request.method": request.method,
+                "http.response.status_code": raw_response.status_code,
+                "http.response.streaming": True,
+                "url.full": safe_url,
+            },
+        )
+
+        return StreamingResponse(
+            status_code=raw_response.status_code,
+            headers=dict(raw_response.headers),
+            _raw=raw_response,
         )
 
     def close(self) -> None:
@@ -423,7 +505,10 @@ class HttpxAsyncTransport(BaseAsyncTransport):
             httpx.HTTPError: If a network or protocol error occurs.
 
         """
-        safe_url = _scrub_url(str(request.url))
+        if request.stream:
+            return await self._send_stream(request)
+
+        safe_url = scrub_url(str(request.url))
 
         _logger.debug(
             "--> %s %s",
@@ -440,7 +525,7 @@ class HttpxAsyncTransport(BaseAsyncTransport):
                 "--> %s %s body — headers: %s body: %s",
                 request.method,
                 safe_url,
-                _scrub_headers(request.headers),
+                scrub_headers(request.headers),
                 request.content,
                 extra={"body_logging": True},
             )
@@ -472,7 +557,7 @@ class HttpxAsyncTransport(BaseAsyncTransport):
                 r.status_code,
                 request.method,
                 safe_url,
-                _scrub_headers(dict(r.headers)),
+                scrub_headers(dict(r.headers)),
                 r.content,
                 extra={"body_logging": True},
             )
@@ -483,6 +568,56 @@ class HttpxAsyncTransport(BaseAsyncTransport):
             method=request.method,
             url=str(request.url),
             _raw=r,
+        )
+
+    async def _send_stream(self, request: Request) -> AsyncStreamingResponse:
+        """Send a request in async streaming mode and return a streaming response."""
+        safe_url = scrub_url(str(request.url))
+
+        _logger.debug(
+            "--> %s %s",
+            request.method,
+            safe_url,
+            extra={
+                "event.action": "http-request",
+                "http.request.method": request.method,
+                "url.full": safe_url,
+            },
+        )
+
+        request_kwargs: dict[str, object] = {
+            "method": request.method,
+            "url": request.url,
+            "headers": request.headers,
+            "params": request.params,
+            "content": request.content,
+        }
+        raw_request = self._client.build_request(**request_kwargs)  # type: ignore[arg-type]
+
+        send_kwargs: dict[str, object] = {"stream": True}
+        if request.timeout is not None:
+            send_kwargs["timeout"] = request.timeout
+
+        raw_response = await self._client.send(raw_request, **send_kwargs)  # type: ignore[arg-type]
+
+        _logger.debug(
+            "<-- %d %s %s (streaming, no body)",
+            raw_response.status_code,
+            request.method,
+            safe_url,
+            extra={
+                "event.action": "http-response",
+                "http.request.method": request.method,
+                "http.response.status_code": raw_response.status_code,
+                "http.response.streaming": True,
+                "url.full": safe_url,
+            },
+        )
+
+        return AsyncStreamingResponse(
+            status_code=raw_response.status_code,
+            headers=dict(raw_response.headers),
+            _raw=raw_response,
         )
 
     async def aclose(self) -> None:

@@ -57,10 +57,10 @@ Plynth and would add unnecessary complexity.
 The Response Layer is split across two files in different namespaces, mirroring
 the split in the Transport Layer (see ADR-0006):
 
-- __`plynth.base.response`__ (`core/response.py`) — defines `Response` (the
+- __`plynth.base.response`__ (`base/response.py`) — defines `Response` (the
   protocol-agnostic data carrier) and `ResponseProtocol` (the structural
-  interface). Lives in `core/` because it is framework-agnostic and depended
-  upon by all layers including `core/base.py` (Transport abstractions).
+  interface). Lives in `base/` because it is framework-agnostic and depended
+  upon by all layers including `base/transport.py` (Transport abstractions).
 - __`plynth.http.response`__ (`http/response.py`) — defines `HttpResponse`,
   which extends `Response` with HTTP request context (`method`, `url`) and
   raises `HttpStatusError` from `raise_for_status()`. Lives in `http/` because

@@ -1,0 +1,84 @@
+name: Release smoke checklist
+description: Verify release automation and publish safety for a real release
+labels: ["release"]
+body:
+  - type: input
+    id: target_version
+    attributes:
+      label: Target version
+      description: Planned release version (SemVer)
+      placeholder: 0.2.2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: release_reason
+    attributes:
+      label: Release reason
+      description: Select why this release is being made
+      options:
+        - Feature delivery
+        - Bug fix
+        - Security fix
+        - Maintenance
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: pre_release_checks
+    attributes:
+      label: Pre-release checks
+      description: Validate the baseline before merging the release PR
+      options:
+        - label: make check passed locally
+          required: true
+        - label: No manual version bump or manual git tag was created
+          required: true
+        - label: Release-please PR was reviewed and merged to main
+          required: true
+
+  - type: checkboxes
+    id: release_artifact_checks
+    attributes:
+      label: Release artifact checks
+      description: Confirm naming and generated artifacts
+      options:
+        - label: Git tag format is X.Y.Z (no v prefix)
+          required: true
+        - label: GitHub release title format is vX.Y.Z
+          required: true
+        - label: CHANGELOG entry exists for X.Y.Z
+          required: true
+
+  - type: checkboxes
+    id: publish_checks
+    attributes:
+      label: Publish checks
+      description: Validate publish workflow and guard settings
+      options:
+        - label: Publish workflow run succeeded for this release
+          required: true
+        - label: OIDC was used (no API token in workflow)
+          required: true
+        - label: ENABLE_PYPI_PUBLISH was intentionally set for this release path
+          required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence links
+      description: Add links to PR, release page, and workflow runs
+      placeholder: |
+        - Release PR:
+        - GitHub release:
+        - Publish run:
+        - Verify run:
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Optional risks, follow-ups, or deviations

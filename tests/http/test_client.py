@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
-from plynth.base.response import Response
+from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynth.base.request import Request
+from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
+from plynth.base.transport import BaseAsyncTransport, BaseSyncTransport
 from plynth.http.client import APIClient, AsyncAPIClient, AsyncHTTPClient, HTTPClient
 from plynth.http.errors import (
     HttpStatusError,
@@ -13,6 +19,48 @@ from plynth.http.errors import (
     UnauthorizedError,
 )
 from tests.conftest import BASE_URL, MockAsyncTransport, MockSyncTransport
+
+
+class _MockSyncStreamTransport(MockSyncTransport):
+    """Sync transport stub that serves streaming responses via send()."""
+
+    def __init__(self, response: StreamingResponse) -> None:
+        """Initialize stream transport with pre-canned streaming response."""
+        super().__init__(status_code=response.status_code, content=response.content)
+        self._stream_response = response
+        self._last_stream_request: Request | None = None
+        self.send = MagicMock(side_effect=self._send)
+
+    def _send(self, request: Request) -> Response:
+        """Return a pre-canned response and capture streaming requests."""
+        if request.stream:
+            self._last_stream_request = request
+            return self._stream_response
+        return Response(
+            status_code=self._stream_response.status_code,
+            content=self._stream_response.content,
+        )
+
+
+class _MockAsyncStreamTransport(MockAsyncTransport):
+    """Async transport stub that serves streaming responses via send()."""
+
+    def __init__(self, response: AsyncStreamingResponse) -> None:
+        """Initialize async stream transport with pre-canned response."""
+        super().__init__(status_code=response.status_code, content=response.content)
+        self._stream_response = response
+        self._last_stream_request: Request | None = None
+        self.send = AsyncMock(side_effect=self._send)
+
+    async def _send(self, request: Request) -> Response:
+        """Return a pre-canned response and capture streaming requests."""
+        if request.stream:
+            self._last_stream_request = request
+            return self._stream_response
+        return Response(
+            status_code=self._stream_response.status_code,
+            content=self._stream_response.content,
+        )
 
 
 class TestHTTPClient:
@@ -125,6 +173,89 @@ class TestHTTPClient:
         resp = client.get("/items/99")
         assert resp.status_code == 404
 
+    def test_stream_sets_request_stream_flag(self) -> None:
+        """Validate stream() builds request with stream flag enabled."""
+        raw = type("Raw", (), {"close": lambda self: None})()
+        transport = _MockSyncStreamTransport(
+            StreamingResponse(status_code=200, _raw=raw)
+        )
+        client = HTTPClient(base_url=BASE_URL, transport=transport)
+
+        response = client.stream("GET", "/events")
+
+        assert isinstance(response, StreamingResponse)
+        request = vars(transport).get("_last_stream_request")
+        assert request is not None
+        assert request.stream is True
+
+    def test_stream_merges_headers_and_params(self) -> None:
+        """Validate stream() forwards headers and params."""
+        raw = type("Raw", (), {"close": lambda self: None})()
+        transport = _MockSyncStreamTransport(
+            StreamingResponse(status_code=200, _raw=raw)
+        )
+        client = HTTPClient(
+            base_url=BASE_URL,
+            transport=transport,
+            headers={"X-Default": "yes"},
+        )
+
+        client.stream(
+            "GET",
+            "/events",
+            headers={"X-Call": "yes"},
+            params={"cursor": "a"},
+        )
+
+        request = vars(transport).get("_last_stream_request")
+        assert request is not None
+        assert request.headers["X-Default"] == "yes"
+        assert request.headers["X-Call"] == "yes"
+        assert request.params == {"cursor": "a"}
+
+    def test_stream_uses_transport_middleware_chain(self) -> None:
+        """Validate stream() goes through the sync transport middleware chain."""
+        calls: list[str] = []
+
+        class _MarkerMiddleware(SyncMiddleware):
+            def handle(
+                self,
+                request: Request,
+                next_handler: Callable[[Request], Response],
+            ) -> Response:
+                calls.append(f"before:{request.stream}")
+                response = next_handler(request)
+                calls.append(type(response).__name__)
+                return response
+
+        class _StreamTransport(BaseSyncTransport):
+            def _send_once(self, request: Request) -> Response:
+                raw = type("Raw", (), {"close": lambda self: None})()
+                return StreamingResponse(status_code=200, _raw=raw)
+
+        client = HTTPClient(
+            base_url=BASE_URL,
+            transport=_StreamTransport(middlewares=[_MarkerMiddleware()]),
+        )
+
+        response = client.stream("GET", "/events")
+
+        assert isinstance(response, StreamingResponse)
+        assert calls == ["before:True", "StreamingResponse"]
+
+    def test_stream_raises_type_error_when_transport_returns_non_streaming(
+        self,
+    ) -> None:
+        """Validate stream() enforces StreamingResponse return contract."""
+        transport = MockSyncTransport(200, b"ok")
+        client = HTTPClient(base_url=BASE_URL, transport=transport)
+
+        with pytest.raises(
+            TypeError,
+            match="expected StreamingResponse, got Response",
+        ):
+            client.stream("GET", "/events")
+
 
 class TestAsyncHTTPClient:
     """Test suite for AsyncHTTPClient."""
@@ -198,6 +329,64 @@ class TestAsyncHTTPClient:
         client = AsyncHTTPClient(base_url=BASE_URL, transport=transport)
         resp = await client.get("/items")
         assert resp.status_code == 503
+
+    async def test_stream_sets_request_stream_flag(self) -> None:
+        """Validate async stream() builds request with stream flag enabled."""
+        raw = type("Raw", (), {"aclose": lambda self: None})()
+        transport = _MockAsyncStreamTransport(
+            AsyncStreamingResponse(status_code=200, _raw=raw)
+        )
+        client = AsyncHTTPClient(base_url=BASE_URL, transport=transport)
+
+        response = await client.stream("GET", "/events")
+
+        assert isinstance(response, AsyncStreamingResponse)
+        request = vars(transport).get("_last_stream_request")
+        assert request is not None
+        assert request.stream is True
+
+    async def test_stream_uses_transport_middleware_chain(self) -> None:
+        """Validate async stream() goes through the async transport middleware chain."""
+        calls: list[str] = []
+
+        class _MarkerMiddleware(AsyncMiddleware):
+            async def handle(
+                self,
+                request: Request,
+                next_handler: Callable[[Request], Awaitable[Response]],
+            ) -> Response:
+                calls.append(f"before:{request.stream}")
+                response = await next_handler(request)
+                calls.append(type(response).__name__)
+                return response
+
+        class _StreamTransport(BaseAsyncTransport):
+            async def _send_once(self, request: Request) -> Response:
+                raw = type("Raw", (), {"aclose": lambda self: None})()
+                return AsyncStreamingResponse(status_code=200, _raw=raw)
+
+        client = AsyncHTTPClient(
+            base_url=BASE_URL,
+            transport=_StreamTransport(middlewares=[_MarkerMiddleware()]),
+        )
+
+        response = await client.stream("GET", "/events")
+
+        assert isinstance(response, AsyncStreamingResponse)
+        assert calls == ["before:True", "AsyncStreamingResponse"]
+
+    async def test_stream_raises_type_error_when_transport_returns_non_streaming(
+        self,
+    ) -> None:
+        """Validate async stream() enforces AsyncStreamingResponse contract."""
+        transport = MockAsyncTransport(200, b"ok")
+        client = AsyncHTTPClient(base_url=BASE_URL, transport=transport)
+
+        with pytest.raises(
+            TypeError,
+            match="expected AsyncStreamingResponse, got Response",
+        ):
+            await client.stream("GET", "/events")
 
 
 class TestAPIClient:
@@ -279,9 +468,10 @@ class TestAPIClient:
         client = APIClient(base_url=BASE_URL, transport=transport)
         with pytest.raises(HttpStatusError) as exc_info:
             client.get("/items/1")
-        assert exc_info.value._response is not None
-        assert exc_info.value._response.status_code == 404
-        assert exc_info.value._response.content == b'{"detail": "not found"}'
+        response = exc_info.value.response
+        assert response is not None
+        assert response.status_code == 404
+        assert response.content == b'{"detail": "not found"}'
 
     def test_post_with_content(self) -> None:
         """Validate post with content."""
@@ -305,6 +495,56 @@ class TestAPIClient:
         with pytest.raises(HttpStatusError) as exc_info:
             client.get("/items")
         assert exc_info.value.status_code == status_code
+
+    def test_stream_error_closes_raw_before_raise(self) -> None:
+        """Validate APIClient.stream closes raw response before raising."""
+
+        class Raw:
+            """Raw object that tracks close calls."""
+
+            def __init__(self) -> None:
+                """Initialize close counter."""
+                self.closed = False
+
+            def close(self) -> None:
+                """Close the raw response."""
+                self.closed = True
+
+        raw = Raw()
+        transport = _MockSyncStreamTransport(
+            StreamingResponse(status_code=404, _raw=raw)
+        )
+        client = APIClient(base_url=BASE_URL, transport=transport)
+
+        with pytest.raises(HttpStatusError):
+            client.stream("GET", "/missing")
+
+        assert raw.closed is True
+
+    def test_stream_success_returns_open_response(self) -> None:
+        """Validate APIClient.stream returns response for 2xx without closing."""
+
+        class Raw:
+            """Raw object that tracks close calls."""
+
+            def __init__(self) -> None:
+                """Initialize close counter."""
+                self.closed = False
+
+            def close(self) -> None:
+                """Close the raw response."""
+                self.closed = True
+
+        raw = Raw()
+        transport = _MockSyncStreamTransport(
+            StreamingResponse(status_code=200, _raw=raw)
+        )
+        client = APIClient(base_url=BASE_URL, transport=transport)
+
+        response = client.stream("GET", "/events")
+
+        assert response.status_code == 200
+        assert raw.closed is False
 
 
 class TestAsyncAPIClient:
@@ -356,9 +596,10 @@ class TestAsyncAPIClient:
         client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
         with pytest.raises(HttpStatusError) as exc_info:
             await client.get("/items")
-        assert exc_info.value._response is not None
-        assert exc_info.value._response.status_code == 500
-        assert exc_info.value._response.content == b'{"error": "boom"}'
+        response = exc_info.value.response
+        assert response is not None
+        assert response.status_code == 500
+        assert response.content == b'{"error": "boom"}'
 
     async def test_post_with_content(self) -> None:
         """Validate post with content."""
@@ -377,3 +618,53 @@ class TestAsyncAPIClient:
         with pytest.raises(HttpStatusError) as exc_info:
             await client.get("/items")
         assert exc_info.value.status_code == status_code
+
+    async def test_stream_error_closes_raw_before_raise(self) -> None:
+        """Validate AsyncAPIClient.stream closes raw response before raising."""
+
+        class Raw:
+            """Raw object that tracks async close calls."""
+
+            def __init__(self) -> None:
+                """Initialize async close counter."""
+                self.closed = False
+
+            async def aclose(self) -> None:
+                """Close the raw response."""
+                self.closed = True
+
+        raw = Raw()
+        transport = _MockAsyncStreamTransport(
+            AsyncStreamingResponse(status_code=500, _raw=raw)
+        )
+        client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
+
+        with pytest.raises(HttpStatusError):
+            await client.stream("GET", "/boom")
+
+        assert raw.closed is True
+
+    async def test_stream_success_returns_open_response(self) -> None:
+        """Validate AsyncAPIClient.stream returns response for 2xx without closing."""
+
+        class Raw:
+            """Raw object that tracks async close calls."""
+
+            def __init__(self) -> None:
+                """Initialize async close counter."""
+                self.closed = False
+
+            async def aclose(self) -> None:
+                """Close the raw response."""
+                self.closed = True
+
+        raw = Raw()
+        transport = _MockAsyncStreamTransport(
+            AsyncStreamingResponse(status_code=200, _raw=raw)
+        )
+        client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
+
+        response = await client.stream("GET", "/events")
+
+        assert response.status_code == 200
+        assert raw.closed is False

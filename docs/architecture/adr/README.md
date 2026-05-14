@@ -1,0 +1,45 @@
+# Architecture ADR Index
+
+This index lists architecture decision records (ADRs) for plynth.
+
+## Status Summary
+
+- Accepted: 20
+- Proposed: 1
+
+## ADR List
+
+| ADR                                            | Title                      | Status   |
+| ---------------------------------------------- | -------------------------- | -------- |
+| [ADR-0001](0001-architecture-principles.md)    | Architecture Principles    | Accepted |
+| [ADR-0002](0002-layered-architecture.md)       | Layered Architecture       | Accepted |
+| [ADR-0003](0003-dependency-policy.md)          | Dependency Policy          | Accepted |
+| [ADR-0004](0004-settings-and-configuration.md) | Settings and Configuration | Accepted |
+| [ADR-0005](0005-request-layer.md)              | Request Layer              | Accepted |
+| [ADR-0006](0006-transport-layer.md)            | Transport Layer            | Accepted |
+| [ADR-0007](0007-response-layer.md)             | Response Layer             | Accepted |
+| [ADR-0008](0008-client-layer.md)               | Client Layer               | Accepted |
+| [ADR-0009](0009-service-layer.md)              | Service Layer              | Accepted |
+| [ADR-0010](0010-caching.md)                    | Caching                    | Accepted |
+| [ADR-0011](0011-authentication.md)             | Authentication             | Accepted |
+| [ADR-0012](0012-retry-strategy.md)             | Retry Strategy             | Accepted |
+| [ADR-0013](0013-transport-base-class.md)       | Transport Base Class       | Accepted |
+| [ADR-0014](0014-logging.md)                    | Logging Strategy           | Accepted |
+| [ADR-0015](0015-header-middleware.md)          | Header Middleware          | Accepted |
+| [ADR-0016](0016-vcr-testsupport.md)            | VCR Testsupport Layer      | Accepted |
+| [ADR-0017](0017-streaming-response.md)         | Streaming Response Support | Accepted |
+| [ADR-0018](0018-raw-response-access.md)        | Raw Response Access        | Proposed |
+| [ADR-0019](0019-circuit-breaker-middleware.md) | Circuit Breaker Middleware | Accepted |
+| [ADR-0020](0020-rate-limit-middleware.md)      | Rate Limit Middleware      | Accepted |
+
+## When to Add a New ADR
+
+Add an ADR for changes that affect:
+
+- public API surface or behavioral contracts,
+- package boundaries or dependency model,
+- core abstractions, layering, or sync/async strategy,
+- middleware execution semantics,
+- installation extras or optional-framework strategy.
+
+Use the next sequential number (currently: `0021`).

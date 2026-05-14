@@ -228,7 +228,7 @@ Out-of-scope in the current REST-first connector:
 - SOAP metadata-only operations such as `retrieve`, `listMetadata`, and
   `describeMetadata`.
 
-See [SF-0008](../architecture/adr/SF-0008-metadata-rest-deploy.md) for the decision record.
+See [SF-0008](../architecture/adr/sf-0008-metadata-rest-deploy.md) for the decision record.
 
 ### Composite REST Primitives
 
@@ -252,7 +252,7 @@ Example flow (consumer-level orchestration):
 This keeps the connector generic while still making composite a first-class
 building block for higher-level flows.
 
-See [SF-0007](../architecture/adr/SF-0007-composite-rest-primitives.md) for the decision
+See [SF-0007](../architecture/adr/sf-0007-composite-rest-primitives.md) for the decision
 record.
 
 ### Backlog Focus
@@ -272,7 +272,7 @@ Execution starts only when both conditions are met:
 - multiple stable plynth versions are live in production
 - multiple connectors are shipped and maintained in-repo
 
-See [EXTRACTION-PLAN.md](product/EXTRACTION-PLAN.md)
+See [extraction-plan.md](extraction-plan.md)
 for sequencing and packaging details.
 
 ## Principles

@@ -292,7 +292,7 @@ result = composite.composite(
 Keep the actual orchestration logic in the consuming application layer. The
 connector only provides the generic primitives.
 
-See [SF-0007](architecture/adr/SF-0007-composite-rest-primitives.md) for the decision and
+See [SF-0007](architecture/adr/sf-0007-composite-rest-primitives.md) for the decision and
 scope.
 
 ## Lookup Convenience Services
@@ -447,7 +447,7 @@ records = lead_query.query_all(
 )
 ```
 
-The query service is shipped and documented in [SF-0003](architecture/adr/SF-0003-query-service-design.md).
+The query service is shipped and documented in [SF-0003](architecture/adr/sf-0003-query-service-design.md).
 
 ### Incremental object query
 
@@ -476,7 +476,7 @@ object-scoped convenience accessors. Business-specific query builders remain
 out of scope for the generic connector.
 
 If you need a higher-level query abstraction, build it in the consuming
-application on top of [SF-0003](architecture/adr/SF-0003-query-service-design.md).
+application on top of [SF-0003](architecture/adr/sf-0003-query-service-design.md).
 
 ## API Scope Note
 
@@ -501,19 +501,19 @@ SalesforceAPIError.
 
 See ADR:
 
-- [SF-0001 Error Mapping](architecture/adr/SF-0001-error-mapping.md)
+- [SF-0001 Error Mapping](architecture/adr/sf-0001-error-mapping.md)
 
 ## Facade Decision
 
 Facade naming and architecture decision:
 
-- [SF-0002 Salesforce facade ergonomics](architecture/adr/SF-0002-sobject-api-facade.md)
+- [SF-0002 Salesforce facade ergonomics](architecture/adr/sf-0002-sobject-api-facade.md)
 
 ## Roadmap
 
 For feature planning, ideas, and extraction sequencing, see:
 
-- [Salesforce Roadmap](product/ROADMAP.md)
-- [Salesforce Extraction Plan](product/EXTRACTION-PLAN.md)
-- [Project Roadmap](../../product/ROADMAP.md)
+- [Salesforce Roadmap](product/roadmap.md)
+- [Salesforce Extraction Plan](product/extraction-plan.md)
+- [Project Roadmap](../../product/roadmap.md)
 - [VCR Testsupport Guide](../../../src/plynth/testsupport/vcr/README.md)

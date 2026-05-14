@@ -38,10 +38,14 @@ __all__ = [
     "SalesforceAPIError",
     "SalesforceBulkJobError",
     "SalesforceDuplicateError",
+    "SalesforceInvalidFieldQueryError",
+    "SalesforceInvalidTypeQueryError",
     "SalesforceLockError",
+    "SalesforceMalformedQueryError",
     "SalesforceMetadataDeployError",
     "SalesforceNotFoundError",
     "SalesforcePermissionError",
+    "SalesforceQueryResponseError",
     "SalesforceSessionExpiredError",
     "SalesforceValidationError",
     "raise_for_salesforce_errors",
@@ -82,6 +86,30 @@ class SalesforceValidationError(SalesforceAPIError):
 
     Covers ``REQUIRED_FIELD_MISSING``, ``FIELD_CUSTOM_VALIDATION_EXCEPTION``,
     ``FIELD_INTEGRITY_EXCEPTION``, ``STRING_TOO_LONG``, and related codes.
+
+    """
+
+
+class SalesforceMalformedQueryError(SalesforceAPIError):
+    """Raised when Salesforce rejects a SOQL query as malformed.
+
+    Covers ``MALFORMED_QUERY``.
+
+    """
+
+
+class SalesforceInvalidTypeQueryError(SalesforceAPIError):
+    """Raised when a SOQL query references an invalid Salesforce type.
+
+    Covers ``INVALID_TYPE`` in query responses.
+
+    """
+
+
+class SalesforceInvalidFieldQueryError(SalesforceAPIError):
+    """Raised when a SOQL query references an invalid Salesforce field.
+
+    Covers ``INVALID_FIELD`` in query responses.
 
     """
 
@@ -193,6 +221,21 @@ class MetadataDeployTimeoutError(SalesforceAPIError):
         self.args = (f"Metadata deploy {deploy_id!r} timed out after {max_wait:.1f}s",)
 
 
+class SalesforceQueryResponseError(SalesforceAPIError):
+    """Raised when a Salesforce query response has an unexpected shape.
+
+    Use this when a SOQL query response parses as JSON but is missing the
+    fields needed by the caller, such as an empty ``records`` list or a
+    missing field in the first record.
+
+    """
+
+    def __init__(self, detail: str) -> None:
+        """Initialize SalesforceQueryResponseError."""
+        super().__init__(errors=[], status_code=0)
+        self.args = (detail,)
+
+
 # ---------------------------------------------------------------------------
 # Error-code → exception-class mapping
 # ---------------------------------------------------------------------------
@@ -205,7 +248,6 @@ _VALIDATION_CODES: frozenset[str] = frozenset(
         "FIELD_FILTER_VALIDATION_EXCEPTION",
         "FIELD_INTEGRITY_EXCEPTION",
         "INVALID_ARGUMENT_TYPE",
-        "INVALID_FIELD",
         "INVALID_FIELD_FOR_INSERT_UPDATE",
         "INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST",
         "INVALID_TEXT_REPRESENTATION",
@@ -215,6 +257,12 @@ _VALIDATION_CODES: frozenset[str] = frozenset(
         "STRING_TOO_LONG",
     }
 )
+
+_QUERY_CODES: dict[str, type[SalesforceAPIError]] = {
+    "INVALID_FIELD": SalesforceInvalidFieldQueryError,
+    "INVALID_TYPE": SalesforceInvalidTypeQueryError,
+    "MALFORMED_QUERY": SalesforceMalformedQueryError,
+}
 
 _DUPLICATE_CODES: frozenset[str] = frozenset(
     {
@@ -266,6 +314,7 @@ _LOCK_CODES: frozenset[str] = frozenset(
 )
 
 _ERROR_CODE_MAP: dict[str, type[SalesforceAPIError]] = {
+    **_QUERY_CODES,
     **dict.fromkeys(_VALIDATION_CODES, SalesforceValidationError),
     **dict.fromkeys(_DUPLICATE_CODES, SalesforceDuplicateError),
     **dict.fromkeys(_NOT_FOUND_CODES, SalesforceNotFoundError),

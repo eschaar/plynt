@@ -4,9 +4,14 @@ This document tracks what is implemented, what is planned, and what
 is deferred. It is a living document: update it alongside ADRs when
 decisions are made or scope changes.
 
+Companion product documents:
+
+- [Vision](vision.md)
+- [Requirements](requirements.md)
+
 ______________________________________________________________________
 
-## Implemented (v0.1.0)
+## Implemented Baseline (through v0.2.1)
 
 ### Core abstractions (`plynth.base`)
 
@@ -14,9 +19,17 @@ ______________________________________________________________________
 - `BaseSyncTransport` / `BaseAsyncTransport` — compose a middleware chain
   and delegate I/O to `_send_once()` (ADR-0013)
 - `Request` / `Response` data carriers (ADR-0005, ADR-0007)
+- `StreamingResponse` / `AsyncStreamingResponse` — typed streaming HTTP
+  response with `iter_lines()` / `aiter_lines()` and `iter_bytes()` /
+  `aiter_bytes()` methods (ADR-0017)
+- `StreamInterruptedError` — raised on stream close or interruption (ADR-0017)
 - `SyncMiddleware` / `AsyncMiddleware` Protocols (ADR-0013)
 - `Cache` Protocol (ADR-0010)
 - `RetryPolicy` dataclass (ADR-0012)
+- `CircuitBreakerPolicy` dataclass — controls circuit breaker state machine
+  (ADR-0019)
+- `RateLimitPolicy` dataclass — controls sliding-window rate limiting
+  (ADR-0020)
 - `Settings` base class — env-driven, pydantic-settings (ADR-0004)
 - `BaseError` hierarchy (ADR-0007)
 
@@ -34,13 +47,15 @@ ______________________________________________________________________
   (ADR-0004, ADR-0010)
 - `plynth.http.auth` — typed auth configuration dataclasses
   (`BearerAuthConfig`, `BasicAuthConfig`, `OAuth2ClientCredentialsConfig`,
-  `OAuth2PasswordConfig`) plus factory functions `auth_from_config()` /
-  `async_auth_from_config()` (ADR-0011)
+  `OAuth2JWTBearerConfig`, `OAuth2PasswordConfig`) plus factory functions
+  `auth_from_config()` / `async_auth_from_config()` (ADR-0011)
 - Auth middleware in `plynth.http.middleware.auth/` (ADR-0011):
   - `BearerTokenAuthMiddleware`, `BasicAuthMiddleware` (sync + async)
   - `OAuth2AuthMiddlewareBase` — abstract base for all OAuth2 flows
   - `OAuth2ClientCredentialsMiddleware` / `AsyncOAuth2ClientCredentialsMiddleware`
     (Client Credentials flow, machine-to-machine)
+  - `OAuth2JWTBearerMiddleware` / `AsyncOAuth2JWTBearerMiddleware`
+    (JWT Bearer flow)
   - `OAuth2PasswordMiddleware` / `AsyncOAuth2PasswordMiddleware`
     (Resource Owner Password Credentials flow, legacy)
   - `OAuth2AuthMiddleware` / `AsyncOAuth2AuthMiddleware` backward-compat aliases
@@ -48,6 +63,9 @@ ______________________________________________________________________
     (`LocMemCache` default; `RedisCache` for cross-process sharing)
 - `HttpRetryPolicy` — HTTP-aware retry with configurable backoff (ADR-0012)
 - `HttpResponse` — encoding detection, `.text`, `.json()` (ADR-0007)
+- Streaming HTTP support — `HTTPClient.stream()` / `AsyncHTTPClient.stream()`
+  and `APIClient.stream()` / `AsyncAPIClient.stream()` methods for SSE and
+  chunked responses (ADR-0017)
 - `HttpStatusError` subclasses per HTTP status group (ADR-0007)
 - `HTTPClient` / `AsyncHTTPClient` — base URL + verb API (ADR-0008)
 - `APIClient` / `AsyncAPIClient` — JSON REST + typed error raising (ADR-0008)
@@ -63,10 +81,22 @@ ______________________________________________________________________
 - Typed cache configuration dataclasses: `DummyCacheConfig`,
   `LocMemCacheConfig`, `RedisCacheConfig` (ADR-0010)
 - `cache_from_config(config)` — typed factory for `CacheBackend` instances
+- `CircuitBreakerMiddleware` / `AsyncCircuitBreakerMiddleware` — configurable
+  circuit breaker for detecting and containing cascading failures (ADR-0019)
+- `CircuitBreakerPolicy` — typed circuit breaker configuration with
+  `failure_threshold`, `recovery_timeout`, `half_open_max_calls` (ADR-0019)
+- `CircuitBreakerOpenError` — raised when circuit is open (ADR-0019)
+- `RateLimitMiddleware` / `AsyncRateLimitMiddleware` — sliding-window request
+  rate limiting (ADR-0020)
+- `RateLimitPolicy` — typed rate limit configuration with `max_requests` and
+  `window_seconds` (ADR-0020)
+- `RateLimitExceededError` — raised when rate limit is exceeded (ADR-0020)
 - `RetryMiddleware` / `AsyncRetryMiddleware` — configurable retry with
   exponential backoff (ADR-0012, ADR-0013)
 - `LoggingMiddleware` / `AsyncLoggingMiddleware` — INFO-level request /
   response logging, once per logical call outside the retry loop (ADR-0014)
+- `HeaderMiddleware` / `AsyncHeaderMiddleware` — inject static or dynamic
+  headers on every request (ADR-0015)
 - `ThrottleFilter`, `ExceptionInfoFilter`, `PlynthHTTPFilter` — stdlib
   logging filters (ADR-0014)
 - `StructuredFormatter` — single-line JSON log output (ADR-0014)
@@ -82,12 +112,27 @@ ______________________________________________________________________
   resolution from the OAuth2 token response
 - `AsyncSalesforceAPIClient` — async client counterpart with dynamic
   `instance_url` resolution
+- `SalesforceJWTBearerAuthMiddleware` /
+  `AsyncSalesforceJWTBearerAuthMiddleware` — Salesforce-specific JWT Bearer
+  auth support
+- `SalesforceSessionAuthMiddleware` /
+  `AsyncSalesforceSessionAuthMiddleware` — direct session token injection for
+  externally managed tokens
 - `SalesforceClientCredentialsAuthMiddleware` — extends
   `OAuth2AuthMiddleware` to
   capture and cache `instance_url` alongside the access token
 - `SalesforcePasswordAuthMiddleware` and async auth counterparts
 - `SalesforceAPIFacade` / `AsyncSalesforceAPIFacade` — ergonomic facade that
   returns object-bound services (ADR: SF-0002)
+- `SalesforceCompositeService` / `AsyncSalesforceCompositeService` — typed
+  composite, batch, and tree REST operations
+- `SalesforceMetadataService` / `AsyncSalesforceMetadataService` — Metadata
+  REST deploy helpers
+- `SalesforceIdentityAccessService` /
+  `AsyncSalesforceIdentityAccessService` — generic user and assignment
+  primitives
+- `SalesforceUtilityService` / `AsyncSalesforceUtilityService` — `limits()`,
+  `versions()`, `objects()`, and `tooling_execute()`
 - Lookup conveniences: `SalesforceQueueLookupService`,
   `SalesforceProfileLookupService`, and async counterparts — list,
   get-by-name, get-by-developer-name via enum-based registry
@@ -122,16 +167,20 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## Release and History Strategy (Planned)
+## Release Strategy
 
-Target path for a publicly usable and functionally complete release:
+Current release history:
 
-1. `v0.0.0` baseline snapshot: repository bootstrap state
-   (README-focused minimal baseline).
-1. `v0.9.x` pre-1.0 core-complete milestone:
-   plynth core is feature-complete, documented, and release-gated.
-1. `v1.0.0` public stable milestone:
-   plynth core + Salesforce connector complete and production-ready.
+1. `0.1.0` core baseline release.
+1. `0.2.0` Salesforce connector baseline release.
+1. `0.2.1` release process and documentation stabilization release.
+
+Forward path:
+
+1. `0.x` series: complete core + connector scope while preserving
+   compatibility where practical.
+1. `1.0.0`: stable public milestone after roadmap and ADR readiness gates
+   are met.
 
 ### Definition of Done: `v0.9.x` (Plynth Core)
 
@@ -149,20 +198,11 @@ Target path for a publicly usable and functionally complete release:
 - Explicit scope boundaries documented (what is supported vs deferred).
 - Public release checklist complete (tests, docs, packaging, changelog).
 
-### Main Branch Rewrite Intention
+### Repository History Note
 
-After the connector is complete, a full `main` history rewrite can be
-performed to reset public history for the 1.0 era.
-
-Guardrails:
-
-- Use a coordinated maintenance window.
-- Create backup refs/tags before rewrite.
-- Rewrite locally, validate tags/releases, then push with
-  `--force-with-lease`.
-- Communicate rebase/reclone steps to all contributors.
-
-This is intentionally deferred until the `v1.0.0` readiness gate is met.
+Repository history has already been reset and normalized for the current
+public release baseline. Future history rewrites are not part of normal
+delivery and should only happen via explicit maintenance decision.
 
 ______________________________________________________________________
 
@@ -171,44 +211,16 @@ ______________________________________________________________________
 Items are ordered by dependency and priority: core library completeness first,
 then integration validation, then framework adapters.
 
-### 🔴 Critical Blocker: Streaming Response Support
-
-**Decision rationale:** ADR-0017 (streaming response) is elevated to critical
-priority status because it unblocks *five downstream items* across the entire
-roadmap:
-
-1. **Item 2m:** Salesforce Models API — streaming chat completions
-1. **Item 2n:** Salesforce Agent API — streaming agent messages
-1. **Item 6:** gRPC transport — streaming event consumption (CDC/Pub-Sub)
-1. **Item 7:** LLM connector — streaming AI inference responses
-1. **Item 1d/1e/1f:** Future middleware extensions may benefit from streaming
-
-This is a **keystone decision:** completing item 3 (streaming support) should be
-the first action item before committing to any of the above.
-
-**Consequence:** The roadmap should be reordered to place item 3 first. Concrete
-implementation priority:
-
-1. Item 3: Streaming response support (ADR-0017)
-1. Item 2m: Salesforce Models API (depends on 3)
-1. Item 2n: Salesforce Agent API (depends on 3)
-1. Item 6: gRPC transport (soft depend on 3; gRPC isn't HTTP streaming, but
-   implementation can learn from streaming patterns)
-1. Item 7: LLM connector (depends on 3)
-
-### Review Comments
-
-| Area                      | Comment                                                                                                                                                                                                                                              |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Streaming urgency**     | Models API, Agent API, and LLM connector are not useful without real-time streaming. Waterfall delivery (sync-first, streaming later) will create tech debt and poor UX. Prioritize streaming as the foundation.                                     |
-| **AI APIs vs connectors** | Models and Agent APIs belong in Salesforce connector, not in a generic LLM adapter. They are Salesforce-specific orchestration layers, not generic LLM clients. Generic OpenAI-compatible support lives in `plynth.connectors.llm`.                  |
-| **Dependency clarity**    | Streaming is a transport-layer decision (ADR-0017 amends ADR-0006). It affects Response contract, middleware chain, and transport I/O. gRPC transport (item 6) is *not* blocked by HTTP streaming, but learning from streaming patterns is valuable. |
+Core streaming support, circuit breaking, and client-side rate limiting are now
+implemented. The remaining roadmap items below build on that shipped
+foundation rather than block on it.
 
 ______________________________________________________________________
 
 ### Middleware extensions
 
-**Status:** In progress — `HeaderMiddleware` implemented (ADR-0015).
+**Status:** `HeaderMiddleware`, `Request.timeout`,
+`CircuitBreakerMiddleware`, and `RateLimitMiddleware` are implemented.
 See [`docs/product/ideas/middleware-extensions.md`](ideas/middleware-extensions.md)
 for remaining items.
 
@@ -229,22 +241,21 @@ transport-level timeout for that single call. A `TimeoutMiddleware` was
 considered and rejected — a plain field on `Request` is simpler and keeps
 the override at the call site.
 
-#### 1c. `CircuitBreakerMiddleware` (Tier 1 — core, no new dependencies)
+#### 1c. `CircuitBreakerMiddleware` (Tier 1 — core, no new dependencies) ✓
 
-Stop failing-fast when an upstream is structurally unavailable; automatic
-recovery probing. Complements `RetryMiddleware`. See
-[idea](ideas/middleware-extensions.md#circuitbreakermiddleware) for interface
-sketch.
+Implemented in `plynth.middleware.circuit_breaker` with sync and async
+variants plus typed policy and open-circuit error support (ADR-0019).
 
-**Prerequisite:** New ADR before implementation.
+Complements `RetryMiddleware` by failing fast when an upstream is
+structurally unavailable while still allowing recovery probing.
 
-#### 1d. `RateLimitMiddleware` (Tier 1 — core, no new dependencies)
+#### 1d. `RateLimitMiddleware` (Tier 1 — core, no new dependencies) ✓
 
-Client-side token-bucket throttle to stay within upstream API quotas. See
-[idea](ideas/middleware-extensions.md#ratelimitmiddleware) for interface
-sketch.
+Implemented in `plynth.middleware.rate_limit` with sync and async variants
+plus typed policy and rate-limit exceeded error support (ADR-0020).
 
-**Prerequisite:** New ADR before implementation.
+Provides client-side pacing to stay within upstream quotas using a core
+middleware rather than connector-specific throttling logic.
 
 #### 1e. `TracingMiddleware` — `plynth[otel]` (Tier 2)
 
@@ -311,7 +322,7 @@ workflows stay outside connector core.
   list and raises the appropriate subclass; falls back to `HttpStatusError`
   for non-Salesforce bodies
 - Wired into both `SalesforceAPIClient` and `AsyncSalesforceAPIClient`
-- ADR: [SF-0001](../connectors/salesforce/architecture/adr/SF-0001-error-mapping.md)
+- ADR: [SF-0001](../connectors/salesforce/architecture/adr/sf-0001-error-mapping.md)
 
 #### 2c. SOQL Query API (`SalesforceQueryService`) ✓
 
@@ -405,6 +416,8 @@ Notes:
 - `SalesforceUtilityService` / `AsyncSalesforceUtilityService` implemented
 - Endpoint wrappers:
   - `limits()`
+  - `versions()`
+  - `objects()`
   - `search(sosl)`
   - `quick_search(search_text)`
   - `tooling_execute(action, ...)`
@@ -452,7 +465,7 @@ Scope note:
 
 #### 2m. Generative AI — Models REST API
 
-**Status:** Planned — depends on item 3 (Streaming support).
+**Status:** Planned — core streaming support is already available.
 
 - `SalesforceModelsService` / `AsyncSalesforceModelsService` — LLM inference
   via Salesforce Einstein Trust Layer
@@ -464,8 +477,8 @@ Scope note:
   - `submit_feedback(...)` — feedback loop for inference optimization
 - Full sync + async parity
 
-**Core dependency:** Streaming response support (item 3) — enables streaming
-chat completions. Sync-only variants work without streaming but limit real-time UX.
+**Core enablement:** Item 3 is already shipped, so streaming chat completions
+can build directly on the current response and transport model.
 
 **Scope note:**
 
@@ -474,7 +487,7 @@ chat completions. Sync-only variants work without streaming but limit real-time 
 
 #### 2n. Generative AI — Agent API
 
-**Status:** Planned — depends on item 3 (Streaming support).
+**Status:** Planned — core streaming support is already available.
 
 - `SalesforceAgentService` / `AsyncSalesforceAgentService` — orchestrate
   Salesforce AI agents from external systems
@@ -487,9 +500,8 @@ chat completions. Sync-only variants work without streaming but limit real-time 
   - `submit_feedback(...)` — feedback on agent responses
 - Full sync + async parity
 
-**Core dependency:** Streaming response support (item 3) — Agent API provides
-both sync and streaming message endpoints. Streaming is critical for interactive
-agent conversations.
+**Core enablement:** Item 3 is already shipped, so both sync and streaming
+message flows can build on the current response and transport model.
 
 **Scope note:**
 
@@ -501,28 +513,25 @@ ______________________________________________________________________
 
 ### 3. Streaming response support (SSE / chunked HTTP)
 
-**Status:** Proposed — see [ADR-0017](../architecture/adr/0017-streaming-response.md).
+**Status:** Implemented — see [ADR-0017](../architecture/adr/0017-streaming-response.md).
 
-**Critical blocker for:** Items 2m (Models API), 2n (Agent API), and item 7 (LLM
-connector).
+This foundation work is complete and now enables planned higher-level work such
+as items 2m, 2n, and 7.
 
-Plynth's `Response` model buffers the full response body before returning to
-the caller. This makes it unsuitable for long-lived streaming HTTP
-connections such as Server-Sent Events (SSE), which AI completion APIs use to
-stream generated tokens incrementally.
-
-Key changes required (detailed in ADR-0017):
+Shipped core capabilities:
 
 - `Request.stream: bool` opt-in flag (no impact on existing callers).
 - `StreamingResponse` / `AsyncStreamingResponse` subtypes in
-  `plynth.base.response` exposing `iter_lines()` / `aiter_lines()`.
+  `plynth.base.response` exposing `iter_lines()` / `aiter_lines()` and byte
+  iteration helpers.
 - `_send_once()` branches on `request.stream` — uses `httpx.stream()` instead
   of `httpx.request()`.
 - `CacheMiddleware` and `LoggingMiddleware` get minor stream-aware
   adaptations; all other middleware and service-layer code is unaffected.
 - No new runtime dependencies.
 
-**Prerequisite:** ADR-0017 must be accepted before implementation.
+This item no longer blocks roadmap execution; the remaining work is at the
+service and connector layer.
 
 ______________________________________________________________________
 
@@ -539,7 +548,7 @@ core abstractions are stable enough. See
 #### 4a. Django extra (`plynth[django]`) — [idea](ideas/django-adapter.md)
 
 - `from_django_settings()` factory — reads plynth config from `settings.py`
-- `DjangoCacheBackend` implementing the `Cache` Protocol over `django.core.cache`
+- Django cache adapter implementing the `Cache` Protocol over `django.core.cache`
 - Logging: no adapter needed; documented configuration only
 
 #### 4b. FastAPI extra (`plynth[fastapi]`) — [idea](ideas/fastapi-adapter.md)
@@ -565,8 +574,8 @@ ______________________________________________________________________
 All cache backends and typed config are implemented. Missing:
 
 - How-to guide for using `RedisCache` with custom SSL options
-- How to plug in `DjangoCacheBackend` (without the Django adapter)
-- How to implement a custom `CacheBackend`
+- How to wrap framework-native caches behind plynth's cache protocol
+- How to implement a custom cache backend cleanly
 
 ______________________________________________________________________
 
@@ -599,8 +608,7 @@ ______________________________________________________________________
 
 Plynth's transport and middleware chain is well-suited for LLM API clients:
 auth (API key via `BearerTokenAuthMiddleware`), retry, and rate limiting are
-already available. The primary missing capability is **streaming response
-support** (SSE / chunked HTTP), which is a prerequisite (item 3 above).
+already available, and streaming response support is already shipped.
 
 Anticipated scope:
 
@@ -616,7 +624,6 @@ Anticipated scope:
 
 **Prerequisite:**
 
-1. Streaming response implementation (item 3) must land first.
 1. New ADR before implementation.
 1. Consider whether this lives in `plynth.connectors.llm` (generic)
    or as a separate `plynth-openai` package from the start.
@@ -688,7 +695,6 @@ ______________________________________________________________________
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | OAuth2 authorization code flow                 | User-facing browser flow; not machine-to-machine                                                                                                                                                     |
 | WebSocket transport                            | Full-duplex persistent connections; protocol model differs from the middleware chain contract; no current use case — requires its own ADR                                                            |
-| gRPC transport (Salesforce Pub/Sub CDC)        | Moved to planned item 6 — requires ADR                                                                                                                                                               |
 | Request signing (AWS SigV4, etc.)              | Custom `Authenticator` is sufficient; no built-in needed                                                                                                                                             |
 | Automatic schema generation                    | Not a client library concern                                                                                                                                                                         |
 | ORM-style query builders                       | Too framework-specific                                                                                                                                                                               |

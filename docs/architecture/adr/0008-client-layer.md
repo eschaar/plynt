@@ -202,3 +202,24 @@ returns a pre-built `Response`. No network access is required.
 - `APIClient` can extend `HTTPClient` through standard inheritance without
   duplicating request-building logic.
 - Swapping the transport requires changing only the constructor argument.
+
+## Amendment — client-layer streaming entry points (ADR-0008-A1)
+
+Decision: Add explicit `stream()` methods to all HTTP client variants:
+
+- `HTTPClient.stream()`
+- `AsyncHTTPClient.stream()`
+- `APIClient.stream()`
+- `AsyncAPIClient.stream()`
+
+`HTTPClient` and `AsyncHTTPClient` set `Request.stream=True`, delegate to the
+injected transport, and enforce the return contract (`StreamingResponse` or
+`AsyncStreamingResponse`).
+
+`APIClient` and `AsyncAPIClient` apply the existing typed error mapping rules
+for streaming requests as well. On 4xx/5xx responses, they close the stream
+before raising to avoid leaking open connections.
+
+Rationale: this keeps streaming behavior inside the existing client layer
+contract: callers get typed errors and transport-neutral responses without
+handling raw transport details.

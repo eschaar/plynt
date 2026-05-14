@@ -134,5 +134,5 @@ ______________________________________________________________________
 
 ## Next Step
 
-Write an ADR (next available number after the Django ADR) covering the lifespan
-and DI design before any code is written.
+Write a new ADR covering the lifespan and DI design before any code is
+written.

@@ -23,8 +23,8 @@ It must be:
 
 The Transport Layer is split across two files that live in different namespaces:
 
-- __`plynth.base.transport`__ (`core/base.py`) — defines the abstract contracts
-  `SyncTransport` and `AsyncTransport`. Lives in `core/` because it is a
+- __`plynth.base.transport`__ (`base/transport.py`) — defines the abstract
+  contracts `SyncTransport` and `AsyncTransport`. Lives in `base/` because it is a
   framework-agnostic primitive that higher layers depend on, and because
   placing it there avoids a circular import with `base/request.py`.
 - __`plynth.http.transport`__ (`http/transport.py`) — provides the concrete
@@ -115,7 +115,7 @@ pip install plynth[httpx]
   concerns.
 - Users can swap in their own HTTP libraries or mocks for testing.
 - Sync and async execution are both supported without code duplication.
-- The abstract contracts in `core/base.py` remain dependency-free and usable
+- The abstract contracts in `base/transport.py` remain dependency-free and usable
   without installing `httpx`.
 - Cross-cutting concerns (auth, retry, cache) are handled once in
   `BaseSyncTransport` / `BaseAsyncTransport` (`plynth.base.transport`) and

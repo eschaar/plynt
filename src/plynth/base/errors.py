@@ -292,3 +292,28 @@ class StatusError(TransportError):
         """
         super().__init__(message, status_code=status_code, **kwargs)
         self.status_code = status_code
+
+
+class StreamInterruptedError(TransportError):
+    """Raised when a streaming response is interrupted before completion.
+
+    Occurs during iteration over response body when the underlying transport
+    connection fails, the remote closes unexpectedly, or a protocol error
+    occurs (ADR-0017, Step B).
+
+    May wrap an underlying transport error (stored in ``details`` as
+    ``"underlying_error"``).
+
+    Example:
+        try:
+            for chunk in response.iter_bytes():
+                process(chunk)
+        except StreamInterruptedError as e:
+            # Handle streaming interruption; underlying error in e.details
+            underlying = e.details.get("underlying_error")
+            logger.error(f"Stream failed: {underlying}")
+
+    """
+
+    code = "STREAM_INTERRUPTED"
+    message = "Streaming response interrupted"
