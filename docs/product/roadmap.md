@@ -465,7 +465,7 @@ Scope note:
 
 #### 2m. Generative AI — Models REST API
 
-**Status:** Planned — core streaming support is already available.
+**Status:** Implemented — shipped on top of the current streaming foundation.
 
 - `SalesforceModelsService` / `AsyncSalesforceModelsService` — LLM inference
   via Salesforce Einstein Trust Layer
@@ -477,8 +477,8 @@ Scope note:
   - `submit_feedback(...)` — feedback loop for inference optimization
 - Full sync + async parity
 
-**Core enablement:** Item 3 is already shipped, so streaming chat completions
-can build directly on the current response and transport model.
+**Core enablement:** Item 3 is already shipped, and this service now builds on
+the current response and transport model for sync and streaming calls.
 
 **Scope note:**
 
@@ -487,7 +487,7 @@ can build directly on the current response and transport model.
 
 #### 2n. Generative AI — Agent API
 
-**Status:** Planned — core streaming support is already available.
+**Status:** Implemented — shipped on top of the current streaming foundation.
 
 - `SalesforceAgentService` / `AsyncSalesforceAgentService` — orchestrate
   Salesforce AI agents from external systems
@@ -500,8 +500,8 @@ can build directly on the current response and transport model.
   - `submit_feedback(...)` — feedback on agent responses
 - Full sync + async parity
 
-**Core enablement:** Item 3 is already shipped, so both sync and streaming
-message flows can build on the current response and transport model.
+**Core enablement:** Item 3 is already shipped, and both sync and streaming
+message flows now build on the current response and transport model.
 
 **Scope note:**
 
