@@ -11,15 +11,19 @@ import json
 import re
 from typing import Any
 
+from pydantic import TypeAdapter, ValidationError
+
 from plynth.connectors.salesforce.constants import (
     resolve_async_api_version,
     resolve_sync_api_version,
 )
+from plynth.connectors.salesforce.errors import SalesforceQueryResponseError
 from plynth.connectors.salesforce.models import (
     SalesforceApiUsage,
     SalesforceApiVersion,
     SalesforceGlobalDescribeResponse,
     SalesforceLimitsResponse,
+    SalesforceQueryResponse,
 )
 from plynth.connectors.salesforce.renderer import SalesforceRenderer
 from plynth.http.client import APIClient, AsyncAPIClient
@@ -32,6 +36,36 @@ __all__ = [
 ]
 
 _API_USAGE_RE = re.compile(r"^api-usage=(\d+)/(\d+)$")
+_API_VERSION_LIST = TypeAdapter(list[SalesforceApiVersion])
+
+
+def _parse_is_sandbox_response(content: bytes) -> bool:
+    """Return the Organization.IsSandbox value from a Salesforce query body.
+
+    Raises:
+        SalesforceQueryResponseError: If the response is not a valid query
+            payload or does not contain the expected first record shape.
+
+    """
+    try:
+        result = SalesforceQueryResponse.model_validate_json(content)
+    except ValidationError as exc:
+        raise SalesforceQueryResponseError(
+            "Salesforce query response had an invalid shape for IsSandbox lookup"
+        ) from exc
+
+    if not result.records:
+        raise SalesforceQueryResponseError(
+            "Salesforce query response contained no records for IsSandbox lookup"
+        )
+
+    record = result.records[0]
+    if "IsSandbox" not in record:
+        raise SalesforceQueryResponseError(
+            "Salesforce query response missing IsSandbox in first record"
+        )
+
+    return bool(record["IsSandbox"])
 
 
 def _parse_api_usage(headers: dict[str, str]) -> SalesforceApiUsage | None:
@@ -94,10 +128,7 @@ class SalesforceUtilityService(APIService):
 
         """
         resp = self._client.get("/services/data/")
-        return [
-            SalesforceApiVersion.model_validate(entry)
-            for entry in json.loads(resp.content)
-        ]
+        return _API_VERSION_LIST.validate_json(resp.content)
 
     def limits(self) -> SalesforceLimitsResponse:
         """Return current Salesforce organization limits."""
@@ -126,6 +157,23 @@ class SalesforceUtilityService(APIService):
         """
         resp = self._client.get(f"{self._base_path()}/sobjects/")
         return SalesforceGlobalDescribeResponse.model_validate_json(resp.content)
+
+    def is_sandbox(self) -> bool:
+        """Return whether the connected org is a sandbox.
+
+        Queries the ``Organization`` SObject for the ``IsSandbox`` field.
+        Useful as a guard before executing destructive or production-only
+        operations.
+
+        Returns:
+            ``True`` when the org is a sandbox, ``False`` for a production org.
+
+        """
+        resp = self._client.get(
+            f"{self._base_path()}/query",
+            params={"q": "SELECT IsSandbox FROM Organization LIMIT 1"},
+        )
+        return _parse_is_sandbox_response(resp.content)
 
     def search(self, sosl: str) -> None:
         """Removed — use ``SalesforceSearchService.search()`` instead."""
@@ -253,10 +301,7 @@ class AsyncSalesforceUtilityService(AsyncAPIService):
 
         """
         resp = await self._client.get("/services/data/")
-        return [
-            SalesforceApiVersion.model_validate(entry)
-            for entry in json.loads(resp.content)
-        ]
+        return _API_VERSION_LIST.validate_json(resp.content)
 
     async def limits(self) -> SalesforceLimitsResponse:
         """Return current Salesforce organization limits."""
@@ -277,6 +322,24 @@ class AsyncSalesforceUtilityService(AsyncAPIService):
         """
         resp = await self._client.get(f"{await self._base_path()}/sobjects/")
         return SalesforceGlobalDescribeResponse.model_validate_json(resp.content)
+
+    async def is_sandbox(self) -> bool:
+        """Return whether the connected org is a sandbox.
+
+        Queries the ``Organization`` SObject for the ``IsSandbox`` field.
+        Useful as a guard before executing destructive or production-only
+        operations.
+
+        Returns:
+            ``True`` when the org is a sandbox, ``False`` for a production org.
+
+        """
+        base = await self._base_path()
+        resp = await self._client.get(
+            f"{base}/query",
+            params={"q": "SELECT IsSandbox FROM Organization LIMIT 1"},
+        )
+        return _parse_is_sandbox_response(resp.content)
 
     async def search(self, sosl: str) -> None:
         """Removed — use ``AsyncSalesforceSearchService.search()`` instead."""
