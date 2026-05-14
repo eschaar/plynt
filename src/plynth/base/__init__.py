@@ -20,7 +20,7 @@ from plynth.base.errors import (
     TransportError,
 )
 from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.policies import RetryPolicy
+from plynth.base.policies import CircuitBreakerPolicy, RateLimitPolicy, RetryPolicy
 from plynth.base.request import Request
 from plynth.base.response import (
     AsyncStreamingResponse,
@@ -44,11 +44,13 @@ __all__ = [
     "BaseError",
     "BaseSyncTransport",
     "CacheBackend",
+    "CircuitBreakerPolicy",
     "ConfigurationError",
     "DependencyUnavailableError",
     "FeatureDisabledError",
     "InvalidInputError",
     "OperationFailedError",
+    "RateLimitPolicy",
     "Request",
     "Response",
     "ResponseProtocol",
