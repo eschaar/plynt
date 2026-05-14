@@ -27,7 +27,7 @@ from http import HTTPStatus
 
 from plynth.base.cache import CacheBackend
 from plynth.base.request import Request
-from plynth.base.response import Response
+from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 
 __all__ = ["AsyncCacheMiddleware", "CacheMiddleware"]
 
@@ -54,6 +54,8 @@ class _CacheBase:
 
     def _get_cached(self, request: Request) -> Response | None:
         """Return cached response for GET requests, or ``None`` on miss or non-GET."""
+        if request.stream:
+            return None
         if request.method != "GET":
             return None
         key = type(self._backend).cache_key(request)
@@ -66,6 +68,10 @@ class _CacheBase:
 
     def _store(self, request: Request, response: Response) -> None:
         """Store response for successful GET requests only (status < 400)."""
+        if request.stream:
+            return
+        if isinstance(response, (StreamingResponse, AsyncStreamingResponse)):
+            return
         if request.method == "GET" and response.status_code < HTTPStatus.BAD_REQUEST:
             key = type(self._backend).cache_key(request)
             self._backend.set(key, self._snapshot_response(response))

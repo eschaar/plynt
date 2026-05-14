@@ -21,7 +21,12 @@ from plynth.base.errors import (
 from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynth.base.policies import RetryPolicy
 from plynth.base.request import Request
-from plynth.base.response import Response, ResponseProtocol
+from plynth.base.response import (
+    AsyncStreamingResponse,
+    Response,
+    ResponseProtocol,
+    StreamingResponse,
+)
 from plynth.base.settings import Settings
 from plynth.base.transport import (
     AsyncTransport,
@@ -32,6 +37,7 @@ from plynth.base.transport import (
 
 __all__ = [
     "AsyncMiddleware",
+    "AsyncStreamingResponse",
     "AsyncTransport",
     "BaseAsyncTransport",
     "BaseError",
@@ -48,6 +54,7 @@ __all__ = [
     "RetryPolicy",
     "Settings",
     "StatusError",
+    "StreamingResponse",
     "SupportsSizeInfo",
     "SupportsStats",
     "SupportsTTL",

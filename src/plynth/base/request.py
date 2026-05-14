@@ -38,6 +38,9 @@ class Request:
             ``HTTPSettings.timeout_read``. When ``None`` (default), the
             transport's configured timeout applies unchanged.
             (ADR-0005-A1)
+        stream: Opt-in streaming mode. When ``True``, the transport keeps
+            the response body unbuffered and returns a streaming response
+            object. When ``False`` (default), the body is fully buffered.
 
     Example:
         req = Request(
@@ -56,3 +59,4 @@ class Request:
     params: dict[str, Any] = field(default_factory=dict)
     content: bytes | None = None
     timeout: float | None = None
+    stream: bool = False

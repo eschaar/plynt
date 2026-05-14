@@ -45,7 +45,7 @@ except ImportError as exc:  # pragma: no cover
 
 from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynth.base.request import Request
-from plynth.base.response import Response
+from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynth.base.transport import BaseAsyncTransport, BaseSyncTransport
 from plynth.http.policies import HttpRetryPolicy
 from plynth.http.response import HttpResponse
@@ -259,6 +259,9 @@ class HttpxSyncTransport(BaseSyncTransport):
             httpx.HTTPError: If a network or protocol error occurs.
 
         """
+        if request.stream:
+            return self._send_stream(request)
+
         safe_url = _scrub_url(str(request.url))
 
         _logger.debug(
@@ -319,6 +322,55 @@ class HttpxSyncTransport(BaseSyncTransport):
             method=request.method,
             url=str(request.url),
             _raw=r,
+        )
+
+    def _send_stream(self, request: Request) -> StreamingResponse:
+        """Send a request in streaming mode and return a streaming response."""
+        safe_url = _scrub_url(str(request.url))
+
+        _logger.debug(
+            "--> %s %s",
+            request.method,
+            safe_url,
+            extra={
+                "event.action": "http-request",
+                "http.request.method": request.method,
+                "url.full": safe_url,
+            },
+        )
+
+        request_kwargs: dict[str, object] = {
+            "method": request.method,
+            "url": request.url,
+            "headers": request.headers,
+            "params": request.params,
+            "content": request.content,
+        }
+        raw_request = self._client.build_request(**request_kwargs)  # type: ignore[arg-type]
+
+        send_kwargs: dict[str, object] = {"stream": True}
+        if request.timeout is not None:
+            send_kwargs["timeout"] = request.timeout
+
+        raw_response = self._client.send(raw_request, **send_kwargs)  # type: ignore[arg-type]
+
+        _logger.debug(
+            "<-- %d %s %s (streaming)",
+            raw_response.status_code,
+            request.method,
+            safe_url,
+            extra={
+                "event.action": "http-request",
+                "http.request.method": request.method,
+                "http.response.status_code": raw_response.status_code,
+                "url.full": safe_url,
+            },
+        )
+
+        return StreamingResponse(
+            status_code=raw_response.status_code,
+            headers=dict(raw_response.headers),
+            _raw=raw_response,
         )
 
     def close(self) -> None:
@@ -423,6 +475,9 @@ class HttpxAsyncTransport(BaseAsyncTransport):
             httpx.HTTPError: If a network or protocol error occurs.
 
         """
+        if request.stream:
+            return await self._send_stream(request)
+
         safe_url = _scrub_url(str(request.url))
 
         _logger.debug(
@@ -483,6 +538,55 @@ class HttpxAsyncTransport(BaseAsyncTransport):
             method=request.method,
             url=str(request.url),
             _raw=r,
+        )
+
+    async def _send_stream(self, request: Request) -> AsyncStreamingResponse:
+        """Send a request in async streaming mode and return a streaming response."""
+        safe_url = _scrub_url(str(request.url))
+
+        _logger.debug(
+            "--> %s %s",
+            request.method,
+            safe_url,
+            extra={
+                "event.action": "http-request",
+                "http.request.method": request.method,
+                "url.full": safe_url,
+            },
+        )
+
+        request_kwargs: dict[str, object] = {
+            "method": request.method,
+            "url": request.url,
+            "headers": request.headers,
+            "params": request.params,
+            "content": request.content,
+        }
+        raw_request = self._client.build_request(**request_kwargs)  # type: ignore[arg-type]
+
+        send_kwargs: dict[str, object] = {"stream": True}
+        if request.timeout is not None:
+            send_kwargs["timeout"] = request.timeout
+
+        raw_response = await self._client.send(raw_request, **send_kwargs)  # type: ignore[arg-type]
+
+        _logger.debug(
+            "<-- %d %s %s (streaming)",
+            raw_response.status_code,
+            request.method,
+            safe_url,
+            extra={
+                "event.action": "http-request",
+                "http.request.method": request.method,
+                "http.response.status_code": raw_response.status_code,
+                "url.full": safe_url,
+            },
+        )
+
+        return AsyncStreamingResponse(
+            status_code=raw_response.status_code,
+            headers=dict(raw_response.headers),
+            _raw=raw_response,
         )
 
     async def aclose(self) -> None:

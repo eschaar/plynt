@@ -45,7 +45,7 @@ from collections.abc import Awaitable, Callable
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from plynth.base.request import Request
-from plynth.base.response import Response
+from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 
 __all__ = [
     "AsyncLoggingMiddleware",
@@ -142,12 +142,18 @@ class _LoggingBase:
         safe_url = _scrub_url(str(request.url))
         elapsed_ms = (time.monotonic() - start) * 1000
         elapsed_ns = int(elapsed_ms * 1_000_000)
+        stream_suffix = (
+            " (streaming)"
+            if isinstance(response, (StreamingResponse, AsyncStreamingResponse))
+            else ""
+        )
         self._logger.log(
             self._level,
-            "<-- %d %s %s  (%.0fms)",
+            "<-- %d %s %s%s  (%.0fms)",
             response.status_code,
             request.method,
             safe_url,
+            stream_suffix,
             elapsed_ms,
             extra={
                 "event.action": "http-request",
