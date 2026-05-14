@@ -109,3 +109,19 @@ Package versioning is derived from Git tags at build time via `setuptools_scm`
 published package versions.
 
 No manual version bumping or tagging is needed.
+
+### Release naming policy
+
+- Git tags use plain SemVer: `X.Y.Z` (no `v` prefix).
+- GitHub Release titles use `vX.Y.Z` for readability.
+- `CHANGELOG.md` versions use `X.Y.Z` (match tags).
+- Publish validation accepts only plain SemVer tags.
+
+### Release checklist
+
+- Ensure quality gate is green locally: `make check`.
+- Merge the open release-please PR into `main` (do not hand-tag).
+- Confirm GitHub release exists with tag `X.Y.Z`.
+- Confirm GitHub release title is `vX.Y.Z`.
+- Confirm `Publish` workflow succeeded for that release.
+- Keep `ENABLE_PYPI_PUBLISH` disabled unless you intentionally publish to PyPI.

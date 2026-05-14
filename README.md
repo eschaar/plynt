@@ -90,9 +90,9 @@ pip install plynth
 
 Current status:
 
-- GitHub releases exist for `0.1.0` (core baseline) and `0.2.0` (Salesforce connector).
-- PyPI publishing is configured but currently intentionally disabled in CI until
-  release automation is re-enabled.
+- GitHub releases exist for `0.1.0` (core baseline), `0.2.0` (Salesforce connector), and `0.2.1`.
+- Release automation is enabled via release-please.
+- PyPI publish uses OIDC and is guarded by `ENABLE_PYPI_PUBLISH` in CI.
 
 ______________________________________________________________________
 
