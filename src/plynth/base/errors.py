@@ -292,3 +292,15 @@ class StatusError(TransportError):
         """
         super().__init__(message, status_code=status_code, **kwargs)
         self.status_code = status_code
+
+
+class StreamInterruptedError(TransportError):
+    """Raised when a streaming response is interrupted before completion.
+
+    Occurs during iteration over response bodies when the underlying
+    transport fails, the peer closes unexpectedly, or a protocol error is
+    raised while consuming chunks.
+    """
+
+    code = "STREAM_INTERRUPTED"
+    message = "Streaming response interrupted"

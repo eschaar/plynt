@@ -29,7 +29,7 @@ from http import HTTPStatus
 from typing import Any
 
 from plynth.base.request import Request
-from plynth.base.response import Response
+from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynth.base.transport import AsyncTransport, SyncTransport
 
 __all__ = ["APIClient", "AsyncAPIClient", "AsyncHTTPClient", "HTTPClient"]
@@ -76,6 +76,7 @@ class HTTPClient:
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
+        stream: bool = False,
     ) -> Request:
         """Build a request by merging the base URL, default headers,
         and call-level overrides.
@@ -87,6 +88,7 @@ class HTTPClient:
             headers=merged_headers,
             params=params or {},
             content=content,
+            stream=stream,
         )
 
     def request(
@@ -167,6 +169,33 @@ class HTTPClient:
         """Send a DELETE request."""
         return self.request("DELETE", path, headers=headers, params=params)
 
+    def stream(
+        self,
+        method: str,
+        path: str,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        content: bytes | None = None,
+    ) -> StreamingResponse:
+        """Send a streaming HTTP request and return a streaming response."""
+        req = self._build_request(
+            method,
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+            stream=True,
+        )
+        resp = self._transport.send(req)
+        if not isinstance(resp, StreamingResponse):
+            raise TypeError(
+                "Sync transport returned non-streaming response for "
+                "Request.stream=True; expected StreamingResponse, got "
+                f"{type(resp).__name__}"
+            )
+        return resp
+
 
 class AsyncHTTPClient:
     """Asynchronous HTTP client with convenience methods for each HTTP verb.
@@ -203,6 +232,7 @@ class AsyncHTTPClient:
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
+        stream: bool = False,
     ) -> Request:
         """Build a request by merging the base URL, default headers,
         and call-level overrides.
@@ -214,6 +244,7 @@ class AsyncHTTPClient:
             headers=merged_headers,
             params=params or {},
             content=content,
+            stream=stream,
         )
 
     async def request(
@@ -294,6 +325,33 @@ class AsyncHTTPClient:
         """Send a DELETE request."""
         return await self.request("DELETE", path, headers=headers, params=params)
 
+    async def stream(
+        self,
+        method: str,
+        path: str,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        content: bytes | None = None,
+    ) -> AsyncStreamingResponse:
+        """Send an async streaming HTTP request and return a streaming response."""
+        req = self._build_request(
+            method,
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+            stream=True,
+        )
+        resp = await self._transport.send(req)
+        if not isinstance(resp, AsyncStreamingResponse):
+            raise TypeError(
+                "Async transport returned non-streaming response for "
+                "Request.stream=True; expected AsyncStreamingResponse, got "
+                f"{type(resp).__name__}"
+            )
+        return resp
+
 
 class APIClient(HTTPClient):
     """Synchronous REST API client with JSON defaults and structured errors.
@@ -361,7 +419,37 @@ class APIClient(HTTPClient):
                 method=method,
                 url=f"{self._base_url}/{path.lstrip('/')}",
             )
-            err._response = resp
+            err.attach_response(resp)
+            raise err
+        return resp
+
+    def stream(
+        self,
+        method: str,
+        path: str,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        content: bytes | None = None,
+    ) -> StreamingResponse:
+        """Send a streaming request and raise a typed error on 4xx/5xx status."""
+        from plynth.http.errors import match_error
+
+        resp = super().stream(
+            method,
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+        )
+        if resp.status_code >= HTTPStatus.BAD_REQUEST:
+            resp.close()
+            err = match_error(
+                resp.status_code,
+                method=method,
+                url=f"{self._base_url}/{path.lstrip('/')}",
+            )
+            err.attach_response(resp)
             raise err
         return resp
 
@@ -423,6 +511,36 @@ class AsyncAPIClient(AsyncHTTPClient):
                 method=method,
                 url=f"{self._base_url}/{path.lstrip('/')}",
             )
-            err._response = resp
+            err.attach_response(resp)
+            raise err
+        return resp
+
+    async def stream(
+        self,
+        method: str,
+        path: str,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        content: bytes | None = None,
+    ) -> AsyncStreamingResponse:
+        """Send an async streaming request and raise a typed error on 4xx/5xx."""
+        from plynth.http.errors import match_error
+
+        resp = await super().stream(
+            method,
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+        )
+        if resp.status_code >= HTTPStatus.BAD_REQUEST:
+            await resp.aclose()
+            err = match_error(
+                resp.status_code,
+                method=method,
+                url=f"{self._base_url}/{path.lstrip('/')}",
+            )
+            err.attach_response(resp)
             raise err
         return resp

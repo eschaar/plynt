@@ -16,6 +16,7 @@ from plynth.base.errors import (
     InvalidInputError,
     OperationFailedError,
     StatusError,
+    StreamInterruptedError,
     TransportError,
 )
 from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
@@ -54,6 +55,7 @@ __all__ = [
     "RetryPolicy",
     "Settings",
     "StatusError",
+    "StreamInterruptedError",
     "StreamingResponse",
     "SupportsSizeInfo",
     "SupportsStats",

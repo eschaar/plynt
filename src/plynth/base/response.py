@@ -17,13 +17,12 @@ layers, not in this module.
 
 from __future__ import annotations
 
-import inspect
 from collections.abc import AsyncIterator, Iterator, Mapping
 from dataclasses import dataclass, field
 from http import HTTPStatus
 from typing import Any, Protocol, runtime_checkable
 
-from plynth.base.errors import StatusError
+from plynth.base.errors import StatusError, StreamInterruptedError
 
 __all__ = [
     "AsyncStreamingResponse",
@@ -87,33 +86,38 @@ class StreamingResponse(Response):
     def _raw_response(self) -> Any:
         """Return the underlying transport response object."""
         if self._raw is None:
-            raise RuntimeError("StreamingResponse has no raw response attached")
+            raise RuntimeError(
+                "StreamingResponse has no bound raw stream; "
+                "ensure transport returns a streaming _raw response"
+            )
         return self._raw
 
-    def iter_bytes(self) -> Iterator[bytes]:
+    def iter_lines(self) -> Iterator[str]:
+        """Yield newline-delimited body lines as text."""
+        raw = self._raw_response()
+
+        def _iter_lines() -> Iterator[str]:
+            try:
+                yield from raw.iter_lines()
+            except Exception as exc:
+                raise StreamInterruptedError(underlying_error=exc) from exc
+
+        return _iter_lines()
+
+    def iter_bytes(self, chunk_size: int | None = None) -> Iterator[bytes]:
         """Yield raw body chunks as bytes."""
         raw = self._raw_response()
-        yield from raw.iter_bytes()
 
-    def iter_lines(self) -> Iterator[bytes]:
-        """Yield newline-delimited body lines as bytes."""
-        buffered = b""
-        for chunk in self.iter_bytes():
-            buffered += chunk
-            while True:
-                newline_at = buffered.find(b"\n")
-                if newline_at == -1:
-                    break
-                line = buffered[:newline_at]
-                if line.endswith(b"\r"):
-                    line = line[:-1]
-                yield line
-                buffered = buffered[newline_at + 1 :]
+        def _iter_bytes() -> Iterator[bytes]:
+            try:
+                if chunk_size is not None:
+                    yield from raw.iter_bytes(chunk_size)
+                    return
+                yield from raw.iter_bytes()
+            except Exception as exc:
+                raise StreamInterruptedError(underlying_error=exc) from exc
 
-        if buffered:
-            if buffered.endswith(b"\r"):
-                buffered = buffered[:-1]
-            yield buffered
+        return _iter_bytes()
 
     def close(self) -> None:
         """Close the underlying transport response stream."""
@@ -126,7 +130,8 @@ class StreamingResponse(Response):
 
     def __exit__(self, *args: object) -> None:
         """Close the streaming response on context exit."""
-        self.close()
+        if self._raw is not None:
+            self.close()
 
 
 @dataclass
@@ -143,41 +148,47 @@ class AsyncStreamingResponse(Response):
     def _raw_response(self) -> Any:
         """Return the underlying transport response object."""
         if self._raw is None:
-            raise RuntimeError("AsyncStreamingResponse has no raw response attached")
+            raise RuntimeError(
+                "AsyncStreamingResponse has no bound raw stream; "
+                "ensure transport returns a streaming _raw response"
+            )
         return self._raw
 
-    async def aiter_bytes(self) -> AsyncIterator[bytes]:
+    def aiter_lines(self) -> AsyncIterator[str]:
+        """Yield newline-delimited body lines as text."""
+        raw = self._raw_response()
+
+        async def _aiter_lines() -> AsyncIterator[str]:
+            try:
+                async for line in raw.aiter_lines():
+                    yield line
+            except Exception as exc:
+                raise StreamInterruptedError(underlying_error=exc) from exc
+
+        return _aiter_lines()
+
+    def aiter_bytes(self, chunk_size: int | None = None) -> AsyncIterator[bytes]:
         """Yield raw body chunks as bytes."""
         raw = self._raw_response()
-        async for chunk in raw.aiter_bytes():
-            yield chunk
 
-    async def aiter_lines(self) -> AsyncIterator[bytes]:
-        """Yield newline-delimited body lines as bytes."""
-        buffered = b""
-        async for chunk in self.aiter_bytes():
-            buffered += chunk
-            while True:
-                newline_at = buffered.find(b"\n")
-                if newline_at == -1:
-                    break
-                line = buffered[:newline_at]
-                if line.endswith(b"\r"):
-                    line = line[:-1]
-                yield line
-                buffered = buffered[newline_at + 1 :]
+        async def _aiter_bytes() -> AsyncIterator[bytes]:
+            try:
+                iterator = (
+                    raw.aiter_bytes(chunk_size)
+                    if chunk_size is not None
+                    else raw.aiter_bytes()
+                )
+                async for chunk in iterator:
+                    yield chunk
+            except Exception as exc:
+                raise StreamInterruptedError(underlying_error=exc) from exc
 
-        if buffered:
-            if buffered.endswith(b"\r"):
-                buffered = buffered[:-1]
-            yield buffered
+        return _aiter_bytes()
 
     async def aclose(self) -> None:
         """Close the underlying async response stream."""
         raw = self._raw_response()
-        close_result = raw.aclose()
-        if inspect.isawaitable(close_result):
-            await close_result
+        await raw.aclose()
 
     async def __aenter__(self) -> AsyncStreamingResponse:
         """Enter async context manager and return this response."""
@@ -185,7 +196,8 @@ class AsyncStreamingResponse(Response):
 
     async def __aexit__(self, *args: object) -> None:
         """Close the streaming response on async context exit."""
-        await self.aclose()
+        if self._raw is not None:
+            await self.aclose()
 
 
 @runtime_checkable

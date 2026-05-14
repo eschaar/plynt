@@ -128,6 +128,7 @@ class SalesforceAPIClient(APIClient):
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
+        stream: bool = False,
     ) -> Request:
         """Build a request using the org-specific Salesforce instance URL."""
         instance_url = self._sf_auth.instance_url
@@ -138,6 +139,7 @@ class SalesforceAPIClient(APIClient):
             headers=merged_headers,
             params=params or {},
             content=content,
+            stream=stream,
         )
 
     def build_request(

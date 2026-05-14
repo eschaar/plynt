@@ -95,6 +95,30 @@ considered but rejected: it would either affect all requests equally
 framework-specific extension points. A plain field on `Request` is
 simpler, testable, and keeps the override close to the call site.
 
+## Amendment — streaming request intent flag (ADR-0005-A2)
+
+Decision: Add an opt-in `stream` field to `Request`:
+
+```python
+@dataclass
+class Request:
+  method: str
+  url: str
+  headers: dict[str, str] = field(default_factory=dict)
+  params: dict[str, Any] = field(default_factory=dict)
+  content: bytes | None = None
+  timeout: float | None = None
+  stream: bool = False
+```
+
+When `stream=True`, transports may return streaming response objects instead
+of fully buffered responses. The default remains `False`, preserving existing
+behavior for all callers.
+
+Rationale: streaming is an execution-mode concern at the request boundary and
+belongs on the transport-neutral `Request` abstraction, not in protocol-
+specific transport kwargs.
+
 ## Consequences
 
 - All layers are decoupled from specific HTTP libraries.
