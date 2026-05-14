@@ -209,6 +209,16 @@ Returns:
   → Stop and request an architectural decision.
 - Do **not** silently introduce breaking changes.
 
+## 16. Branch Workflow Safety
+
+- Do **not** commit directly to `main` or `master` unless the user explicitly
+  approves this in the current conversation.
+- Implement new functionality on a dedicated branch first.
+- Before starting work on a branch name, check whether that branch already
+  exists on the remote and whether it has already been merged.
+- If a branch has already been merged remotely, do not reuse it for new work;
+  create a new branch.
+
 ---
 
 ## 🧭 Meta-Instruction for Copilot and AI Agents

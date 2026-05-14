@@ -80,6 +80,20 @@ Agents must not:
 
 ______________________________________________________________________
 
+## Branch Workflow Safety
+
+Agents must follow these branch workflow rules for all implementation work:
+
+- Do not commit directly to `main` or `master` unless the user explicitly
+  agrees in the current conversation.
+- Start new functionality, bug fixes, and refactors on a dedicated branch.
+- Before creating or using a local work branch, verify whether the same branch
+  already exists on the remote and whether it has already been merged.
+- If a branch is already merged remotely, do not continue work on it; create a
+  new branch instead.
+
+______________________________________________________________________
+
 ## Escalation Rules
 
 Agents must **stop immediately** if a task:
