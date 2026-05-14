@@ -135,9 +135,10 @@ class TestLoggingMiddleware:
             LoggingMiddleware().handle(_REQUEST, _noop)
 
         rec = next(r for r in caplog.records if "<--" in r.message)
-        assert getattr(rec, "event.action") == "http-request"
+        assert getattr(rec, "event.action") == "http-response"
         assert getattr(rec, "http.request.method") == _REQUEST.method
         assert getattr(rec, "http.response.status_code") == _RESPONSE.status_code
+        assert getattr(rec, "http.response.streaming") is False
         assert getattr(rec, "url.full") == str(_REQUEST.url)
         assert isinstance(getattr(rec, "event.duration"), int)
 
@@ -192,7 +193,8 @@ class TestLoggingMiddleware:
             LoggingMiddleware().handle(_REQUEST, lambda _r: streaming_response)
 
         response_record = next(r for r in caplog.records if "<--" in r.message)
-        assert "(streaming)" in response_record.message
+        assert "(streaming, no body)" in response_record.message
+        assert getattr(response_record, "http.response.streaming", False) is True
 
 
 # ---------------------------------------------------------------------------
@@ -320,4 +322,5 @@ class TestAsyncLoggingMiddleware:
             await AsyncLoggingMiddleware().handle(_REQUEST, _return_streaming)
 
         response_record = next(r for r in caplog.records if "<--" in r.message)
-        assert "(streaming)" in response_record.message
+        assert "(streaming, no body)" in response_record.message
+        assert getattr(response_record, "http.response.streaming", False) is True

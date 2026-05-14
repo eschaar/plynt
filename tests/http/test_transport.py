@@ -775,13 +775,13 @@ class TestHttpxTransportMiddlewaresParam:
 
 
 class TestScrubHeaders:
-    """Tests for the _scrub_headers helper (ADR-0014 § 4)."""
+    """Tests for the scrub_headers helper (ADR-0014 § 4)."""
 
     def setup_method(self) -> None:
         """Return setup method."""
-        from plynth.http.transport import _scrub_headers
+        from plynth.http.transport import scrub_headers
 
-        self._scrub = _scrub_headers
+        self._scrub = scrub_headers
 
     def test_authorization_is_redacted(self) -> None:
         """Validate authorization is redacted."""

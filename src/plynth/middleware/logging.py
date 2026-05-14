@@ -142,24 +142,25 @@ class _LoggingBase:
         safe_url = _scrub_url(str(request.url))
         elapsed_ms = (time.monotonic() - start) * 1000
         elapsed_ns = int(elapsed_ms * 1_000_000)
-        stream_suffix = (
-            " (streaming)"
-            if isinstance(response, (StreamingResponse, AsyncStreamingResponse))
-            else ""
-        )
+
+        # Detect streaming response and add marker
+        is_streaming = isinstance(response, (StreamingResponse, AsyncStreamingResponse))
+        streaming_marker = " (streaming, no body)" if is_streaming else ""
+
         self._logger.log(
             self._level,
-            "<-- %d %s %s%s  (%.0fms)",
+            "<-- %d %s %s  (%.0fms)%s",
             response.status_code,
             request.method,
             safe_url,
-            stream_suffix,
             elapsed_ms,
+            streaming_marker,
             extra={
-                "event.action": "http-request",
+                "event.action": "http-response",
                 "event.duration": elapsed_ns,
                 "http.request.method": request.method,
                 "http.response.status_code": response.status_code,
+                "http.response.streaming": is_streaming,
                 "url.full": safe_url,
             },
         )

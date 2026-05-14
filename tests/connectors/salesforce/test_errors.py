@@ -10,7 +10,10 @@ from plynth.base.response import Response
 from plynth.connectors.salesforce.errors import (
     SalesforceAPIError,
     SalesforceDuplicateError,
+    SalesforceInvalidFieldQueryError,
+    SalesforceInvalidTypeQueryError,
     SalesforceLockError,
+    SalesforceMalformedQueryError,
     SalesforceNotFoundError,
     SalesforcePermissionError,
     SalesforceSessionExpiredError,
@@ -74,6 +77,35 @@ class TestRaiseForSalesforceErrorsDoesNotRaise:
 
 class TestRaiseForSalesforceErrorsTypedExceptions:
     """Test suite for RaiseForSalesforceErrorsTypedExceptions."""
+
+    @pytest.mark.parametrize(
+        ("code", "expected"),
+        [
+            pytest.param(
+                "MALFORMED_QUERY",
+                SalesforceMalformedQueryError,
+                id="malformed_query",
+            ),
+            pytest.param(
+                "INVALID_TYPE",
+                SalesforceInvalidTypeQueryError,
+                id="invalid_type",
+            ),
+            pytest.param(
+                "INVALID_FIELD",
+                SalesforceInvalidFieldQueryError,
+                id="invalid_field",
+            ),
+        ],
+    )
+    def test_query_codes(
+        self,
+        code: str,
+        expected: type[SalesforceAPIError],
+    ) -> None:
+        """Validate query-specific error codes raise typed exceptions."""
+        with pytest.raises(expected):
+            raise_for_salesforce_errors(_resp([_sf_error(code)]))
 
     @pytest.mark.parametrize(
         ("code",),

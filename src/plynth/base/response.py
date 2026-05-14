@@ -77,8 +77,35 @@ class Response:
 class StreamingResponse(Response):
     """Response whose body is consumed lazily via iteration.
 
-    ``content`` is always ``b""``. Read the body through ``iter_bytes()`` or
-    ``iter_lines()`` and call ``close()`` when finished (or use ``with``).
+    Holds a reference to the underlying httpx response as an entered
+    context manager. The response body is not buffered; instead, callers
+    iterate over lines or bytes on demand via ``iter_lines()`` or
+    ``iter_bytes()``.
+
+    The connection remains open until ``close()`` is called or the response
+    exits its context manager (ADR-0017, Step A).
+
+    Attributes:
+        status_code: HTTP response status (e.g. 200, 404).
+        headers: Response headers as a mapping.
+        content: Always ``b""`` for streaming responses (body not buffered).
+        _raw: An entered ``httpx.Response`` object. Call methods on this via
+            the public iteration interface (``iter_lines()``, etc.).
+
+    Example::
+
+        resp = client.stream(Request("GET", "https://api.example.com/events"))
+        for line in resp.iter_lines():
+            if line.startswith("data: "):
+                event = json.loads(line[6:])
+                print(f"Event: {event}")
+        resp.close()
+
+        # Or use as a context manager:
+        with client.stream(...) as resp:
+            for line in resp.iter_lines():
+                ...
+
     """
 
     content: bytes = b""
@@ -138,9 +165,30 @@ class StreamingResponse(Response):
 class AsyncStreamingResponse(Response):
     """Async response whose body is consumed lazily via async iteration.
 
-    ``content`` is always ``b""``. Read the body through ``aiter_bytes()`` or
-    ``aiter_lines()`` and call ``aclose()`` when finished (or use
-    ``async with``).
+    Holds a reference to the underlying httpx async response as an entered
+    context manager. The response body is not buffered; instead, callers
+    iterate asynchronously over lines or bytes on demand via ``aiter_lines()``
+    or ``aiter_bytes()``.
+
+    The connection remains open until ``aclose()`` is called or the response
+    exits its async context manager (ADR-0017, Step A).
+
+    Attributes:
+        status_code: HTTP response status (e.g. 200, 404).
+        headers: Response headers as a mapping.
+        content: Always ``b""`` for streaming responses (body not buffered).
+        _raw: An entered ``httpx.AsyncResponse`` object. Call methods on this
+            via the public async iteration interface (``aiter_lines()``, etc.).
+
+    Example::
+
+        resp = await client.stream(Request("GET", "https://api.example.com/events"))
+        async with resp:
+            async for line in resp.aiter_lines():
+                if line.startswith("data: "):
+                    event = json.loads(line[6:])
+                    print(f"Event: {event}")
+
     """
 
     content: bytes = b""
