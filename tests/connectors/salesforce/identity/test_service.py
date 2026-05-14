@@ -29,7 +29,7 @@ _ASSIGNMENT_ID = "0Pa000000000001AAA"
 
 def _json_bytes(data: Any) -> bytes:
     """Render test payloads to JSON bytes."""
-    return _JSON_RENDERER.render(data)
+    return bytes(_JSON_RENDERER.render(data))
 
 
 def _make_service(
@@ -240,7 +240,7 @@ class TestSalesforceIdentityAccessService:
 
     def test_list_users_with_all_filters_builds_compound_where(self) -> None:
         """Build SOQL query with all optional filter conditions active."""
-        payload = {"records": []}
+        payload: dict[str, list[object]] = {"records": []}
         service, transport = _make_service(content=_json_bytes(payload))
 
         service.list_users(
@@ -294,7 +294,7 @@ class TestSalesforceIdentityAccessService:
         self,
     ) -> None:
         """Add PermissionSetId condition when permission_set_id is provided."""
-        payload = {"records": []}
+        payload: dict[str, list[object]] = {"records": []}
         service, transport = _make_service(content=_json_bytes(payload))
 
         service.list_permission_set_assignments(
@@ -364,7 +364,7 @@ class TestSalesforceIdentityAccessService:
 
     def test_list_permission_set_group_assignments_with_group_id_filter(self) -> None:
         """Add PermissionSetGroupId condition when permission_set_group_id is given."""
-        payload = {"records": []}
+        payload: dict[str, list[object]] = {"records": []}
         service, transport = _make_service(content=_json_bytes(payload))
 
         service.list_permission_set_group_assignments(
@@ -574,7 +574,7 @@ class TestAsyncSalesforceIdentityAccessService:
     @pytest.mark.asyncio
     async def test_list_permission_set_assignments_with_filter(self) -> None:
         """Add PermissionSetId condition when permission_set_id is provided (async)."""
-        payload = {"records": []}
+        payload: dict[str, list[object]] = {"records": []}
         service, transport = _make_async_service(content=_json_bytes(payload))
 
         await service.list_permission_set_assignments(
