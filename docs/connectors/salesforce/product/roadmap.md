@@ -91,8 +91,8 @@ integration implementations.
 | Event streaming (CDC / Pub-Sub)            | Salesforce Pub/Sub API over gRPC                                      | Deferred      | ADR-required before implementation | —       | Requires gRPC transport design alignment and an accepted capability ADR                       |
 | Upstream rate governance                   | Client-side throttling, quota backpressure, and pacing                | Deferred      | Core middleware first              | —       | Prefer shared core middleware policy over connector-specific throttling logic                 |
 | GraphQL API                                | Flexible query interface: `/graphql` POST with queries and mutations  | Conditional   | Implement on repeated demand       | —       | Alternative to REST; no core plynth changes required; complements SOQL/SOSL queries           |
-| Generative AI — Models API                 | `/einstein/platform/v1` chat, text, embeddings inference              | Planned       | Streaming support first            | —       | Generate Chat, Text, Embeddings with feedback loop; depends on ADR-0017 implementation        |
-| Generative AI — Agent API                  | `/einstein/ai-agent/v1` agent session and message orchestration       | Planned       | Streaming support first            | —       | Session lifecycle, sync/streaming messaging, feedback; depends on ADR-0017 implementation     |
+| Generative AI — Models API                 | `/einstein/platform/v1` chat, text, embeddings inference              | Implemented   | Keep parity and boundary checks    | —       | Generate Chat, Text, Embeddings with feedback loop; shipped with sync and streaming support   |
+| Generative AI — Agent API                  | `/einstein/ai-agent/v1` agent session and message orchestration       | Implemented   | Keep parity and boundary checks    | —       | Session lifecycle, sync/streaming messaging, feedback; shipped with facade exposure           |
 | Metadata retrieval and catalog (SOAP-only) | `retrieve`, `listMetadata`, `describeMetadata` (SOAP Metadata API)    | Out of Scope  | Re-evaluate with SOAP core support | —       | Not available via REST-only connector scope                                                   |
 | Business-specific contrib layers           | Business-specific wrappers on top of generic connector                | Out of Scope  | Keep in consumer layer             | —       | Protects framework-agnostic, reusable connector core                                          |
 
@@ -112,39 +112,36 @@ scope boundaries rather than a dedicated Salesforce capability ADR.
 - GraphQL API: no core plynth changes required; standard HTTP POST + JSON
   response handling suffice. Implement only on repeated demand to avoid
   over-engineering before consumer needs are clear.
-- Generative AI (Models + Agent API): both depend on **ADR-0017 streaming
-  response support** to fully realize streaming message and inference use cases.
-  Sync variants are feasible without streaming but limit real-time UX.
+- Generative AI (Models + Agent API): both now build on **ADR-0017 streaming
+  response support** and ship sync plus streaming variants.
 - SOAP metadata and business-specific contrib layers: explicitly out of scope
   by connector policy.
 
 ## Strategic Review: AI API Integration
 
-**Decision:** Salesforce Models API and Agent API are classified as **Planned**
-items (not Conditional or Deferred). This reflects three strategic factors:
+**Decision:** Salesforce Models API and Agent API are classified as
+**Implemented** items. This reflects three strategic factors:
 
 1. **Salesforce product direction:** Agentforce is central to Salesforce's AI
    narrative. Models and Agent APIs are the programmatic entry points. Supporting
    them positions plynth as a natural choice for Salesforce AI workloads.
 
-1. **Streaming blocker:** Both APIs achieve their best UX with streaming support
-   (ADR-0017). Streaming is therefore elevated to a critical blocker for the
-   entire AI roadmap. This is correct because streaming support (item 3) unlocks
-   *five downstream items*: Models API, Agent API, gRPC transport, CDC/Pub-Sub,
-   and the LLM connector.
+1. **Streaming foundation:** Both APIs achieve their best UX with streaming
+  support (ADR-0017). That dependency is now satisfied, so Models and Agent API
+  delivery can serve as the validation baseline for later AI roadmap items.
 
 1. **Scope boundary:** Models and Agent APIs are Salesforce-specific orchestration
    layers, not generic connectors. They belong here, not in a future LLM adapter.
    Generic LLM support (OpenAI, etc.) remains a separate concern in the core
    `plynth.connectors.llm` module.
 
-**Implication:** Streaming support (ADR-0017) adoption is now front-and-center
-in core roadmap prioritization.
+**Implication:** The shipped Salesforce AI services now validate the connector
+boundary and streaming foundation needed for later generic AI work.
 
 **Roadmap note:**
 
-- Salesforce Models API and Agent API can be developed in parallel with the
-  generic LLM connector, but the two tracks must stay independent.
+- Salesforce Models API and Agent API can evolve in parallel with the generic
+  LLM connector, but the two tracks must stay independent.
 - Do not make either connector depend on the other; only share neutral core
   streaming and transport capabilities.
 - Salesforce-specific AI orchestration stays in the Salesforce connector,
