@@ -7,6 +7,7 @@ helpers.
 
 from __future__ import annotations
 
+import asyncio
 import re
 from collections.abc import AsyncIterator, Iterator
 from datetime import UTC, datetime
@@ -259,16 +260,24 @@ class AsyncSalesforceQueryService(AsyncAPIService):
         """Initialize AsyncSalesforceQueryService."""
         super().__init__(client, renderer=renderer or SalesforceRenderer())
         self._api_version = api_version
+        self._version_lock = asyncio.Lock()
+
+    async def _ensure_api_version(self) -> str:
+        """Resolve and cache the API version once per service instance."""
+        if self._api_version is None:
+            async with self._version_lock:
+                if self._api_version is None:
+                    self._api_version = await resolve_async_api_version(
+                        self._client,
+                        self._api_version,
+                    )
+        return self._api_version
 
     async def _query_path(self, *, include_deleted: bool = False) -> str:
         """Return the Salesforce query endpoint path."""
-        if self._api_version is None:
-            self._api_version = await resolve_async_api_version(
-                self._client,
-                self._api_version,
-            )
+        api_version = await self._ensure_api_version()
         endpoint = "queryAll" if include_deleted else "query"
-        return f"/services/data/v{self._api_version}/{endpoint}"
+        return f"/services/data/v{api_version}/{endpoint}"
 
     async def query(
         self,
@@ -328,15 +337,9 @@ class AsyncSalesforceQueryService(AsyncAPIService):
             raise ValueError(
                 "next_records_id must be a non-empty cursor token without '/'."
             )
-        if self._api_version is None:
-            self._api_version = await resolve_async_api_version(
-                self._client,
-                self._api_version,
-            )
+        api_version = await self._ensure_api_version()
         endpoint = "queryAll" if include_deleted else "query"
-        next_records_url = (
-            f"/services/data/v{self._api_version}/{endpoint}/{next_records_id}"
-        )
+        next_records_url = f"/services/data/v{api_version}/{endpoint}/{next_records_id}"
         return await self.query_more(next_records_url)
 
     async def query_all_iter(

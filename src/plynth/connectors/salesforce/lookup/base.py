@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import Sequence
 from typing import Any
@@ -100,15 +101,23 @@ class AsyncSalesforceLookupService(AsyncAPIService):
         """Initialize AsyncSalesforceLookupService."""
         super().__init__(client, renderer=renderer or SalesforceRenderer())
         self._api_version = api_version
+        self._version_lock = asyncio.Lock()
+
+    async def _ensure_api_version(self) -> str:
+        """Resolve and cache the API version once per service instance."""
+        if self._api_version is None:
+            async with self._version_lock:
+                if self._api_version is None:
+                    self._api_version = await resolve_async_api_version(
+                        self._client,
+                        self._api_version,
+                    )
+        return self._api_version
 
     async def _query_path(self) -> str:
         """Return the Salesforce query endpoint path."""
-        if self._api_version is None:
-            self._api_version = await resolve_async_api_version(
-                self._client,
-                self._api_version,
-            )
-        return f"/services/data/v{self._api_version}/query"
+        api_version = await self._ensure_api_version()
+        return f"/services/data/v{api_version}/query"
 
     async def _query(
         self,

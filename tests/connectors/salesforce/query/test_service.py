@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -485,6 +486,67 @@ class TestAsyncSalesforceQueryService:
         facade = AsyncSalesforceAPIFacade(client)
         svc = facade.query()
         assert isinstance(svc, AsyncSalesforceQueryService)
+
+    async def test_parallel_query_resolves_api_version_once(
+        self,
+        monkeypatch: Any,
+    ) -> None:
+        """Parallel query calls resolve API version only once per service."""
+        content = _single_page([{"Id": "001AAA"}])
+        svc, _ = _make_async_service(content=content)
+        call_count = 0
+
+        async def fake_resolve(_client: Any, _api_version: str | None) -> str:
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0)
+            return "63.0"
+
+        monkeypatch.setattr(
+            "plynth.connectors.salesforce.query.service.resolve_async_api_version",
+            fake_resolve,
+        )
+
+        await asyncio.gather(
+            svc.query("SELECT Id FROM Account LIMIT 1"),
+            svc.query("SELECT Id FROM Contact LIMIT 1"),
+        )
+
+        assert call_count == 1
+
+    async def test_parallel_query_mixed_include_deleted_resolves_once(
+        self,
+        monkeypatch: Any,
+    ) -> None:
+        """Mixed parallel query/queryAll calls resolve API version only once."""
+        content = _single_page([{"Id": "001AAA"}])
+        svc, transport = _make_async_service(content=content)
+        call_count = 0
+
+        async def fake_resolve(_client: Any, _api_version: str | None) -> str:
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0)
+            return "63.0"
+
+        monkeypatch.setattr(
+            "plynth.connectors.salesforce.query.service.resolve_async_api_version",
+            fake_resolve,
+        )
+
+        await asyncio.gather(
+            svc.query("SELECT Id FROM Account LIMIT 1"),
+            svc.query(
+                "SELECT Id, IsDeleted FROM Account LIMIT 1",
+                include_deleted=True,
+            ),
+        )
+
+        assert call_count == 1
+
+        urls = [call.args[0].url for call in transport.send.call_args_list]
+        assert any("/services/data/v63.0/query" in url for url in urls)
+        assert any("/services/data/v63.0/queryAll" in url for url in urls)
 
 
 class TestSalesforceObjectQueryService:

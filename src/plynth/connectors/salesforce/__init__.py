@@ -1,5 +1,13 @@
 """Salesforce Platform REST API integration for Plynth."""
 
+from plynth.connectors.salesforce.agent import (
+    AsyncSalesforceAgentService,
+    SalesforceAgentService,
+)
+from plynth.connectors.salesforce.ai import (
+    AsyncSalesforceModelsService,
+    SalesforceModelsService,
+)
 from plynth.connectors.salesforce.apex import (
     AsyncSalesforceApexRestService,
     SalesforceApexRestService,
@@ -69,8 +77,23 @@ from plynth.connectors.salesforce.metadata import (
     SalesforceMetadataService,
 )
 from plynth.connectors.salesforce.models import (
+    AgentFeedbackRequest,
+    AgentMessageRequest,
+    AgentMessageResponse,
+    AgentSession,
+    AgentSessionEndAck,
+    AgentSessionStartRequest,
+    ChatCompletionResponse,
+    ChatMessage,
+    EmbeddingResponse,
+    FeedbackAck,
+    ModelsChatGenerationRequest,
+    ModelsEmbeddingRequest,
+    ModelsFeedbackRequest,
+    ModelsTextGenerationRequest,
     SalesforceGlobalDescribeResponse,
     SalesforceSObjectSummary,
+    TextGenerationResponse,
 )
 from plynth.connectors.salesforce.query import (
     AsyncSalesforceObjectQueryService,
@@ -88,13 +111,21 @@ from plynth.connectors.salesforce.utility import (
 )
 
 __all__ = [
+    "AgentFeedbackRequest",
+    "AgentMessageRequest",
+    "AgentMessageResponse",
+    "AgentSession",
+    "AgentSessionEndAck",
+    "AgentSessionStartRequest",
     "AsyncSalesforceAPIFacade",
+    "AsyncSalesforceAgentService",
     "AsyncSalesforceApexRestService",
     "AsyncSalesforceBulkService",
     "AsyncSalesforceCompositeService",
     "AsyncSalesforceIdentityAccessService",
     "AsyncSalesforceLookupService",
     "AsyncSalesforceMetadataService",
+    "AsyncSalesforceModelsService",
     "AsyncSalesforceObjectQueryService",
     "AsyncSalesforcePricebookLookupService",
     "AsyncSalesforceProfileLookupService",
@@ -109,6 +140,8 @@ __all__ = [
     "BulkJobState",
     "BulkJobTimeoutError",
     "BulkOperation",
+    "ChatCompletionResponse",
+    "ChatMessage",
     "CompositeBatchRequest",
     "CompositeBatchResponse",
     "CompositeBatchResult",
@@ -120,9 +153,16 @@ __all__ = [
     "CompositeTreeRecordResult",
     "CompositeTreeRequest",
     "CompositeTreeResponse",
+    "EmbeddingResponse",
+    "FeedbackAck",
     "LookupType",
     "MetadataDeployTimeoutError",
+    "ModelsChatGenerationRequest",
+    "ModelsEmbeddingRequest",
+    "ModelsFeedbackRequest",
+    "ModelsTextGenerationRequest",
     "SalesforceAPIFacade",
+    "SalesforceAgentService",
     "SalesforceApexRestService",
     "SalesforceBulkJobError",
     "SalesforceBulkService",
@@ -133,6 +173,7 @@ __all__ = [
     "SalesforceMetadataDeployError",
     "SalesforceMetadataDeployResult",
     "SalesforceMetadataService",
+    "SalesforceModelsService",
     "SalesforceObjectQueryService",
     "SalesforcePricebookLookupService",
     "SalesforceProfileLookupService",
@@ -143,6 +184,7 @@ __all__ = [
     "SalesforceSearchService",
     "SalesforceUserLookupService",
     "SalesforceUtilityService",
+    "TextGenerationResponse",
     "build_select_soql",
     "escape_sosl",
     "format_soql",

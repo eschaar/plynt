@@ -6,6 +6,8 @@ Search Language) search endpoints.
 
 from __future__ import annotations
 
+import asyncio
+
 from plynth.connectors.salesforce.constants import (
     resolve_async_api_version,
     resolve_sync_api_version,
@@ -98,14 +100,17 @@ class AsyncSalesforceSearchService(AsyncAPIService):
         """Initialize AsyncSalesforceSearchService."""
         super().__init__(client, renderer=renderer or SalesforceRenderer())
         self._api_version = api_version
+        self._version_lock = asyncio.Lock()
 
     async def _base_path(self) -> str:
         """Return the versioned Salesforce REST API base path."""
         if self._api_version is None:
-            self._api_version = await resolve_async_api_version(
-                self._client,
-                self._api_version,
-            )
+            async with self._version_lock:
+                if self._api_version is None:
+                    self._api_version = await resolve_async_api_version(
+                        self._client,
+                        self._api_version,
+                    )
         return f"/services/data/v{self._api_version}"
 
     async def search(self, sosl: str) -> SalesforceSearchResponse:

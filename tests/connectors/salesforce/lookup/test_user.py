@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from plynth.connectors.salesforce.lookup import (
@@ -75,3 +76,31 @@ class TestAsyncSalesforceUserLookupService:
 
         sent = transport.send.call_args[0][0]
         assert sent.url.endswith("/services/data/v61.0/query")
+
+    async def test_parallel_lookup_resolves_api_version_once(
+        self,
+        monkeypatch: Any,
+    ) -> None:
+        """Parallel lookup calls resolve API version only once per service."""
+        payload: dict[str, Any] = {"records": [{"Id": "005A", "Username": "john"}]}
+        client, _ = make_async_client(content=render_json_bytes(payload))
+        service = AsyncSalesforceUserLookupService(client)
+        call_count = 0
+
+        async def fake_resolve(_client: Any, _api_version: str | None) -> str:
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0)
+            return "63.0"
+
+        monkeypatch.setattr(
+            "plynth.connectors.salesforce.lookup.base.resolve_async_api_version",
+            fake_resolve,
+        )
+
+        await asyncio.gather(
+            service.list(username="john@example.com"),
+            service.list(username="jane@example.com"),
+        )
+
+        assert call_count == 1
