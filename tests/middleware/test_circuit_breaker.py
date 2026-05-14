@@ -173,6 +173,60 @@ class TestCircuitBreakerMiddleware:
 
         assert calls == ["TimeoutError"]
 
+    def test_half_open_probe_failure_reopens_breaker(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Validate a failing probe in half-open transitions circuit back to open."""
+        clock = _Clock()
+        monkeypatch.setattr(
+            "plynth.middleware.circuit_breaker.time.monotonic",
+            clock.monotonic,
+        )
+
+        policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
+        mw = CircuitBreakerMiddleware(policy)
+
+        with pytest.raises(TimeoutError):
+            mw.handle(_REQUEST, lambda req: (_ for _ in ()).throw(TimeoutError("x")))
+
+        clock.advance(5.1)
+
+        with pytest.raises(TimeoutError):
+            mw.handle(_REQUEST, lambda req: (_ for _ in ()).throw(TimeoutError("x")))
+
+        with pytest.raises(CircuitBreakerOpenError) as exc_info:
+            mw.handle(_REQUEST, lambda req: Response(status_code=200, content=b"ok"))
+        assert exc_info.value.retry_after_seconds > 0.0
+
+    def test_half_open_rejects_excess_probes(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Validate half-open state rejects calls beyond max_calls limit."""
+        clock = _Clock()
+        monkeypatch.setattr(
+            "plynth.middleware.circuit_breaker.time.monotonic",
+            clock.monotonic,
+        )
+
+        policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
+        mw = CircuitBreakerMiddleware(policy)
+
+        with pytest.raises(TimeoutError):
+            mw.handle(_REQUEST, lambda req: (_ for _ in ()).throw(TimeoutError("x")))
+
+        clock.advance(5.1)
+
+        # Prevent state reset so the circuit stays half-open after the first probe
+        monkeypatch.setattr(mw._state, "record_success", lambda: None)
+
+        mw.handle(_REQUEST, lambda req: Response(status_code=200, content=b"ok"))
+
+        with pytest.raises(CircuitBreakerOpenError) as exc_info:
+            mw.handle(_REQUEST, lambda req: Response(status_code=200, content=b"ok"))
+        assert exc_info.value.retry_after_seconds == 0.0
+
 
 class TestAsyncCircuitBreakerMiddleware:
     """Tests for the asynchronous circuit breaker middleware."""
@@ -255,6 +309,68 @@ class TestAsyncCircuitBreakerMiddleware:
 
         with pytest.raises(CircuitBreakerOpenError):
             await mw.handle(_REQUEST, lambda req: _async_response(200))
+
+    @pytest.mark.asyncio
+    async def test_half_open_probe_failure_reopens_breaker(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Validate a failing async probe in half-open transitions circuit to open."""
+        clock = _Clock()
+        monkeypatch.setattr(
+            "plynth.middleware.circuit_breaker.time.monotonic",
+            clock.monotonic,
+        )
+
+        policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
+        mw = AsyncCircuitBreakerMiddleware(policy)
+
+        async def failing(_: Request) -> Response:
+            raise TimeoutError("x")
+
+        with pytest.raises(TimeoutError):
+            await mw.handle(_REQUEST, failing)
+
+        clock.advance(5.1)
+
+        with pytest.raises(TimeoutError):
+            await mw.handle(_REQUEST, failing)
+
+        with pytest.raises(CircuitBreakerOpenError) as exc_info:
+            await mw.handle(_REQUEST, lambda req: _async_response(200))
+        assert exc_info.value.retry_after_seconds > 0.0
+
+    @pytest.mark.asyncio
+    async def test_half_open_rejects_excess_probes(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Validate async half-open state rejects calls beyond max_calls limit."""
+        clock = _Clock()
+        monkeypatch.setattr(
+            "plynth.middleware.circuit_breaker.time.monotonic",
+            clock.monotonic,
+        )
+
+        policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
+        mw = AsyncCircuitBreakerMiddleware(policy)
+
+        async def failing(_: Request) -> Response:
+            raise TimeoutError("x")
+
+        with pytest.raises(TimeoutError):
+            await mw.handle(_REQUEST, failing)
+
+        clock.advance(5.1)
+
+        # Prevent state reset so the circuit stays half-open after the first probe
+        monkeypatch.setattr(mw._state, "record_success", lambda: None)
+
+        await mw.handle(_REQUEST, lambda req: _async_response(200))
+
+        with pytest.raises(CircuitBreakerOpenError) as exc_info:
+            await mw.handle(_REQUEST, lambda req: _async_response(200))
+        assert exc_info.value.retry_after_seconds == 0.0
 
 
 async def _async_response(status_code: int) -> Response:
