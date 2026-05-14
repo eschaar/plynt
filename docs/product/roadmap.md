@@ -604,7 +604,7 @@ ______________________________________________________________________
 
 ### 7. AI / LLM connector (`plynth.connectors.llm`)
 
-**Status:** Not started. Requires scoping and ADR before implementation.
+**Status:** Scoped. Generic contract proposed in ADR-0021.
 
 Plynth's transport and middleware chain is well-suited for LLM API clients:
 auth (API key via `BearerTokenAuthMiddleware`), retry, and rate limiting are
@@ -612,21 +612,16 @@ already available, and streaming response support is already shipped.
 
 Anticipated scope:
 
-- Generic `LLMService` base on top of `APIService` — handles chat completion
-  and streaming endpoints.
-- First target: OpenAI-compatible APIs (OpenAI, Azure OpenAI, local
-  OpenAI-compatible servers such as Ollama).
-- `ChatMessage`, `ChatCompletionRequest`, `ChatCompletionResponse`,
-  `StreamingChunk` — typed request/response models.
-- SSE line-by-line iteration via `AsyncStreamingResponse.aiter_lines()`.
-- Token-bucket rate limiting via `RateLimitMiddleware` (item 1d) — relevant
-  for high-throughput inference workloads.
+- Generic `LLMService` contract on top of `APIService`.
+- Typed, provider-agnostic request and response primitives.
+- Streaming and non-streaming parity with one shared contract model.
+- Optional tool-calling workflow in neutral contract types.
+- Provider-local extensions that stay opaque to the generic layer.
 
 **Prerequisite:**
 
-1. New ADR before implementation.
-1. Consider whether this lives in `plynth.connectors.llm` (generic)
-   or as a separate `plynth-openai` package from the start.
+1. ADR-0021 must be accepted.
+1. Contract conformance and connector-boundary tests must be defined.
 
 **Roadmap note:**
 
@@ -635,8 +630,8 @@ Anticipated scope:
 - Share only neutral core capabilities such as streaming response support,
   transport primitives, and middleware; do not introduce connector-to-
   connector dependencies.
-- If a shared AI abstraction emerges, keep it generic and connector-agnostic
-  so that Salesforce-specific behavior stays in the Salesforce connector.
+- Keep shared AI abstractions generic and connector-agnostic so provider-
+  specific behavior stays in each provider connector.
 
 ______________________________________________________________________
 

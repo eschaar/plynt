@@ -49,3 +49,11 @@ Thumbs.db
 
 # Packaging
 MANIFEST
+
+# Local vstack tooling artifacts
+.vstack/
+.github/agents/
+.github/hooks/
+.github/instructions/
+.github/prompts/
+.github/skills/
