@@ -178,7 +178,28 @@ class HTTPClient:
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
     ) -> StreamingResponse:
-        """Send a streaming HTTP request and return a streaming response."""
+        """Send a streaming HTTP request and return a streaming response.
+
+        The response body is not buffered. Callers must iterate over lines
+        or bytes using iter_lines() or iter_bytes(), and close the response
+        when done (via context manager or explicit close()) (ADR-0017, Step B).
+
+        Args:
+            method: HTTP method (e.g. "GET", "POST").
+            path: Request path; merged with base_url.
+            headers: Additional request headers; merged with defaults.
+            params: Query string parameters.
+            content: Request body as bytes.
+
+        Returns:
+            A StreamingResponse opened for iteration.
+
+        Example:
+            with client.stream("GET", "/data") as resp:
+                for line in resp.iter_lines():
+                    ...
+
+        """
         req = self._build_request(
             method,
             path,
@@ -334,7 +355,29 @@ class AsyncHTTPClient:
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
     ) -> AsyncStreamingResponse:
-        """Send an async streaming HTTP request and return a streaming response."""
+        """Send an async streaming HTTP request and return a streaming response.
+
+        The response body is not buffered. Callers must iterate asynchronously
+        over lines or bytes using aiter_lines() or aiter_bytes(), and close
+        the response when done (via async context manager or aclose())
+        (ADR-0017, Step B).
+
+        Args:
+            method: HTTP method (e.g. "GET", "POST").
+            path: Request path; merged with base_url.
+            headers: Additional request headers; merged with defaults.
+            params: Query string parameters.
+            content: Request body as bytes.
+
+        Returns:
+            An AsyncStreamingResponse opened for async iteration.
+
+        Example:
+            async with client.stream("GET", "/data") as resp:
+                async for line in resp.aiter_lines():
+                    ...
+
+        """
         req = self._build_request(
             method,
             path,
@@ -432,7 +475,22 @@ class APIClient(HTTPClient):
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
     ) -> StreamingResponse:
-        """Send a streaming request and raise a typed error on 4xx/5xx status."""
+        """Send a streaming request and raise a typed error on 4xx/5xx status.
+
+        Returns the response immediately *before* consuming the body.
+        Callers must close the response on the success path after finishing
+        iteration. On 4xx/5xx responses, the client closes the response
+        before raising the error to allow proper resource cleanup
+        (ADR-0017, Step B).
+
+        Returns:
+            A StreamingResponse (status 1xx-3xx) opened for iteration.
+
+        Raises:
+            HttpStatusError: Typed subclass for 4xx/5xx responses after the
+                client closes the response.
+
+        """
         from plynth.http.errors import match_error
 
         resp = super().stream(
@@ -524,7 +582,22 @@ class AsyncAPIClient(AsyncHTTPClient):
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
     ) -> AsyncStreamingResponse:
-        """Send an async streaming request and raise a typed error on 4xx/5xx."""
+        """Send an async streaming request and raise a typed error on 4xx/5xx.
+
+        Returns the response immediately *before* consuming the body.
+        Callers must close the response on the success path after finishing
+        iteration. On 4xx/5xx responses, the client closes the response
+        before raising the error to allow proper resource cleanup
+        (ADR-0017, Step B).
+
+        Returns:
+            An AsyncStreamingResponse (status 1xx-3xx) opened for iteration.
+
+        Raises:
+            HttpStatusError: Typed subclass for 4xx/5xx responses after the
+                client closes the response.
+
+        """
         from plynth.http.errors import match_error
 
         resp = await super().stream(

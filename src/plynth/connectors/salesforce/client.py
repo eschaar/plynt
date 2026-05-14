@@ -29,9 +29,10 @@ Usage::
 
 from __future__ import annotations
 
-import json
 from http import HTTPStatus
 from typing import Any
+
+from pydantic import TypeAdapter, ValidationError
 
 from plynth.base.request import Request
 from plynth.base.response import Response
@@ -45,9 +46,12 @@ from plynth.connectors.salesforce.auth import (
     SalesforceSessionAuthMiddleware,
 )
 from plynth.connectors.salesforce.constants import DEFAULT_API_VERSION
+from plynth.connectors.salesforce.models import SalesforceApiVersion
 from plynth.http.client import APIClient, AsyncAPIClient
 
 __all__ = ["AsyncSalesforceAPIClient", "SalesforceAPIClient"]
+
+_API_VERSION_LIST = TypeAdapter(list[SalesforceApiVersion])
 
 
 class SalesforceAPIClient(APIClient):
@@ -108,16 +112,18 @@ class SalesforceAPIClient(APIClient):
             return self._resolved_api_version
 
         response = self.get("/services/data/")
-        payload = json.loads(response.content)
+        try:
+            payload = _API_VERSION_LIST.validate_json(response.content)
+        except ValidationError:
+            return DEFAULT_API_VERSION
         if not isinstance(payload, list) or not payload:
             return DEFAULT_API_VERSION
 
         latest = payload[-1]
-        if isinstance(latest, dict):
-            version = latest.get("version")
-            if isinstance(version, str) and version:
-                self._resolved_api_version = version
-                return version
+        version = getattr(latest, "version", None)
+        if isinstance(version, str) and version:
+            self._resolved_api_version = version
+            return version
         return DEFAULT_API_VERSION
 
     def _build_request(
@@ -278,16 +284,18 @@ class AsyncSalesforceAPIClient(AsyncAPIClient):
             return self._resolved_api_version
 
         response = await self.get("/services/data/")
-        payload = json.loads(response.content)
+        try:
+            payload = _API_VERSION_LIST.validate_json(response.content)
+        except ValidationError:
+            return DEFAULT_API_VERSION
         if not isinstance(payload, list) or not payload:
             return DEFAULT_API_VERSION
 
         latest = payload[-1]
-        if isinstance(latest, dict):
-            version = latest.get("version")
-            if isinstance(version, str) and version:
-                self._resolved_api_version = version
-                return version
+        version = getattr(latest, "version", None)
+        if isinstance(version, str) and version:
+            self._resolved_api_version = version
+            return version
         return DEFAULT_API_VERSION
 
     def set_configured_api_version(self, api_version: str | None) -> None:
