@@ -219,6 +219,64 @@ Returns:
 - If a branch has already been merged remotely, do not reuse it for new work;
   create a new branch.
 
+## 17. Repo Operating Profile
+
+Use this profile for day-to-day implementation decisions in this repository.
+
+### 17.1 Source Boundaries
+
+- Core framework-agnostic code lives in `src/plynth/base`, `src/plynth/http`,
+  `src/plynth/middleware`, and `src/plynth/cache`.
+- Connector-specific code lives under `src/plynth/connectors/*`.
+- `src/plynth/connectors/salesforce` is the active validation connector.
+- Keep connector-to-connector dependencies out of scope.
+- If shared behavior is needed, move it to a neutral core abstraction.
+
+### 17.2 Canonical Local Commands
+
+- Bootstrap: `make install`
+- Full local gate: `make check`
+- Lint only: `make lint`
+- Tests only: `make unittests`
+- Full test matrix: `make test-all`
+- Coverage report: `make coverage`
+
+When validating focused changes, prefer targeted pytest runs first, then run
+`make check` before final handoff.
+
+### 17.3 Testing Conventions
+
+- Use pytest test classes that map to the unit under test where practical.
+- Prefer HTTP-level mocking over service stubbing.
+- Keep tests deterministic and avoid time- or network-dependent flakiness.
+- For connector additions, maintain sync and async parity in both code and
+  tests.
+
+### 17.4 AI Connector Track Rules
+
+- `plynth.connectors.llm` and Salesforce AI services may progress in parallel.
+- Do not make the LLM connector depend on Salesforce internals.
+- Do not make Salesforce AI services depend on `plynth.connectors.llm`.
+- Share only transport, streaming, middleware, and typed core abstractions.
+
+### 17.5 ADR Trigger Checklist
+
+Stop and request an ADR before implementation if the change affects:
+
+- Public API shape or compatibility promises
+- Dependency model (including new runtime dependencies)
+- Installation extras or package extraction boundaries
+- Transport contracts (HTTP, streaming, gRPC, SOAP)
+- Core abstraction responsibilities across layers
+
+### 17.6 Local Tooling Artifacts
+
+- Local vstack artifacts may exist for developer workflow support.
+- Do not commit local-only generated vstack artifacts unless explicitly
+  requested for repository governance.
+- Keep `.gitignore` aligned so local vstack output stays out of commits by
+  default.
+
 ---
 
 ## 🧭 Meta-Instruction for Copilot and AI Agents
