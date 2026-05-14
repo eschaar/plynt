@@ -36,6 +36,20 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, RootModel
 
 __all__ = [
+    "AgentFeedbackRequest",
+    "AgentMessageRequest",
+    "AgentMessageResponse",
+    "AgentSession",
+    "AgentSessionEndAck",
+    "AgentSessionStartRequest",
+    "ChatCompletionResponse",
+    "ChatMessage",
+    "EmbeddingResponse",
+    "FeedbackAck",
+    "ModelsChatGenerationRequest",
+    "ModelsEmbeddingRequest",
+    "ModelsFeedbackRequest",
+    "ModelsTextGenerationRequest",
     "SObjectCreateResult",
     "SObjectError",
     "SObjectPayload",
@@ -48,6 +62,7 @@ __all__ = [
     "SalesforceSObjectSummary",
     "SalesforceSearchRecord",
     "SalesforceSearchResponse",
+    "TextGenerationResponse",
 ]
 
 
@@ -238,6 +253,196 @@ class SalesforceSearchResponse(BaseModel):
     search_records: list[SalesforceSearchRecord] = Field(
         default_factory=list, alias="searchRecords"
     )
+
+
+class ChatMessage(BaseModel):
+    """Typed chat message payload used by Salesforce Models API calls."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    role: str
+    content: str | list[dict[str, Any]]
+    name: str | None = None
+
+
+class ModelsChatGenerationRequest(BaseModel):
+    """Typed request payload for chat generation."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    messages: list[ChatMessage | dict[str, Any]]
+    model: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    stream: bool = False
+    metadata: dict[str, str] | None = None
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return a request payload with provider-compatible message objects."""
+        payload = self.model_dump(
+            mode="json",
+            by_alias=True,
+            exclude_none=True,
+            exclude={"messages"},
+        )
+        payload["messages"] = [
+            message.model_dump(mode="json", by_alias=True, exclude_none=True)
+            if isinstance(message, ChatMessage)
+            else message
+            for message in self.messages
+        ]
+        return payload
+
+
+class ModelsTextGenerationRequest(BaseModel):
+    """Typed request payload for text generation."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    prompt: str
+    model: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return a request payload for the text-generation endpoint."""
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+class ModelsEmbeddingRequest(BaseModel):
+    """Typed request payload for embedding generation."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    input_text: str | list[str] = Field(serialization_alias="input")
+    model: str | None = None
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return a request payload for the embeddings endpoint."""
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+class ModelsFeedbackRequest(BaseModel):
+    """Typed request payload for model inference feedback."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    request_id: str = Field(serialization_alias="requestId")
+    rating: int
+    comment: str | None = None
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return a request payload for model feedback submission."""
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+class AgentSessionStartRequest(BaseModel):
+    """Typed request payload for starting an agent session."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    agent_id: str = Field(serialization_alias="agentId")
+    context: dict[str, str] | None = None
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return a request payload for session creation."""
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+class AgentMessageRequest(BaseModel):
+    """Typed request payload for agent session messaging."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    text: str
+    metadata: dict[str, str] | None = None
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return a request payload for posting a session message."""
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+class AgentFeedbackRequest(BaseModel):
+    """Typed request payload for agent feedback submission."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    session_id: str = Field(serialization_alias="sessionId")
+    rating: int
+    message_id: str | None = Field(default=None, serialization_alias="messageId")
+    comment: str | None = None
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return a request payload for agent feedback submission."""
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+class ChatCompletionResponse(BaseModel):
+    """Typed response model for a model chat-generation call."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    id: str | None = None
+    model: str | None = None
+    choices: list[dict[str, Any]] = Field(default_factory=list)
+    usage: dict[str, int] | None = None
+
+
+class TextGenerationResponse(BaseModel):
+    """Typed response model for a model text-generation call."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    id: str | None = None
+    model: str | None = None
+    text: str = ""
+
+
+class EmbeddingResponse(BaseModel):
+    """Typed response model for model embedding generation."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    model: str | None = None
+    data: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class FeedbackAck(BaseModel):
+    """Typed acknowledgement model for feedback endpoints."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    success: bool = True
+    request_id: str | None = Field(default=None, alias="requestId")
+
+
+class AgentSession(BaseModel):
+    """Typed model for an agent session creation response."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    session_id: str = Field(alias="sessionId")
+    agent_id: str | None = Field(default=None, alias="agentId")
+    status: str | None = None
+
+
+class AgentMessageResponse(BaseModel):
+    """Typed model for a synchronous agent message response."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    session_id: str = Field(alias="sessionId")
+    message_id: str | None = Field(default=None, alias="messageId")
+    output_text: str | None = Field(default=None, alias="outputText")
+
+
+class AgentSessionEndAck(BaseModel):
+    """Typed acknowledgement model for ending an agent session."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    session_id: str | None = Field(default=None, alias="sessionId")
+    ended: bool = True
 
 
 class SObjectError(BaseModel):

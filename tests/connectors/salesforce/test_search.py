@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 import pytest
@@ -182,6 +183,17 @@ class TestAsyncSalesforceSearchService:
         svc = facade.search()
         assert isinstance(svc, AsyncSalesforceSearchService)
 
+    async def test_custom_api_version(self) -> None:
+        """Passing api_version at construction routes async requests correctly."""
+        transport = MockAsyncTransport(content=_json_bytes({"searchRecords": []}))
+        client = AsyncAPIClient(base_url=DUMMY_INSTANCE_URL, transport=transport)
+        svc = AsyncSalesforceSearchService(client, api_version="62.0")
+
+        await svc.search("FIND {x}")
+
+        sent = transport.send.call_args[0][0]
+        assert "/v62.0/" in sent.url
+
     @pytest.mark.parametrize(
         "sosl,exp_q",
         [
@@ -195,3 +207,32 @@ class TestAsyncSalesforceSearchService:
         await svc.search(sosl)
         sent = transport.send.call_args[0][0]
         assert sent.params == {"q": exp_q}
+
+    async def test_parallel_search_resolves_api_version_once(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Parallel search calls resolve API version only once per service."""
+        svc, _ = _make_async_service(content=_json_bytes(_SEARCH_PAYLOAD))
+        call_count = 0
+
+        async def fake_resolve(
+            _client: AsyncAPIClient,
+            _api_version: str | None,
+        ) -> str:
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0)
+            return "63.0"
+
+        monkeypatch.setattr(
+            "plynth.connectors.salesforce.search.resolve_async_api_version",
+            fake_resolve,
+        )
+
+        await asyncio.gather(
+            svc.search("FIND {Acme}"),
+            svc.search("FIND {Jane}"),
+        )
+
+        assert call_count == 1

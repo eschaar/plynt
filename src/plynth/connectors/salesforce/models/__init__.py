@@ -3,6 +3,20 @@
 from __future__ import annotations
 
 from .schemas import (
+    AgentFeedbackRequest,
+    AgentMessageRequest,
+    AgentMessageResponse,
+    AgentSession,
+    AgentSessionEndAck,
+    AgentSessionStartRequest,
+    ChatCompletionResponse,
+    ChatMessage,
+    EmbeddingResponse,
+    FeedbackAck,
+    ModelsChatGenerationRequest,
+    ModelsEmbeddingRequest,
+    ModelsFeedbackRequest,
+    ModelsTextGenerationRequest,
     SalesforceApiUsage,
     SalesforceApiVersion,
     SalesforceGlobalDescribeResponse,
@@ -15,9 +29,24 @@ from .schemas import (
     SObjectCreateResult,
     SObjectError,
     SObjectPayload,
+    TextGenerationResponse,
 )
 
 __all__ = [
+    "AgentFeedbackRequest",
+    "AgentMessageRequest",
+    "AgentMessageResponse",
+    "AgentSession",
+    "AgentSessionEndAck",
+    "AgentSessionStartRequest",
+    "ChatCompletionResponse",
+    "ChatMessage",
+    "EmbeddingResponse",
+    "FeedbackAck",
+    "ModelsChatGenerationRequest",
+    "ModelsEmbeddingRequest",
+    "ModelsFeedbackRequest",
+    "ModelsTextGenerationRequest",
     "SObjectCreateResult",
     "SObjectError",
     "SObjectPayload",
@@ -30,4 +59,5 @@ __all__ = [
     "SalesforceSObjectSummary",
     "SalesforceSearchRecord",
     "SalesforceSearchResponse",
+    "TextGenerationResponse",
 ]

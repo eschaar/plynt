@@ -177,14 +177,14 @@ class SalesforceUtilityService(APIService):
 
     def search(self, sosl: str) -> None:
         """Removed — use ``SalesforceSearchService.search()`` instead."""
-        raise AttributeError(
+        raise NotImplementedError(
             "search() has been moved to SalesforceSearchService. "
             "Use facade.search().search(sosl) instead."
         )
 
     def quick_search(self, search_text: str) -> None:
         """Removed — use ``SalesforceSearchService.quick_search()`` instead."""
-        raise AttributeError(
+        raise NotImplementedError(
             "quick_search() has been moved to SalesforceSearchService. "
             "Use facade.search().quick_search(text) instead."
         )
@@ -343,14 +343,14 @@ class AsyncSalesforceUtilityService(AsyncAPIService):
 
     async def search(self, sosl: str) -> None:
         """Removed — use ``AsyncSalesforceSearchService.search()`` instead."""
-        raise AttributeError(
+        raise NotImplementedError(
             "search() has been moved to AsyncSalesforceSearchService. "
             "Use facade.search().search(sosl) instead."
         )
 
     async def quick_search(self, search_text: str) -> None:
         """Removed — use ``AsyncSalesforceSearchService.quick_search()`` instead."""
-        raise AttributeError(
+        raise NotImplementedError(
             "quick_search() has been moved to AsyncSalesforceSearchService. "
             "Use facade.search().quick_search(text) instead."
         )

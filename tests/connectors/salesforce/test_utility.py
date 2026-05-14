@@ -159,25 +159,25 @@ class TestSalesforceUtilityService:
         assert obj.queryable is True
         assert obj.key_prefix == "001"
 
-    def test_search_raises_attribute_error(self) -> None:
-        """search() on utility raises AttributeError directing to SearchService."""
+    def test_search_raises_not_implemented_error(self) -> None:
+        """search() on utility raises NotImplementedError directing to SearchService."""
         svc, _ = _make_service()
         try:
             svc.search("FIND {x}")
-        except AttributeError as exc:
+        except NotImplementedError as exc:
             assert "SalesforceSearchService" in str(exc)
         else:
-            raise AssertionError("Expected AttributeError")
+            raise AssertionError("Expected NotImplementedError")
 
-    def test_quick_search_raises_attribute_error(self) -> None:
-        """quick_search() on utility raises AttributeError."""
+    def test_quick_search_raises_not_implemented_error(self) -> None:
+        """quick_search() on utility raises NotImplementedError."""
         svc, _ = _make_service()
         try:
             svc.quick_search("x")
-        except AttributeError as exc:
+        except NotImplementedError as exc:
             assert "SalesforceSearchService" in str(exc)
         else:
-            raise AssertionError("Expected AttributeError")
+            raise AssertionError("Expected NotImplementedError")
 
     def test_tooling_execute_get(self) -> None:
         """Validate tooling execute get."""
@@ -386,25 +386,25 @@ class TestAsyncSalesforceUtilityService:
         assert len(result.sobjects) == 1
         assert result.sobjects[0].name == "Contact"
 
-    async def test_search_raises_attribute_error(self) -> None:
-        """search() on utility raises AttributeError directing to SearchService."""
+    async def test_search_raises_not_implemented_error(self) -> None:
+        """search() on utility raises NotImplementedError directing to SearchService."""
         svc, _ = _make_async_service()
         try:
             await svc.search("FIND {x}")
-        except AttributeError as exc:
+        except NotImplementedError as exc:
             assert "SalesforceSearchService" in str(exc)
         else:
-            raise AssertionError("Expected AttributeError")
+            raise AssertionError("Expected NotImplementedError")
 
-    async def test_quick_search_raises_attribute_error(self) -> None:
-        """quick_search() on utility raises AttributeError."""
+    async def test_quick_search_raises_not_implemented_error(self) -> None:
+        """quick_search() on utility raises NotImplementedError."""
         svc, _ = _make_async_service()
         try:
             await svc.quick_search("x")
-        except AttributeError as exc:
+        except NotImplementedError as exc:
             assert "SalesforceSearchService" in str(exc)
         else:
-            raise AssertionError("Expected AttributeError")
+            raise AssertionError("Expected NotImplementedError")
 
     async def test_tooling_execute_get(self) -> None:
         """Validate tooling execute get."""

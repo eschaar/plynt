@@ -6,12 +6,19 @@ import pytest
 from pydantic import Field, ValidationError
 
 from plynth.connectors.salesforce.models import (
+    AgentMessageResponse,
+    AgentSession,
+    AgentSessionEndAck,
+    ChatCompletionResponse,
+    EmbeddingResponse,
+    FeedbackAck,
     SalesforceLimit,
     SalesforceLimitsResponse,
     SalesforceSearchRecord,
     SObjectCreateResult,
     SObjectError,
     SObjectPayload,
+    TextGenerationResponse,
 )
 
 
@@ -264,3 +271,59 @@ class TestSalesforceLimitsResponse:
         limits = self._make()
         names = [name for name, _ in sorted(limits.items())]
         assert names == ["DailyApiRequests", "SingleEmail"]
+
+
+class TestSalesforceAiModels:
+    """Tests for Salesforce AI typed response models."""
+
+    def test_chat_completion_accepts_extra_fields(self) -> None:
+        """Validate chat completion model accepts provider-specific extra fields."""
+        model = ChatCompletionResponse.model_validate(
+            {
+                "id": "chat-1",
+                "model": "gpt-sf",
+                "choices": [{"index": 0, "message": {"content": "hello"}}],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 2},
+                "providerLatencyMs": 12,
+            }
+        )
+        assert model.id == "chat-1"
+        assert model.choices[0]["message"]["content"] == "hello"
+
+    def test_text_generation_defaults_text(self) -> None:
+        """Validate text generation model defaults to empty text when absent."""
+        model = TextGenerationResponse.model_validate({"id": "txt-1"})
+        assert model.text == ""
+
+    def test_embedding_response_defaults_data(self) -> None:
+        """Validate embedding response model defaults to empty data list."""
+        model = EmbeddingResponse.model_validate({"model": "embed-1"})
+        assert model.data == []
+
+    def test_feedback_ack_uses_alias(self) -> None:
+        """Validate feedback ack maps requestId alias to request_id."""
+        ack = FeedbackAck.model_validate({"success": True, "requestId": "req-1"})
+        assert ack.request_id == "req-1"
+
+    def test_agent_session_aliases(self) -> None:
+        """Validate agent session maps sessionId and agentId aliases."""
+        session = AgentSession.model_validate(
+            {"sessionId": "sess-1", "agentId": "agent-1", "status": "active"}
+        )
+        assert session.session_id == "sess-1"
+        assert session.agent_id == "agent-1"
+
+    def test_agent_message_response_aliases(self) -> None:
+        """Validate message response maps message aliases."""
+        message = AgentMessageResponse.model_validate(
+            {"sessionId": "sess-1", "messageId": "msg-1", "outputText": "ok"}
+        )
+        assert message.session_id == "sess-1"
+        assert message.message_id == "msg-1"
+        assert message.output_text == "ok"
+
+    def test_agent_session_end_ack_defaults_true(self) -> None:
+        """Validate end-session ack defaults ended to true."""
+        ack = AgentSessionEndAck.model_validate({"sessionId": "sess-1"})
+        assert ack.session_id == "sess-1"
+        assert ack.ended is True

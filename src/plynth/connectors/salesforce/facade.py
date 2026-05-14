@@ -7,6 +7,14 @@ service layers.
 
 from __future__ import annotations
 
+from plynth.connectors.salesforce.agent import (
+    AsyncSalesforceAgentService,
+    SalesforceAgentService,
+)
+from plynth.connectors.salesforce.ai import (
+    AsyncSalesforceModelsService,
+    SalesforceModelsService,
+)
 from plynth.connectors.salesforce.apex import (
     AsyncSalesforceApexRestService,
     SalesforceApexRestService,
@@ -139,6 +147,28 @@ class SalesforceAPIFacade:
         return SalesforceSearchService(
             self._client,
             api_version=api_version,
+            renderer=renderer,
+        )
+
+    def models(
+        self,
+        *,
+        renderer: Renderer | None = None,
+    ) -> SalesforceModelsService:
+        """Return a sync service for Salesforce Models API endpoints."""
+        return SalesforceModelsService(
+            self._client,
+            renderer=renderer,
+        )
+
+    def agent(
+        self,
+        *,
+        renderer: Renderer | None = None,
+    ) -> SalesforceAgentService:
+        """Return a sync service for Salesforce Agent API endpoints."""
+        return SalesforceAgentService(
+            self._client,
             renderer=renderer,
         )
 
@@ -294,6 +324,28 @@ class AsyncSalesforceAPIFacade:
         return AsyncSalesforceSearchService(
             self._client,
             api_version=api_version,
+            renderer=renderer,
+        )
+
+    def models(
+        self,
+        *,
+        renderer: Renderer | None = None,
+    ) -> AsyncSalesforceModelsService:
+        """Return an async service for Salesforce Models API endpoints."""
+        return AsyncSalesforceModelsService(
+            self._client,
+            renderer=renderer,
+        )
+
+    def agent(
+        self,
+        *,
+        renderer: Renderer | None = None,
+    ) -> AsyncSalesforceAgentService:
+        """Return an async service for Salesforce Agent API endpoints."""
+        return AsyncSalesforceAgentService(
+            self._client,
             renderer=renderer,
         )
 
