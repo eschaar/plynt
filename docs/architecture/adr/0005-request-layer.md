@@ -19,10 +19,11 @@ The `Request` class is implemented as a standalone module (`request.py`) within
 the `base/` namespace: `plynth.base.request`.
 
 It lives in `base/` rather than `http/` for a deliberate structural reason: the
-Transport ABCs (`SyncTransport`, `AsyncTransport`) in `core/base.py` reference
+Transport ABCs (`SyncTransport`, `AsyncTransport`) in `base/transport.py` reference
 `Request` as their parameter type. If `Request` were placed in `http/`, a
-circular import would result (`core/base.py` → `http/` → `http/transport.py` →
-`core/base.py`). Moving `Request` to `base/` breaks this cycle while keeping
+circular import would result (`base/transport.py` → `http/` →
+`http/transport.py` → `base/transport.py`). Moving `Request` to `base/` breaks
+this cycle while keeping
 the type available across all layers.
 
 This placement reinforces the reality that `Request` is a protocol-agnostic data

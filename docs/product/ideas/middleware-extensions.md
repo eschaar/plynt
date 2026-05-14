@@ -1,16 +1,18 @@
 # Idea: Middleware Extensions
 
-**Status:** Idea — open items only. Items that have been accepted and
-implemented are listed below and then removed from this file.
+**Status:** Idea-stage items plus a status summary for recently closed
+middleware proposals.
 
-| Item                                         | ADR                                          | Status                                                                      |
-| -------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
-| `HeaderMiddleware` / `AsyncHeaderMiddleware` | [ADR-0015](../adr/0015-header-middleware.md) | Implemented                                                                 |
-| `Request.timeout` per-request override       | ADR-0005-A1                                  | Implemented                                                                 |
-| `TracingMiddleware` (`plynth[otel]`)         | [ADR-0014](../adr/0014-logging.md)           | Out of scope — `opentelemetry-instrumentation-httpx` covers the common case |
-| `MetricsMiddleware` (`plynth[prometheus]`)   | [ADR-0014](../adr/0014-logging.md)           | Out of scope — OTel + Prometheus exporter covers the common case            |
+| Item                                                         | ADR                                                                   | Status                                                                      |
+| ------------------------------------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `HeaderMiddleware` / `AsyncHeaderMiddleware`                 | [ADR-0015](../../architecture/adr/0015-header-middleware.md)          | Implemented                                                                 |
+| `Request.timeout` per-request override                       | ADR-0005-A1                                                           | Implemented                                                                 |
+| `CircuitBreakerMiddleware` / `AsyncCircuitBreakerMiddleware` | [ADR-0019](../../architecture/adr/0019-circuit-breaker-middleware.md) | Implemented                                                                 |
+| `RateLimitMiddleware` / `AsyncRateLimitMiddleware`           | [ADR-0020](../../architecture/adr/0020-rate-limit-middleware.md)      | Implemented                                                                 |
+| `TracingMiddleware` (`plynth[otel]`)                         | [ADR-0014](../../architecture/adr/0014-logging.md)                    | Out of scope — `opentelemetry-instrumentation-httpx` covers the common case |
+| `MetricsMiddleware` (`plynth[prometheus]`)                   | [ADR-0014](../../architecture/adr/0014-logging.md)                    | Out of scope — OTel + Prometheus exporter covers the common case            |
 
-Convert individual items to ADRs when the approach is agreed and
+Convert remaining idea-stage items to ADRs when the approach is agreed and
 implementation is about to begin.
 
 ______________________________________________________________________
@@ -30,69 +32,13 @@ Items are grouped into three tiers based on dependency impact:
 
 ______________________________________________________________________
 
-## Tier 1 — Core middleware
+## Remaining idea-stage middleware
 
-### `CircuitBreakerMiddleware`
+No Tier 1 core middleware remains in idea stage.
 
-**Problem:** `RetryMiddleware` retries on transient failures. When an
-upstream is structurally unavailable (e.g. 503 for minutes), retry storms
-waste resources and may worsen the upstream's recovery. A circuit breaker
-stops attempts fast when failure rate exceeds a threshold, and
-automatically re-evaluates after a cooldown period.
-
-**Interface sketch:**
-
-```python
-from plynth.middleware.circuit_breaker import CircuitBreakerMiddleware
-
-transport = HttpxSyncTransport(middlewares=[
-    CircuitBreakerMiddleware(
-        failure_threshold=5,
-        recovery_timeout=60.0,
-    ),
-])
-```
-
-**States:** `CLOSED` (normal) → `OPEN` (failing fast) → `HALF_OPEN`
-(probing recovery) → `CLOSED`.
-
-**Notes:**
-
-- Complements `RetryMiddleware`; typically placed before retry in the chain
-  so the circuit breaker sees logical outcomes, not individual attempts.
-- State is per-middleware instance (not shared across processes unless an
-  external store is wired in — that is out of scope for the core
-  implementation).
-- No new dependency required for a basic in-memory implementation.
-- Requires a new ADR.
-
-______________________________________________________________________
-
-### `RateLimitMiddleware`
-
-**Problem:** Client-side rate limiting prevents exceeding upstream API
-quotas. Without it, callers must implement their own throttle logic per
-service.
-
-**Interface sketch:**
-
-```python
-from plynth.middleware.rate_limit import RateLimitMiddleware
-
-transport = HttpxSyncTransport(middlewares=[
-    RateLimitMiddleware(requests_per_second=10.0),
-])
-```
-
-**Notes:**
-
-- Token-bucket algorithm is the standard approach: simple, burst-tolerant,
-  easy to reason about.
-- Sync and async variants both needed; async variant should use
-  `asyncio.sleep` rather than `time.sleep`.
-- State is per-middleware instance (in-process only).
-- No new dependency for a pure Python implementation.
-- Requires a new ADR.
+`CircuitBreakerMiddleware` (ADR-0019) and `RateLimitMiddleware` (ADR-0020)
+have both been implemented in sync and async form. The remaining open item in
+this document is test/dev oriented.
 
 ______________________________________________________________________
 
@@ -140,5 +86,5 @@ ______________________________________________________________________
 ## Prerequisites
 
 - ADR-0013 (Transport Base Class + Middleware Chain) must remain stable.
-- Each Tier 1 item should be covered by either an amendment to an existing
-  ADR or a new one before implementation begins.
+- Any future Tier 1 item should be covered by either an amendment to an
+  existing ADR or a new one before implementation begins.

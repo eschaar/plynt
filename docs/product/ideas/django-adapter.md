@@ -124,5 +124,5 @@ ______________________________________________________________________
 
 ## Next Step
 
-Write ADR-0014 (or next available number) covering the settings bridge and
-cache adapter design before any code is written.
+Write a new ADR covering the settings bridge and cache adapter design before
+any code is written.

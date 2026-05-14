@@ -57,9 +57,14 @@ ______________________________________________________________________
 
 ## Documentation
 
+- [Architecture Overview](docs/architecture/overview.md)
+- [Architecture ADR Index](docs/architecture/adr/README.md)
 - [Architecture Principles](docs/architecture/adr/0001-architecture-principles.md)
 - [Layered Architecture](docs/architecture/adr/0002-layered-architecture.md)
 - [Dependency Policy](docs/architecture/adr/0003-dependency-policy.md)
+- [Product Vision](docs/product/vision.md)
+- [Product Requirements](docs/product/requirements.md)
+- [Product Roadmap](docs/product/roadmap.md)
 - [Salesforce Integration Guide](docs/connectors/salesforce/README.md)
 
 ______________________________________________________________________
@@ -140,13 +145,13 @@ class MySettings(HTTPSettings):
 
 For Salesforce-specific JWT claim construction and signing guidance, see
 [docs/connectors/salesforce/README.md](docs/connectors/salesforce/README.md)
-and [docs/connectors/salesforce/architecture/adr/SF-0006-jwt-bearer-auth.md](docs/connectors/salesforce/architecture/adr/SF-0006-jwt-bearer-auth.md).
+and [docs/connectors/salesforce/architecture/adr/sf-0006-jwt-bearer-auth.md](docs/connectors/salesforce/architecture/adr/sf-0006-jwt-bearer-auth.md).
 
 ______________________________________________________________________
 
 ## Roadmap
 
-See [docs/product/ROADMAP.md](docs/product/ROADMAP.md) for the full roadmap, including what
+See [docs/product/roadmap.md](docs/product/roadmap.md) for the full roadmap, including what
 is implemented, what is planned, and what is explicitly out of scope.
 
 High-level planned areas:
