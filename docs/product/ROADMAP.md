@@ -14,9 +14,17 @@ ______________________________________________________________________
 - `BaseSyncTransport` / `BaseAsyncTransport` — compose a middleware chain
   and delegate I/O to `_send_once()` (ADR-0013)
 - `Request` / `Response` data carriers (ADR-0005, ADR-0007)
+- `StreamingResponse` / `AsyncStreamingResponse` — typed streaming HTTP
+  response with `iter_lines()` / `aiter_lines()` and `iter_bytes()` /
+  `aiter_bytes()` methods (ADR-0017)
+- `StreamInterruptedError` — raised on stream close or interruption (ADR-0017)
 - `SyncMiddleware` / `AsyncMiddleware` Protocols (ADR-0013)
 - `Cache` Protocol (ADR-0010)
 - `RetryPolicy` dataclass (ADR-0012)
+- `CircuitBreakerPolicy` dataclass — controls circuit breaker state machine
+  (ADR-0019)
+- `RateLimitPolicy` dataclass — controls sliding-window rate limiting
+  (ADR-0020)
 - `Settings` base class — env-driven, pydantic-settings (ADR-0004)
 - `BaseError` hierarchy (ADR-0007)
 
@@ -48,6 +56,9 @@ ______________________________________________________________________
     (`LocMemCache` default; `RedisCache` for cross-process sharing)
 - `HttpRetryPolicy` — HTTP-aware retry with configurable backoff (ADR-0012)
 - `HttpResponse` — encoding detection, `.text`, `.json()` (ADR-0007)
+- Streaming HTTP support — `HTTPClient.stream()` / `AsyncHTTPClient.stream()`
+  and `APIClient.stream()` / `AsyncAPIClient.stream()` methods for SSE and
+  chunked responses (ADR-0017)
 - `HttpStatusError` subclasses per HTTP status group (ADR-0007)
 - `HTTPClient` / `AsyncHTTPClient` — base URL + verb API (ADR-0008)
 - `APIClient` / `AsyncAPIClient` — JSON REST + typed error raising (ADR-0008)
@@ -63,10 +74,22 @@ ______________________________________________________________________
 - Typed cache configuration dataclasses: `DummyCacheConfig`,
   `LocMemCacheConfig`, `RedisCacheConfig` (ADR-0010)
 - `cache_from_config(config)` — typed factory for `CacheBackend` instances
+- `CircuitBreakerMiddleware` / `AsyncCircuitBreakerMiddleware` — configurable
+  circuit breaker for detecting and containing cascading failures (ADR-0019)
+- `CircuitBreakerPolicy` — typed circuit breaker configuration with
+  `failure_threshold`, `recovery_timeout`, `half_open_max_calls` (ADR-0019)
+- `CircuitBreakerOpenError` — raised when circuit is open (ADR-0019)
+- `RateLimitMiddleware` / `AsyncRateLimitMiddleware` — sliding-window request
+  rate limiting (ADR-0020)
+- `RateLimitPolicy` — typed rate limit configuration with `max_requests` and
+  `window_seconds` (ADR-0020)
+- `RateLimitExceededError` — raised when rate limit is exceeded (ADR-0020)
 - `RetryMiddleware` / `AsyncRetryMiddleware` — configurable retry with
   exponential backoff (ADR-0012, ADR-0013)
 - `LoggingMiddleware` / `AsyncLoggingMiddleware` — INFO-level request /
   response logging, once per logical call outside the retry loop (ADR-0014)
+- `HeaderMiddleware` / `AsyncHeaderMiddleware` — inject static or dynamic
+  headers on every request (ADR-0015)
 - `ThrottleFilter`, `ExceptionInfoFilter`, `PlynthHTTPFilter` — stdlib
   logging filters (ADR-0014)
 - `StructuredFormatter` — single-line JSON log output (ADR-0014)
