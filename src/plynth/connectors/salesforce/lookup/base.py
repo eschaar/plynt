@@ -11,6 +11,7 @@ from plynth.connectors.salesforce.constants import (
     resolve_sync_api_version,
 )
 from plynth.connectors.salesforce.helpers import build_select_soql, format_soql
+from plynth.connectors.salesforce.models import SalesforceQueryResponse
 from plynth.connectors.salesforce.renderer import SalesforceRenderer
 from plynth.http.client import APIClient, AsyncAPIClient
 from plynth.http.renderer import Renderer
@@ -74,8 +75,16 @@ class SalesforceLookupService(APIService):
         payload = json.loads(response.content)
         if not isinstance(payload, dict):
             return []
-        records = payload.get("records", [])
-        return records if isinstance(records, list) else []
+        records = payload.get("records")
+        if not isinstance(records, list):
+            return []
+        normalized_payload = {
+            "totalSize": payload.get("totalSize", len(records)),
+            "done": payload.get("done", True),
+            "nextRecordsUrl": payload.get("nextRecordsUrl"),
+            "records": records,
+        }
+        return SalesforceQueryResponse.model_validate(normalized_payload).records
 
 
 class AsyncSalesforceLookupService(AsyncAPIService):
@@ -143,5 +152,13 @@ class AsyncSalesforceLookupService(AsyncAPIService):
         payload = json.loads(response.content)
         if not isinstance(payload, dict):
             return []
-        records = payload.get("records", [])
-        return records if isinstance(records, list) else []
+        records = payload.get("records")
+        if not isinstance(records, list):
+            return []
+        normalized_payload = {
+            "totalSize": payload.get("totalSize", len(records)),
+            "done": payload.get("done", True),
+            "nextRecordsUrl": payload.get("nextRecordsUrl"),
+            "records": records,
+        }
+        return SalesforceQueryResponse.model_validate(normalized_payload).records

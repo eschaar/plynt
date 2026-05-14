@@ -16,7 +16,10 @@ from plynth.connectors.salesforce.constants import (
     resolve_sync_api_version,
 )
 from plynth.connectors.salesforce.helpers import build_select_soql, format_soql
-from plynth.connectors.salesforce.models import SObjectCreateResult
+from plynth.connectors.salesforce.models import (
+    SalesforceQueryResponse,
+    SObjectCreateResult,
+)
 from plynth.connectors.salesforce.renderer import SalesforceRenderer
 from plynth.http.client import APIClient, AsyncAPIClient
 from plynth.http.renderer import Renderer
@@ -90,8 +93,16 @@ class SalesforceIdentityAccessService(APIService):
         payload = json.loads(response.content)
         if not isinstance(payload, dict):
             return []
-        records = payload.get("records", [])
-        return records if isinstance(records, list) else []
+        records = payload.get("records")
+        if not isinstance(records, list):
+            return []
+        normalized_payload = {
+            "totalSize": payload.get("totalSize", len(records)),
+            "done": payload.get("done", True),
+            "nextRecordsUrl": payload.get("nextRecordsUrl"),
+            "records": records,
+        }
+        return SalesforceQueryResponse.model_validate(normalized_payload).records
 
     def get_user(
         self,
@@ -188,7 +199,7 @@ class SalesforceIdentityAccessService(APIService):
                 }
             ),
         )
-        return SObjectCreateResult.model_validate(json.loads(response.content))
+        return SObjectCreateResult.model_validate_json(response.content)
 
     def revoke_permission_set(self, assignment_id: str) -> None:
         """Delete an existing PermissionSetAssignment by assignment record ID."""
@@ -241,7 +252,7 @@ class SalesforceIdentityAccessService(APIService):
                 }
             ),
         )
-        return SObjectCreateResult.model_validate(json.loads(response.content))
+        return SObjectCreateResult.model_validate_json(response.content)
 
     def revoke_permission_set_group(self, assignment_id: str) -> None:
         """Delete an existing PermissionSetGroupAssignment by assignment ID."""
@@ -306,8 +317,16 @@ class AsyncSalesforceIdentityAccessService(AsyncAPIService):
         payload = json.loads(response.content)
         if not isinstance(payload, dict):
             return []
-        records = payload.get("records", [])
-        return records if isinstance(records, list) else []
+        records = payload.get("records")
+        if not isinstance(records, list):
+            return []
+        normalized_payload = {
+            "totalSize": payload.get("totalSize", len(records)),
+            "done": payload.get("done", True),
+            "nextRecordsUrl": payload.get("nextRecordsUrl"),
+            "records": records,
+        }
+        return SalesforceQueryResponse.model_validate(normalized_payload).records
 
     async def get_user(
         self,
@@ -406,7 +425,7 @@ class AsyncSalesforceIdentityAccessService(AsyncAPIService):
                 }
             ),
         )
-        return SObjectCreateResult.model_validate(json.loads(response.content))
+        return SObjectCreateResult.model_validate_json(response.content)
 
     async def revoke_permission_set(self, assignment_id: str) -> None:
         """Delete an existing PermissionSetAssignment by assignment record ID."""
@@ -459,7 +478,7 @@ class AsyncSalesforceIdentityAccessService(AsyncAPIService):
                 }
             ),
         )
-        return SObjectCreateResult.model_validate(json.loads(response.content))
+        return SObjectCreateResult.model_validate_json(response.content)
 
     async def revoke_permission_set_group(self, assignment_id: str) -> None:
         """Delete an existing PermissionSetGroupAssignment by assignment ID."""
