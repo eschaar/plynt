@@ -27,6 +27,16 @@ keywords = [
   "integration",
   "service",
   "connector",
+  "middleware",
+  "oauth2",
+  "circuit-breaker",
+  "retry",
+  "caching",
+  "httpx",
+  "pydantic",
+  "type-hints",
+  "salesforce-api",
+  "http-client",
 ]
 license-files = ["LICENSE"]
 dependencies = ["pydantic-settings>=2.14.1"]
@@ -53,7 +63,12 @@ Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 httpx = ["httpx>=0.28.1"]
-salesforce = ["httpx>=0.28.1", "PyJWT>=2.12.1", "cryptography>=48.0.0"]
+salesforce = [
+  "httpx>=0.28.1",
+  "pydantic>=2.7.0",
+  "PyJWT>=2.12.1",
+  "cryptography>=48.0.0",
+]
 test = [
   "pytest",
   "pytest-cov",
