@@ -7,7 +7,7 @@ import json
 from collections.abc import Mapping
 from typing import Any, cast
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 # Use libYAML when available for performance parity with vcrpy defaults.
 try:
