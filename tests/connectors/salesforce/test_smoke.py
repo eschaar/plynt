@@ -215,3 +215,22 @@ class TestSalesforceVCRSmoke:
         for record in result.search_records:
             assert record.sobject_type
             assert record["Id"]
+
+    def test_objects_catalog(self, request: pytest.FixtureRequest) -> None:
+        """GET /sobjects/ exposes a non-empty global object catalog."""
+        result = _facade(_cassette(request)).utility().objects()
+
+        assert len(result.sobjects) > 0
+        assert any(obj.name == "Account" for obj in result.sobjects)
+
+    def test_query_org_metadata(self, request: pytest.FixtureRequest) -> None:
+        """SOQL on Organization returns a minimal non-destructive metadata row."""
+        result = (
+            _facade(_cassette(request), path_only=True)
+            .query()
+            .query("SELECT Id, Name FROM Organization LIMIT 1")
+        )
+
+        assert result.total_size >= 1
+        assert isinstance(result.records[0]["Id"], str)
+        assert isinstance(result.records[0]["Name"], str)

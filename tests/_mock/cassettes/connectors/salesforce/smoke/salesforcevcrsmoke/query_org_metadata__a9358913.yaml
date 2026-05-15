@@ -1,0 +1,456 @@
+version: 1
+interactions:
+- request:
+    method: POST
+    uri: https://login.salesforce.com/services/oauth2/token
+    body: grant_type=password&client_id=REDACTED_CLIENT_ID&client_secret=REDACTED_CLIENT_SECRET&username=REDACTED_USERNAME&password=REDACTED_PASSWORD
+    headers:
+      Host:
+      - login.salesforce.com
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-httpx/0.28.1
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Content-Length:
+      - '289'
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - REDACTED
+      Vary:
+      - Accept-Encoding
+      Set-Cookie:
+      - CookieConsentPolicy=REDACTED; LSKey-c$CookieConsentPolicy=REDACTED; BrowserId=REDACTED_BROWSER_ID
+      X-Content-Type-Options:
+      - nosniff
+      Strict-Transport-Security:
+      - max-age=63072000; includeSubDomains
+      Cache-Control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      Expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      X-ReadOnlyMode:
+      - 'false'
+      Content-Type:
+      - application/json;charset=UTF-8
+      Transfer-Encoding:
+      - chunked
+      content-length:
+      - '383'
+    body:
+      string: |-
+        {
+          "access_token": "REDACTED_ACCESS_TOKEN",
+          "instance_url": "https://myorg.my.salesforce.com",
+          "id": "https://test.salesforce.com/id/REDACTED_ORG_ID/REDACTED_USER_ID",
+          "token_type": "Bearer",
+          "issued_at": "1778800167393",
+          "signature": "IjPexQ1hC+P7smMqJ9qNpQo8aThkjPDpO8OMU0CYV4M="
+        }
+- request:
+    method: POST
+    uri: https://login.salesforce.com/services/oauth2/token
+    body: grant_type=password&client_id=REDACTED_CLIENT_ID&client_secret=REDACTED_CLIENT_SECRET&username=REDACTED_USERNAME&password=REDACTED_PASSWORD
+    headers:
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 200
+      message: ''
+    headers:
+      date:
+      - REDACTED
+      vary:
+      - Accept-Encoding
+      set-cookie:
+      - CookieConsentPolicy=REDACTED; LSKey-c$CookieConsentPolicy=REDACTED; BrowserId=REDACTED_BROWSER_ID
+      x-content-type-options:
+      - nosniff
+      strict-transport-security:
+      - max-age=63072000; includeSubDomains
+      cache-control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      x-readonlymode:
+      - 'false'
+      content-type:
+      - application/json;charset=UTF-8
+      transfer-encoding:
+      - chunked
+      content-length:
+      - '383'
+    body:
+      string: |-
+        {
+          "access_token": "REDACTED_ACCESS_TOKEN",
+          "instance_url": "https://myorg.my.salesforce.com",
+          "id": "https://test.salesforce.com/id/REDACTED_ORG_ID/REDACTED_USER_ID",
+          "token_type": "Bearer",
+          "issued_at": "1778800167393",
+          "signature": "IjPexQ1hC+P7smMqJ9qNpQo8aThkjPDpO8OMU0CYV4M="
+        }
+- request:
+    method: GET
+    uri: https://myorg.my.salesforce.com/services/data/
+    body: ''
+    headers:
+      Host:
+      - myorg.my.salesforce.com
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-httpx/0.28.1
+      Content-Type:
+      - application/json
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - REDACTED
+      Content-Type:
+      - application/json;charset=UTF-8
+      Transfer-Encoding:
+      - chunked
+      Connection:
+      - keep-alive
+      Strict-Transport-Security:
+      - max-age=63072000; includeSubDomains
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      Cache-Control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      X-Robots-Tag:
+      - none
+      Set-Cookie:
+      - CookieConsentPolicy=REDACTED; LSKey-c$CookieConsentPolicy=REDACTED; BrowserId=REDACTED_BROWSER_ID
+      Server:
+      - sfdcedge
+      X-SFDC-Request-Id:
+      - REDACTED
+      X-Request-Id:
+      - REDACTED
+      X-SFDC-Edge-Cache:
+      - none
+      content-length:
+      - '2487'
+    body:
+      string: |-
+        [
+          {
+            "label": "Summer '22",
+            "url": "/services/data/v55.0",
+            "version": "55.0"
+          },
+          {
+            "label": "Winter '23",
+            "url": "/services/data/v56.0",
+            "version": "56.0"
+          },
+          {
+            "label": "Spring '23",
+            "url": "/services/data/v57.0",
+            "version": "57.0"
+          },
+          {
+            "label": "Summer '23",
+            "url": "/services/data/v58.0",
+            "version": "58.0"
+          },
+          {
+            "label": "Winter '24",
+            "url": "/services/data/v59.0",
+            "version": "59.0"
+          },
+          {
+            "label": "Spring '24",
+            "url": "/services/data/v60.0",
+            "version": "60.0"
+          },
+          {
+            "label": "Summer '24",
+            "url": "/services/data/v61.0",
+            "version": "61.0"
+          },
+          {
+            "label": "Winter '25",
+            "url": "/services/data/v62.0",
+            "version": "62.0"
+          },
+          {
+            "label": "Spring '25",
+            "url": "/services/data/v63.0",
+            "version": "63.0"
+          },
+          {
+            "label": "Summer '25",
+            "url": "/services/data/v64.0",
+            "version": "64.0"
+          },
+          {
+            "label": "Winter '26",
+            "url": "/services/data/v65.0",
+            "version": "65.0"
+          },
+          {
+            "label": "Spring '26",
+            "url": "/services/data/v66.0",
+            "version": "66.0"
+          }
+        ]
+- request:
+    method: GET
+    uri: https://myorg.my.salesforce.com/services/data/
+    body: null
+    headers:
+      Content-Type:
+      - application/json
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: ''
+    headers:
+      date:
+      - REDACTED
+      content-type:
+      - application/json;charset=UTF-8
+      transfer-encoding:
+      - chunked
+      connection:
+      - keep-alive
+      strict-transport-security:
+      - max-age=63072000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      cache-control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      x-robots-tag:
+      - none
+      set-cookie:
+      - CookieConsentPolicy=REDACTED; LSKey-c$CookieConsentPolicy=REDACTED; BrowserId=REDACTED_BROWSER_ID
+      server:
+      - sfdcedge
+      x-sfdc-request-id:
+      - REDACTED
+      x-request-id:
+      - REDACTED
+      x-sfdc-edge-cache:
+      - none
+      content-length:
+      - '2487'
+    body:
+      string: |-
+        [
+          {
+            "label": "Summer '22",
+            "url": "/services/data/v55.0",
+            "version": "55.0"
+          },
+          {
+            "label": "Winter '23",
+            "url": "/services/data/v56.0",
+            "version": "56.0"
+          },
+          {
+            "label": "Spring '23",
+            "url": "/services/data/v57.0",
+            "version": "57.0"
+          },
+          {
+            "label": "Summer '23",
+            "url": "/services/data/v58.0",
+            "version": "58.0"
+          },
+          {
+            "label": "Winter '24",
+            "url": "/services/data/v59.0",
+            "version": "59.0"
+          },
+          {
+            "label": "Spring '24",
+            "url": "/services/data/v60.0",
+            "version": "60.0"
+          },
+          {
+            "label": "Summer '24",
+            "url": "/services/data/v61.0",
+            "version": "61.0"
+          },
+          {
+            "label": "Winter '25",
+            "url": "/services/data/v62.0",
+            "version": "62.0"
+          },
+          {
+            "label": "Spring '25",
+            "url": "/services/data/v63.0",
+            "version": "63.0"
+          },
+          {
+            "label": "Summer '25",
+            "url": "/services/data/v64.0",
+            "version": "64.0"
+          },
+          {
+            "label": "Winter '26",
+            "url": "/services/data/v65.0",
+            "version": "65.0"
+          },
+          {
+            "label": "Spring '26",
+            "url": "/services/data/v66.0",
+            "version": "66.0"
+          }
+        ]
+- request:
+    method: GET
+    uri: https://myorg.my.salesforce.com/services/data/v66.0/query?q=SELECT+Id%2C+Name+FROM+Organization+LIMIT+1
+    body: ''
+    headers:
+      Host:
+      - myorg.my.salesforce.com
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-httpx/0.28.1
+      Content-Type:
+      - application/json
+      Accept:
+      - application/json
+      Cookie:
+      - CookieConsentPolicy=REDACTED; LSKey-c$CookieConsentPolicy=REDACTED; BrowserId=REDACTED_BROWSER_ID
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - REDACTED
+      Content-Type:
+      - application/json;charset=UTF-8
+      Transfer-Encoding:
+      - chunked
+      Connection:
+      - keep-alive
+      Vary:
+      - Accept-Encoding
+      Strict-Transport-Security:
+      - max-age=63072000; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      Sforce-Limit-Info:
+      - api-usage=6/5000000
+      X-Robots-Tag:
+      - none
+      Cache-Control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      Server:
+      - sfdcedge
+      X-SFDC-Request-Id:
+      - REDACTED
+      X-Request-Id:
+      - REDACTED
+      X-SFDC-Edge-Cache:
+      - none
+      content-length:
+      - '204'
+    body:
+      string: |-
+        {
+          "totalSize": 1,
+          "done": true,
+          "records": [
+            {
+              "attributes": {
+                "type": "Organization",
+                "url": "/services/data/v66.0/sobjects/Organization/REDACTED_ORG_ID"
+              },
+              "Id": "REDACTED_ORG_ID",
+              "Name": "REDACTED_ORG_NAME"
+            }
+          ]
+        }
+- request:
+    method: GET
+    uri: https://myorg.my.salesforce.com/services/data/v66.0/query?q=SELECT+Id%2C+Name+FROM+Organization+LIMIT+1
+    body: null
+    headers:
+      Content-Type:
+      - application/json
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: ''
+    headers:
+      date:
+      - REDACTED
+      content-type:
+      - application/json;charset=UTF-8
+      transfer-encoding:
+      - chunked
+      connection:
+      - keep-alive
+      vary:
+      - Accept-Encoding
+      strict-transport-security:
+      - max-age=63072000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      sforce-limit-info:
+      - api-usage=6/5000000
+      x-robots-tag:
+      - none
+      cache-control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      server:
+      - sfdcedge
+      x-sfdc-request-id:
+      - REDACTED
+      x-request-id:
+      - REDACTED
+      x-sfdc-edge-cache:
+      - none
+      content-length:
+      - '204'
+    body:
+      string: |-
+        {
+          "totalSize": 1,
+          "done": true,
+          "records": [
+            {
+              "attributes": {
+                "type": "Organization",
+                "url": "/services/data/v66.0/sobjects/Organization/REDACTED_ORG_ID"
+              },
+              "Id": "REDACTED_ORG_ID",
+              "Name": "REDACTED_ORG_NAME"
+            }
+          ]
+        }
