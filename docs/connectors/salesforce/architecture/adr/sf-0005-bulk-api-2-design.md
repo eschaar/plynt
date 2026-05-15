@@ -204,10 +204,23 @@ Bulk API 2.0 protocol. The implementation must handle or document each one.
 
 Ingest jobs follow a strict state machine:
 
-```text
-Open → UploadComplete → InProgress → JobComplete
-                                   ↘ Failed
-                    ↘ Aborted (from Open or UploadComplete)
+```mermaid
+stateDiagram-v2
+    [*] --> Open : create job
+    Open --> UploadComplete : upload records + close
+    Open --> Aborted : abort
+    UploadComplete --> InProgress : Salesforce starts processing
+    UploadComplete --> Aborted : abort
+    InProgress --> JobComplete : success
+    InProgress --> Failed : error
+    JobComplete --> [*]
+    Failed --> [*]
+    Aborted --> [*]
+
+    note right of InProgress
+        Query jobs skip directly
+        to InProgress (no upload phase)
+    end note
 ```
 
 Query jobs skip directly to `InProgress` — there is no upload phase.

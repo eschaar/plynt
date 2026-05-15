@@ -38,14 +38,22 @@ ______________________________________________________________________
 Introduce a separate exception hierarchy rooted at `SalesforceAPIError`
 (a direct `Exception` subclass, not an `HttpStatusError`):
 
-```text
-SalesforceAPIError
-├── SalesforceValidationError    — field validation failures
-├── SalesforceDuplicateError     — duplicate record detection
-├── SalesforceNotFoundError      — record/object not found or deleted
-├── SalesforceSessionExpiredError — expired or invalid token/session
-├── SalesforcePermissionError    — insufficient access rights
-└── SalesforceLockError          — record locked by concurrent process
+```mermaid
+classDiagram
+    class SalesforceAPIError
+    class SalesforceValidationError["SalesforceValidationError\nfield validation failures"]
+    class SalesforceDuplicateError["SalesforceDuplicateError\nduplicate record detection"]
+    class SalesforceNotFoundError["SalesforceNotFoundError\nrecord/object not found or deleted"]
+    class SalesforceSessionExpiredError["SalesforceSessionExpiredError\nexpired or invalid token/session"]
+    class SalesforcePermissionError["SalesforcePermissionError\ninsufficient access rights"]
+    class SalesforceLockError["SalesforceLockError\nrecord locked by concurrent process"]
+
+    SalesforceAPIError <|-- SalesforceValidationError
+    SalesforceAPIError <|-- SalesforceDuplicateError
+    SalesforceAPIError <|-- SalesforceNotFoundError
+    SalesforceAPIError <|-- SalesforceSessionExpiredError
+    SalesforceAPIError <|-- SalesforcePermissionError
+    SalesforceAPIError <|-- SalesforceLockError
 ```
 
 All exceptions carry:

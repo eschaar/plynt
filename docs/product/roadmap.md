@@ -11,6 +11,30 @@ Companion product documents:
 
 ______________________________________________________________________
 
+## Status Overview
+
+| #   | Area                                               | Status          | Notes                                                                              |
+| --- | -------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------- |
+| —   | `plynth.base` — protocol-agnostic abstractions     | **Done**        | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings        |
+| —   | `plynth.http` — transport, clients, auth, settings | **Done**        | httpx transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
+| —   | `plynth.middleware` — core middleware suite        | **Done**        | Cache, Retry, CircuitBreaker, RateLimit, Logging, Header                           |
+| 1e  | `TracingMiddleware` `plynth[otel]`                 | **Planned**     | ADR required; OTel auto-instrumentation may cover most needs                       |
+| 1f  | `MetricsMiddleware` `plynth[prometheus]`           | **Planned**     | ADR required; low priority                                                         |
+| 1g  | `MockMiddleware`                                   | **Planned**     | Test/dev only; Tier 3                                                              |
+| 2   | Salesforce connector — REST + Bulk + AI            | **Done**        | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API     |
+| 2f  | Salesforce Pub/Sub CDC                             | **Deferred**    | gRPC ADR required first                                                            |
+| 2g  | `plynth-salesforce` package extraction             | **Deferred**    | After multi-connector gate                                                         |
+| 2l  | Salesforce GraphQL API                             | **Conditional** | Implement on repeated demand only                                                  |
+| 3   | Streaming response (SSE / chunked HTTP)            | **Done**        | ADR-0017; enables Salesforce AI and LLM connector                                  |
+| 4   | Framework adapters (Django / FastAPI / Flask)      | **Planned**     | ADR required per adapter; deferred until core is stable                            |
+| 5   | Cache backend documentation                        | **Planned**     | Implementation complete; how-to guides remaining                                   |
+| 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                       |
+| 7   | AI / LLM connector `plynth.connectors.llm`         | **Planned**     | ADR-0021 scoped; parallel with Salesforce AI                                       |
+| 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                      |
+| 9   | Connector package extraction                       | **Planned**     | Policy defined; individual extractions need ADR                                    |
+
+______________________________________________________________________
+
 ## Implemented Baseline (through v0.2.1)
 
 ### Core abstractions (`plynth.base`)
