@@ -196,12 +196,12 @@ def format_soql(query: str, **params: Any) -> str:
         from plynth.connectors.salesforce.helpers import format_soql
 
         soql = format_soql(
-            "SELECT Id, Name FROM Account WHERE Name = :name AND Active__c = :active",
+            "SELECT Id, Name FROM User WHERE Name = :name AND IsActive = :active",
             name="O'Brien & Co",
             active=True,
         )
-        # → "SELECT Id, Name FROM Account WHERE Name = 'O\\'Brien & Co'"
-        #    " AND Active__c = true"
+        # → "SELECT Id, Name FROM User WHERE Name = 'O\\'Brien & Co'"
+        #    " AND IsActive = true"
 
     """
 
