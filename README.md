@@ -66,6 +66,7 @@ ______________________________________________________________________
 - [Product Requirements](docs/product/requirements.md)
 - [Product Roadmap](docs/product/roadmap.md)
 - [Salesforce Integration Guide](docs/connectors/salesforce/README.md)
+- [Contributing](CONTRIBUTING.md)
 
 ______________________________________________________________________
 
@@ -89,15 +90,18 @@ ______________________________________________________________________
 
 ## Installation
 
+Requires **Python 3.11 or later**.
+
 ```bash
 pip install plynth
 ```
 
-Current status:
+Optional extras:
 
-- GitHub releases exist for `0.1.0` (core baseline), `0.2.0` (Salesforce connector), and `0.2.1`.
-- Release automation is enabled via release-please.
-- PyPI publish uses OIDC and is guarded by `ENABLE_PYPI_PUBLISH` in CI.
+```bash
+pip install "plynth[httpx]"       # httpx transport
+pip install "plynth[salesforce]"  # Salesforce REST connector
+```
 
 ______________________________________________________________________
 
@@ -127,20 +131,20 @@ from plynth.http.settings import HTTPSettings
 
 
 def build_assertion() -> str:
-  # Use your own signer implementation (PyJWT, jose, HSM client, etc.).
-  return "<signed-jwt>"
+    # Use your own signer implementation (PyJWT, jose, HSM client, etc.).
+    return "<signed-jwt>"
 
 
 class MySettings(HTTPSettings):
-  @property
-  def auth(self) -> AuthConfig | None:
-    return OAuth2JWTBearerConfig(
-      token_url="https://auth.example.com/oauth/token",
-      assertion_factory=build_assertion,
-      cache_key_material="my-issuer:service-account",
-      scope="api.read api.write",
-      ttl_leeway=30,
-    )
+    @property
+    def auth(self) -> AuthConfig | None:
+        return OAuth2JWTBearerConfig(
+            token_url="https://auth.example.com/oauth/token",
+            assertion_factory=build_assertion,
+            cache_key_material="my-issuer:service-account",
+            scope="api.read api.write",
+            ttl_leeway=30,
+        )
 ```
 
 For Salesforce-specific JWT claim construction and signing guidance, see
@@ -160,9 +164,8 @@ High-level planned areas:
 - Framework adapters — Django and FastAPI extras
 - Built-in cache backends (`plynth[cache]`)
 - Async OAuth2 (`AsyncOAuth2ClientCredentials`)
-- Salesforce client implementation (REST, SOQL, Bulk, Pub/Sub CDC) —
-  reference implementation and integration test for plynth, later extracted
-  into a standalone `plynth-salesforce` package
+- Salesforce connector (`plynth[salesforce]`) — SOQL queries and auth flows
+  are available; Bulk API 2.0 and Pub/Sub CDC are planned
 
 ______________________________________________________________________
 
