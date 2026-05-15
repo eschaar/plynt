@@ -72,29 +72,29 @@ integration implementations.
 - **Conditional**: only implement when repeated demand appears.
 - **Out of Scope**: intentionally excluded from generic core.
 
-| Capability Domain                          | Typical REST API Scope                                                | Plynth Status | Support Policy                     | ADR     | Notes                                                                                         |
-| ------------------------------------------ | --------------------------------------------------------------------- | ------------- | ---------------------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| Authentication and session handling        | OAuth token endpoint, bearer token usage, externally managed sessions | Done          | Maintain                           | SF-0006 | OAuth client credentials, OAuth password (legacy), JWT bearer, direct token/session injection |
-| API version discovery                      | `GET /services/data/`                                                 | Done          | Maintain                           | —       | Optional dynamic version selection with cache                                                 |
-| SObject data operations                    | `/sobjects/{Object}` and related record endpoints                     | Done          | Maintain                           | —       | CRUD, upsert, external ID flows, describe, layout, deleted and updated windows                |
-| Query operations                           | `/query`, `/queryAll`, pagination cursors                             | Done          | Maintain                           | SF-0003 | SOQL execution, query_more, query_more_from_id, typed query responses                         |
-| Search operations                          | `/search`, `/parameterizedSearch`                                     | Done          | Maintain                           | SF-0004 | SOSL search, quick search, escape helpers                                                     |
-| Utility and org introspection              | `/limits`, `/sobjects`, `/tooling/*`                                  | Done          | Maintain                           | —       | Limits, API usage parsing, object catalog, tooling execute                                    |
-| Observability                              | Response headers and usage telemetry (`Sforce-Limit-Info`)            | Done          | Maintain                           | —       | Typed API usage parsing and exposure via limits context                                       |
-| Developer experience (DX)                  | Lookup and helper abstractions for safer usage                        | Done          | Maintain                           | SF-0002 | Enum-based lookup registry, query helpers, escape hatch convenience                           |
-| Generic lookup helpers                     | Composite of query and object endpoints                               | Done          | Deferred expansion                 | —       | RecordType, User, Pricebook, Queue, Profile lookup services via enum-based registry           |
-| Apex REST passthrough                      | `/apexrest/*`                                                         | Done          | Maintain                           | —       | Dedicated sync and async service entry points                                                 |
-| Bulk data processing                       | Bulk API v2 ingest and query resources                                | Done          | v2-first                           | SF-0005 | Bulk API v1 remains excluded by default                                                       |
-| Metadata deployment (REST)                 | `/metadata/deployRequest` operations                                  | Done          | Maintain                           | SF-0008 | Start deploy, status polling, quick deploy, cancel, wait helpers, sync and async parity       |
-| Composite request orchestration            | `/composite/*`, `/composite/tree/*`, `/composite/batch/*`             | Done          | Maintain                           | SF-0007 | Generic composite primitives for request minimization and transactional orchestration         |
-| Identity access primitives (generic)       | User, PermissionSetAssignment, PermissionSetGroupAssignment endpoints | Done          | Deferred expansion                 | SF-0009 | Policy-neutral user retrieval/listing, assignment create/delete, and user active toggle       |
-| Event streaming (CDC / Pub-Sub)            | Salesforce Pub/Sub API over gRPC                                      | Deferred      | ADR-required before implementation | —       | Requires gRPC transport design alignment and an accepted capability ADR                       |
-| Upstream rate governance                   | Client-side throttling, quota backpressure, and pacing                | Deferred      | Core middleware first              | —       | Prefer shared core middleware policy over connector-specific throttling logic                 |
-| GraphQL API                                | Flexible query interface: `/graphql` POST with queries and mutations  | Conditional   | Implement on repeated demand       | —       | Alternative to REST; no core plynth changes required; complements SOQL/SOSL queries           |
-| Generative AI — Models API                 | `/einstein/platform/v1` chat, text, embeddings inference              | Implemented   | Keep parity and boundary checks    | —       | Generate Chat, Text, Embeddings with feedback loop; shipped with sync and streaming support   |
-| Generative AI — Agent API                  | `/einstein/ai-agent/v1` agent session and message orchestration       | Implemented   | Keep parity and boundary checks    | —       | Session lifecycle, sync/streaming messaging, feedback; shipped with facade exposure           |
-| Metadata retrieval and catalog (SOAP-only) | `retrieve`, `listMetadata`, `describeMetadata` (SOAP Metadata API)    | Out of Scope  | Re-evaluate with SOAP core support | —       | Not available via REST-only connector scope                                                   |
-| Business-specific contrib layers           | Business-specific wrappers on top of generic connector                | Out of Scope  | Keep in consumer layer             | —       | Protects framework-agnostic, reusable connector core                                          |
+| Capability Domain                          | Typical REST API Scope                                                | Plynth Status | Support Policy                     | ADR     | Notes                                                                                                                                                                                                                                                                              |
+| ------------------------------------------ | --------------------------------------------------------------------- | ------------- | ---------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication and session handling        | OAuth token endpoint, bearer token usage, externally managed sessions | Done          | Maintain                           | SF-0006 | OAuth client credentials, OAuth password (legacy), JWT bearer, direct token/session injection                                                                                                                                                                                      |
+| API version discovery                      | `GET /services/data/`                                                 | Done          | Maintain                           | —       | Optional dynamic version selection with cache                                                                                                                                                                                                                                      |
+| SObject data operations                    | `/sobjects/{Object}` and related record endpoints                     | Done          | Maintain                           | —       | CRUD, upsert, external ID flows, describe, layout, deleted and updated windows                                                                                                                                                                                                     |
+| Query operations                           | `/query`, `/queryAll`, pagination cursors                             | Done          | Maintain                           | SF-0003 | SOQL execution, query_more, query_more_from_id, typed query responses                                                                                                                                                                                                              |
+| Search operations                          | `/search`, `/parameterizedSearch`                                     | Done          | Maintain                           | SF-0004 | SOSL search, quick search, escape helpers                                                                                                                                                                                                                                          |
+| Utility and org introspection              | `/limits`, `/sobjects`, `/tooling/*`                                  | Done          | Maintain                           | —       | Limits, API usage parsing, object catalog, tooling execute                                                                                                                                                                                                                         |
+| Observability                              | Response headers and usage telemetry (`Sforce-Limit-Info`)            | Done          | Maintain                           | —       | Typed API usage parsing and exposure via limits context                                                                                                                                                                                                                            |
+| Developer experience (DX)                  | Lookup and helper abstractions for safer usage                        | Done          | Maintain                           | SF-0002 | Enum-based lookup registry, query helpers, escape hatch convenience                                                                                                                                                                                                                |
+| Generic lookup helpers                     | Composite of query and object endpoints                               | Done          | Deferred expansion                 | —       | RecordType, User, Pricebook, Queue, Profile lookup services via enum-based registry                                                                                                                                                                                                |
+| Apex REST passthrough                      | `/apexrest/*`                                                         | Done          | Maintain                           | —       | Dedicated sync and async service entry points                                                                                                                                                                                                                                      |
+| Bulk data processing                       | Bulk API v2 ingest and query resources                                | Done          | v2-first                           | SF-0005 | Bulk API v1 remains excluded by default                                                                                                                                                                                                                                            |
+| Metadata deployment (REST)                 | `/metadata/deployRequest` operations                                  | Done          | Maintain                           | SF-0008 | Start deploy, status polling, quick deploy, cancel, wait helpers, sync and async parity                                                                                                                                                                                            |
+| Composite request orchestration            | `/composite/*`, `/composite/tree/*`, `/composite/batch/*`             | Done          | Maintain                           | SF-0007 | Generic composite primitives for request minimization and transactional orchestration                                                                                                                                                                                              |
+| Identity access primitives (generic)       | User, PermissionSetAssignment, PermissionSetGroupAssignment endpoints | Done          | Deferred expansion                 | SF-0009 | Policy-neutral user retrieval/listing, assignment create/delete, and user active toggle                                                                                                                                                                                            |
+| Event streaming (CDC / Pub-Sub)            | Salesforce Pub/Sub API over gRPC                                      | Deferred      | ADR-required before implementation | —       | Requires gRPC transport design alignment and an accepted capability ADR                                                                                                                                                                                                            |
+| Upstream rate governance                   | Client-side throttling, quota backpressure, and pacing                | Out of Scope  | Consumer responsibility            | —       | Salesforce enforces limits server-side (403/503); connector already surfaces `SalesforceApiUsage` and `SalesforceLimitsResponse` for observability; circuit breaking is available via core `CircuitBreakerMiddleware`; active pacing is application-level logic, not library logic |
+| GraphQL API                                | Flexible query interface: `/graphql` POST with queries and mutations  | Conditional   | Implement on repeated demand       | —       | Alternative to REST; no core plynth changes required; complements SOQL/SOSL queries                                                                                                                                                                                                |
+| Generative AI — Models API                 | `/einstein/platform/v1` chat, text, embeddings inference              | Implemented   | Keep parity and boundary checks    | —       | Generate Chat, Text, Embeddings with feedback loop; shipped with sync and streaming support                                                                                                                                                                                        |
+| Generative AI — Agent API                  | `/einstein/ai-agent/v1` agent session and message orchestration       | Implemented   | Keep parity and boundary checks    | —       | Session lifecycle, sync/streaming messaging, feedback; shipped with facade exposure                                                                                                                                                                                                |
+| Metadata retrieval and catalog (SOAP-only) | `retrieve`, `listMetadata`, `describeMetadata` (SOAP Metadata API)    | Out of Scope  | Re-evaluate with SOAP core support | —       | Not available via REST-only connector scope                                                                                                                                                                                                                                        |
+| Business-specific contrib layers           | Business-specific wrappers on top of generic connector                | Out of Scope  | Keep in consumer layer             | —       | Protects framework-agnostic, reusable connector core                                                                                                                                                                                                                               |
 
 ### ADR Coverage Notes
 
@@ -107,9 +107,13 @@ scope boundaries rather than a dedicated Salesforce capability ADR.
   surface and core observability/retry policies.
 - CDC / Pub-Sub: blocked until a dedicated accepted ADR is written for the
   capability and transport contract.
-- Upstream rate governance: delegated to shared core middleware decisions,
-  not connector-local behavior. The governance policy proposal is tracked in
-  ADR-0022.
+- Upstream rate governance: moved to Out of Scope. Salesforce already
+  enforces limits server-side and returns typed errors (403/503) that the
+  connector maps to exceptions. Active pacing is application-level logic.
+  Circuit breaking against transient Salesforce failures is covered by core
+  `CircuitBreakerMiddleware`. Quota observability is already available via
+  `SalesforceApiUsage` (from `Sforce-Limit-Info` headers) and
+  `SalesforceLimitsResponse` (from `GET /limits`).
 - GraphQL API: no core plynth changes required; standard HTTP POST + JSON
   response handling suffice. Implement only on repeated demand to avoid
   over-engineering before consumer needs are clear.
@@ -236,6 +240,80 @@ Out-of-scope in the current REST-first connector:
   `describeMetadata`.
 
 See [SF-0008](../architecture/adr/sf-0008-metadata-rest-deploy.md) for the decision record.
+
+### Resilience: Circuit Breaking and Quota Observability
+
+#### Circuit breaking
+
+Plynth ships a generic `CircuitBreakerMiddleware` (and async variant) in
+`plynth.middleware`. Configure it on the `SalesforceAPIClient` to protect
+against transient Salesforce downtime (500, 503).
+
+Recommended policy for Salesforce:
+
+```python
+from plynth.middleware.circuit_breaker import CircuitBreakerMiddleware
+from plynth.base.policies import CircuitBreakerPolicy
+from plynth.connectors.salesforce import SalesforceAPIClient, SalesforceSettings
+
+client = SalesforceAPIClient(
+    settings=SalesforceSettings(),
+    middleware=[
+        CircuitBreakerMiddleware(
+            CircuitBreakerPolicy(
+                failure_threshold=5,       # open after 5 failures
+                recovery_timeout=30.0,     # try again after 30 s
+                failure_status_codes={500, 503},
+            )
+        ),
+    ],
+)
+```
+
+When the circuit is open, `CircuitBreakerOpenError` is raised with a
+`retry_after_seconds` attribute. The caller decides what to do — retry,
+fall back, or surface the degradation to the end user.
+
+Do **not** add `429` to `failure_status_codes`. Salesforce uses `403` with
+a `REQUEST_LIMIT_EXCEEDED` body for quota errors, not `429`. The connector's
+error mapping already turns those into typed exceptions.
+
+#### Quota observability (not governance)
+
+The connector provides two complementary mechanisms to observe quota state.
+Neither throttles calls — that is the application's responsibility.
+
+**Per-call header** (`Sforce-Limit-Info`):
+
+Every Salesforce response includes an `api-usage` header. The connector
+parses this automatically and exposes it as `SalesforceApiUsage`
+on any response that carries the header. The utility service attaches
+it to `SalesforceLimitsResponse` via `limits.api_usage`.
+
+```python
+limits_resp = client.utility.limits()
+if usage := limits_resp.api_usage:
+    pct = usage.used / usage.limit * 100
+    print(f"API usage: {usage.used}/{usage.limit} ({pct:.1f}%)")
+```
+
+**Full org limits** (`GET /limits`):
+
+For detailed per-resource quota state (DailyApiRequests, DailyBulkV2QueryJobs,
+etc.) call `utility.limits()` directly:
+
+```python
+limits_resp = client.utility.limits()
+daily = limits_resp["DailyApiRequests"]
+print(f"Daily API calls remaining: {daily.remaining}/{daily.max_value}")
+```
+
+This endpoint counts as one API call itself. Poll it at a schedule appropriate
+for your workload — not on every request.
+
+No extra helper is needed. The existing `SalesforceApiUsage` and
+`SalesforceLimitsResponse` models provide everything required to build
+application-level quota guards.
 
 ### Composite REST Primitives
 
