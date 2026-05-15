@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
+import pytest
+
 from plynth.base.response import AsyncStreamingResponse, StreamingResponse
 from plynth.connectors.salesforce.ai import (
     AsyncSalesforceModelsService,
@@ -327,7 +329,7 @@ class TestAIConnectorBoundaries:
     def test_llm_connector_does_not_import_salesforce_connector(self) -> None:
         """Keep a future generic LLM connector independent from Salesforce."""
         if not LLM_ROOT.exists():
-            return
+            pytest.skip("plynth.connectors.llm does not exist yet")
 
         violations = _imports_connector(LLM_ROOT, "plynth.connectors.salesforce")
 
