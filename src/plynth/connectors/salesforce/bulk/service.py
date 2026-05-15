@@ -490,8 +490,8 @@ class SalesforceBulkService(APIService):
             result = bulk.ingest(
                 "Contact",
                 BulkOperation.upsert,
-                [{"Email__c": "a@example.com", "FirstName": "Ada"}],
-                external_id_field="Email__c",
+                [{"UserName__c": "ada-001", "FirstName": "Ada"}],
+                external_id_field="UserName__c",
             )
 
         """
@@ -867,8 +867,8 @@ class AsyncSalesforceBulkService(AsyncAPIService):
             result = await bulk.ingest(
                 "Contact",
                 BulkOperation.upsert,
-                [{"Email__c": "a@example.com", "FirstName": "Ada"}],
-                external_id_field="Email__c",
+                [{"UserName__c": "ada-001", "FirstName": "Ada"}],
+                external_id_field="UserName__c",
             )
 
         """
