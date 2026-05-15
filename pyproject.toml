@@ -183,6 +183,13 @@ no_implicit_optional = true
 ignore_missing_imports = true
 allow_untyped_globals = true
 
+[[tool.mypy.overrides]]
+# _ReadableDumper(Dumper) requires type: ignore[misc] for Pylance/pyright
+# because the base class resolves to CDumper (a C extension) at runtime.
+# mypy does not flag the inheritance itself, so the ignore appears unused to it.
+module = "plynth.testsupport.vcr.serializer"
+warn_unused_ignores = false
+
 # ---------------------------------------------------------------------------
 # Tox — multi-version test matrix
 # ---------------------------------------------------------------------------
