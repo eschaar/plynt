@@ -13,17 +13,17 @@ import yaml
 try:
     from yaml import CDumper as Dumper
 except ImportError:
-    from yaml import Dumper
+    from yaml import Dumper  # type: ignore[assignment]
 
 
 READABLE_YAML_SERIALIZER_NAME = "yaml_readable"
 
 
-class _ReadableDumper(Dumper):  # type: ignore[misc]
+class _ReadableDumper(Dumper):
     """YAML dumper that emits multiline strings using block style."""
 
 
-def _represent_str(dumper: yaml.Dumper, value: str) -> yaml.Node:
+def _represent_str(dumper: _ReadableDumper, value: str) -> yaml.Node:
     """Represent multiline strings with ``|`` for human-readable cassettes."""
     if "\n" in value:
         return dumper.represent_scalar("tag:yaml.org,2002:str", value, style="|")
@@ -81,16 +81,13 @@ class ReadableYamlSerializer:
     def serialize(cassette_dict: Mapping[str, Any]) -> str:
         """Serialize cassette data with readable multiline block strings."""
         readable = ReadableYamlSerializer._prettify_response_json(cassette_dict)
-        return cast(
-            str,
-            yaml.dump(
-                readable,
-                Dumper=_ReadableDumper,
-                sort_keys=False,
-                allow_unicode=True,
-                width=4096,
-                default_flow_style=False,
-            ),
+        return yaml.dump(
+            readable,
+            Dumper=_ReadableDumper,
+            sort_keys=False,
+            allow_unicode=True,
+            width=4096,
+            default_flow_style=False,
         )
 
 
