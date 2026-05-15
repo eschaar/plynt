@@ -128,8 +128,8 @@ scope boundaries rather than a dedicated Salesforce capability ADR.
    them positions plynth as a natural choice for Salesforce AI workloads.
 
 1. **Streaming foundation:** Both APIs achieve their best UX with streaming
-  support (ADR-0017). That dependency is now satisfied, so Models and Agent API
-  delivery can serve as the validation baseline for later AI roadmap items.
+   support (ADR-0017). That dependency is now satisfied, so Models and Agent API
+   delivery can serve as the validation baseline for later AI roadmap items.
 
 1. **Scope boundary:** Models and Agent APIs are Salesforce-specific orchestration
    layers, not generic connectors. They belong here, not in a future LLM adapter.
