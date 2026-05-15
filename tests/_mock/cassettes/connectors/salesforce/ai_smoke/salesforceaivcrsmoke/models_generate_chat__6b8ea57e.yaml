@@ -1,0 +1,398 @@
+version: 1
+interactions:
+- request:
+    method: POST
+    uri: https://login.salesforce.com/services/oauth2/token
+    body: grant_type=password&client_id=REDACTED_CLIENT_ID&client_secret=REDACTED_CLIENT_SECRET&username=redacted%40example.com&password=REDACTED_PASSWORD
+    headers:
+      Host:
+      - login.salesforce.com
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-httpx/0.28.1
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Content-Length:
+      - '289'
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Thu, 14 May 2026 23:04:37 GMT
+      Vary:
+      - Accept-Encoding
+      Set-Cookie:
+      - CookieConsentPolicy=REDACTED; path=/; expires=Fri, 14-May-2027 23:04:37 GMT; Max-Age=31536000; secure
+      - LSKey-c$CookieConsentPolicy=REDACTED; path=/; expires=Fri, 14-May-2027 23:04:37 GMT; Max-Age=31536000; secure
+      - BrowserId=REDACTED_BROWSER_ID; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:04:37 GMT; Max-Age=31536000; secure; SameSite=None
+      X-Content-Type-Options:
+      - nosniff
+      Strict-Transport-Security:
+      - max-age=63072000; includeSubDomains
+      Cache-Control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      Expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      X-ReadOnlyMode:
+      - 'false'
+      Content-Type:
+      - application/json;charset=UTF-8
+      Transfer-Encoding:
+      - chunked
+      content-length:
+      - '383'
+    body:
+      string: |-
+        {
+          "access_token": "replay_only_fake_token",
+          "instance_url": "https://myorg.my.salesforce.com",
+          "id": "https://login.salesforce.com/id/00D000000000000AAA/005000000000000AAA",
+          "token_type": "Bearer",
+          "issued_at": "0",
+          "signature": "replay_only_signature"
+        }
+- request:
+    method: POST
+    uri: https://login.salesforce.com/services/oauth2/token
+    body: grant_type=password&client_id=REDACTED_CLIENT_ID&client_secret=REDACTED_CLIENT_SECRET&username=redacted%40example.com&password=REDACTED_PASSWORD
+    headers:
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 200
+      message: ''
+    headers:
+      date:
+      - Thu, 14 May 2026 23:04:37 GMT
+      vary:
+      - Accept-Encoding
+      set-cookie:
+      - CookieConsentPolicy=REDACTED; path=/; expires=Fri, 14-May-2027 23:04:37 GMT; Max-Age=31536000; secure, LSKey-c$CookieConsentPolicy=REDACTED; path=/; expires=Fri, 14-May-2027 23:04:37 GMT; Max-Age=31536000; secure, BrowserId=REDACTED_BROWSER_ID; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:04:37 GMT; Max-Age=31536000; secure; SameSite=None
+      x-content-type-options:
+      - nosniff
+      strict-transport-security:
+      - max-age=63072000; includeSubDomains
+      cache-control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      x-readonlymode:
+      - 'false'
+      content-type:
+      - application/json;charset=UTF-8
+      transfer-encoding:
+      - chunked
+      content-length:
+      - '383'
+    body:
+      string: |-
+        {
+          "access_token": "replay_only_fake_token",
+          "instance_url": "https://myorg.my.salesforce.com",
+          "id": "https://login.salesforce.com/id/00D000000000000AAA/005000000000000AAA",
+          "token_type": "Bearer",
+          "issued_at": "0",
+          "signature": "replay_only_signature"
+        }
+- request:
+    method: POST
+    uri: https://myorg.my.salesforce.com/einstein/platform/v1/chat-generations
+    body: '{"max_tokens": 16, "stream": false, "messages": [{"role": "user", "content": "Reply with: hello"}]}'
+    headers:
+      Host:
+      - myorg.my.salesforce.com
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-httpx/0.28.1
+      Content-Type:
+      - application/json
+      Accept:
+      - application/json
+      Content-Length:
+      - '99'
+  response:
+    status:
+      code: 404
+      message: Not Found
+    headers:
+      Date:
+      - Thu, 14 May 2026 23:04:38 GMT
+      Content-Type:
+      - text/html; charset=UTF-8
+      Transfer-Encoding:
+      - chunked
+      Connection:
+      - keep-alive
+      Cache-Control:
+      - must-revalidate,no-cache,no-store
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      X-Content-Type-Options:
+      - nosniff
+      X-Robots-Tag:
+      - none
+      Strict-Transport-Security:
+      - max-age=63072000; includeSubDomains
+      Set-Cookie:
+      - CookieConsentPolicy=REDACTED; path=/; expires=Fri, 14-May-2027 23:04:38 GMT; Max-Age=31536000; secure
+      - LSKey-c$CookieConsentPolicy=REDACTED; path=/; expires=Fri, 14-May-2027 23:04:38 GMT; Max-Age=31536000; secure
+      - BrowserId=REDACTED_BROWSER_ID; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:04:38 GMT; Max-Age=31536000; secure; SameSite=None
+      Server:
+      - sfdcedge
+      X-SFDC-Request-Id:
+      - e3090de764ebd6117d7261eebd3951de
+      X-Request-Id:
+      - e3090de764ebd6117d7261eebd3951de
+    body:
+      string: "<table cellspacing=10>\n<tr><td><span style=\"font-weight: bold; font-size: 12pt;\">URL No Longer Exists</span></td></tr>\n<tr><td>You have attempted to reach a URL that no longer exists on salesforce.com. <br/><br/>\n\nYou may have reached this page after clicking on a direct link into the application. This direct link might be: <br/>\n&#8226; A bookmark to a particular page, such as a report or view <br/>\n&#8226; A link to a particular page in the Custom Links section of your Home Tab, or a Custom Link <br/>\n&#8226; A link to a particular page in your email templates <br/><br/>\nIf you reached this page through a bookmark, you are probably trying to access something that has moved. Please update your bookmark. <br/>\n<br/>If you reached this page through any of the other direct links listed above, please notify your administrator to update the link. <br/><br/>If you reached this page through a link on our site, please <a href=\"/cases/logabug.jsp\">report the broken link directly to our Support Team</a> and we will fix it promptly. Please indicate the page you were on when you clicked the link as well as any other related information. We apologize for the inconvenience. <br/><br/>Thank you again for your patience and assistance. And thanks for using salesforce.com!</td></tr>\n</table>\n\n\n\n<!-- Body events -->\n<script type=\"text/javascript\">function bodyOnLoad(){if(window.PreferenceBits){window.PreferenceBits.prototype.csrfToken=\"null\";};}function bodyOnBeforeUnload(){}function bodyOnFocus(){}function bodyOnUnload(){}</script>\n\t\t\t\n</body>\n</html>\n\n\n<!--\n...................................................................................................\n...................................................................................................\n...................................................................................................\n...................................................................................................\n-->\n"
+- request:
+    method: POST
+    uri: https://myorg.my.salesforce.com/einstein/platform/v1/chat-generations
+    body: '{"max_tokens": 16, "stream": false, "messages": [{"role": "user", "content": "Reply with: hello"}]}'
+    headers:
+      Content-Type:
+      - application/json
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 404
+      message: ''
+    headers:
+      date:
+      - Thu, 14 May 2026 23:04:38 GMT
+      content-type:
+      - text/html; charset=UTF-8
+      transfer-encoding:
+      - chunked
+      connection:
+      - keep-alive
+      cache-control:
+      - must-revalidate,no-cache,no-store
+      content-security-policy:
+      - upgrade-insecure-requests
+      x-content-type-options:
+      - nosniff
+      x-robots-tag:
+      - none
+      strict-transport-security:
+      - max-age=63072000; includeSubDomains
+      set-cookie:
+      - CookieConsentPolicy=REDACTED; path=/; expires=Fri, 14-May-2027 23:04:38 GMT; Max-Age=31536000; secure, LSKey-c$CookieConsentPolicy=REDACTED; path=/; expires=Fri, 14-May-2027 23:04:38 GMT; Max-Age=31536000; secure, BrowserId=REDACTED_BROWSER_ID; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:04:38 GMT; Max-Age=31536000; secure; SameSite=None
+      server:
+      - sfdcedge
+      x-sfdc-request-id:
+      - e3090de764ebd6117d7261eebd3951de
+      x-request-id:
+      - e3090de764ebd6117d7261eebd3951de
+    body:
+      string: "<table cellspacing=10>\n<tr><td><span style=\"font-weight: bold; font-size: 12pt;\">URL No Longer Exists</span></td></tr>\n<tr><td>You have attempted to reach a URL that no longer exists on salesforce.com. <br/><br/>\n\nYou may have reached this page after clicking on a direct link into the application. This direct link might be: <br/>\n&#8226; A bookmark to a particular page, such as a report or view <br/>\n&#8226; A link to a particular page in the Custom Links section of your Home Tab, or a Custom Link <br/>\n&#8226; A link to a particular page in your email templates <br/><br/>\nIf you reached this page through a bookmark, you are probably trying to access something that has moved. Please update your bookmark. <br/>\n<br/>If you reached this page through any of the other direct links listed above, please notify your administrator to update the link. <br/><br/>If you reached this page through a link on our site, please <a href=\"/cases/logabug.jsp\">report the broken link directly to our Support Team</a> and we will fix it promptly. Please indicate the page you were on when you clicked the link as well as any other related information. We apologize for the inconvenience. <br/><br/>Thank you again for your patience and assistance. And thanks for using salesforce.com!</td></tr>\n</table>\n\n\n\n<!-- Body events -->\n<script type=\"text/javascript\">function bodyOnLoad(){if(window.PreferenceBits){window.PreferenceBits.prototype.csrfToken=\"null\";};}function bodyOnBeforeUnload(){}function bodyOnFocus(){}function bodyOnUnload(){}</script>\n\t\t\t\n</body>\n</html>\n\n\n<!--\n...................................................................................................\n...................................................................................................\n...................................................................................................\n...................................................................................................\n-->\n"
+- request:
+    method: POST
+    uri: https://login.salesforce.com/services/oauth2/token
+    body: grant_type=password&client_id=REDACTED_CLIENT_ID&client_secret=REDACTED_CLIENT_SECRET&username=redacted%40example.com&password=REDACTED_PASSWORD
+    headers:
+      Host:
+      - login.salesforce.com
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-httpx/0.28.1
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Content-Length:
+      - '289'
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Thu, 14 May 2026 23:06:49 GMT
+      Vary:
+      - Accept-Encoding
+      Set-Cookie:
+      - CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure
+      - LSKey-c$CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure
+      - BrowserId=lqoYtU_pEfG5WRtUax249g; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure; SameSite=None
+      X-Content-Type-Options:
+      - nosniff
+      Strict-Transport-Security:
+      - max-age=63072000; includeSubDomains
+      Cache-Control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      Expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      X-ReadOnlyMode:
+      - 'false'
+      Content-Type:
+      - application/json;charset=UTF-8
+      Transfer-Encoding:
+      - chunked
+      content-length:
+      - '383'
+    body:
+      string: |-
+        {
+          "access_token": "REDACTED_ACCESS_TOKEN",
+          "instance_url": "https://myorg.my.salesforce.com",
+          "id": "https://login.salesforce.com/id/00D000000000000AAA/005000000000000AAA",
+          "token_type": "Bearer",
+          "issued_at": "0",
+          "signature": "replay_only_signature"
+        }
+- request:
+    method: POST
+    uri: https://login.salesforce.com/services/oauth2/token
+    body: grant_type=password&client_id=REDACTED_CLIENT_ID&client_secret=REDACTED_CLIENT_SECRET&username=redacted%40example.com&password=REDACTED_PASSWORD
+    headers:
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 200
+      message: ''
+    headers:
+      date:
+      - Thu, 14 May 2026 23:06:49 GMT
+      vary:
+      - Accept-Encoding
+      set-cookie:
+      - CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure, LSKey-c$CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure, BrowserId=lqoYtU_pEfG5WRtUax249g; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure; SameSite=None
+      x-content-type-options:
+      - nosniff
+      strict-transport-security:
+      - max-age=63072000; includeSubDomains
+      cache-control:
+      - no-cache,must-revalidate,max-age=0,no-store,private
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      x-readonlymode:
+      - 'false'
+      content-type:
+      - application/json;charset=UTF-8
+      transfer-encoding:
+      - chunked
+      content-length:
+      - '383'
+    body:
+      string: |-
+        {
+          "access_token": "REDACTED_ACCESS_TOKEN",
+          "instance_url": "https://myorg.my.salesforce.com",
+          "id": "https://login.salesforce.com/id/00D000000000000AAA/005000000000000AAA",
+          "token_type": "Bearer",
+          "issued_at": "0",
+          "signature": "replay_only_signature"
+        }
+- request:
+    method: POST
+    uri: https://myorg.my.salesforce.com/einstein/platform/v1/chat-generations
+    body: '{"max_tokens": 16, "stream": false, "messages": [{"role": "user", "content": "Reply with: hello"}]}'
+    headers:
+      Host:
+      - myorg.my.salesforce.com
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-httpx/0.28.1
+      Content-Type:
+      - application/json
+      Accept:
+      - application/json
+      Content-Length:
+      - '99'
+  response:
+    status:
+      code: 404
+      message: Not Found
+    headers:
+      Date:
+      - Thu, 14 May 2026 23:06:50 GMT
+      Content-Type:
+      - text/html; charset=UTF-8
+      Transfer-Encoding:
+      - chunked
+      Connection:
+      - keep-alive
+      X-Content-Type-Options:
+      - nosniff
+      Cache-Control:
+      - must-revalidate,no-cache,no-store
+      X-Robots-Tag:
+      - none
+      Strict-Transport-Security:
+      - max-age=63072000; includeSubDomains
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Set-Cookie:
+      - CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:50 GMT; Max-Age=31536000; secure
+      - LSKey-c$CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:50 GMT; Max-Age=31536000; secure
+      - BrowserId=lyBZoE_pEfG4rr3W_aMFKA; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:50 GMT; Max-Age=31536000; secure; SameSite=None
+      Server:
+      - sfdcedge
+      X-SFDC-Request-Id:
+      - 7b08f01bb2fc6f2d8992d5cbcf42e271
+      X-Request-Id:
+      - 7b08f01bb2fc6f2d8992d5cbcf42e271
+    body:
+      string: "<table cellspacing=10>\n<tr><td><span style=\"font-weight: bold; font-size: 12pt;\">URL No Longer Exists</span></td></tr>\n<tr><td>You have attempted to reach a URL that no longer exists on salesforce.com. <br/><br/>\n\nYou may have reached this page after clicking on a direct link into the application. This direct link might be: <br/>\n&#8226; A bookmark to a particular page, such as a report or view <br/>\n&#8226; A link to a particular page in the Custom Links section of your Home Tab, or a Custom Link <br/>\n&#8226; A link to a particular page in your email templates <br/><br/>\nIf you reached this page through a bookmark, you are probably trying to access something that has moved. Please update your bookmark. <br/>\n<br/>If you reached this page through any of the other direct links listed above, please notify your administrator to update the link. <br/><br/>If you reached this page through a link on our site, please <a href=\"/cases/logabug.jsp\">report the broken link directly to our Support Team</a> and we will fix it promptly. Please indicate the page you were on when you clicked the link as well as any other related information. We apologize for the inconvenience. <br/><br/>Thank you again for your patience and assistance. And thanks for using salesforce.com!</td></tr>\n</table>\n\n\n\n<!-- Body events -->\n<script type=\"text/javascript\">function bodyOnLoad(){if(window.PreferenceBits){window.PreferenceBits.prototype.csrfToken=\"null\";};}function bodyOnBeforeUnload(){}function bodyOnFocus(){}function bodyOnUnload(){}</script>\n\t\t\t\n</body>\n</html>\n\n\n<!--\n...................................................................................................\n...................................................................................................\n...................................................................................................\n...................................................................................................\n-->\n"
+- request:
+    method: POST
+    uri: https://myorg.my.salesforce.com/einstein/platform/v1/chat-generations
+    body: '{"max_tokens": 16, "stream": false, "messages": [{"role": "user", "content": "Reply with: hello"}]}'
+    headers:
+      Content-Type:
+      - application/json
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 404
+      message: ''
+    headers:
+      date:
+      - Thu, 14 May 2026 23:06:50 GMT
+      content-type:
+      - text/html; charset=UTF-8
+      transfer-encoding:
+      - chunked
+      connection:
+      - keep-alive
+      x-content-type-options:
+      - nosniff
+      cache-control:
+      - must-revalidate,no-cache,no-store
+      x-robots-tag:
+      - none
+      strict-transport-security:
+      - max-age=63072000; includeSubDomains
+      content-security-policy:
+      - upgrade-insecure-requests
+      set-cookie:
+      - CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:50 GMT; Max-Age=31536000; secure, LSKey-c$CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:50 GMT; Max-Age=31536000; secure, BrowserId=lyBZoE_pEfG4rr3W_aMFKA; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:50 GMT; Max-Age=31536000; secure; SameSite=None
+      server:
+      - sfdcedge
+      x-sfdc-request-id:
+      - 7b08f01bb2fc6f2d8992d5cbcf42e271
+      x-request-id:
+      - 7b08f01bb2fc6f2d8992d5cbcf42e271
+    body:
+      string: "<table cellspacing=10>\n<tr><td><span style=\"font-weight: bold; font-size: 12pt;\">URL No Longer Exists</span></td></tr>\n<tr><td>You have attempted to reach a URL that no longer exists on salesforce.com. <br/><br/>\n\nYou may have reached this page after clicking on a direct link into the application. This direct link might be: <br/>\n&#8226; A bookmark to a particular page, such as a report or view <br/>\n&#8226; A link to a particular page in the Custom Links section of your Home Tab, or a Custom Link <br/>\n&#8226; A link to a particular page in your email templates <br/><br/>\nIf you reached this page through a bookmark, you are probably trying to access something that has moved. Please update your bookmark. <br/>\n<br/>If you reached this page through any of the other direct links listed above, please notify your administrator to update the link. <br/><br/>If you reached this page through a link on our site, please <a href=\"/cases/logabug.jsp\">report the broken link directly to our Support Team</a> and we will fix it promptly. Please indicate the page you were on when you clicked the link as well as any other related information. We apologize for the inconvenience. <br/><br/>Thank you again for your patience and assistance. And thanks for using salesforce.com!</td></tr>\n</table>\n\n\n\n<!-- Body events -->\n<script type=\"text/javascript\">function bodyOnLoad(){if(window.PreferenceBits){window.PreferenceBits.prototype.csrfToken=\"null\";};}function bodyOnBeforeUnload(){}function bodyOnFocus(){}function bodyOnUnload(){}</script>\n\t\t\t\n</body>\n</html>\n\n\n<!--\n...................................................................................................\n...................................................................................................\n...................................................................................................\n...................................................................................................\n-->\n"
