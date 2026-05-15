@@ -206,8 +206,8 @@ class TestSalesforceQueryService:
         assert pages[0].records == [{"Id": "001AAA"}]
         assert pages[1].records == [{"Id": "001BBB"}]
 
-    def test_query_all_returns_flat_list(self) -> None:
-        """Validate query all returns flat list."""
+    def test_query_all_returns_typed_response_with_all_records(self) -> None:
+        """Validate query_all returns a SalesforceQueryResponse with all records."""
         next_url = f"/services/data/v{DEFAULT_API_VERSION}/query/01g...XXXX-2000"
         page1 = _page_with_next([{"Id": "001AAA"}], next_url, total=2)
         page2 = _single_page([{"Id": "001BBB"}], total=2)
@@ -229,8 +229,11 @@ class TestSalesforceQueryService:
 
         transport.send.side_effect = side_effect
 
-        records = svc.query_all("SELECT Id FROM Account")
-        assert records == [{"Id": "001AAA"}, {"Id": "001BBB"}]
+        result = svc.query_all("SELECT Id FROM Account")
+        assert result.done is True
+        assert result.next_records_url is None
+        assert result.total_size == 2
+        assert result.records == [{"Id": "001AAA"}, {"Id": "001BBB"}]
 
     def test_query_all_iter_uses_query_all_when_include_deleted(self) -> None:
         """Validate query_all_iter starts from queryAll when requested."""
@@ -254,14 +257,14 @@ class TestSalesforceQueryService:
         content = _single_page([{"Id": "001AAA", "IsDeleted": True}])
         svc, transport = _make_service(content=content)
 
-        records = svc.query_all(
+        result = svc.query_all(
             "SELECT Id, IsDeleted FROM Account",
             include_deleted=True,
         )
 
         sent = transport.send.call_args[0][0]
         assert sent.url.endswith(f"/services/data/v{DEFAULT_API_VERSION}/queryAll")
-        assert records == [{"Id": "001AAA", "IsDeleted": True}]
+        assert result.records == [{"Id": "001AAA", "IsDeleted": True}]
 
     def test_facade_query_returns_service(self) -> None:
         """Validate facade query returns service."""
@@ -421,8 +424,8 @@ class TestAsyncSalesforceQueryService:
         assert pages[0].records == [{"Id": "001AAA"}]
         assert pages[1].records == [{"Id": "001BBB"}]
 
-    async def test_query_all_returns_flat_list(self) -> None:
-        """Validate query all returns flat list."""
+    async def test_query_all_returns_typed_response_with_all_records(self) -> None:
+        """Validate query_all returns a SalesforceQueryResponse with all records."""
         next_url = f"/services/data/v{DEFAULT_API_VERSION}/query/01g...XXXX-2000"
         page1 = _page_with_next([{"Id": "001AAA"}], next_url, total=2)
         page2 = _single_page([{"Id": "001BBB"}], total=2)
@@ -444,8 +447,11 @@ class TestAsyncSalesforceQueryService:
 
         transport.send.side_effect = side_effect
 
-        records = await svc.query_all("SELECT Id FROM Account")
-        assert records == [{"Id": "001AAA"}, {"Id": "001BBB"}]
+        result = await svc.query_all("SELECT Id FROM Account")
+        assert result.done is True
+        assert result.next_records_url is None
+        assert result.total_size == 2
+        assert result.records == [{"Id": "001AAA"}, {"Id": "001BBB"}]
 
     async def test_query_all_iter_uses_query_all_when_include_deleted(self) -> None:
         """Validate query_all_iter starts from queryAll when requested."""
@@ -470,14 +476,14 @@ class TestAsyncSalesforceQueryService:
         content = _single_page([{"Id": "001AAA", "IsDeleted": True}])
         svc, transport = _make_async_service(content=content)
 
-        records = await svc.query_all(
+        result = await svc.query_all(
             "SELECT Id, IsDeleted FROM Account",
             include_deleted=True,
         )
 
         sent = transport.send.call_args[0][0]
         assert sent.url.endswith(f"/services/data/v{DEFAULT_API_VERSION}/queryAll")
-        assert records == [{"Id": "001AAA", "IsDeleted": True}]
+        assert result.records == [{"Id": "001AAA", "IsDeleted": True}]
 
     def test_facade_query_returns_service(self) -> None:
         """Validate facade query returns service."""
@@ -617,8 +623,8 @@ class TestSalesforceObjectQueryService:
         sent = transport.send.call_args[0][0]
         assert sent.params == {"q": "SELECT Id FROM Account LIMIT 1"}
 
-    def test_query_all_builds_soql_and_returns_flat_list(self) -> None:
-        """query_all composes SOQL for the object and returns records as a flat list."""
+    def test_query_all_builds_soql_and_returns_typed_response(self) -> None:
+        """query_all builds SOQL and returns a SalesforceQueryResponse."""
         records = [{"Id": "001AAA"}, {"Id": "001BBB"}]
         content = _single_page(records)
         transport = MockSyncTransport(status_code=200, content=content)
@@ -627,7 +633,7 @@ class TestSalesforceObjectQueryService:
 
         result = svc.query_all(fields=["Id"])
 
-        assert result == records
+        assert result.records == records
         sent = transport.send.call_args[0][0]
         assert sent.params == {"q": "SELECT Id FROM Account"}
 
@@ -734,8 +740,8 @@ class TestAsyncSalesforceObjectQueryService:
         sent = transport.send.call_args[0][0]
         assert sent.params == {"q": "SELECT Id FROM Account LIMIT 1"}
 
-    async def test_object_query_all_returns_flat_list(self) -> None:
-        """query_all composes SOQL for the object and returns records as a flat list."""
+    async def test_object_query_all_returns_typed_response(self) -> None:
+        """query_all builds SOQL and returns a SalesforceQueryResponse."""
         records = [{"Id": "001AAA"}, {"Id": "001BBB"}]
         content = _single_page(records)
         transport = MockAsyncTransport(status_code=200, content=content)
@@ -744,7 +750,7 @@ class TestAsyncSalesforceObjectQueryService:
 
         result = await svc.query_all(fields=["Id"])
 
-        assert result == records
+        assert result.records == records
         sent = transport.send.call_args[0][0]
         assert sent.params == {"q": "SELECT Id FROM Account"}
 

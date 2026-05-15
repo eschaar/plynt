@@ -198,35 +198,48 @@ class SalesforceQueryService(APIService):
         soql: str,
         *,
         include_deleted: bool = False,
-    ) -> list[dict[str, Any]]:
+    ) -> SalesforceQueryResponse:
         """Eagerly fetch all records across all pages of a SOQL query.
 
-        Drives ``query_all_iter()`` to completion and returns every record
-        in a single flat list.  Use this when you need all results at once
-        and the total record count is manageable in memory.
+        Drives ``query_all_iter()`` to completion and returns a
+        ``SalesforceQueryResponse`` with ``done=True``,
+        ``next_records_url=None``, ``total_size`` from the first page, and
+        ``records`` containing every record from all pages.  Use this when
+        you need all results at once and the total record count is
+        manageable in memory.
 
         Args:
             include_deleted: When ``True``, fetch from ``/queryAll`` so
                 soft-deleted records are included.
 
         Returns:
-            A flat list of record dicts from all pages.
+            A ``SalesforceQueryResponse`` with ``done=True`` and all records
+            across all pages in ``records``.
 
         Example::
 
-            accounts = query_svc.query_all(
+            result = query_svc.query_all(
                 "SELECT Id, Name FROM Account WHERE Type = 'Customer'"
             )
+            print(f"Total: {result.total_size}")
+            for record in result.records:
+                process(record)
 
         """
-        return [
-            record
-            for page in self.query_all_iter(
-                soql,
-                include_deleted=include_deleted,
-            )
-            for record in page.records
-        ]
+        all_records: list[dict[str, Any]] = []
+        total_size = 0
+        for i, page in enumerate(
+            self.query_all_iter(soql, include_deleted=include_deleted)
+        ):
+            if i == 0:
+                total_size = page.total_size
+            all_records.extend(page.records)
+        return SalesforceQueryResponse(
+            totalSize=total_size,
+            done=True,
+            nextRecordsUrl=None,
+            records=all_records,
+        )
 
 
 class AsyncSalesforceQueryService(AsyncAPIService):
@@ -378,7 +391,7 @@ class AsyncSalesforceQueryService(AsyncAPIService):
         soql: str,
         *,
         include_deleted: bool = False,
-    ) -> list[dict[str, Any]]:
+    ) -> SalesforceQueryResponse:
         """Eagerly fetch all records across all pages of a SOQL query.
 
         Args:
@@ -386,16 +399,27 @@ class AsyncSalesforceQueryService(AsyncAPIService):
                 soft-deleted records are included.
 
         Returns:
-            A flat list of record dicts from all pages.
+            A ``SalesforceQueryResponse`` with ``done=True`` and all records
+            across all pages in ``records``.
 
         """
-        records: list[dict[str, Any]] = []
+        all_records: list[dict[str, Any]] = []
+        total_size = 0
+        i = 0
         async for page in self.query_all_iter(
             soql,
             include_deleted=include_deleted,
         ):
-            records.extend(page.records)
-        return records
+            if i == 0:
+                total_size = page.total_size
+            all_records.extend(page.records)
+            i += 1
+        return SalesforceQueryResponse(
+            totalSize=total_size,
+            done=True,
+            nextRecordsUrl=None,
+            records=all_records,
+        )
 
 
 class SalesforceObjectQueryService:
@@ -521,8 +545,8 @@ class SalesforceObjectQueryService:
         limit: int | None = None,
         offset: int | None = None,
         include_deleted: bool = False,
-    ) -> list[dict[str, Any]]:
-        """Fetch all records for an object-scoped query into one list."""
+    ) -> SalesforceQueryResponse:
+        """Fetch all records for an object-scoped query into one response."""
         soql = build_select_soql(
             self._object_name,
             fields=fields,
@@ -654,8 +678,8 @@ class AsyncSalesforceObjectQueryService:
         limit: int | None = None,
         offset: int | None = None,
         include_deleted: bool = False,
-    ) -> list[dict[str, Any]]:
-        """Fetch all records for an object-scoped query into one list."""
+    ) -> SalesforceQueryResponse:
+        """Fetch all records for an object-scoped query into one response."""
         soql = build_select_soql(
             self._object_name,
             fields=fields,
