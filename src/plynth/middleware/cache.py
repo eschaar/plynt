@@ -39,9 +39,10 @@ class _CacheBase:
     ``AsyncCacheMiddleware`` instead.
     """
 
-    def __init__(self, backend: CacheBackend) -> None:
+    def __init__(self, backend: CacheBackend, ttl: float | None = None) -> None:
         """Initialize _CacheBase."""
         self._backend = backend
+        self._ttl = ttl
 
     @staticmethod
     def _snapshot_response(response: Response) -> Response:
@@ -74,7 +75,7 @@ class _CacheBase:
             return
         if request.method == "GET" and response.status_code < HTTPStatus.BAD_REQUEST:
             key = type(self._backend).cache_key(request)
-            self._backend.set(key, self._snapshot_response(response))
+            self._backend.set(key, self._snapshot_response(response), self._ttl)
 
 
 class CacheMiddleware(_CacheBase):
@@ -90,11 +91,14 @@ class CacheMiddleware(_CacheBase):
 
     Args:
         backend: Any ``CacheBackend``-compatible object.
+        ttl: Optional time-to-live in seconds passed to ``backend.set()``
+            on every cache write.  Backends that do not support TTL ignore
+            this value.
 
     Example::
 
         transport = HttpxSyncTransport(
-            middlewares=[CacheMiddleware(LocMemCache())],
+            middlewares=[CacheMiddleware(LocMemCache(), ttl=300)],
         )
 
     """
@@ -127,11 +131,14 @@ class AsyncCacheMiddleware(_CacheBase):
 
     Args:
         backend: Any ``CacheBackend``-compatible object.
+        ttl: Optional time-to-live in seconds passed to ``backend.set()``
+            on every cache write.  Backends that do not support TTL ignore
+            this value.
 
     Example::
 
         transport = HttpxAsyncTransport(
-            middlewares=[AsyncCacheMiddleware(LocMemCache())],
+            middlewares=[AsyncCacheMiddleware(LocMemCache(), ttl=300)],
         )
 
     """

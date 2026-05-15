@@ -19,7 +19,7 @@ except ImportError:
 READABLE_YAML_SERIALIZER_NAME = "yaml_readable"
 
 
-class _ReadableDumper(Dumper):
+class _ReadableDumper(Dumper):  # type: ignore[misc]
     """YAML dumper that emits multiline strings using block style."""
 
 
