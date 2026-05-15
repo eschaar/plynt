@@ -139,8 +139,9 @@ since both variants are always shipped together.
 
 Layers are ordered by dependency and logical build-up:
 
-```text
-Request → Transport → Response → Client → Service
+```mermaid
+flowchart LR
+    Req[Request] --> Transport --> Response --> Client --> Service
 ```
 
 1. **Request Layer** (`base/request.py`)

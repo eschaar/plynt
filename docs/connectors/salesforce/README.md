@@ -412,11 +412,11 @@ deleted_page = query_svc.query(
     include_deleted=True,
 )
 
-all_records = query_svc.query_all(
+result = query_svc.query_all(
     "SELECT Id, Name FROM Account ORDER BY CreatedDate DESC"
 )
 
-all_records_with_deleted = query_svc.query_all(
+result_with_deleted = query_svc.query_all(
     "SELECT Id, IsDeleted FROM Account ORDER BY LastModifiedDate DESC",
     include_deleted=True,
 )
@@ -441,7 +441,7 @@ for page in query_svc.query_all_iter("SELECT Id, Name FROM Lead"):
 lead_query = facade.object_query("Lead")
 
 page = lead_query.query(fields=["Id", "Email"], where="Email = 'john@example.com'")
-records = lead_query.query_all(
+result = lead_query.query_all(
     fields=["Id", "Email", "FirstName", "LastName"],
     where="Email = 'john@example.com'",
 )

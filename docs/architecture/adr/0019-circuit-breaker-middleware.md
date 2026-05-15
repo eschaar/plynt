@@ -71,13 +71,13 @@ The circuit breaker implements three states:
 
 State transitions:
 
-```text
-Closed --[failure_threshold met]--> Open
-  ^                                    |
-  |                                    |
-  +-- Half-open --[success]-----------+
-         |
-         +--[failure]----> Open
+```mermaid
+stateDiagram-v2
+    [*] --> Closed
+    Closed --> Open : failure_threshold met
+    Open --> HalfOpen : recovery_timeout elapsed
+    HalfOpen --> Closed : probe succeeds
+    HalfOpen --> Open : probe fails
 ```
 
 ### Failure criteria
@@ -105,9 +105,9 @@ No new dependencies are introduced. This is a Tier 1 core addition.
 
 The standard chain order (ADR-0013) is extended:
 
-```text
-HeaderMiddleware → AuthMiddleware → CacheMiddleware → CircuitBreakerMiddleware
-  → RateLimitMiddleware → RetryMiddleware → _send_once
+```mermaid
+flowchart LR
+    H[HeaderMiddleware] --> A[AuthMiddleware] --> C[CacheMiddleware] --> CB[CircuitBreakerMiddleware] --> R[RateLimitMiddleware] --> Re[RetryMiddleware] --> IO["_send_once()"]
 ```
 
 Placing `CircuitBreakerMiddleware` **before** `RetryMiddleware` ensures:

@@ -26,37 +26,6 @@ Current module layout:
 - `errors.py`: Typed error hierarchy (maps Salesforce error payloads)
 - `constants.py`: Shared literals and defaults
 
-## Implemented Capabilities
-
-The following are implemented and covered by tests:
-
-- **SObject CRUD**: create, get, update, delete, upsert,
-  get/list-by-external-id
-- **SObject metadata**: describe, available layouts, deleted/updated windows
-- **SOQL queries**: execute with pagination support (query, query_more,
-  query_all, include_deleted via `queryAll`)
-- **SOSL search**: search and quick_search with typed `SalesforceSearchResponse`
-- **SOSL/SOQL helpers**: `escape_sosl`, `format_soql`, `build_select_soql`,
-  `is_salesforce_id`, `validate_salesforce_id`
-- **Utility endpoints**: limits (typed), tooling execute
-- **Observability**: API usage parsing from `Sforce-Limit-Info`
-- **Developer experience**: lookup registry, helper builders, REST/Apex
-  passthrough entry points
-- **Lookup conveniences**: Queue and Profile lookup services
-  (`SalesforceQueueLookupService`, `SalesforceProfileLookupService`,
-  and async counterparts) — list, get-by-name, get-by-developer-name
-- **Incremental query helper**: `query_updated_since()` on
-  `SalesforceObjectQueryService` / `AsyncSalesforceObjectQueryService`
-  — timezone-aware datetime validation, configurable timestamp field,
-  composable WHERE and ORDER BY
-- **Composite primitives**: composite, batch, tree request/response models
-- **Objects catalog**: `objects()` (`GET /sobjects/`) with typed
-  `SalesforceGlobalDescribeResponse`
-- **Facade**: SalesforceAPIFacade / AsyncSalesforceAPIFacade
-- **Authentication**: OAuth2 password flow, OAuth2 client credentials flow
-- **Error handling**: typed error mapping from Salesforce payloads (SF-0001)
-- **Sync and async**: full parity for all implemented capabilities
-
 ## Salesforce REST Capability Overview
 
 This matrix consolidates the connector direction in one place.
