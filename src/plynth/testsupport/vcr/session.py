@@ -27,6 +27,10 @@ from plynth.testsupport.vcr.config import (
     VCRSettings,
 )
 from plynth.testsupport.vcr.path import DeterministicCassettePathResolver
+from plynth.testsupport.vcr.serializer import (
+    READABLE_YAML_SERIALIZER,
+    READABLE_YAML_SERIALIZER_NAME,
+)
 
 
 def _normalize_path(url: str) -> str:
@@ -212,6 +216,11 @@ class VCRSession:
             instance = vcr.VCR(
                 filter_headers=list(self._settings.filter_headers),
                 decode_compressed_response=self._settings.decode_compressed_response,
+                serializer=READABLE_YAML_SERIALIZER_NAME,
+            )
+            instance.register_serializer(
+                READABLE_YAML_SERIALIZER_NAME,
+                READABLE_YAML_SERIALIZER,
             )
             for name, matcher in self._settings.custom_matchers.items():
                 instance.register_matcher(name, matcher)
