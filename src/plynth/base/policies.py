@@ -15,7 +15,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 __all__ = [
     "CircuitBreakerPolicy",
@@ -137,7 +137,7 @@ class RateLimitPolicy:
             raise ValueError("window_seconds must be > 0")
 
 
-class ThrottleGovernanceAction(Enum):
+class ThrottleGovernanceAction(StrEnum):
     """Possible actions emitted by throttle governance policy.
 
     Attributes:
