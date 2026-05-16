@@ -29,6 +29,7 @@ from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynth.base.policies import RetryPolicy
 from plynth.base.request import Request
 from plynth.base.response import Response
+from plynth.middleware.throttle import ThrottleGovernedError
 
 __all__ = ["AsyncRetryMiddleware", "RetryMiddleware"]
 
@@ -82,6 +83,18 @@ class _RetryBase:  # pylint: disable=too-few-public-methods
         governance_delay = getattr(response, "_governance_delay_seconds", 0.0)
         return max(backoff_delay, governance_delay)
 
+    def _should_retry_exception(self, exc: Exception) -> bool:
+        """Return whether *exc* should be retried.
+
+        ThrottleGovernedError is never retried regardless of policy, since
+        a governance reject means stop immediately.
+        """
+        if isinstance(exc, ThrottleGovernedError):
+            return False
+        if not self._policy.retry_on_network_error:
+            return False
+        return self._policy.retryable_exception_classifier(exc)
+
 
 class RetryMiddleware(  # pylint: disable=too-few-public-methods
     _RetryBase,
@@ -119,6 +132,9 @@ class RetryMiddleware(  # pylint: disable=too-few-public-methods
             last response once all attempts are exhausted.
 
         Raises:
+            ThrottleGovernedError: Re-raised immediately when governance
+                rejects the request; never retried regardless of the
+                exception classifier.
             Exception: Re-raises the last network exception when all
                 attempts raise and ``retry_on_network_error`` is ``True``.
 
@@ -145,9 +161,7 @@ class RetryMiddleware(  # pylint: disable=too-few-public-methods
             try:
                 response = next_handler(request)
             except Exception as exc:  # pylint: disable=broad-exception-caught
-                if not policy.retry_on_network_error:
-                    raise
-                if not policy.retryable_exception_classifier(exc):
+                if not self._should_retry_exception(exc):
                     raise
                 last_exc = exc
                 response = None
@@ -216,6 +230,9 @@ class AsyncRetryMiddleware(  # pylint: disable=too-few-public-methods
             last response once all attempts are exhausted.
 
         Raises:
+            ThrottleGovernedError: Re-raised immediately when governance
+                rejects the request; never retried regardless of the
+                exception classifier.
             Exception: Re-raises the last network exception when all
                 attempts raise and ``retry_on_network_error`` is ``True``.
 
@@ -242,9 +259,7 @@ class AsyncRetryMiddleware(  # pylint: disable=too-few-public-methods
             try:
                 response = await next_handler(request)
             except Exception as exc:  # pylint: disable=broad-exception-caught
-                if not policy.retry_on_network_error:
-                    raise
-                if not policy.retryable_exception_classifier(exc):
+                if not self._should_retry_exception(exc):
                     raise
                 last_exc = exc
                 response = None

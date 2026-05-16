@@ -17,6 +17,7 @@ from plynth.base.policies import RetryPolicy
 from plynth.base.request import Request
 from plynth.base.response import Response
 from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
+from plynth.middleware.throttle import ThrottleGovernedError
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -235,8 +236,30 @@ class TestRetryMiddlewareGovernanceIntegration:
         # max(0.5, 0.2) = 0.5
         mock_sleep.assert_called_once_with(0.5)
 
+    def test_governance_reject_is_not_retried(self) -> None:
+        """Test ThrottleGovernedError propagates immediately without retry."""
+        calls: list[int] = []
+        reject_response = Response(status_code=429, headers={}, content=b"")
+        error = ThrottleGovernedError(
+            response=reject_response, delay_seconds=0.0, reason="Rejected"
+        )
 
-class TestAsyncRetryMiddlewareGovernanceIntegration:
+        def handler(_req: Request) -> Response:
+            """Always raise governance rejection."""
+            calls.append(1)
+            raise error
+
+        policy = RetryPolicy(
+            max_attempts=3,
+            retry_on_network_error=True,
+            retryable_exception_classifier=lambda _exc: True,
+        )
+        mw = RetryMiddleware(policy)
+        with pytest.raises(ThrottleGovernedError):
+            mw.handle(_REQUEST, handler)
+
+        assert len(calls) == 1
+
     """Tests for async retry middleware integration with throttle governance."""
 
     @pytest.mark.asyncio
@@ -288,3 +311,28 @@ class TestAsyncRetryMiddlewareGovernanceIntegration:
 
         await AsyncRetryMiddleware(_POLICY_NO_RETRY).handle(_REQUEST, handler)
         assert captured[0] is _REQUEST
+
+    @pytest.mark.asyncio
+    async def test_async_governance_reject_is_not_retried(self) -> None:
+        """Test ThrottleGovernedError propagates immediately without retry."""
+        calls: list[int] = []
+        reject_response = Response(status_code=429, headers={}, content=b"")
+        error = ThrottleGovernedError(
+            response=reject_response, delay_seconds=0.0, reason="Rejected"
+        )
+
+        async def handler(_req: Request) -> Response:
+            """Always raise governance rejection."""
+            calls.append(1)
+            raise error
+
+        policy = RetryPolicy(
+            max_attempts=3,
+            retry_on_network_error=True,
+            retryable_exception_classifier=lambda _exc: True,
+        )
+        mw = AsyncRetryMiddleware(policy)
+        with pytest.raises(ThrottleGovernedError):
+            await mw.handle(_REQUEST, handler)
+
+        assert len(calls) == 1
