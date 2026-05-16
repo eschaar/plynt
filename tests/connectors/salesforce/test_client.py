@@ -550,6 +550,20 @@ class TestSalesforceAPIClientErrorMapping:
             client.get(SERVICE_PATH)
         assert exc_info.value.url.startswith(INSTANCE_URL)
 
+    def test_raw_true_returns_salesforce_error_response_without_raising(self) -> None:
+        """raw=True bypasses raise_for_salesforce_errors and returns the response."""
+        client, _, _ = _make_client(
+            status_code=400, content=_sf_body("REQUIRED_FIELD_MISSING")
+        )
+        resp = client.request("GET", SERVICE_PATH, raw=True)
+        assert resp.status_code == 400
+
+    def test_raw_true_returns_generic_http_error_response_without_raising(self) -> None:
+        """raw=True bypasses match_error and returns non-Salesforce 4xx responses."""
+        client, _, _ = _make_client(status_code=401, content=b"Unauthorized")
+        resp = client.request("GET", SERVICE_PATH, raw=True)
+        assert resp.status_code == 401
+
 
 # ---------------------------------------------------------------------------
 # Error-mapping integration — async
@@ -599,3 +613,21 @@ class TestAsyncSalesforceAPIClientErrorMapping:
         )
         with pytest.raises(SalesforceAPIError):
             await client.get(SERVICE_PATH)
+
+    async def test_raw_true_returns_salesforce_error_response_without_raising(
+        self,
+    ) -> None:
+        """raw=True bypasses raise_for_salesforce_errors and returns the response."""
+        client, _, _ = _make_async_client(
+            status_code=400, content=_sf_body("REQUIRED_FIELD_MISSING")
+        )
+        resp = await client.request("GET", SERVICE_PATH, raw=True)
+        assert resp.status_code == 400
+
+    async def test_raw_true_returns_generic_http_error_response_without_raising(
+        self,
+    ) -> None:
+        """raw=True bypasses match_error and returns non-Salesforce 4xx responses."""
+        client, _, _ = _make_async_client(status_code=401, content=b"Unauthorized")
+        resp = await client.request("GET", SERVICE_PATH, raw=True)
+        assert resp.status_code == 401
