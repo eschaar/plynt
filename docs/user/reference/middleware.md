@@ -162,7 +162,7 @@ quota headers such as `X-RateLimit-Remaining: 0`. When an
 fallback delay source when `Retry-After` is absent.
 
 ```python
-ThrottleGovernanceMiddleware(policy: ThrottleGovernancePolicy)
+ThrottleGovernanceMiddleware(policy: ThrottleGovernancePolicy | None = None)
 ```
 
 ### Policy: `ThrottleGovernancePolicy` (`plynth.base.policies`)
