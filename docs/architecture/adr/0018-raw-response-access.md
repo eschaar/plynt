@@ -68,6 +68,10 @@ resp = client.post("/sobjects/Account", content=body, raw=True)
 location = resp.headers.get("Location")
 ```
 
+Trade-off: forwarding `**kwargs` keeps verb methods DRY and avoids duplicate
+overrides in subclasses, but it makes verb signatures less explicit about
+which subclass-specific options are supported.
+
 ### What this is not
 
 - Not a context manager. A flag is simpler, composes cleanly with the

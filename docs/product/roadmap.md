@@ -26,6 +26,7 @@ ______________________________________________________________________
 | 2g  | `plynth-salesforce` package extraction             | **Deferred**    | After multi-connector gate                                                         |
 | 2l  | Salesforce GraphQL API                             | **Conditional** | Implement on repeated demand only                                                  |
 | 3   | Streaming response (SSE / chunked HTTP)            | **Done**        | ADR-0017; enables Salesforce AI and LLM connector                                  |
+| 3b  | Raw response access on `APIClient`                 | **Done**        | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                   |
 | 4   | Framework adapters (Django / FastAPI / Flask)      | **Planned**     | ADR required per adapter; deferred until core is stable                            |
 | 5   | Cache backend documentation                        | **Planned**     | Implementation complete; how-to guides remaining                                   |
 | 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                       |
@@ -93,6 +94,9 @@ ______________________________________________________________________
 - `HttpStatusError` subclasses per HTTP status group (ADR-0007)
 - `HTTPClient` / `AsyncHTTPClient` — base URL + verb API (ADR-0008)
 - `APIClient` / `AsyncAPIClient` — JSON REST + typed error raising (ADR-0008)
+- `APIClient.request(..., raw=True)` and
+  `AsyncAPIClient.request(..., raw=True)` — opt-in raw response access
+  without typed status exceptions (ADR-0018)
 - `HTTPService` / `AsyncHTTPService` — raw HTTP service base (ADR-0009)
 - `APIService` / `AsyncAPIService` — JSON REST service base (ADR-0009)
 - `JSONRenderer` — JSON body serialiser (ADR-0009)

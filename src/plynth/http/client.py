@@ -14,9 +14,16 @@ APIs:
 
 - Sends ``Content-Type: application/json`` and ``Accept: application/json``
   by default on every request.
-- Calls ``raise_for_status()`` after every response, which raises a typed
-  ``HttpStatusError`` subclass (via ``match_error()``) for 4xx and 5xx
-  responses.
+- Raises a typed ``HttpStatusError`` subclass (via ``match_error()``) for
+    4xx and 5xx responses by default.
+- Supports ``raw=True`` on ``request()`` to bypass typed error raising when
+    callers need direct access to upstream status and headers.
+
+To keep responsibility boundaries clear, ``raw`` exists only on
+``APIClient`` and ``AsyncAPIClient``. ``HTTPClient`` and ``AsyncHTTPClient``
+already return raw transport responses. Their verb methods forward
+``**kwargs`` to ``request()`` so extended options added by subclasses (such
+as ``raw``) work without duplicating verb methods in each subclass.
 
 Inject a ``SyncTransport`` or ``AsyncTransport`` to control the underlying
 HTTP library. Use ``HTTPClient`` directly when you need raw ``Response``
@@ -116,9 +123,22 @@ class HTTPClient:
         *,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a GET request."""
-        return self.request("GET", path, headers=headers, params=params)
+        """Send a GET request.
+
+        Extra keyword arguments are forwarded to ``request()``. This allows
+        subclasses to expose additional options without redefining verb
+        methods.
+
+        """
+        return self.request(
+            "GET",
+            path,
+            headers=headers,
+            params=params,
+            **kwargs,
+        )
 
     def post(
         self,
@@ -127,10 +147,20 @@ class HTTPClient:
         content: bytes | None = None,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a POST request."""
+        """Send a POST request.
+
+        Extra keyword arguments are forwarded to ``request()``.
+
+        """
         return self.request(
-            "POST", path, headers=headers, params=params, content=content
+            "POST",
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+            **kwargs,
         )
 
     def put(
@@ -140,10 +170,20 @@ class HTTPClient:
         content: bytes | None = None,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a PUT request."""
+        """Send a PUT request.
+
+        Extra keyword arguments are forwarded to ``request()``.
+
+        """
         return self.request(
-            "PUT", path, headers=headers, params=params, content=content
+            "PUT",
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+            **kwargs,
         )
 
     def patch(
@@ -153,10 +193,20 @@ class HTTPClient:
         content: bytes | None = None,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a PATCH request."""
+        """Send a PATCH request.
+
+        Extra keyword arguments are forwarded to ``request()``.
+
+        """
         return self.request(
-            "PATCH", path, headers=headers, params=params, content=content
+            "PATCH",
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+            **kwargs,
         )
 
     def delete(
@@ -165,9 +215,20 @@ class HTTPClient:
         *,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a DELETE request."""
-        return self.request("DELETE", path, headers=headers, params=params)
+        """Send a DELETE request.
+
+        Extra keyword arguments are forwarded to ``request()``.
+
+        """
+        return self.request(
+            "DELETE",
+            path,
+            headers=headers,
+            params=params,
+            **kwargs,
+        )
 
     def stream(
         self,
@@ -293,9 +354,22 @@ class AsyncHTTPClient:
         *,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a GET request."""
-        return await self.request("GET", path, headers=headers, params=params)
+        """Send a GET request.
+
+        Extra keyword arguments are forwarded to ``request()``. This allows
+        subclasses to expose additional options without redefining verb
+        methods.
+
+        """
+        return await self.request(
+            "GET",
+            path,
+            headers=headers,
+            params=params,
+            **kwargs,
+        )
 
     async def post(
         self,
@@ -304,10 +378,20 @@ class AsyncHTTPClient:
         content: bytes | None = None,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a POST request."""
+        """Send a POST request.
+
+        Extra keyword arguments are forwarded to ``request()``.
+
+        """
         return await self.request(
-            "POST", path, headers=headers, params=params, content=content
+            "POST",
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+            **kwargs,
         )
 
     async def put(
@@ -317,10 +401,20 @@ class AsyncHTTPClient:
         content: bytes | None = None,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a PUT request."""
+        """Send a PUT request.
+
+        Extra keyword arguments are forwarded to ``request()``.
+
+        """
         return await self.request(
-            "PUT", path, headers=headers, params=params, content=content
+            "PUT",
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+            **kwargs,
         )
 
     async def patch(
@@ -330,10 +424,20 @@ class AsyncHTTPClient:
         content: bytes | None = None,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a PATCH request."""
+        """Send a PATCH request.
+
+        Extra keyword arguments are forwarded to ``request()``.
+
+        """
         return await self.request(
-            "PATCH", path, headers=headers, params=params, content=content
+            "PATCH",
+            path,
+            headers=headers,
+            params=params,
+            content=content,
+            **kwargs,
         )
 
     async def delete(
@@ -342,9 +446,20 @@ class AsyncHTTPClient:
         *,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
-        """Send a DELETE request."""
-        return await self.request("DELETE", path, headers=headers, params=params)
+        """Send a DELETE request.
+
+        Extra keyword arguments are forwarded to ``request()``.
+
+        """
+        return await self.request(
+            "DELETE",
+            path,
+            headers=headers,
+            params=params,
+            **kwargs,
+        )
 
     async def stream(
         self,
@@ -431,14 +546,25 @@ class APIClient(HTTPClient):
         method: str,
         path: str,
         *,
+        raw: bool = False,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
     ) -> Response:
         """Send a request and raise a typed error on 4xx/5xx responses.
 
+        Args:
+            method: HTTP method.
+            path: Request path.
+            raw: When true, bypass typed status errors and return the raw
+                response for all status codes.
+            headers: Additional request headers.
+            params: Query string parameters.
+            content: Request body.
+
         Returns:
-            The raw transport response (status 1xx-3xx).
+            The transport response. With ``raw=False`` this is 1xx-3xx only.
+            With ``raw=True`` this may be any HTTP status.
 
         Raises:
             HttpStatusError: Typed subclass for the specific status code
@@ -456,7 +582,7 @@ class APIClient(HTTPClient):
             params=params,
             content=content,
         )
-        if resp.status_code >= HTTPStatus.BAD_REQUEST:
+        if not raw and resp.status_code >= HTTPStatus.BAD_REQUEST:
             err = match_error(
                 resp.status_code,
                 method=method,
@@ -541,14 +667,25 @@ class AsyncAPIClient(AsyncHTTPClient):
         method: str,
         path: str,
         *,
+        raw: bool = False,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
     ) -> Response:
         """Send a request asynchronously and raise a typed error on 4xx/5xx.
 
+        Args:
+            method: HTTP method.
+            path: Request path.
+            raw: When true, bypass typed status errors and return the raw
+                response for all status codes.
+            headers: Additional request headers.
+            params: Query string parameters.
+            content: Request body.
+
         Returns:
-            The raw transport response (status 1xx-3xx).
+            The transport response. With ``raw=False`` this is 1xx-3xx only.
+            With ``raw=True`` this may be any HTTP status.
 
         Raises:
             HttpStatusError: Typed subclass for the specific status code.
@@ -563,7 +700,7 @@ class AsyncAPIClient(AsyncHTTPClient):
             params=params,
             content=content,
         )
-        if resp.status_code >= HTTPStatus.BAD_REQUEST:
+        if not raw and resp.status_code >= HTTPStatus.BAD_REQUEST:
             err = match_error(
                 resp.status_code,
                 method=method,

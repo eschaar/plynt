@@ -100,8 +100,9 @@ detailed explanation of why ordering matters.
 
 - Sends `Content-Type: application/json` and `Accept: application/json`
   on every request.
-- Calls `raise_for_status()` after every response, which raises a typed
-  `HttpStatusError` for 4xx and 5xx.
+- Raises a typed `HttpStatusError` for 4xx and 5xx by default.
+- Supports `raw=True` on `request()` when you need direct access to
+  upstream status and headers without typed exception mapping.
 
 ```python
 from plynth.http.client import APIClient
@@ -109,6 +110,24 @@ from plynth.http.client import APIClient
 client = APIClient(base_url="https://api.example.com", transport=transport)
 resp = client.get("/items")          # raises on 4xx/5xx automatically
 ```
+
+### Raw mode and layer boundary
+
+`HTTPClient` is already the raw layer. It always returns a `Response`
+without status-to-exception mapping.
+
+`APIClient` adds the mapping behavior and therefore owns the `raw` toggle:
+
+```python
+resp = client.get("/items/42", raw=True)
+if resp.status_code == 404:
+    ...
+```
+
+Internally, verb helpers (`get`, `post`, and others) forward extra keyword
+arguments to `request()`. This keeps the API DRY and avoids duplicated
+override methods in subclasses. Trade-off: verb signatures are less explicit
+about subclass-specific options such as `raw`.
 
 ## The service layer
 
