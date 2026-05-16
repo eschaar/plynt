@@ -150,9 +150,9 @@ Mitigations:
 
 ## Acceptance Criteria
 
-1. A core `ThrottleGovernancePolicy` type exists with deterministic action outputs.
-1. A normalized `ThrottleSignal` model exists and is connector-agnostic.
-1. `ThrottleGovernanceMiddleware` (sync and async) in `plynth.middleware.throttle` apply policy and raise typed exceptions.
+1. ✅ A core `ThrottleGovernancePolicy` type exists with deterministic action outputs.
+1. ✅ A normalized `ThrottleSignal` model exists and is connector-agnostic.
+1. ✅ `ThrottleGovernanceMiddleware` (sync and async) in `plynth.middleware.throttle` apply policy and raise typed exceptions.
 1. Retry integration honors governance delay and reject outputs via `max(backoff, governance_delay)`.
 1. Sync and async governance behaviors are parity-tested.
 1. Connector tests validate normalization from provider-specific signals.

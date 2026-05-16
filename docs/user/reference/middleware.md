@@ -190,12 +190,12 @@ recommended order for a typical stack is:
 
 ```python
 middlewares = [
-    CacheMiddleware(...),         # outermost — short-circuit on hit
+    CacheMiddleware(...),           # outermost — short-circuit on hit
     LoggingMiddleware(),
     HeaderMiddleware({...}),
-    auth_middleware,              # from auth_from_config()
+    auth_middleware,                # from auth_from_config()
+    RetryMiddleware(...),           # wraps throttle so it sees governance delay
     ThrottleGovernanceMiddleware(...),
-    RetryMiddleware(...),
     CircuitBreakerMiddleware(...),  # innermost
 ]
 ```
