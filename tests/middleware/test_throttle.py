@@ -3,6 +3,7 @@
 # pylint: disable=protected-access
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import cast
 
 import pytest
@@ -19,6 +20,7 @@ from plynth.middleware.throttle import (
     AsyncThrottleGovernanceMiddleware,
     ThrottleGovernanceMiddleware,
     ThrottleGovernedError,
+    _parse_retry_after,
 )
 
 
@@ -185,8 +187,9 @@ class TestThrottleSignalExtraction:
         result = middleware.handle(request, lambda _req: response)
         assert result.__dict__["_governance_delay_seconds"] == 3.0
 
-    def test_ignores_invalid_retry_after_date_format(self) -> None:
-        """Test that invalid Retry-After format falls back to min delay."""
+    def test_parses_retry_after_http_date(self) -> None:
+        """Test that valid HTTP-date Retry-After is parsed into delay."""
+        # Oct 21, 2026 at 07:28:00 GMT is a valid future date
         policy = ThrottleGovernancePolicy(min_delay_seconds=4.0)
         middleware = ThrottleGovernanceMiddleware(policy=policy)
 
@@ -199,7 +202,8 @@ class TestThrottleSignalExtraction:
         request = Request(method="GET", url="http://example.com/test")
 
         result = middleware.handle(request, lambda _req: response)
-        assert result.__dict__["_governance_delay_seconds"] == 4.0
+        # Should use the parsed HTTP-date delay, not the min_delay_seconds
+        assert result.__dict__["_governance_delay_seconds"] > 4.0
 
 
 class TestThrottleGovernanceMiddleware:
@@ -378,3 +382,57 @@ class TestAsyncThrottleGovernanceMiddleware:
 
         with pytest.raises(TypeError, match="next_handler must return Response"):
             await middleware.handle(request, next_handler)
+
+
+class TestParseRetryAfter:
+    """Tests for _parse_retry_after header parser."""
+
+    def test_parse_retry_after_seconds_integer(self) -> None:
+        """Test parsing Retry-After with integer seconds."""
+        response = Response(status_code=429, headers={"retry-after": "60"})
+        assert _parse_retry_after(response) == 60.0
+
+    def test_parse_retry_after_seconds_decimal(self) -> None:
+        """Test parsing Retry-After with decimal seconds."""
+        response = Response(status_code=429, headers={"retry-after": "30.5"})
+        assert _parse_retry_after(response) == 30.5
+
+    def test_parse_retry_after_missing(self) -> None:
+        """Test parsing when Retry-After header is missing."""
+        response = Response(status_code=429, headers={})
+        assert _parse_retry_after(response) is None
+
+    def test_parse_retry_after_case_insensitive(self) -> None:
+        """Test parsing with case-insensitive header lookup."""
+        response = Response(status_code=429, headers={"Retry-After": "45"})
+        assert _parse_retry_after(response) == 45.0
+
+    def test_parse_retry_after_http_date_future(self) -> None:
+        """Test parsing Retry-After with future HTTP-date."""
+        # Create a date 30 seconds in the future
+        future = datetime.now(UTC) + timedelta(seconds=30)
+        date_str = future.strftime("%a, %d %b %Y %H:%M:%S GMT")
+
+        response = Response(status_code=429, headers={"retry-after": date_str})
+        result = _parse_retry_after(response)
+
+        # Should be approximately 30 seconds, allow 1 second tolerance
+        assert result is not None
+        assert 29 < result < 31
+
+    def test_parse_retry_after_http_date_past(self) -> None:
+        """Test parsing Retry-After with past HTTP-date returns 0."""
+        # Create a date 30 seconds in the past
+        past = datetime.now(UTC) - timedelta(seconds=30)
+        date_str = past.strftime("%a, %d %b %Y %H:%M:%S GMT")
+
+        response = Response(status_code=429, headers={"retry-after": date_str})
+        result = _parse_retry_after(response)
+
+        # Should return 0 (don't return negative)
+        assert result == 0.0
+
+    def test_parse_retry_after_invalid_format(self) -> None:
+        """Test parsing with invalid format returns None."""
+        response = Response(status_code=429, headers={"retry-after": "not-a-number"})
+        assert _parse_retry_after(response) is None
