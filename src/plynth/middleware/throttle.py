@@ -213,6 +213,11 @@ class ThrottleGovernanceMiddleware(SyncMiddleware):
         """
         self._policy = policy or ThrottleGovernancePolicy()
 
+    @property
+    def policy(self) -> ThrottleGovernancePolicy:
+        """Return the active governance policy."""
+        return self._policy
+
     def handle(self, request: Request, next_handler: NextSyncHandler) -> Response:
         """Apply throttle governance to request/response cycle.
 
@@ -256,9 +261,6 @@ class AsyncThrottleGovernanceMiddleware(AsyncMiddleware):
 
     Intercepts responses, detects upstream throttle signals, and applies
     governance logic to decide whether to proceed, delay, or reject.
-
-    Attributes:
-        policy: Governance policy controlling decision logic.
 
     """
 
