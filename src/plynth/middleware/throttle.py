@@ -121,7 +121,7 @@ def _parse_retry_after(response: Response) -> float | None:
         Retry-after delay in seconds, or None if not found.
 
     """
-    retry_after = response.headers.get("retry-after")
+    retry_after = {k.lower(): v for k, v in response.headers.items()}.get("retry-after")
     if not retry_after:
         return None
 
@@ -149,7 +149,9 @@ def _is_quota_exhausted(response: Response) -> bool:
         True if quota appears exhausted.
 
     """
-    remaining = response.headers.get("x-ratelimit-remaining")
+    remaining = {k.lower(): v for k, v in response.headers.items()}.get(
+        "x-ratelimit-remaining"
+    )
     if remaining == "0":
         return True
 

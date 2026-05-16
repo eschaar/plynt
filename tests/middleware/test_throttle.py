@@ -1,5 +1,6 @@
 """Tests for throttle governance middleware."""
 
+# pylint: disable=protected-access
 from __future__ import annotations
 
 from typing import cast
