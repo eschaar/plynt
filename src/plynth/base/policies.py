@@ -12,6 +12,7 @@ HTTP-specific logic. Override via ``HttpRetryPolicy`` in
 
 from __future__ import annotations
 
+import math
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -227,6 +228,10 @@ class ThrottleGovernancePolicy:
 
     def __post_init__(self) -> None:
         """Validate policy values."""
+        if not math.isfinite(self.min_delay_seconds):
+            raise ValueError("min_delay_seconds must be finite")
+        if not math.isfinite(self.max_delay_seconds):
+            raise ValueError("max_delay_seconds must be finite")
         if self.min_delay_seconds < 0:
             raise ValueError("min_delay_seconds must be >= 0")
         if self.max_delay_seconds < self.min_delay_seconds:

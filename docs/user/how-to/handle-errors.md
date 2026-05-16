@@ -30,7 +30,7 @@ Exception
 
 ## Catch HTTP status errors
 
-`APIClient` raises `HttpStatusError` (or a subclass) for non-2xx responses.
+`APIClient` raises `HttpStatusError` (or a subclass) for `4xx` and `5xx` responses.
 
 ```python
 from plynth.http.errors import NotFoundError, HttpStatusError

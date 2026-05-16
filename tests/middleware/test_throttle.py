@@ -83,6 +83,26 @@ class TestThrottleGovernancePolicy:
         ):
             ThrottleGovernancePolicy(min_delay_seconds=60.0, max_delay_seconds=30.0)
 
+    def test_policy_validation_min_delay_nan(self) -> None:
+        """Test that NaN min_delay raises ValueError."""
+        with pytest.raises(ValueError, match="min_delay_seconds must be finite"):
+            ThrottleGovernancePolicy(min_delay_seconds=float("nan"))
+
+    def test_policy_validation_min_delay_inf(self) -> None:
+        """Test that Infinity min_delay raises ValueError."""
+        with pytest.raises(ValueError, match="min_delay_seconds must be finite"):
+            ThrottleGovernancePolicy(min_delay_seconds=float("inf"))
+
+    def test_policy_validation_max_delay_nan(self) -> None:
+        """Test that NaN max_delay raises ValueError."""
+        with pytest.raises(ValueError, match="max_delay_seconds must be finite"):
+            ThrottleGovernancePolicy(max_delay_seconds=float("nan"))
+
+    def test_policy_validation_max_delay_inf(self) -> None:
+        """Test that Infinity max_delay raises ValueError."""
+        with pytest.raises(ValueError, match="max_delay_seconds must be finite"):
+            ThrottleGovernancePolicy(max_delay_seconds=float("inf"))
+
     def test_evaluate_no_throttle(self) -> None:
         """Test evaluate with no throttle detected."""
         policy = ThrottleGovernancePolicy()

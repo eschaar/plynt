@@ -160,6 +160,11 @@ Mitigations:
    `max(backoff, governance_delay)`.
 1. ✅ Sync and async governance behaviors are parity-tested.
 1. ✅ Connector tests validate normalization from provider-specific signals.
+   The Salesforce connector exposes `_salesforce_quota_signal` to normalize
+   `Sforce-Limit-Info: api-usage=X/Y` quota exhaustion into a `ThrottleSignal`.
+   Tests in `tests/connectors/salesforce/test_throttle.py` cover both this
+   Salesforce-specific helper and `_extract_throttle_signal` with Salesforce
+   response shapes (429 `REQUEST_LIMIT_EXCEEDED`, 503 with `Retry-After`).
 1. ✅ Governance exceptions are typed and mapped consistently in error handling.
 
 ## Related ADRs

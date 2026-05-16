@@ -13,6 +13,8 @@ from typing import Any
 
 from pydantic import TypeAdapter, ValidationError
 
+from plynth.base.policies import ThrottleSignal
+from plynth.base.response import Response
 from plynth.connectors.salesforce.constants import (
     resolve_async_api_version,
     resolve_sync_api_version,
@@ -85,6 +87,28 @@ def _parse_api_usage(headers: dict[str, str]) -> SalesforceApiUsage | None:
                 used=int(match.group(1)),
                 limit=int(match.group(2)),
             )
+    return None
+
+
+def _salesforce_quota_signal(response: Response) -> ThrottleSignal | None:
+    """Normalize quota exhaustion from ``Sforce-Limit-Info`` into a throttle signal.
+
+    Reads ``Sforce-Limit-Info: api-usage=X/Y`` and returns a detected
+    ``ThrottleSignal`` when used equals or exceeds the configured limit.
+
+    Args:
+        response: HTTP response to inspect.
+
+    Returns:
+        Detected ThrottleSignal when the Salesforce API quota is exhausted,
+        None otherwise.
+
+    """
+    usage = _parse_api_usage(dict(response.headers))
+    if usage is None or usage.limit <= 0:
+        return None
+    if usage.used >= usage.limit:
+        return ThrottleSignal(detected=True)
     return None
 
 
