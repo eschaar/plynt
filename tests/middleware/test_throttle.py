@@ -6,6 +6,7 @@ from typing import cast
 
 import pytest
 
+from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynth.base.policies import (
     ThrottleGovernanceAction,
     ThrottleGovernancePolicy,
@@ -162,10 +163,9 @@ class TestThrottleSignalExtraction:
             content=b"Service Unavailable",
         )
 
-        middleware.next_handler = lambda _req: response
         request = Request(method="GET", url="http://example.com/test")
 
-        result = middleware(request)
+        result = middleware.handle(request, lambda _req: response)
         assert result.__dict__["_governance_delay_seconds"] == 5.0
 
     def test_detects_quota_exhaustion_header(self) -> None:
@@ -179,10 +179,9 @@ class TestThrottleSignalExtraction:
             content=b"OK",
         )
 
-        middleware.next_handler = lambda _req: response
         request = Request(method="GET", url="http://example.com/test")
 
-        result = middleware(request)
+        result = middleware.handle(request, lambda _req: response)
         assert result.__dict__["_governance_delay_seconds"] == 3.0
 
     def test_ignores_invalid_retry_after_date_format(self) -> None:
@@ -196,10 +195,9 @@ class TestThrottleSignalExtraction:
             content=b"Too Many Requests",
         )
 
-        middleware.next_handler = lambda _req: response
         request = Request(method="GET", url="http://example.com/test")
 
-        result = middleware(request)
+        result = middleware.handle(request, lambda _req: response)
         assert result.__dict__["_governance_delay_seconds"] == 4.0
 
 
@@ -212,19 +210,15 @@ class TestThrottleGovernanceMiddleware:
         assert middleware.policy is not None
         assert middleware.policy.reject_on_detection is False
 
+    def test_middleware_satisfies_protocol(self) -> None:
+        """Test that middleware satisfies SyncMiddleware protocol."""
+        assert isinstance(ThrottleGovernanceMiddleware(), SyncMiddleware)
+
     def test_middleware_with_custom_policy(self) -> None:
         """Test middleware initialization with custom policy."""
         policy = ThrottleGovernancePolicy(reject_on_detection=True)
         middleware = ThrottleGovernanceMiddleware(policy=policy)
         assert middleware.policy is policy
-
-    def test_middleware_no_next_handler_raises(self) -> None:
-        """Test that middleware without next_handler raises."""
-        middleware = ThrottleGovernanceMiddleware()
-        request = Request(method="GET", url="http://example.com/test")
-
-        with pytest.raises(RuntimeError, match="next_handler not set"):
-            middleware(request)
 
     def test_middleware_passes_through_200(self) -> None:
         """Test that 200 responses pass through unchanged."""
@@ -236,10 +230,9 @@ class TestThrottleGovernanceMiddleware:
         def next_handler(_req: Request) -> Response:
             return response
 
-        middleware.next_handler = next_handler
         request = Request(method="GET", url="http://example.com/test")
 
-        result = middleware(request)
+        result = middleware.handle(request, next_handler)
         assert result is response
         assert not hasattr(result, "_governance_delay_seconds")
 
@@ -260,10 +253,9 @@ class TestThrottleGovernanceMiddleware:
         def next_handler(_req: Request) -> Response:
             return response
 
-        middleware.next_handler = next_handler
         request = Request(method="GET", url="http://example.com/test")
 
-        result = middleware(request)
+        result = middleware.handle(request, next_handler)
         assert result is response
         assert hasattr(result, "_governance_delay_seconds")
         assert result.__dict__["_governance_delay_seconds"] == 30.0
@@ -282,11 +274,10 @@ class TestThrottleGovernanceMiddleware:
         def next_handler(_req: Request) -> Response:
             return response
 
-        middleware.next_handler = next_handler
         request = Request(method="GET", url="http://example.com/test")
 
         with pytest.raises(ThrottleGovernedError) as exc_info:
-            middleware(request)
+            middleware.handle(request, next_handler)
 
         error = exc_info.value
         assert error.response is response
@@ -304,13 +295,9 @@ class TestAsyncThrottleGovernanceMiddleware:
         assert middleware.policy.reject_on_detection is False
 
     @pytest.mark.asyncio
-    async def test_async_middleware_no_next_handler_raises(self) -> None:
-        """Test that async middleware without next_handler raises."""
-        middleware = AsyncThrottleGovernanceMiddleware()
-        request = Request(method="GET", url="http://example.com/test")
-
-        with pytest.raises(RuntimeError, match="next_handler not set"):
-            await middleware(request)
+    async def test_async_middleware_satisfies_protocol(self) -> None:
+        """Test that async middleware satisfies AsyncMiddleware protocol."""
+        assert isinstance(AsyncThrottleGovernanceMiddleware(), AsyncMiddleware)
 
     @pytest.mark.asyncio
     async def test_async_middleware_passes_through_200(self) -> None:
@@ -323,10 +310,9 @@ class TestAsyncThrottleGovernanceMiddleware:
         async def next_handler(_req: Request) -> Response:
             return response
 
-        middleware.next_handler = next_handler
         request = Request(method="GET", url="http://example.com/test")
 
-        result = await middleware(request)
+        result = await middleware.handle(request, next_handler)
         assert result is response
         assert not hasattr(result, "_governance_delay_seconds")
 
@@ -348,10 +334,9 @@ class TestAsyncThrottleGovernanceMiddleware:
         async def next_handler(_req: Request) -> Response:
             return response
 
-        middleware.next_handler = next_handler
         request = Request(method="GET", url="http://example.com/test")
 
-        result = await middleware(request)
+        result = await middleware.handle(request, next_handler)
         assert result is response
         assert hasattr(result, "_governance_delay_seconds")
         assert result.__dict__["_governance_delay_seconds"] == 30.0
@@ -371,11 +356,10 @@ class TestAsyncThrottleGovernanceMiddleware:
         async def next_handler(_req: Request) -> Response:
             return response
 
-        middleware.next_handler = next_handler
         request = Request(method="GET", url="http://example.com/test")
 
         with pytest.raises(ThrottleGovernedError) as exc_info:
-            await middleware(request)
+            await middleware.handle(request, next_handler)
 
         error = exc_info.value
         assert error.response is response
@@ -389,8 +373,7 @@ class TestAsyncThrottleGovernanceMiddleware:
         async def next_handler(_req: Request) -> Response:
             return cast(Response, object())
 
-        middleware.next_handler = next_handler
         request = Request(method="GET", url="http://example.com/test")
 
         with pytest.raises(TypeError, match="next_handler must return Response"):
-            await middleware(request)
+            await middleware.handle(request, next_handler)
