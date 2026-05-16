@@ -50,6 +50,27 @@ except HttpStatusError as exc:
     body = exc.response.json() if exc.response else {}
 ```
 
+## Bypass typed mapping with raw mode
+
+Use `raw=True` when you need direct status or header inspection on
+`APIClient` without raising `HttpStatusError`.
+
+```python
+response = client.get("/items/42", raw=True)
+
+if response.status_code == 404:
+    print("Item does not exist")
+```
+
+Typical use cases:
+
+- Read headers from success responses, such as `Location` or `ETag`.
+- Differentiate status-only semantics (for example `200` vs `201` vs `204`).
+- Forward upstream response metadata to another service.
+
+Note: `HTTPClient` already behaves as a raw client. The `raw` toggle is only
+needed when using `APIClient` or `AsyncAPIClient`.
+
 ## Construct a typed error from a status code
 
 Use `match_error` to get the most specific subclass for a known status code:

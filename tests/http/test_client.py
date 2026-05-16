@@ -473,6 +473,26 @@ class TestAPIClient:
         assert response.status_code == 404
         assert response.content == b'{"detail": "not found"}'
 
+    def test_raw_true_returns_4xx_response_without_raising(self) -> None:
+        """Validate raw=True bypasses typed error raising for APIClient."""
+        transport = MockSyncTransport(404, b'{"detail": "not found"}')
+        client = APIClient(base_url=BASE_URL, transport=transport)
+
+        resp = client.get("/items/1", raw=True)
+
+        assert resp.status_code == 404
+        assert resp.content == b'{"detail": "not found"}'
+
+    def test_raw_true_returns_5xx_response_on_request(self) -> None:
+        """Validate raw=True works through request() calls."""
+        transport = MockSyncTransport(503, b'{"error": "unavailable"}')
+        client = APIClient(base_url=BASE_URL, transport=transport)
+
+        resp = client.request("GET", "/items", raw=True)
+
+        assert resp.status_code == 503
+        assert resp.content == b'{"error": "unavailable"}'
+
     def test_post_with_content(self) -> None:
         """Validate post with content."""
         transport = MockSyncTransport(201)
@@ -600,6 +620,26 @@ class TestAsyncAPIClient:
         assert response is not None
         assert response.status_code == 500
         assert response.content == b'{"error": "boom"}'
+
+    async def test_raw_true_returns_4xx_response_without_raising(self) -> None:
+        """Validate raw=True bypasses typed error raising for AsyncAPIClient."""
+        transport = MockAsyncTransport(404, b'{"detail": "not found"}')
+        client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
+
+        resp = await client.get("/items/1", raw=True)
+
+        assert resp.status_code == 404
+        assert resp.content == b'{"detail": "not found"}'
+
+    async def test_raw_true_returns_5xx_response_on_request(self) -> None:
+        """Validate raw=True works through async request() calls."""
+        transport = MockAsyncTransport(503, b'{"error": "unavailable"}')
+        client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
+
+        resp = await client.request("GET", "/items", raw=True)
+
+        assert resp.status_code == 503
+        assert resp.content == b'{"error": "unavailable"}'
 
     async def test_post_with_content(self) -> None:
         """Validate post with content."""
