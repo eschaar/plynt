@@ -8,7 +8,6 @@ path when ``max_attempts <= 1``.
 
 from __future__ import annotations
 
-import time
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -171,13 +170,11 @@ class TestRetryMiddlewareGovernanceIntegration:
     def test_retry_uses_backoff_when_no_governance_delay(self) -> None:
         """Validate retry uses backoff when governance delay absent."""
 
-        calls: list[tuple[Request, float]] = []
-        start_time = time.time()
+        calls: list[Request] = []
 
         def handler(req: Request) -> Response:
             """Handler without governance delay."""
-            elapsed = time.time() - start_time
-            calls.append((req, elapsed))
+            calls.append(req)
 
             if len(calls) == 1:
                 return Response(
@@ -188,30 +185,28 @@ class TestRetryMiddlewareGovernanceIntegration:
 
             return Response(status_code=200, content=b"ok")
 
+        # Backoff for attempt 2 is 0.5s (backoff_initial * 1)
         policy = RetryPolicy(
             max_attempts=2,
             backoff_initial=0.5,
             retryable_status_codes=frozenset([503]),
         )
         mw = RetryMiddleware(policy)
-        result = mw.handle(_REQUEST, handler)
+        with patch("plynth.middleware.retry.time.sleep") as mock_sleep:
+            result = mw.handle(_REQUEST, handler)
 
         assert result.status_code == 200
         assert len(calls) == 2
-        # Should use backoff delay (0.5s)
-        elapsed_between = calls[1][1] - calls[0][1]
-        assert 0.4 <= elapsed_between < 1.0
+        mock_sleep.assert_called_once_with(0.5)
 
     def test_retry_uses_max_of_backoff_and_governance(self) -> None:
         """Validate retry uses max(backoff, governance_delay)."""
 
-        calls: list[tuple[Request, float]] = []
-        start_time = time.time()
+        calls: list[Request] = []
 
         def handler(req: Request) -> Response:
             """Handler with short governance delay but longer backoff."""
-            elapsed = time.time() - start_time
-            calls.append((req, elapsed))
+            calls.append(req)
 
             if len(calls) == 1:
                 resp = Response(
@@ -219,7 +214,7 @@ class TestRetryMiddlewareGovernanceIntegration:
                     headers={},
                     content=b"Service Unavailable",
                 )
-                # Governance delay is short
+                # Governance delay is short; backoff (0.5s) should win
                 resp.__dict__["_governance_delay_seconds"] = 0.2
                 return resp
 
@@ -232,13 +227,13 @@ class TestRetryMiddlewareGovernanceIntegration:
             retryable_status_codes=frozenset([503]),
         )
         mw = RetryMiddleware(policy)
-        result = mw.handle(_REQUEST, handler)
+        with patch("plynth.middleware.retry.time.sleep") as mock_sleep:
+            result = mw.handle(_REQUEST, handler)
 
         assert result.status_code == 200
         assert len(calls) == 2
-        # Should use max(0.5, 0.2) = 0.5s
-        elapsed_between = calls[1][1] - calls[0][1]
-        assert 0.4 <= elapsed_between < 1.0
+        # max(0.5, 0.2) = 0.5
+        mock_sleep.assert_called_once_with(0.5)
 
 
 class TestAsyncRetryMiddlewareGovernanceIntegration:
