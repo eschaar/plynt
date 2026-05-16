@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import importlib
+
+import yaml
+
+from plynth.testsupport.vcr import serializer as serializer_module
 from plynth.testsupport.vcr.serializer import READABLE_YAML_SERIALIZER
 
 
@@ -89,3 +94,49 @@ class TestReadableYamlSerializer:
 
         request_body = parsed["interactions"][0]["request"]["body"]
         assert request_body == '{"k":"v"}'
+
+    def test_prettify_ignores_non_matching_shapes_and_invalid_json(self) -> None:
+        """Skip malformed interaction shapes and non-JSON response bodies."""
+        cassette = {
+            "interactions": [
+                "not-a-dict",
+                {"response": "not-a-dict"},
+                {"response": {"body": "not-a-dict"}},
+                {"response": {"body": {"string": 123}}},
+                {"response": {"body": {"string": "not-json"}}},
+            ]
+        }
+
+        rendered = READABLE_YAML_SERIALIZER.serialize(cassette)
+        parsed = READABLE_YAML_SERIALIZER.deserialize(rendered)
+
+        assert parsed["interactions"][0] == "not-a-dict"
+        assert parsed["interactions"][4]["response"]["body"]["string"] == "not-json"
+
+    def test_prettify_with_non_list_interactions_returns_copy(self) -> None:
+        """Return input-like mapping when interactions is not a list."""
+        cassette = {"interactions": "not-a-list", "meta": {"a": 1}}
+
+        rendered = READABLE_YAML_SERIALIZER.serialize(cassette)
+        parsed = READABLE_YAML_SERIALIZER.deserialize(rendered)
+
+        assert parsed == cassette
+
+    def test_import_falls_back_to_yaml_dumper_without_cdumper(self) -> None:
+        """Reload module without CDumper to execute ImportError fallback path."""
+        had_c_dumper = hasattr(yaml, "CDumper")
+        original = getattr(yaml, "CDumper", None)
+
+        try:
+            if had_c_dumper:
+                delattr(yaml, "CDumper")
+
+            reloaded = importlib.reload(serializer_module)
+            dumped = reloaded.READABLE_YAML_SERIALIZER.serialize(
+                {"interactions": [{"response": {"body": {"string": "x\ny"}}}]}
+            )
+            assert "string: |-" in dumped
+        finally:
+            if had_c_dumper and original is not None:
+                yaml.__dict__["CDumper"] = original
+            importlib.reload(serializer_module)
