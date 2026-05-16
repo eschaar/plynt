@@ -150,6 +150,39 @@ limit is hit.
 
 ______________________________________________________________________
 
+## ThrottleGovernanceMiddleware
+
+**Module:** `plynth.middleware.throttle`
+**Async variant:** `AsyncThrottleGovernanceMiddleware`
+
+Reacts to throttle or backpressure signals returned by upstream APIs.
+Typical signals include `429`, `503` with `Retry-After`, and exhausted
+quota headers such as `X-RateLimit-Remaining: 0`.
+
+```python
+ThrottleGovernanceMiddleware(policy: ThrottleGovernancePolicy)
+```
+
+### Policy: `ThrottleGovernancePolicy` (`plynth.base.policies`)
+
+| Field                 | Type    | Default | Description                                             |
+| --------------------- | ------- | ------- | ------------------------------------------------------- |
+| `reject_on_detection` | `bool`  | `False` | Reject immediately when a throttle signal is detected   |
+| `min_delay_seconds`   | `float` | `0.5`   | Minimum delay used for throttle-governed retry behavior |
+| `max_delay_seconds`   | `float` | `60.0`  | Maximum delay clamp for upstream delay hints            |
+
+### ThrottleGovernedError
+
+`ThrottleGovernedError(response, delay_seconds, reason)` — raised when
+policy action is reject.
+
+### Retry integration
+
+When paired with `RetryMiddleware`, governance delay metadata is consumed
+by retry and applied as `max(backoff, governance_delay)`.
+
+______________________________________________________________________
+
 ## Middleware ordering
 
 The first middleware in the list is outermost (wraps everything). The
@@ -161,6 +194,7 @@ middlewares = [
     LoggingMiddleware(),
     HeaderMiddleware({...}),
     auth_middleware,              # from auth_from_config()
+    ThrottleGovernanceMiddleware(...),
     RetryMiddleware(...),
     CircuitBreakerMiddleware(...),  # innermost
 ]

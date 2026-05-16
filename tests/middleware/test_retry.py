@@ -8,6 +8,8 @@ path when ``max_attempts <= 1``.
 
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
@@ -26,12 +28,12 @@ _RESPONSE = Response(status_code=200, content=b"ok")
 _POLICY_NO_RETRY = RetryPolicy(max_attempts=1)
 
 
-def _noop(request: Request) -> Response:
+def _noop(_request: Request) -> Response:
     """Handle noop."""
     return _RESPONSE
 
 
-async def _async_noop(request: Request) -> Response:
+async def _async_noop(_request: Request) -> Response:
     """Handle async noop."""
     return _RESPONSE
 
@@ -64,7 +66,7 @@ class TestRetryMiddleware:
         """Validate handle returns response from next."""
         expected = Response(status_code=201, content=b"created")
         mw = RetryMiddleware(_POLICY_NO_RETRY)
-        result = mw.handle(_REQUEST, lambda r: expected)
+        result = mw.handle(_REQUEST, lambda _req: expected)
         assert result is expected
 
     def test_handle_propagates_request_unchanged(self) -> None:
@@ -110,13 +112,175 @@ class TestAsyncRetryMiddleware:
         """Validate handle returns response from next."""
         expected = Response(status_code=201, content=b"created")
 
-        async def handler(req: Request) -> Response:
+        async def handler(_req: Request) -> Response:
             """Return handler."""
             return expected
 
         mw = AsyncRetryMiddleware(_POLICY_NO_RETRY)
         result = await mw.handle(_REQUEST, handler)
         assert result is expected
+
+
+# ---------------------------------------------------------------------------
+# Governance Integration Tests
+# ---------------------------------------------------------------------------
+
+
+class TestRetryMiddlewareGovernanceIntegration:
+    """Tests for retry middleware integration with throttle governance."""
+
+    def test_retry_respects_governance_delay(self) -> None:
+        """Validate retry uses governance delay over backoff."""
+
+        calls: list[tuple[Request, float]] = []
+        start_time = time.time()
+
+        def handler(req: Request) -> Response:
+            """Handler that returns throttled response."""
+            elapsed = time.time() - start_time
+            calls.append((req, elapsed))
+
+            # First call: return retryable 503 with governance delay
+            if len(calls) == 1:
+                resp = Response(
+                    status_code=503,
+                    headers={"retry-after": "2"},
+                    content=b"Service Unavailable",
+                )
+                # Simulate governance delay attachment
+                resp.__dict__["_governance_delay_seconds"] = 2.0
+                resp.__dict__["_governance_reason"] = "Throttled; delaying 2.0s"
+                return resp
+
+            # Second call: success
+            return Response(status_code=200, content=b"ok")
+
+        policy = RetryPolicy(
+            max_attempts=2,
+            backoff_initial=0.1,
+            retryable_status_codes=frozenset([503]),
+        )
+        mw = RetryMiddleware(policy)
+        result = mw.handle(_REQUEST, handler)
+
+        assert result.status_code == 200
+        assert len(calls) == 2
+        # Governance delay (2.0s) should take precedence over backoff (0.1s)
+        elapsed_between = calls[1][1] - calls[0][1]
+        assert elapsed_between >= 1.8  # Allow small margin for timing
+
+    def test_retry_uses_backoff_when_no_governance_delay(self) -> None:
+        """Validate retry uses backoff when governance delay absent."""
+
+        calls: list[tuple[Request, float]] = []
+        start_time = time.time()
+
+        def handler(req: Request) -> Response:
+            """Handler without governance delay."""
+            elapsed = time.time() - start_time
+            calls.append((req, elapsed))
+
+            if len(calls) == 1:
+                return Response(
+                    status_code=503,
+                    headers={},
+                    content=b"Service Unavailable",
+                )
+
+            return Response(status_code=200, content=b"ok")
+
+        policy = RetryPolicy(
+            max_attempts=2,
+            backoff_initial=0.5,
+            retryable_status_codes=frozenset([503]),
+        )
+        mw = RetryMiddleware(policy)
+        result = mw.handle(_REQUEST, handler)
+
+        assert result.status_code == 200
+        assert len(calls) == 2
+        # Should use backoff delay (0.5s)
+        elapsed_between = calls[1][1] - calls[0][1]
+        assert 0.4 <= elapsed_between < 1.0
+
+    def test_retry_uses_max_of_backoff_and_governance(self) -> None:
+        """Validate retry uses max(backoff, governance_delay)."""
+
+        calls: list[tuple[Request, float]] = []
+        start_time = time.time()
+
+        def handler(req: Request) -> Response:
+            """Handler with short governance delay but longer backoff."""
+            elapsed = time.time() - start_time
+            calls.append((req, elapsed))
+
+            if len(calls) == 1:
+                resp = Response(
+                    status_code=503,
+                    headers={},
+                    content=b"Service Unavailable",
+                )
+                # Governance delay is short
+                resp.__dict__["_governance_delay_seconds"] = 0.2
+                return resp
+
+            return Response(status_code=200, content=b"ok")
+
+        # Backoff for attempt 2 is 0.5s (backoff_initial * 1)
+        policy = RetryPolicy(
+            max_attempts=2,
+            backoff_initial=0.5,
+            retryable_status_codes=frozenset([503]),
+        )
+        mw = RetryMiddleware(policy)
+        result = mw.handle(_REQUEST, handler)
+
+        assert result.status_code == 200
+        assert len(calls) == 2
+        # Should use max(0.5, 0.2) = 0.5s
+        elapsed_between = calls[1][1] - calls[0][1]
+        assert 0.4 <= elapsed_between < 1.0
+
+
+class TestAsyncRetryMiddlewareGovernanceIntegration:
+    """Tests for async retry middleware integration with throttle governance."""
+
+    @pytest.mark.asyncio
+    async def test_async_retry_respects_governance_delay(self) -> None:
+        """Validate async retry uses governance delay over backoff."""
+
+        calls: list[tuple[Request, float]] = []
+        start_time = time.time()
+
+        async def handler(req: Request) -> Response:
+            """Handler that returns throttled response."""
+            elapsed = time.time() - start_time
+            calls.append((req, elapsed))
+
+            if len(calls) == 1:
+                resp = Response(
+                    status_code=503,
+                    headers={"retry-after": "2"},
+                    content=b"Service Unavailable",
+                )
+                resp.__dict__["_governance_delay_seconds"] = 2.0
+                resp.__dict__["_governance_reason"] = "Throttled; delaying 2.0s"
+                return resp
+
+            return Response(status_code=200, content=b"ok")
+
+        policy = RetryPolicy(
+            max_attempts=2,
+            backoff_initial=0.1,
+            retryable_status_codes=frozenset([503]),
+        )
+        mw = AsyncRetryMiddleware(policy)
+        result = await mw.handle(_REQUEST, handler)
+
+        assert result.status_code == 200
+        assert len(calls) == 2
+        elapsed_between = calls[1][1] - calls[0][1]
+        assert elapsed_between >= 1.8
 
     @pytest.mark.asyncio
     async def test_handle_propagates_request_unchanged(self) -> None:

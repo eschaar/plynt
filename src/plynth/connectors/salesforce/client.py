@@ -179,6 +179,7 @@ class SalesforceAPIClient(APIClient):
         method: str,
         path: str,
         *,
+        raw: bool = False,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
@@ -209,7 +210,7 @@ class SalesforceAPIClient(APIClient):
             content=content,
         )
         resp = self._transport.send(req)
-        if resp.status_code >= HTTPStatus.BAD_REQUEST:
+        if not raw and resp.status_code >= HTTPStatus.BAD_REQUEST:
             raise_for_salesforce_errors(resp)
             err = match_error(resp.status_code, method=method, url=req.url)
             if isinstance(err, HttpStatusError):
@@ -311,6 +312,7 @@ class AsyncSalesforceAPIClient(AsyncAPIClient):
         method: str,
         path: str,
         *,
+        raw: bool = False,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         content: bytes | None = None,
@@ -341,7 +343,7 @@ class AsyncSalesforceAPIClient(AsyncAPIClient):
             content=content,
         )
         resp = await self._transport.send(req)
-        if resp.status_code >= HTTPStatus.BAD_REQUEST:
+        if not raw and resp.status_code >= HTTPStatus.BAD_REQUEST:
             raise_for_salesforce_errors(resp)
             err = match_error(resp.status_code, method=method, url=req.url)
             if isinstance(err, HttpStatusError):

@@ -6,14 +6,15 @@ item in the list is the outermost wrapper.
 
 ## Available middleware
 
-| Class                      | Module                              | Purpose                                     |
-| -------------------------- | ----------------------------------- | ------------------------------------------- |
-| `CacheMiddleware`          | `plynth.middleware.cache`           | Cache GET responses                         |
-| `LoggingMiddleware`        | `plynth.middleware.logging`         | Log request/response metadata               |
-| `HeaderMiddleware`         | `plynth.middleware.header`          | Inject static headers on every request      |
-| `RetryMiddleware`          | `plynth.middleware.retry`           | Retry on transient failures with backoff    |
-| `CircuitBreakerMiddleware` | `plynth.middleware.circuit_breaker` | Open circuit after repeated failures        |
-| `RateLimitMiddleware`      | `plynth.middleware.rate_limit`      | Enforce a max request rate (sliding window) |
+| Class                          | Module                              | Purpose                                     |
+| ------------------------------ | ----------------------------------- | ------------------------------------------- |
+| `CacheMiddleware`              | `plynth.middleware.cache`           | Cache GET responses                         |
+| `LoggingMiddleware`            | `plynth.middleware.logging`         | Log request/response metadata               |
+| `HeaderMiddleware`             | `plynth.middleware.header`          | Inject static headers on every request      |
+| `RetryMiddleware`              | `plynth.middleware.retry`           | Retry on transient failures with backoff    |
+| `CircuitBreakerMiddleware`     | `plynth.middleware.circuit_breaker` | Open circuit after repeated failures        |
+| `RateLimitMiddleware`          | `plynth.middleware.rate_limit`      | Enforce a max request rate (sliding window) |
+| `ThrottleGovernanceMiddleware` | `plynth.middleware.throttle`        | React to upstream throttle signals          |
 
 Async variants (`AsyncCacheMiddleware`, `AsyncLoggingMiddleware`,
 `AsyncRetryMiddleware`, etc.) exist for every sync class.
@@ -132,12 +133,39 @@ from plynth.base.policies import RateLimitPolicy
 
 transport = HttpxSyncTransport(
     middlewares=[
-        RateLimitMiddleware(RateLimitPolicy(rate=10, period=1.0))
+        RateLimitMiddleware(
+            RateLimitPolicy(max_requests=10, window_seconds=1.0)
+        )
     ]
 )
 ```
 
 `RateLimitExceededError` is raised when the limit is hit.
+
+## Upstream throttle governance
+
+Use `ThrottleGovernanceMiddleware` to react to throttle signals returned by
+the upstream API (for example `429` or `503` with `Retry-After`).
+
+```python
+from plynth.base.policies import ThrottleGovernancePolicy
+from plynth.middleware.throttle import ThrottleGovernanceMiddleware
+
+transport = HttpxSyncTransport(
+    middlewares=[
+        ThrottleGovernanceMiddleware(
+            ThrottleGovernancePolicy(
+                reject_on_detection=False,
+                min_delay_seconds=1.0,
+                max_delay_seconds=60.0,
+            )
+        ),
+    ]
+)
+```
+
+With `RetryMiddleware`, governance delay is respected by retry using
+`max(backoff, governance_delay)`.
 
 ## Write your own middleware
 
