@@ -276,7 +276,7 @@ def auth_from_config(
     # Deferred imports — oauth2.py deferred-imports HttpxSyncTransport
     # inside __init__(), so importing middleware here does not cause a
     # circular import at module level.
-    from plynth.http.middleware.auth import (
+    from plynth.http.middleware.auth import (  # pylint: disable=import-outside-toplevel
         BasicAuthMiddleware,
         BearerTokenAuthMiddleware,
         OAuth2ClientCredentialsMiddleware,
@@ -333,7 +333,7 @@ def async_auth_from_config(
         token_cache: Optional ``CacheBackend`` for OAuth2 token caching.
 
     """
-    from plynth.http.middleware.auth import (
+    from plynth.http.middleware.auth import (  # pylint: disable=import-outside-toplevel
         AsyncBasicAuthMiddleware,
         AsyncBearerTokenAuthMiddleware,
         AsyncOAuth2ClientCredentialsMiddleware,
