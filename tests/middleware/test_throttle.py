@@ -21,6 +21,8 @@ from plynth.middleware.throttle import (
     AsyncThrottleGovernanceMiddleware,
     ThrottleGovernanceMiddleware,
     ThrottleGovernedError,
+    _extract_throttle_signal,
+    _parse_reset_at,
     _parse_retry_after,
 )
 
@@ -133,6 +135,48 @@ class TestThrottleGovernancePolicy:
 
         assert decision.action == ThrottleGovernanceAction.DELAY
         assert decision.delay_seconds == 30.0
+
+    def test_evaluate_uses_reset_at_when_retry_after_absent(self) -> None:
+        """Test evaluate converts reset_at_seconds to delay when retry_after absent."""
+
+        fixed_now = 1_000_000.0
+        reset_at = fixed_now + 45.0
+        policy = ThrottleGovernancePolicy(min_delay_seconds=1.0)
+        signal = ThrottleSignal(detected=True, reset_at_seconds=reset_at)
+
+        with patch("plynth.base.policies.time.time", return_value=fixed_now):
+            decision = policy.evaluate(signal)
+
+        assert decision.action == ThrottleGovernanceAction.DELAY
+        assert decision.delay_seconds == 45.0
+
+    def test_evaluate_prefers_retry_after_over_reset_at(self) -> None:
+        """Test that retry_after_seconds takes priority over reset_at_seconds."""
+
+        fixed_now = 1_000_000.0
+        policy = ThrottleGovernancePolicy(min_delay_seconds=1.0)
+        signal = ThrottleSignal(
+            detected=True,
+            retry_after_seconds=10.0,
+            reset_at_seconds=fixed_now + 60.0,
+        )
+
+        with patch("plynth.base.policies.time.time", return_value=fixed_now):
+            decision = policy.evaluate(signal)
+
+        assert decision.delay_seconds == 10.0
+
+    def test_evaluate_reset_at_past_clamps_to_min_delay(self) -> None:
+        """Test reset_at in the past does not produce a negative delay."""
+
+        fixed_now = 1_000_000.0
+        policy = ThrottleGovernancePolicy(min_delay_seconds=2.0)
+        signal = ThrottleSignal(detected=True, reset_at_seconds=fixed_now - 10.0)
+
+        with patch("plynth.base.policies.time.time", return_value=fixed_now):
+            decision = policy.evaluate(signal)
+
+        assert decision.delay_seconds == 2.0
 
 
 class TestThrottleGovernedError:
@@ -452,3 +496,62 @@ class TestParseRetryAfter:
         """Test that negative Infinity is rejected as non-finite."""
         response = Response(status_code=429, headers={"retry-after": "-inf"})
         assert _parse_retry_after(response) is None
+
+
+class TestParseResetAt:
+    """Tests for _parse_reset_at helper."""
+
+    def test_parse_reset_at_integer(self) -> None:
+        """Test parsing X-RateLimit-Reset as a Unix timestamp."""
+        response = Response(
+            status_code=429, headers={"x-ratelimit-reset": "1748000000"}
+        )
+        assert _parse_reset_at(response) == 1_748_000_000.0
+
+    def test_parse_reset_at_missing(self) -> None:
+        """Test that missing header returns None."""
+        response = Response(status_code=429, headers={})
+        assert _parse_reset_at(response) is None
+
+    def test_parse_reset_at_case_insensitive(self) -> None:
+        """Test case-insensitive header lookup."""
+        response = Response(
+            status_code=429, headers={"X-RateLimit-Reset": "1748000000"}
+        )
+        assert _parse_reset_at(response) == 1_748_000_000.0
+
+    def test_parse_reset_at_invalid_returns_none(self) -> None:
+        """Test that non-numeric value returns None."""
+        response = Response(
+            status_code=429, headers={"x-ratelimit-reset": "not-a-timestamp"}
+        )
+        assert _parse_reset_at(response) is None
+
+
+class TestExtractThrottleSignalResetAt:
+    """Tests for _extract_throttle_signal populating reset_at_seconds."""
+
+    def test_quota_exhausted_extracts_reset_at(self) -> None:
+        """Test that X-RateLimit-Reset is captured alongside quota exhaustion."""
+        response = Response(
+            status_code=200,
+            headers={
+                "x-ratelimit-remaining": "0",
+                "x-ratelimit-reset": "1748000000",
+            },
+            content=b"ok",
+        )
+        signal = _extract_throttle_signal(response)
+        assert signal.detected is True
+        assert signal.reset_at_seconds == 1_748_000_000.0
+
+    def test_quota_exhausted_no_reset_at_when_header_absent(self) -> None:
+        """Test reset_at_seconds is None when X-RateLimit-Reset is absent."""
+        response = Response(
+            status_code=200,
+            headers={"x-ratelimit-remaining": "0"},
+            content=b"ok",
+        )
+        signal = _extract_throttle_signal(response)
+        assert signal.detected is True
+        assert signal.reset_at_seconds is None
