@@ -2,6 +2,55 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.0](https://github.com/eschaar/plynth/compare/0.4.0...0.5.0) (2026-05-16)
+
+
+### Features
+
+* **http:** add raw response mode and document layer boundary ([3657240](https://github.com/eschaar/plynth/commit/365724030adcd8b0129672ff79756cac984f90ce))
+* **middleware:** add throttle governance and align retry handling ([e6731f1](https://github.com/eschaar/plynth/commit/e6731f1448e31fd1df21eb34460e822a02f36cb9))
+
+
+### Fixes
+
+* **base:** use StrEnum for ThrottleGovernanceAction ([dbd8cb6](https://github.com/eschaar/plynth/commit/dbd8cb687b9e2bf3aa4f8ba10522602fc90194b1))
+* **http:** fix stream timeout, remove unnecessary ellipsis, and increase coverage ([4300f1c](https://github.com/eschaar/plynth/commit/4300f1c3033ba7354aa4ce01182a4c4c041fb16d))
+* **http:** move lazy imports to module level; fix pylint disable placement ([38ef321](https://github.com/eschaar/plynth/commit/38ef321b62ef5aac9d20321657325d1b2bf98a15))
+* **middleware:** case-insensitive header lookup in throttle governance ([0e32c81](https://github.com/eschaar/plynth/commit/0e32c812db62d27d5c41e28a6e5105a3b5ccb7e2))
+* **middleware:** extract reset_at_seconds for 429 and 503 signals ([3f1aff4](https://github.com/eschaar/plynth/commit/3f1aff47bebd2d28055ceb60261bd2e4cfa450f8))
+* **middleware:** harden throttle governance and align parity ([46b2e46](https://github.com/eschaar/plynth/commit/46b2e46f145ae0ac7d0561210ecccf6d865e6b89))
+* **middleware:** honour reset_at_seconds in throttle governance ([bbcf7d6](https://github.com/eschaar/plynth/commit/bbcf7d614d3dea418c9a692fa1fb434a563780fb))
+* **middleware:** implement SyncMiddleware/AsyncMiddleware protocol in throttle middleware ([677cb55](https://github.com/eschaar/plynth/commit/677cb552ec1733a0551f72bf9d13ee39010385c9))
+* **middleware:** never retry on ThrottleGovernedError ([828fe0f](https://github.com/eschaar/plynth/commit/828fe0f489b7ebec49fb415aaad9e601ea0782ce))
+* **middleware:** parse HTTP-date Retry-After header format ([a19c3a0](https://github.com/eschaar/plynth/commit/a19c3a02585a1dac795e50bd23cac70acdc31aa8))
+* **middleware:** reject non-finite Retry-After values ([bfdd0ca](https://github.com/eschaar/plynth/commit/bfdd0cacb70ad6480f3d6d4a41f2771d8a0a1776))
+* **salesforce:** early return for raw mode; add raw=True test coverage ([7543bbc](https://github.com/eschaar/plynth/commit/7543bbc95230d34460d55d9e14d58107a736ffab))
+* **tests:** freeze time in HTTP-date Retry-After parser test ([e8a213a](https://github.com/eschaar/plynth/commit/e8a213ab5548ad775fcc6278c7789ec1dd088069))
+* **tests:** patch sleep in remaining retry backoff tests ([a98dfab](https://github.com/eschaar/plynth/commit/a98dfab84708b148aa3b9189d6f7f2ae12e596b5))
+* **tests:** patch sleep in retry governance integration tests ([5c67dbe](https://github.com/eschaar/plynth/commit/5c67dbe8f17a56316c57d48a4664bd5e12806a23))
+
+
+### Refactoring
+
+* **middleware:** rename public policy attribute to _policy for consistency ([e814eb5](https://github.com/eschaar/plynth/commit/e814eb5f5bb120a3b8acf61e6296f00ec17da638))
+
+
+### Documentation
+
+* **adr:** clarify dependency and settings decisions ([9ca80b6](https://github.com/eschaar/plynth/commit/9ca80b6e20ee6c0aa54751ac499c5d7f8224c514))
+* **adr:** mark all acceptance criteria implemented in ADR-0022 ([9ce48d1](https://github.com/eschaar/plynth/commit/9ce48d1f4100dcd77fc9d0512872b67d80b35b3e))
+* fix middleware ordering in reference; mark ADR-0022 criteria implemented ([0fbf521](https://github.com/eschaar/plynth/commit/0fbf5215415549587b6166e1eefee27c5b9ed315))
+* **http:** correct raw mode use cases in error handling guide ([bad0b67](https://github.com/eschaar/plynth/commit/bad0b67034cb5d193f51b4a73e9dd3cbaf8c00ac))
+* **middleware:** document X-RateLimit-Reset as fallback delay source ([fd21526](https://github.com/eschaar/plynth/commit/fd21526a3189210c96bd76b910912df458362f14))
+* **middleware:** remove misleading Attributes section from async throttle middleware ([96fb028](https://github.com/eschaar/plynth/commit/96fb028c5dd2404efb7eb92f87affcb97c3f5809))
+* **middleware:** show policy as optional in ThrottleGovernanceMiddleware signature ([6c07924](https://github.com/eschaar/plynth/commit/6c07924e34f7aacb9206efef78b2e080f0747d81))
+* **salesforce:** document raw=True behaviour on both request() overloads ([80bc5ff](https://github.com/eschaar/plynth/commit/80bc5ff49413d3d28db010cabb95295dca02bfce))
+
+
+### Tests
+
+* **middleware:** increase throttle middleware coverage ([12e3758](https://github.com/eschaar/plynth/commit/12e375816da048af642ec598482286d2f62ba2e7))
+
 ## [0.4.0](https://github.com/eschaar/plynth/compare/0.3.0...0.4.0) (2026-05-15)
 
 
