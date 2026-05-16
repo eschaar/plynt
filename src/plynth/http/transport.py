@@ -240,14 +240,14 @@ class HttpxSyncTransport(BaseSyncTransport):
         """
         # Deferred to avoid a circular import: auth.py deferred-imports
         # HttpxSyncTransport inside oauth2 middleware __init__().
-        from plynth.cache import (
-            cache_from_config,  # pylint: disable=import-outside-toplevel
+        from plynth.cache import (  # pylint: disable=import-outside-toplevel
+            cache_from_config,
         )
-        from plynth.http.auth import (
-            auth_from_config,  # pylint: disable=import-outside-toplevel
+        from plynth.http.auth import (  # pylint: disable=import-outside-toplevel
+            auth_from_config,
         )
-        from plynth.middleware.cache import (
-            CacheMiddleware,  # pylint: disable=import-outside-toplevel
+        from plynth.middleware.cache import (  # pylint: disable=import-outside-toplevel
+            CacheMiddleware,
         )
 
         middlewares: list[SyncMiddleware] = []
@@ -461,14 +461,14 @@ class HttpxAsyncTransport(BaseAsyncTransport):
         """
         # Deferred to avoid a circular import: auth.py deferred-imports
         # HttpxSyncTransport inside oauth2 middleware __init__().
-        from plynth.cache import (
-            cache_from_config,  # pylint: disable=import-outside-toplevel
+        from plynth.cache import (  # pylint: disable=import-outside-toplevel
+            cache_from_config,
         )
-        from plynth.http.auth import (
-            async_auth_from_config,  # pylint: disable=import-outside-toplevel
+        from plynth.http.auth import (  # pylint: disable=import-outside-toplevel
+            async_auth_from_config,
         )
-        from plynth.middleware.cache import (
-            AsyncCacheMiddleware,  # pylint: disable=import-outside-toplevel
+        from plynth.middleware.cache import (  # pylint: disable=import-outside-toplevel
+            AsyncCacheMiddleware,
         )
 
         middlewares: list[AsyncMiddleware] = []

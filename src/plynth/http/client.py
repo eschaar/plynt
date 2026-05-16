@@ -38,6 +38,7 @@ from typing import Any
 from plynth.base.request import Request
 from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynth.base.transport import AsyncTransport, SyncTransport
+from plynth.http.errors import match_error
 
 __all__ = ["APIClient", "AsyncAPIClient", "AsyncHTTPClient", "HTTPClient"]
 
@@ -573,8 +574,6 @@ class APIClient(HTTPClient):
                 codes.
 
         """
-        from plynth.http.errors import match_error
-
         resp = super().request(
             method,
             path,
@@ -617,8 +616,6 @@ class APIClient(HTTPClient):
                 client closes the response.
 
         """
-        from plynth.http.errors import match_error
-
         resp = super().stream(
             method,
             path,
@@ -691,8 +688,6 @@ class AsyncAPIClient(AsyncHTTPClient):
             HttpStatusError: Typed subclass for the specific status code.
 
         """
-        from plynth.http.errors import match_error
-
         resp = await super().request(
             method,
             path,
@@ -735,8 +730,6 @@ class AsyncAPIClient(AsyncHTTPClient):
                 client closes the response.
 
         """
-        from plynth.http.errors import match_error
-
         resp = await super().stream(
             method,
             path,

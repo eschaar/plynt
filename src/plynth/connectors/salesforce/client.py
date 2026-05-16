@@ -46,8 +46,10 @@ from plynth.connectors.salesforce.auth import (
     SalesforceSessionAuthMiddleware,
 )
 from plynth.connectors.salesforce.constants import DEFAULT_API_VERSION
+from plynth.connectors.salesforce.errors import raise_for_salesforce_errors
 from plynth.connectors.salesforce.models import SalesforceApiVersion
 from plynth.http.client import APIClient, AsyncAPIClient
+from plynth.http.errors import HttpStatusError, match_error
 
 __all__ = ["AsyncSalesforceAPIClient", "SalesforceAPIClient"]
 
@@ -199,9 +201,6 @@ class SalesforceAPIClient(APIClient):
             HttpStatusError: For non-Salesforce HTTP errors.
 
         """
-        from plynth.connectors.salesforce.errors import raise_for_salesforce_errors
-        from plynth.http.errors import HttpStatusError, match_error
-
         req = self._build_request(
             method,
             path,
@@ -210,7 +209,9 @@ class SalesforceAPIClient(APIClient):
             content=content,
         )
         resp = self._transport.send(req)
-        if not raw and resp.status_code >= HTTPStatus.BAD_REQUEST:
+        if raw:
+            return resp
+        if resp.status_code >= HTTPStatus.BAD_REQUEST:
             raise_for_salesforce_errors(resp)
             err = match_error(resp.status_code, method=method, url=req.url)
             if isinstance(err, HttpStatusError):
@@ -330,9 +331,6 @@ class AsyncSalesforceAPIClient(AsyncAPIClient):
             HttpStatusError: Typed subclass for the specific status code.
 
         """
-        from plynth.connectors.salesforce.errors import raise_for_salesforce_errors
-        from plynth.http.errors import HttpStatusError, match_error
-
         instance_url = await self._sf_auth.get_instance_url()
         merged_headers = {**self._default_headers, **(headers or {})}
         req = Request(
@@ -343,7 +341,9 @@ class AsyncSalesforceAPIClient(AsyncAPIClient):
             content=content,
         )
         resp = await self._transport.send(req)
-        if not raw and resp.status_code >= HTTPStatus.BAD_REQUEST:
+        if raw:
+            return resp
+        if resp.status_code >= HTTPStatus.BAD_REQUEST:
             raise_for_salesforce_errors(resp)
             err = match_error(resp.status_code, method=method, url=req.url)
             if isinstance(err, HttpStatusError):
