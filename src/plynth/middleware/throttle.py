@@ -162,9 +162,6 @@ class ThrottleGovernanceMiddleware(SyncMiddleware):
     Intercepts responses, detects upstream throttle signals, and applies
     governance logic to decide whether to proceed, delay, or reject.
 
-    Attributes:
-        policy: Governance policy controlling decision logic.
-
     """
 
     def __init__(
@@ -177,7 +174,7 @@ class ThrottleGovernanceMiddleware(SyncMiddleware):
             policy: Governance policy (default: reject_on_detection=False).
 
         """
-        self.policy = policy or ThrottleGovernancePolicy()
+        self._policy = policy or ThrottleGovernancePolicy()
 
     def handle(self, request: Request, next_handler: NextSyncHandler) -> Response:
         """Apply throttle governance to request/response cycle.
@@ -197,7 +194,7 @@ class ThrottleGovernanceMiddleware(SyncMiddleware):
 
         # Extract and evaluate throttle signal
         signal = _extract_throttle_signal(response)
-        decision = self.policy.evaluate(signal)
+        decision = self._policy.evaluate(signal)
 
         # Apply governance action
         if decision.action == ThrottleGovernanceAction.PROCEED:
@@ -238,7 +235,7 @@ class AsyncThrottleGovernanceMiddleware(AsyncMiddleware):
             policy: Governance policy (default: reject_on_detection=False).
 
         """
-        self.policy = policy or ThrottleGovernancePolicy()
+        self._policy = policy or ThrottleGovernancePolicy()
 
     async def handle(
         self, request: Request, next_handler: NextAsyncHandler
@@ -263,7 +260,7 @@ class AsyncThrottleGovernanceMiddleware(AsyncMiddleware):
 
         # Extract and evaluate throttle signal
         signal = _extract_throttle_signal(response)
-        decision = self.policy.evaluate(signal)
+        decision = self._policy.evaluate(signal)
 
         # Apply governance action
         if decision.action == ThrottleGovernanceAction.PROCEED:
