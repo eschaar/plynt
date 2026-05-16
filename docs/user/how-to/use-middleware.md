@@ -164,7 +164,32 @@ transport = HttpxSyncTransport(
 )
 ```
 
-With `RetryMiddleware`, governance delay is respected by retry using
+When combined with `RetryMiddleware`, ordering is required for the
+integration to work: put `RetryMiddleware` before
+`ThrottleGovernanceMiddleware` in the middleware list (first item is
+outermost). This lets retry read per-attempt governance delay metadata.
+
+```python
+from plynth.base.policies import ThrottleGovernancePolicy
+from plynth.http.policies import HttpRetryPolicy
+from plynth.middleware.retry import RetryMiddleware
+from plynth.middleware.throttle import ThrottleGovernanceMiddleware
+
+transport = HttpxSyncTransport(
+    middlewares=[
+        RetryMiddleware(HttpRetryPolicy(max_attempts=3, retryable_status_codes={429, 503})),
+        ThrottleGovernanceMiddleware(
+            ThrottleGovernancePolicy(
+                reject_on_detection=False,
+                min_delay_seconds=1.0,
+                max_delay_seconds=60.0,
+            )
+        ),
+    ]
+)
+```
+
+In this order, retry respects governance delay using
 `max(backoff, governance_delay)`.
 
 ## Write your own middleware

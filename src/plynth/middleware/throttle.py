@@ -213,11 +213,6 @@ class ThrottleGovernanceMiddleware(SyncMiddleware):
         """
         self._policy = policy or ThrottleGovernancePolicy()
 
-    @property
-    def policy(self) -> ThrottleGovernancePolicy:
-        """Return the active governance policy."""
-        return self._policy
-
     def handle(self, request: Request, next_handler: NextSyncHandler) -> Response:
         """Apply throttle governance to request/response cycle.
 
