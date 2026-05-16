@@ -157,7 +157,9 @@ ______________________________________________________________________
 
 Reacts to throttle or backpressure signals returned by upstream APIs.
 Typical signals include `429`, `503` with `Retry-After`, and exhausted
-quota headers such as `X-RateLimit-Remaining: 0`.
+quota headers such as `X-RateLimit-Remaining: 0`. When an
+`X-RateLimit-Reset` header is present, the middleware uses it as a
+fallback delay source when `Retry-After` is absent.
 
 ```python
 ThrottleGovernanceMiddleware(policy: ThrottleGovernancePolicy)
