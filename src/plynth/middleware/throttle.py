@@ -104,6 +104,7 @@ def _extract_throttle_signal(response: Response) -> ThrottleSignal:
     if _is_quota_exhausted(response):
         signal = ThrottleSignal(detected=True)
         signal.retry_after_seconds = _parse_retry_after(response)
+        signal.reset_at_seconds = _parse_reset_at(response)
         return signal
 
     # No throttle signal detected
@@ -147,6 +148,26 @@ def _parse_retry_after(response: Response) -> float | None:
         pass
 
     return None
+
+
+def _parse_reset_at(response: Response) -> float | None:
+    """Parse X-RateLimit-Reset header into a Unix timestamp.
+
+    Args:
+        response: HTTP response to inspect.
+
+    Returns:
+        Unix timestamp in seconds, or None if not present or unparseable.
+
+    """
+    headers_lower = {k.lower(): v for k, v in response.headers.items()}
+    reset_at = headers_lower.get("x-ratelimit-reset")
+    if not reset_at:
+        return None
+    try:
+        return float(reset_at)
+    except ValueError:
+        return None
 
 
 def _is_quota_exhausted(response: Response) -> bool:

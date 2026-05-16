@@ -12,6 +12,7 @@ HTTP-specific logic. Override via ``HttpRetryPolicy`` in
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -253,8 +254,16 @@ class ThrottleGovernancePolicy:
                 reason="Throttle detected and reject_on_detection=True",
             )
 
-        # Compute delay from signal
-        delay = signal.retry_after_seconds or self.min_delay_seconds
+        # Compute delay from signal:
+        # 1. retry_after_seconds (relative, most precise)
+        # 2. reset_at_seconds (absolute Unix timestamp, converted to delay)
+        # 3. min_delay_seconds (fallback)
+        if signal.retry_after_seconds is not None:
+            delay = signal.retry_after_seconds
+        elif signal.reset_at_seconds is not None:
+            delay = max(0.0, signal.reset_at_seconds - time.time())
+        else:
+            delay = self.min_delay_seconds
         delay = max(delay, self.min_delay_seconds)
         delay = min(delay, self.max_delay_seconds)
 
