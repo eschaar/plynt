@@ -90,6 +90,7 @@ def _extract_throttle_signal(response: Response) -> ThrottleSignal:
     if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
         signal = ThrottleSignal(detected=True)
         signal.retry_after_seconds = _parse_retry_after(response)
+        signal.reset_at_seconds = _parse_reset_at(response)
         return signal
 
     # 503 with Retry-After can indicate throttle
@@ -98,6 +99,7 @@ def _extract_throttle_signal(response: Response) -> ThrottleSignal:
         if retry_after is not None:
             signal = ThrottleSignal(detected=True)
             signal.retry_after_seconds = retry_after
+            signal.reset_at_seconds = _parse_reset_at(response)
             return signal
 
     # Check for rate limit exhaustion via headers
