@@ -55,6 +55,11 @@ class TestThrottleGovernanceAction:
         assert ThrottleGovernanceAction.DELAY.value == "delay"
         assert ThrottleGovernanceAction.REJECT.value == "reject"
 
+    def test_governance_action_is_str(self) -> None:
+        """Test that action members are str instances (StrEnum)."""
+        for action in ThrottleGovernanceAction:
+            assert isinstance(action, str)
+
 
 class TestThrottleGovernancePolicy:
     """Tests for ThrottleGovernancePolicy."""
