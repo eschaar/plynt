@@ -233,7 +233,7 @@ class TestThrottleGovernanceMiddleware:
 
         response = Response(status_code=200, headers={}, content=b"OK")
 
-        def next_handler(req: Request) -> Response:
+        def next_handler(_req: Request) -> Response:
             return response
 
         middleware.next_handler = next_handler
@@ -257,7 +257,7 @@ class TestThrottleGovernanceMiddleware:
             content=b"Too Many Requests",
         )
 
-        def next_handler(req: Request) -> Response:
+        def next_handler(_req: Request) -> Response:
             return response
 
         middleware.next_handler = next_handler
@@ -266,7 +266,7 @@ class TestThrottleGovernanceMiddleware:
         result = middleware(request)
         assert result is response
         assert hasattr(result, "_governance_delay_seconds")
-        assert result._governance_delay_seconds == 30.0
+        assert result.__dict__["_governance_delay_seconds"] == 30.0
 
     def test_middleware_rejects_on_governance_reject(self) -> None:
         """Test that middleware raises when governance rejects."""
@@ -279,7 +279,7 @@ class TestThrottleGovernanceMiddleware:
             content=b"Too Many Requests",
         )
 
-        def next_handler(req: Request) -> Response:
+        def next_handler(_req: Request) -> Response:
             return response
 
         middleware.next_handler = next_handler
@@ -320,7 +320,7 @@ class TestAsyncThrottleGovernanceMiddleware:
 
         response = Response(status_code=200, headers={}, content=b"OK")
 
-        async def next_handler(req: Request) -> Response:
+        async def next_handler(_req: Request) -> Response:
             return response
 
         middleware.next_handler = next_handler
@@ -345,7 +345,7 @@ class TestAsyncThrottleGovernanceMiddleware:
             content=b"Too Many Requests",
         )
 
-        async def next_handler(req: Request) -> Response:
+        async def next_handler(_req: Request) -> Response:
             return response
 
         middleware.next_handler = next_handler
@@ -354,7 +354,7 @@ class TestAsyncThrottleGovernanceMiddleware:
         result = await middleware(request)
         assert result is response
         assert hasattr(result, "_governance_delay_seconds")
-        assert result._governance_delay_seconds == 30.0
+        assert result.__dict__["_governance_delay_seconds"] == 30.0
 
     @pytest.mark.asyncio
     async def test_async_middleware_rejects_on_governance_reject(self) -> None:
@@ -368,7 +368,7 @@ class TestAsyncThrottleGovernanceMiddleware:
             content=b"Too Many Requests",
         )
 
-        async def next_handler(req: Request) -> Response:
+        async def next_handler(_req: Request) -> Response:
             return response
 
         middleware.next_handler = next_handler

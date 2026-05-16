@@ -240,9 +240,15 @@ class HttpxSyncTransport(BaseSyncTransport):
         """
         # Deferred to avoid a circular import: auth.py deferred-imports
         # HttpxSyncTransport inside oauth2 middleware __init__().
-        from plynth.cache import cache_from_config
-        from plynth.http.auth import auth_from_config
-        from plynth.middleware.cache import CacheMiddleware
+        from plynth.cache import (
+            cache_from_config,  # pylint: disable=import-outside-toplevel
+        )
+        from plynth.http.auth import (
+            auth_from_config,  # pylint: disable=import-outside-toplevel
+        )
+        from plynth.middleware.cache import (
+            CacheMiddleware,  # pylint: disable=import-outside-toplevel
+        )
 
         middlewares: list[SyncMiddleware] = []
         caches = settings.caches
@@ -376,12 +382,10 @@ class HttpxSyncTransport(BaseSyncTransport):
             "content": request.content,
         }
         raw_request = self._client.build_request(**request_kwargs)  # type: ignore[arg-type]
-
-        send_kwargs: dict[str, object] = {"stream": True}
         if request.timeout is not None:
-            send_kwargs["timeout"] = request.timeout
+            raw_request.extensions["timeout"] = httpx.Timeout(request.timeout).as_dict()
 
-        raw_response = self._client.send(raw_request, **send_kwargs)  # type: ignore[arg-type]
+        raw_response = self._client.send(raw_request, stream=True)
 
         _logger.debug(
             "<-- %d %s %s (streaming, no body)",
@@ -457,9 +461,15 @@ class HttpxAsyncTransport(BaseAsyncTransport):
         """
         # Deferred to avoid a circular import: auth.py deferred-imports
         # HttpxSyncTransport inside oauth2 middleware __init__().
-        from plynth.cache import cache_from_config
-        from plynth.http.auth import async_auth_from_config
-        from plynth.middleware.cache import AsyncCacheMiddleware
+        from plynth.cache import (
+            cache_from_config,  # pylint: disable=import-outside-toplevel
+        )
+        from plynth.http.auth import (
+            async_auth_from_config,  # pylint: disable=import-outside-toplevel
+        )
+        from plynth.middleware.cache import (
+            AsyncCacheMiddleware,  # pylint: disable=import-outside-toplevel
+        )
 
         middlewares: list[AsyncMiddleware] = []
         caches = settings.caches
@@ -593,12 +603,10 @@ class HttpxAsyncTransport(BaseAsyncTransport):
             "content": request.content,
         }
         raw_request = self._client.build_request(**request_kwargs)  # type: ignore[arg-type]
-
-        send_kwargs: dict[str, object] = {"stream": True}
         if request.timeout is not None:
-            send_kwargs["timeout"] = request.timeout
+            raw_request.extensions["timeout"] = httpx.Timeout(request.timeout).as_dict()
 
-        raw_response = await self._client.send(raw_request, **send_kwargs)  # type: ignore[arg-type]
+        raw_response = await self._client.send(raw_request, stream=True)
 
         _logger.debug(
             "<-- %d %s %s (streaming, no body)",

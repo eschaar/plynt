@@ -1,6 +1,6 @@
 # SF-0011 — Salesforce AI Connector Boundary
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-05-14
 **Scope:** `plynth.connectors.salesforce`, planned `plynth.connectors.llm`
 

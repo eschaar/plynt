@@ -71,9 +71,8 @@ class SyncTransport(ABC):
     """
 
     @abstractmethod
-    def send(self, request: Request) -> Response:
+    def send(self, request: Request) -> Response:  # pragma: no cover
         """Send a request synchronously and return the raw response."""
-        ...  # pragma: no cover
 
 
 class AsyncTransport(ABC):
@@ -90,9 +89,8 @@ class AsyncTransport(ABC):
     """
 
     @abstractmethod
-    async def send(self, request: Request) -> Response:
+    async def send(self, request: Request) -> Response:  # pragma: no cover
         """Send a request asynchronously and return the raw response."""
-        ...  # pragma: no cover
 
 
 class BaseSyncTransport(SyncTransport):
@@ -182,14 +180,13 @@ class BaseSyncTransport(SyncTransport):
         return handler
 
     @abstractmethod
-    def _send_once(self, request: Request) -> Response:
+    def _send_once(self, request: Request) -> Response:  # pragma: no cover
         """Execute a single raw network call — no retry, auth, or caching.
 
         Subclasses implement **only** the actual network I/O here; all
         cross-cutting concerns belong in middleware.
 
         """
-        ...  # pragma: no cover
 
 
 class BaseAsyncTransport(AsyncTransport):
@@ -249,11 +246,10 @@ class BaseAsyncTransport(AsyncTransport):
         return handler
 
     @abstractmethod
-    async def _send_once(self, request: Request) -> Response:
+    async def _send_once(self, request: Request) -> Response:  # pragma: no cover
         """Execute a single raw async network call — no retry, auth, or caching.
 
         Async counterpart of ``BaseSyncTransport._send_once``. Subclasses
         implement **only** the actual network I/O here.
 
         """
-        ...  # pragma: no cover

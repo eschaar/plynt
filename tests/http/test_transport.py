@@ -1,17 +1,28 @@
 """Tests for HttpxSyncTransport and HttpxAsyncTransport."""
 
+# pyright: reportPrivateUsage=false
+# pylint: disable=protected-access,too-many-lines
+
 from __future__ import annotations
 
+import base64
 import json
+from collections.abc import Callable
 from typing import Any
 
 import httpx
 import pytest
 
+from plynth.base.middleware import (
+    AsyncMiddleware,
+    NextAsyncHandler,
+    NextSyncHandler,
+    SyncMiddleware,
+)
 from plynth.base.request import Request
 from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynth.base.transport import BaseAsyncTransport, BaseSyncTransport
-from plynth.cache import DummyCacheConfig, LocMemCacheConfig
+from plynth.cache import DummyCache, DummyCacheConfig, LocMemCache, LocMemCacheConfig
 from plynth.http.auth import (
     BasicAuthConfig,
     BearerAuthConfig,
@@ -28,7 +39,7 @@ from plynth.http.middleware.auth import (
 from plynth.http.policies import HttpRetryPolicy
 from plynth.http.response import HttpResponse
 from plynth.http.settings import HTTPSettings
-from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
+from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport, scrub_headers
 from plynth.middleware.cache import AsyncCacheMiddleware, CacheMiddleware
 from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
 from tests.http.conftest import (
@@ -96,7 +107,7 @@ def _mock_response(
     """Return an httpx.MockTransport that always returns the given response."""
     response_headers = dict(headers or {})
 
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(_request: httpx.Request) -> httpx.Response:
         """Return handler."""
         return httpx.Response(
             status_code=status_code,
@@ -122,7 +133,7 @@ class TestHttpxSyncTransport:
         assert resp.status_code == 200
         assert json.loads(resp.content) == {"ok": True}
         assert isinstance(resp, HttpResponse)
-        assert isinstance(resp._raw, httpx.Response)
+        assert isinstance(getattr(resp, "_raw", None), httpx.Response)
 
     def test_send_passes_method_and_url(self) -> None:
         """The method and URL are forwarded to httpx correctly."""
@@ -262,6 +273,31 @@ class TestHttpxSyncTransport:
         assert b"".join(response.iter_bytes()) == body
         response.close()
 
+    def test_stream_request_forwards_timeout(self) -> None:
+        """A stream request forwards per-request timeout to httpx.send()."""
+        seen: dict[str, object] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            """Capture timeout extension for stream send path."""
+            seen["timeout"] = request.extensions.get("timeout")
+            return httpx.Response(200, content=b"stream")
+
+        client = httpx.Client(transport=httpx.MockTransport(handler))
+        transport = HttpxSyncTransport(client=client)
+
+        response = transport.send(
+            Request(
+                method="GET",
+                url="https://example.com",
+                stream=True,
+                timeout=45.0,
+            )
+        )
+
+        assert seen["timeout"] is not None
+        assert isinstance(response, StreamingResponse)
+        response.close()
+
 
 class TestHttpxAsyncTransport:
     """Tests for HttpxAsyncTransport."""
@@ -278,7 +314,7 @@ class TestHttpxAsyncTransport:
         assert resp.status_code == 200
         assert json.loads(resp.content) == {"ok": True}
         assert isinstance(resp, HttpResponse)
-        assert isinstance(resp._raw, httpx.Response)
+        assert isinstance(getattr(resp, "_raw", None), httpx.Response)
 
     async def test_send_passes_method_and_url(self) -> None:
         """The method and URL are forwarded to httpx correctly."""
@@ -403,6 +439,31 @@ class TestHttpxAsyncTransport:
         assert b"".join(chunks) == body
         await response.aclose()
 
+    async def test_stream_request_forwards_timeout(self) -> None:
+        """An async stream request forwards timeout to httpx.send()."""
+        seen: dict[str, object] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            """Capture timeout extension for async stream send path."""
+            seen["timeout"] = request.extensions.get("timeout")
+            return httpx.Response(200, content=b"stream")
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        transport = HttpxAsyncTransport(client=client)
+
+        response = await transport.send(
+            Request(
+                method="GET",
+                url="https://example.com",
+                stream=True,
+                timeout=45.0,
+            )
+        )
+
+        assert seen["timeout"] is not None
+        assert isinstance(response, AsyncStreamingResponse)
+        await response.aclose()
+
 
 class TestHttpxSyncTransportStatusCodes:
     """Test suite for HttpxSyncTransportStatusCodes."""
@@ -493,7 +554,6 @@ class TestHttpxTransportFromSettings:
 
     def test_from_settings_uses_typed_retry_policy(self) -> None:
         """settings.retry takes precedence over max_attempts when set."""
-        from plynth.http.policies import HttpRetryPolicy
 
         class _CustomRetrySettings(HTTPSettings):
             """Represent CustomRetrySettings."""
@@ -517,7 +577,6 @@ class TestHttpxTransportFromSettings:
 
     async def test_from_settings_async_uses_typed_retry_policy(self) -> None:
         """Async: settings.retry takes precedence over max_attempts when set."""
-        from plynth.http.policies import HttpRetryPolicy
 
         class _CustomRetrySettings(HTTPSettings):
             """Represent CustomRetrySettings."""
@@ -573,7 +632,7 @@ class TestHttpxAsyncTransportFromSettingsAuth:
         mw = transport._middlewares[0]
         assert isinstance(mw, AsyncBearerTokenAuthMiddleware)
 
-        async def _next(r: Request) -> Response:
+        async def _next(_r: Request) -> Response:
             """Handle next."""
             return Response(status_code=200, content=b"")
 
@@ -589,14 +648,13 @@ class TestHttpxAsyncTransportFromSettingsAuth:
 
     async def test_basic_auth_produces_correct_header(self) -> None:
         """Validate basic auth produces correct header."""
-        import base64
 
         transport = HttpxAsyncTransport.from_settings(_BasicSettings())
         req = Request(method="GET", url="https://example.com")
         mw = transport._middlewares[0]
         assert isinstance(mw, AsyncBasicAuthMiddleware)
 
-        async def _next(r: Request) -> Response:
+        async def _next(_r: Request) -> Response:
             """Handle next."""
             return Response(status_code=200, content=b"")
 
@@ -705,7 +763,6 @@ class TestHttpxTransportFromSettingsCache:
 
     def test_dummy_cache_config_wires_dummy_cache(self) -> None:
         """DummyCacheConfig produces a DummyCache backend in CacheMiddleware."""
-        from plynth.cache import DummyCache
 
         class _Settings(HTTPSettings):
             """Represent Settings."""
@@ -732,7 +789,6 @@ class TestHttpxTransportMiddlewaresParam:
 
     def test_sync_transport_stores_middlewares(self) -> None:
         """Validate sync transport stores middlewares."""
-        from plynth.base.middleware import NextSyncHandler, SyncMiddleware
 
         class _Noop:
             """Represent Noop."""
@@ -751,7 +807,6 @@ class TestHttpxTransportMiddlewaresParam:
 
     async def test_async_transport_stores_middlewares(self) -> None:
         """Validate async transport stores middlewares."""
-        from plynth.base.middleware import AsyncMiddleware, NextAsyncHandler
 
         class _AsyncNoop:
             """Represent AsyncNoop."""
@@ -777,9 +832,10 @@ class TestHttpxTransportMiddlewaresParam:
 class TestScrubHeaders:
     """Tests for the scrub_headers helper (ADR-0014 § 4)."""
 
+    _scrub: Callable[[dict[str, str]], dict[str, str]]
+
     def setup_method(self) -> None:
         """Return setup method."""
-        from plynth.http.transport import scrub_headers
 
         self._scrub = scrub_headers
 
@@ -1164,7 +1220,6 @@ class TestHttpxTransportCacheBackendSetting:
 
     def test_dummy_cache_backend(self) -> None:
         """Validate dummy cache backend."""
-        from plynth.cache import DummyCache
 
         s = self._settings_with_dummy_cache()
         transport = HttpxSyncTransport.from_settings(s)
@@ -1201,14 +1256,11 @@ class TestHttpxTransportCacheBackendSetting:
         transport = HttpxSyncTransport.from_settings(_FullSettings())
         mw = transport._middlewares[0]
         assert isinstance(mw, OAuth2AuthMiddleware)
-        from plynth.cache import DummyCache
-
         assert isinstance(mw._cache, DummyCache)
         transport.close()
 
     def test_auth_cache_backend_locmem(self) -> None:
         """Validate auth cache backend locmem."""
-        from plynth.cache import LocMemCache
 
         class _Settings(HTTPSettings):
             """Represent Settings."""
@@ -1290,7 +1342,6 @@ class TestHttpxTransportCacheBackendSetting:
 
     async def test_async_auth_cache_backend_sets_token_cache(self) -> None:
         """Validate async auth cache backend sets token cache."""
-        from plynth.cache import DummyCache
 
         class _Settings(HTTPSettings):
             """Represent Settings."""
