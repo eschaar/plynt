@@ -52,8 +52,12 @@ except HttpStatusError as exc:
 
 ## Bypass typed mapping with raw mode
 
-Use `raw=True` when you need direct status or header inspection on
-`APIClient` without raising `HttpStatusError`.
+`APIClient` raises `HttpStatusError` for `4xx` and `5xx` responses by
+default. Responses with a `1xx`, `2xx`, or `3xx` status code are returned
+directly without any exception mapping — no flag is needed for those.
+
+Use `raw=True` only when you need to receive a `4xx` or `5xx` response
+without an exception:
 
 ```python
 response = client.get("/items/42", raw=True)
@@ -64,9 +68,11 @@ if response.status_code == 404:
 
 Typical use cases:
 
-- Read headers from success responses, such as `Location` or `ETag`.
-- Differentiate status-only semantics (for example `200` vs `201` vs `204`).
-- Forward upstream response metadata to another service.
+- Inspect the body of a `4xx` error response that carries a structured
+  payload before deciding how to handle it.
+- Forward upstream `4xx`/`5xx` responses to another service without
+  triggering local error handling.
+- Write test helpers that need to assert on error response details.
 
 Note: `HTTPClient` already behaves as a raw client. The `raw` toggle is only
 needed when using `APIClient` or `AsyncAPIClient`.
