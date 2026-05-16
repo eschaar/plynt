@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
 
 from plynth.base.policies import (
@@ -144,6 +146,61 @@ class TestThrottleGovernedError:
         assert error.delay_seconds == 30.0
         assert error.reason == "Throttled by server"
         assert "rejected" in str(error).lower()
+
+
+class TestThrottleSignalExtraction:
+    """Tests for throttle signal extraction helper paths."""
+
+    def test_detects_503_with_retry_after(self) -> None:
+        """Test that 503 + Retry-After is treated as throttle."""
+        policy = ThrottleGovernancePolicy(min_delay_seconds=1.0)
+        middleware = ThrottleGovernanceMiddleware(policy=policy)
+
+        response = Response(
+            status_code=503,
+            headers={"retry-after": "5"},
+            content=b"Service Unavailable",
+        )
+
+        middleware.next_handler = lambda _req: response
+        request = Request(method="GET", url="http://example.com/test")
+
+        result = middleware(request)
+        assert result.__dict__["_governance_delay_seconds"] == 5.0
+
+    def test_detects_quota_exhaustion_header(self) -> None:
+        """Test that exhausted quota header triggers throttle detection."""
+        policy = ThrottleGovernancePolicy(min_delay_seconds=3.0)
+        middleware = ThrottleGovernanceMiddleware(policy=policy)
+
+        response = Response(
+            status_code=200,
+            headers={"x-ratelimit-remaining": "0"},
+            content=b"OK",
+        )
+
+        middleware.next_handler = lambda _req: response
+        request = Request(method="GET", url="http://example.com/test")
+
+        result = middleware(request)
+        assert result.__dict__["_governance_delay_seconds"] == 3.0
+
+    def test_ignores_invalid_retry_after_date_format(self) -> None:
+        """Test that invalid Retry-After format falls back to min delay."""
+        policy = ThrottleGovernancePolicy(min_delay_seconds=4.0)
+        middleware = ThrottleGovernanceMiddleware(policy=policy)
+
+        response = Response(
+            status_code=429,
+            headers={"retry-after": "Wed, 21 Oct 2026 07:28:00 GMT"},
+            content=b"Too Many Requests",
+        )
+
+        middleware.next_handler = lambda _req: response
+        request = Request(method="GET", url="http://example.com/test")
+
+        result = middleware(request)
+        assert result.__dict__["_governance_delay_seconds"] == 4.0
 
 
 class TestThrottleGovernanceMiddleware:
@@ -323,3 +380,17 @@ class TestAsyncThrottleGovernanceMiddleware:
         error = exc_info.value
         assert error.response is response
         assert error.delay_seconds == 0.0
+
+    @pytest.mark.asyncio
+    async def test_async_middleware_raises_type_error_for_non_response(self) -> None:
+        """Test that async middleware rejects non-Response handler results."""
+        middleware = AsyncThrottleGovernanceMiddleware()
+
+        async def next_handler(_req: Request) -> Response:
+            return cast(Response, object())
+
+        middleware.next_handler = next_handler
+        request = Request(method="GET", url="http://example.com/test")
+
+        with pytest.raises(TypeError, match="next_handler must return Response"):
+            await middleware(request)
