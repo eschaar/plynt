@@ -14,8 +14,17 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from enum import Enum
 
-__all__ = ["CircuitBreakerPolicy", "RateLimitPolicy", "RetryPolicy"]
+__all__ = [
+    "CircuitBreakerPolicy",
+    "RateLimitPolicy",
+    "RetryPolicy",
+    "ThrottleGovernanceAction",
+    "ThrottleGovernanceDecision",
+    "ThrottleGovernancePolicy",
+    "ThrottleSignal",
+]
 
 
 def _default_retryable_exception(exc: BaseException) -> bool:
@@ -125,3 +134,132 @@ class RateLimitPolicy:
             raise ValueError("max_requests must be >= 1")
         if self.window_seconds <= 0:
             raise ValueError("window_seconds must be > 0")
+
+
+class ThrottleGovernanceAction(Enum):
+    """Possible actions emitted by throttle governance policy.
+
+    Attributes:
+        PROCEED: Allow the request to proceed normally.
+        DELAY: Wait before the next attempt; retry will use the delay.
+        REJECT: Fail fast; do not attempt retry.
+
+    """
+
+    PROCEED = "proceed"
+    DELAY = "delay"
+    REJECT = "reject"
+
+
+@dataclass
+class ThrottleSignal:
+    """Normalized upstream throttle signal from external API.
+
+    Connectors and client adapters normalize provider-specific headers
+    (e.g. Retry-After, X-RateLimit-Reset) into this unified model.
+
+    Attributes:
+        detected: Whether throttling was detected.
+        retry_after_seconds: Delay in seconds suggested by upstream,
+            if available.
+        reset_at_seconds: Unix timestamp when throttle clears, if available.
+        remaining_quota: Remaining requests in quota window, if available.
+        quota_limit: Total request limit in quota window, if available.
+
+    """
+
+    detected: bool
+    retry_after_seconds: float | None = None
+    reset_at_seconds: float | None = None
+    remaining_quota: int | None = None
+    quota_limit: int | None = None
+
+
+@dataclass
+class ThrottleGovernanceDecision:
+    """Decision output from throttle governance policy.
+
+    Attributes:
+        action: Governance action to take (PROCEED, DELAY, REJECT).
+        delay_seconds: When action is DELAY, the recommended wait time.
+            Retry integrations use max(backoff, delay_seconds).
+        reason: Human-readable reason for the decision (debug/logging).
+
+    """
+
+    action: ThrottleGovernanceAction
+    delay_seconds: float = 0.0
+    reason: str = ""
+
+
+@dataclass
+class ThrottleGovernancePolicy:
+    """Controls governance behavior for upstream throttling.
+
+    When upstream APIs send throttle signals (429, 503 with retry delays,
+    quota exhaustion, etc.), this policy decides what to do: proceed,
+    delay, or reject.
+
+    Attributes:
+        reject_on_detection: When ``True``, any detected throttle signal
+            causes immediate rejection instead of attempting delay + retry.
+        min_delay_seconds: Minimum delay to apply when throttled, even if
+            upstream suggests less. Prevents aggressive retry storms.
+        max_delay_seconds: Upper bound for governance delay. If upstream
+            suggests longer delay, it is clamped to this value.
+
+    Example::
+
+        from plynth.base.policies import ThrottleGovernancePolicy
+
+        policy = ThrottleGovernancePolicy(
+            reject_on_detection=False,
+            min_delay_seconds=1.0,
+            max_delay_seconds=60.0,
+        )
+
+    """
+
+    reject_on_detection: bool = False
+    min_delay_seconds: float = 0.5
+    max_delay_seconds: float = 60.0
+
+    def __post_init__(self) -> None:
+        """Validate policy values."""
+        if self.min_delay_seconds < 0:
+            raise ValueError("min_delay_seconds must be >= 0")
+        if self.max_delay_seconds < self.min_delay_seconds:
+            raise ValueError("max_delay_seconds must be >= min_delay_seconds")
+
+    def evaluate(self, signal: ThrottleSignal) -> ThrottleGovernanceDecision:
+        """Evaluate a throttle signal and return a governance decision.
+
+        Args:
+            signal: Normalized throttle signal from upstream API.
+
+        Returns:
+            Governance decision with action and delay (if applicable).
+
+        """
+        if not signal.detected:
+            return ThrottleGovernanceDecision(
+                action=ThrottleGovernanceAction.PROCEED,
+                reason="No throttle detected",
+            )
+
+        if self.reject_on_detection:
+            return ThrottleGovernanceDecision(
+                action=ThrottleGovernanceAction.REJECT,
+                reason="Throttle detected and reject_on_detection=True",
+            )
+
+        # Compute delay from signal
+        delay = signal.retry_after_seconds or self.min_delay_seconds
+        delay = max(delay, self.min_delay_seconds)
+        delay = min(delay, self.max_delay_seconds)
+
+        return ThrottleGovernanceDecision(
+            action=ThrottleGovernanceAction.DELAY,
+            delay_seconds=delay,
+            reason=f"Throttled; delaying {delay}s",
+        )

@@ -14,6 +14,8 @@ Available middleware:
 - ``plynth.middleware.rate_limit`` — ``RateLimitMiddleware``,
   ``AsyncRateLimitMiddleware``
 - ``plynth.middleware.retry`` — ``RetryMiddleware``, ``AsyncRetryMiddleware``
+- ``plynth.middleware.throttle`` — ``ThrottleGovernanceMiddleware``,
+  ``AsyncThrottleGovernanceMiddleware``, ``ThrottleGovernedError``
 
 Log filters and formatter live in ``plynth.log``:
 ``ThrottleLogs``, ``ExceptionInfoFilter``, ``PlynthHTTPFilter``,
@@ -32,6 +34,11 @@ from plynth.middleware.rate_limit import (
     RateLimitMiddleware,
 )
 from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
+from plynth.middleware.throttle import (
+    AsyncThrottleGovernanceMiddleware,
+    ThrottleGovernanceMiddleware,
+    ThrottleGovernedError,
+)
 
 __all__ = [
     "AsyncCacheMiddleware",
@@ -40,10 +47,13 @@ __all__ = [
     "AsyncLoggingMiddleware",
     "AsyncRateLimitMiddleware",
     "AsyncRetryMiddleware",
+    "AsyncThrottleGovernanceMiddleware",
     "CacheMiddleware",
     "CircuitBreakerMiddleware",
     "HeaderMiddleware",
     "LoggingMiddleware",
     "RateLimitMiddleware",
     "RetryMiddleware",
+    "ThrottleGovernanceMiddleware",
+    "ThrottleGovernedError",
 ]

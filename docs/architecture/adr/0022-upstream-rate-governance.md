@@ -1,8 +1,8 @@
-# ADR-0022: Upstream Rate Governance
+# ADR-0022: Throttle Governance
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -15,26 +15,29 @@ retry delays. Without shared governance semantics, connectors may implement
 different handling for the same signals. This leads to inconsistent behavior
 under load and makes reliability tuning difficult.
 
-The governance model must stay connector-agnostic and reusable across service
-domains. Provider-specific header names and quota details remain adapter-level
-concerns.
+The governance model must stay connector-agnostic and reusable across all
+service domains. Plynth is a client library for consuming external APIs, not
+an API provider; governance is therefore upstream-facing only.
+Provider-specific header names and quota details remain adapter-level concerns.
 
 ## Decision
 
-Define a core upstream rate governance policy that standardizes throttling
-behavior across connectors.
+Define a core throttle governance policy that standardizes throttling behavior
+across connectors. The policy works with normalized throttle signals that are
+produced by connectors or client adapters from provider-specific headers and
+response metadata.
 
 ### 1. Governance inputs
 
-The policy consumes normalized upstream throttle signals:
+The policy consumes normalized throttle signals:
 
-- throttle status
+- throttle status (detected / not detected)
 - retry delay
 - reset timestamp
 - remaining quota and limit values when available
 
-Normalization from provider-specific headers into these fields is performed by
-connectors or client adapters.
+Normalization from provider-specific headers and response codes into these
+fields is performed by connectors or client adapters.
 
 ### 2. Governance actions
 
@@ -50,8 +53,10 @@ configuration.
 ### 3. Retry integration
 
 Retry behavior must consume governance output instead of bypassing it.
-When governance emits a delay, retry logic uses that delay as the minimum wait
-time. When governance emits reject, retry must stop.
+When governance emits a delay, retry logic uses `max(backoff_delay, governance_delay)` as
+the next wait time. This ensures governance delay takes precedence if it is
+longer than the retry backoff. When governance emits reject, retry must stop
+immediately.
 
 ### 4. Circuit-breaker integration
 
@@ -112,9 +117,12 @@ behavior.
 
 ## Rationale
 
-Rate governance is a cross-cutting reliability concern, not domain logic.
+Throttle governance is a cross-cutting reliability concern, not domain logic.
 Putting the decision policy in core middleware yields consistent behavior and
 keeps connector implementations focused on protocol and payload mapping.
+Using straightforward naming (ThrottleSignal, ThrottleGovernancePolicy) rather
+than "upstream"-prefixed names keeps the API concise and readable, since
+plynth's only perspective is upstream (consuming external APIs).
 
 ## Consequences
 
@@ -142,9 +150,10 @@ Mitigations:
 
 ## Acceptance Criteria
 
-1. A core governance policy type exists with deterministic action outputs.
-1. A normalized throttle signal model exists and is connector-agnostic.
-1. Retry integration honors governance delay and reject outputs.
+1. A core `ThrottleGovernancePolicy` type exists with deterministic action outputs.
+1. A normalized `ThrottleSignal` model exists and is connector-agnostic.
+1. `ThrottleGovernanceMiddleware` (sync and async) in `plynth.middleware.throttle` apply policy and raise typed exceptions.
+1. Retry integration honors governance delay and reject outputs via `max(backoff, governance_delay)`.
 1. Sync and async governance behaviors are parity-tested.
 1. Connector tests validate normalization from provider-specific signals.
 1. Governance exceptions are typed and mapped consistently in error handling.

@@ -11,6 +11,11 @@ The retry loop checks ``retryable_status_codes`` (empty by default) so
 the base classes work for both core and HTTP transports without
 HTTP-specific logic. Override via ``HttpRetryPolicy`` in
 ``plynth.http.policies`` to add HTTP-specific codes (e.g. 429, 503).
+
+When throttle governance middleware is in the chain, governance decisions
+(if a delay is recommended) are attached to the response object. The retry
+loop respects governance delay by using ``max(backoff, governance_delay)``
+as the wait time before the next attempt.
 """
 
 from __future__ import annotations
@@ -30,7 +35,7 @@ __all__ = ["AsyncRetryMiddleware", "RetryMiddleware"]
 _logger = logging.getLogger(__name__)
 
 
-class _RetryBase:
+class _RetryBase:  # pylint: disable=too-few-public-methods
     """Shared state and backoff logic for RetryMiddleware / AsyncRetryMiddleware.
 
     Not intended for direct use. Subclass ``RetryMiddleware`` or
@@ -49,8 +54,39 @@ class _RetryBase:
             self._policy.backoff_max,
         )
 
+    def _effective_delay(
+        self,
+        backoff_delay: float,
+        response: Response | None = None,
+    ) -> float:
+        """Calculate effective delay, respecting governance delay if present.
 
-class RetryMiddleware(_RetryBase, SyncMiddleware):
+        When throttle governance middleware is in the chain, it may attach
+        a governance_delay to the response object. This represents the
+        minimum wait time suggested by upstream API throttle signals.
+
+        The effective delay is ``max(backoff, governance_delay)`` to ensure
+        governance delay takes precedence if it's longer.
+
+        Args:
+            backoff_delay: Computed backoff delay in seconds.
+            response: Response object (may have governance delay attached).
+
+        Returns:
+            Effective delay in seconds.
+
+        """
+        if response is None:
+            return backoff_delay
+
+        governance_delay = getattr(response, "_governance_delay_seconds", 0.0)
+        return max(backoff_delay, governance_delay)
+
+
+class RetryMiddleware(  # pylint: disable=too-few-public-methods
+    _RetryBase,
+    SyncMiddleware,
+):
     """Sync middleware that retries requests according to a ``RetryPolicy``.
 
     Wraps the inner ``next_handler`` call in a retry loop with configurable
@@ -96,7 +132,8 @@ class RetryMiddleware(_RetryBase, SyncMiddleware):
 
         for attempt in range(policy.max_attempts):
             if attempt > 0:
-                delay = self._backoff_delay(attempt)
+                backoff = self._backoff_delay(attempt)
+                delay = self._effective_delay(backoff, response)
                 _logger.debug(
                     "Retry attempt %d/%d after %.2fs delay.",
                     attempt + 1,
@@ -107,7 +144,7 @@ class RetryMiddleware(_RetryBase, SyncMiddleware):
 
             try:
                 response = next_handler(request)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-exception-caught
                 if not policy.retry_on_network_error:
                     raise
                 if not policy.retryable_exception_classifier(exc):
@@ -152,7 +189,10 @@ class RetryMiddleware(_RetryBase, SyncMiddleware):
         return response
 
 
-class AsyncRetryMiddleware(_RetryBase, AsyncMiddleware):
+class AsyncRetryMiddleware(  # pylint: disable=too-few-public-methods
+    _RetryBase,
+    AsyncMiddleware,
+):
     """Async middleware that retries requests according to a ``RetryPolicy``.
 
     Async counterpart of ``RetryMiddleware``. Uses ``asyncio.sleep`` for
@@ -189,7 +229,8 @@ class AsyncRetryMiddleware(_RetryBase, AsyncMiddleware):
 
         for attempt in range(policy.max_attempts):
             if attempt > 0:
-                delay = self._backoff_delay(attempt)
+                backoff = self._backoff_delay(attempt)
+                delay = self._effective_delay(backoff, response)
                 _logger.debug(
                     "Retry attempt %d/%d after %.2fs delay.",
                     attempt + 1,
@@ -200,7 +241,7 @@ class AsyncRetryMiddleware(_RetryBase, AsyncMiddleware):
 
             try:
                 response = await next_handler(request)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-exception-caught
                 if not policy.retry_on_network_error:
                     raise
                 if not policy.retryable_exception_classifier(exc):
