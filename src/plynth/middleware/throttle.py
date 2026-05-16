@@ -17,6 +17,8 @@ Classes:
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
@@ -118,7 +120,7 @@ def _parse_retry_after(response: Response) -> float | None:
         response: HTTP response to inspect.
 
     Returns:
-        Retry-after delay in seconds, or None if not found.
+        Retry-after delay in seconds, or None if not found or unparseable.
 
     """
     retry_after = {k.lower(): v for k, v in response.headers.items()}.get("retry-after")
@@ -131,9 +133,15 @@ def _parse_retry_after(response: Response) -> float | None:
     except ValueError:
         pass
 
-    # If not seconds, it's an HTTP date - not implemented here
-    # (requires datetime parsing). Callers should use a connector-level
-    # adapter to normalize dates.
+    # Try parsing as HTTP-date
+    try:
+        parsed_date = parsedate_to_datetime(retry_after)
+        now = datetime.now(UTC)
+        delay = (parsed_date - now).total_seconds()
+        return max(0, delay)  # Don't return negative delays
+    except (TypeError, ValueError):
+        pass
+
     return None
 
 
