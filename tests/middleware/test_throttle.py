@@ -555,3 +555,32 @@ class TestExtractThrottleSignalResetAt:
         signal = _extract_throttle_signal(response)
         assert signal.detected is True
         assert signal.reset_at_seconds is None
+
+    def test_429_with_ratelimit_reset_extracts_reset_at(self) -> None:
+        """Test that X-RateLimit-Reset is captured on a 429 response."""
+        response = Response(
+            status_code=429,
+            headers={"x-ratelimit-reset": "1748000000"},
+            content=b"",
+        )
+        signal = _extract_throttle_signal(response)
+        assert signal.detected is True
+        assert signal.reset_at_seconds == 1_748_000_000.0
+
+    def test_429_without_ratelimit_reset_has_none(self) -> None:
+        """Test reset_at_seconds is None when X-RateLimit-Reset is absent on 429."""
+        response = Response(status_code=429, headers={}, content=b"")
+        signal = _extract_throttle_signal(response)
+        assert signal.detected is True
+        assert signal.reset_at_seconds is None
+
+    def test_503_with_retry_after_and_ratelimit_reset(self) -> None:
+        """Test that X-RateLimit-Reset is captured on a throttling 503 response."""
+        response = Response(
+            status_code=503,
+            headers={"retry-after": "30", "x-ratelimit-reset": "1748000000"},
+            content=b"",
+        )
+        signal = _extract_throttle_signal(response)
+        assert signal.detected is True
+        assert signal.reset_at_seconds == 1_748_000_000.0
