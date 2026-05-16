@@ -17,10 +17,15 @@ Classes:
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
+from plynth.base.middleware import (
+    AsyncMiddleware,
+    NextAsyncHandler,
+    NextSyncHandler,
+    SyncMiddleware,
+)
 from plynth.base.policies import (
     ThrottleGovernanceAction,
     ThrottleGovernancePolicy,
@@ -151,7 +156,7 @@ def _is_quota_exhausted(response: Response) -> bool:
     return False
 
 
-class ThrottleGovernanceMiddleware:
+class ThrottleGovernanceMiddleware(SyncMiddleware):
     """Sync middleware that applies throttle governance policy.
 
     Intercepts responses, detects upstream throttle signals, and applies
@@ -159,30 +164,27 @@ class ThrottleGovernanceMiddleware:
 
     Attributes:
         policy: Governance policy controlling decision logic.
-        next_handler: Next middleware or transport in the chain.
 
     """
 
     def __init__(
         self,
         policy: ThrottleGovernancePolicy | None = None,
-        next_handler: Callable[..., Response] | None = None,
     ) -> None:
         """Initialize throttle governance middleware.
 
         Args:
             policy: Governance policy (default: reject_on_detection=False).
-            next_handler: Next handler in the chain.
 
         """
         self.policy = policy or ThrottleGovernancePolicy()
-        self.next_handler = next_handler
 
-    def __call__(self, request: Request) -> Response:
+    def handle(self, request: Request, next_handler: NextSyncHandler) -> Response:
         """Apply throttle governance to request/response cycle.
 
         Args:
             request: Outgoing HTTP request.
+            next_handler: Next handler in the middleware chain.
 
         Returns:
             Response from the upstream handler.
@@ -191,10 +193,7 @@ class ThrottleGovernanceMiddleware:
             ThrottleGovernedError: If governance rejects the request.
 
         """
-        if self.next_handler is None:
-            raise RuntimeError("next_handler not set")
-
-        response = self.next_handler(request)
+        response = next_handler(request)
 
         # Extract and evaluate throttle signal
         signal = _extract_throttle_signal(response)
@@ -218,7 +217,7 @@ class ThrottleGovernanceMiddleware:
         return response
 
 
-class AsyncThrottleGovernanceMiddleware:
+class AsyncThrottleGovernanceMiddleware(AsyncMiddleware):
     """Async middleware that applies throttle governance policy.
 
     Intercepts responses, detects upstream throttle signals, and applies
@@ -226,30 +225,29 @@ class AsyncThrottleGovernanceMiddleware:
 
     Attributes:
         policy: Governance policy controlling decision logic.
-        next_handler: Next middleware or transport in the chain.
 
     """
 
     def __init__(
         self,
         policy: ThrottleGovernancePolicy | None = None,
-        next_handler: Callable[[Request], Awaitable[Response]] | None = None,
     ) -> None:
         """Initialize async throttle governance middleware.
 
         Args:
             policy: Governance policy (default: reject_on_detection=False).
-            next_handler: Next handler in the chain.
 
         """
         self.policy = policy or ThrottleGovernancePolicy()
-        self.next_handler = next_handler
 
-    async def __call__(self, request: Request) -> Response:
+    async def handle(
+        self, request: Request, next_handler: NextAsyncHandler
+    ) -> Response:
         """Apply throttle governance to async request/response cycle.
 
         Args:
             request: Outgoing HTTP request.
+            next_handler: Next handler in the middleware chain.
 
         Returns:
             Response from the upstream handler.
@@ -258,10 +256,7 @@ class AsyncThrottleGovernanceMiddleware:
             ThrottleGovernedError: If governance rejects the request.
 
         """
-        if self.next_handler is None:
-            raise RuntimeError("next_handler not set")
-
-        response_obj = await self.next_handler(request)
+        response_obj = await next_handler(request)
         if not isinstance(response_obj, Response):
             raise TypeError("next_handler must return Response")
         response = response_obj
