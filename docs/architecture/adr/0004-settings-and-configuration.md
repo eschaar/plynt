@@ -187,6 +187,60 @@ in the `auth` property. See ADR-0011 for the full typed auth config pattern.
 - No branching on frameworks in the core.
 - Settings are immutable config, not runtime state.
 
+## Alternatives Considered
+
+### msgspec + msgspec-ext
+
+[msgspec](https://jcristharif.com/msgspec/) is a high-performance serialization
+and validation library. [msgspec-ext](https://github.com/msgflux/msgspec-ext)
+extends it with a `BaseSettings` implementation and 26 built-in validators,
+positioning itself as a drop-in replacement for pydantic-settings (7× faster
+cold start, 169× faster warm/cached loads).
+
+**Why not chosen:**
+
+1. **Performance advantage is real but irrelevant for this use case.**
+   Plynth is an HTTP integration library. Every request involves network I/O
+   that dominates total latency by two to three orders of magnitude:
+
+   ```text
+   DNS + TCP connect:              10–30 ms
+   TLS handshake:                   5–15 ms
+   Remote server processing:       50–200 ms
+   ────────────────────────────────────────
+   Total I/O:                      65–245 ms
+
+   pydantic-settings cold start:    ~2.5 ms   (once, at process startup)
+   msgspec-ext cold start:          ~0.35 ms
+   Absolute saving:                 ~2.1 ms   (unmeasurable in production)
+   ```
+
+1. **Framework adapter compatibility.** FastAPI is built on pydantic natively.
+   A `plynth[fastapi]` adapter on msgspec structs would create a permanent
+   impedance mismatch — connector response models would need conversion to
+   pydantic models for OpenAPI schema generation and request/response binding.
+   Django REST Framework has established pydantic integration tooling; msgspec
+   has none.
+
+1. **msgspec-ext maturity risk.** At the time of evaluation (May 2026),
+   msgspec-ext had 12 GitHub stars, 4 forks, 4 releases, and approximately
+   10 months of history. It had no documented production deployments at scale.
+   For a library dependency that ships to downstream users this level of
+   immaturity is not acceptable.
+
+1. **MessagePack is unused in the target API domain.** All APIs Plynth
+   targets (Salesforce REST, OpenAI/LLM APIs, REST APIs in general) use JSON
+   as their wire format. gRPC uses Protocol Buffers, not MessagePack.
+   msgspec's MessagePack support provides no benefit in this context.
+
+1. **Connector model primitives have no msgspec equivalent.**
+   `PrivateAttr`, `RootModel`, and `TypeAdapter` patterns used in connector
+   schemas require bespoke workarounds in msgspec.
+
+If performance profiling ever identifies pydantic validation as a real
+bottleneck — which is only plausible for offline bulk processing paths, not
+for the HTTP integration use case — revisit this decision with measured data.
+
 ## Consequences
 
 - Configuration is explicit, testable, and framework-agnostic.

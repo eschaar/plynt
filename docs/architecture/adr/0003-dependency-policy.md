@@ -17,6 +17,15 @@ To minimize conflicts and maintenance overhead, the library enforces a strict de
 - OAuth and other advanced features are also optional extras.
 - No web frameworks, ORMs, or multiple HTTP libraries are allowed in the core.
 
+### Chosen Libraries
+
+- **HTTP client**: `httpx` (sync and async, single dependency).
+- **Data model validation and serialization**: `pydantic` v2 (`pydantic.BaseModel`),
+  used in connectors and framework adapters.
+- **Settings and configuration**: `pydantic-settings` v2, installed as a core
+  dependency (all installs). See ADR-0004 for rationale and the full
+  alternatives evaluation including msgspec and msgspec-ext.
+
 ## Consequences
 
 - Users can install only the features they need.
