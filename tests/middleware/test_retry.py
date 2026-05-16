@@ -9,6 +9,7 @@ path when ``max_attempts <= 1``.
 from __future__ import annotations
 
 import time
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -132,13 +133,11 @@ class TestRetryMiddlewareGovernanceIntegration:
     def test_retry_respects_governance_delay(self) -> None:
         """Validate retry uses governance delay over backoff."""
 
-        calls: list[tuple[Request, float]] = []
-        start_time = time.time()
+        calls: list[Request] = []
 
         def handler(req: Request) -> Response:
             """Handler that returns throttled response."""
-            elapsed = time.time() - start_time
-            calls.append((req, elapsed))
+            calls.append(req)
 
             # First call: return retryable 503 with governance delay
             if len(calls) == 1:
@@ -161,13 +160,13 @@ class TestRetryMiddlewareGovernanceIntegration:
             retryable_status_codes=frozenset([503]),
         )
         mw = RetryMiddleware(policy)
-        result = mw.handle(_REQUEST, handler)
+        with patch("plynth.middleware.retry.time.sleep") as mock_sleep:
+            result = mw.handle(_REQUEST, handler)
 
         assert result.status_code == 200
         assert len(calls) == 2
         # Governance delay (2.0s) should take precedence over backoff (0.1s)
-        elapsed_between = calls[1][1] - calls[0][1]
-        assert elapsed_between >= 1.8  # Allow small margin for timing
+        mock_sleep.assert_called_once_with(2.0)
 
     def test_retry_uses_backoff_when_no_governance_delay(self) -> None:
         """Validate retry uses backoff when governance delay absent."""
@@ -249,13 +248,11 @@ class TestAsyncRetryMiddlewareGovernanceIntegration:
     async def test_async_retry_respects_governance_delay(self) -> None:
         """Validate async retry uses governance delay over backoff."""
 
-        calls: list[tuple[Request, float]] = []
-        start_time = time.time()
+        calls: list[Request] = []
 
         async def handler(req: Request) -> Response:
             """Handler that returns throttled response."""
-            elapsed = time.time() - start_time
-            calls.append((req, elapsed))
+            calls.append(req)
 
             if len(calls) == 1:
                 resp = Response(
@@ -275,12 +272,14 @@ class TestAsyncRetryMiddlewareGovernanceIntegration:
             retryable_status_codes=frozenset([503]),
         )
         mw = AsyncRetryMiddleware(policy)
-        result = await mw.handle(_REQUEST, handler)
+        with patch(
+            "plynth.middleware.retry.asyncio.sleep", new_callable=AsyncMock
+        ) as mock_sleep:
+            result = await mw.handle(_REQUEST, handler)
 
         assert result.status_code == 200
         assert len(calls) == 2
-        elapsed_between = calls[1][1] - calls[0][1]
-        assert elapsed_between >= 1.8
+        mock_sleep.assert_called_once_with(2.0)
 
     @pytest.mark.asyncio
     async def test_handle_propagates_request_unchanged(self) -> None:
