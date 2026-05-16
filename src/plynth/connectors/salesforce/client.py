@@ -192,13 +192,20 @@ class SalesforceAPIClient(APIClient):
         so that any raised ``HttpStatusError`` reports the full Salesforce URL
         rather than a bare path, making error diagnostics accurate.
 
+        Pass ``raw=True`` to bypass both Salesforce-specific and generic HTTP
+        error mapping. The response is returned as-is for any status code,
+        including ``4xx`` and ``5xx``, without raising.
+
         Returns:
-            The raw transport response (status 1xx-3xx).
+            Response for ``1xx``-``3xx`` status codes, or any status code
+            when ``raw=True``.
 
         Raises:
             SalesforceAPIError: (or subclass) for Salesforce business-logic
                 errors (``REQUIRED_FIELD_MISSING``, ``DUPLICATE_VALUE``, …).
-            HttpStatusError: For non-Salesforce HTTP errors.
+                Not raised when ``raw=True``.
+            HttpStatusError: For non-Salesforce ``4xx``/``5xx`` HTTP errors.
+                Not raised when ``raw=True``.
 
         """
         req = self._build_request(
@@ -324,11 +331,20 @@ class AsyncSalesforceAPIClient(AsyncAPIClient):
         (fetching a token first if needed) and uses it instead of the static
         ``base_url``.
 
+        Pass ``raw=True`` to bypass both Salesforce-specific and generic HTTP
+        error mapping. The response is returned as-is for any status code,
+        including ``4xx`` and ``5xx``, without raising.
+
         Returns:
-            The raw transport response (status 1xx-3xx).
+            Response for ``1xx``-``3xx`` status codes, or any status code
+            when ``raw=True``.
 
         Raises:
-            HttpStatusError: Typed subclass for the specific status code.
+            SalesforceAPIError: (or subclass) for Salesforce business-logic
+                errors (``REQUIRED_FIELD_MISSING``, ``DUPLICATE_VALUE``, …).
+                Not raised when ``raw=True``.
+            HttpStatusError: For non-Salesforce ``4xx``/``5xx`` HTTP errors.
+                Not raised when ``raw=True``.
 
         """
         instance_url = await self._sf_auth.get_instance_url()
