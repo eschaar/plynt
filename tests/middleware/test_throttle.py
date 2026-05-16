@@ -436,3 +436,18 @@ class TestParseRetryAfter:
         """Test parsing with invalid format returns None."""
         response = Response(status_code=429, headers={"retry-after": "not-a-number"})
         assert _parse_retry_after(response) is None
+
+    def test_parse_retry_after_nan_returns_none(self) -> None:
+        """Test that NaN is rejected as non-finite."""
+        response = Response(status_code=429, headers={"retry-after": "NaN"})
+        assert _parse_retry_after(response) is None
+
+    def test_parse_retry_after_inf_returns_none(self) -> None:
+        """Test that Infinity is rejected as non-finite."""
+        response = Response(status_code=429, headers={"retry-after": "inf"})
+        assert _parse_retry_after(response) is None
+
+    def test_parse_retry_after_negative_inf_returns_none(self) -> None:
+        """Test that negative Infinity is rejected as non-finite."""
+        response = Response(status_code=429, headers={"retry-after": "-inf"})
+        assert _parse_retry_after(response) is None
