@@ -17,6 +17,7 @@ Classes:
 
 from __future__ import annotations
 
+import math
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from http import HTTPStatus
@@ -129,7 +130,10 @@ def _parse_retry_after(response: Response) -> float | None:
 
     # Try parsing as seconds (most common)
     try:
-        return float(retry_after)
+        value = float(retry_after)
+        if not math.isfinite(value):
+            return None
+        return value
     except ValueError:
         pass
 
