@@ -207,8 +207,8 @@ class TestThrottleGovernanceMiddleware:
     def test_middleware_initialization(self) -> None:
         """Test middleware initialization with default policy."""
         middleware = ThrottleGovernanceMiddleware()
-        assert middleware.policy is not None
-        assert middleware.policy.reject_on_detection is False
+        assert middleware._policy is not None
+        assert middleware._policy.reject_on_detection is False
 
     def test_middleware_satisfies_protocol(self) -> None:
         """Test that middleware satisfies SyncMiddleware protocol."""
@@ -218,7 +218,7 @@ class TestThrottleGovernanceMiddleware:
         """Test middleware initialization with custom policy."""
         policy = ThrottleGovernancePolicy(reject_on_detection=True)
         middleware = ThrottleGovernanceMiddleware(policy=policy)
-        assert middleware.policy is policy
+        assert middleware._policy is policy
 
     def test_middleware_passes_through_200(self) -> None:
         """Test that 200 responses pass through unchanged."""
@@ -291,8 +291,8 @@ class TestAsyncThrottleGovernanceMiddleware:
     async def test_async_middleware_initialization(self) -> None:
         """Test async middleware initialization with default policy."""
         middleware = AsyncThrottleGovernanceMiddleware()
-        assert middleware.policy is not None
-        assert middleware.policy.reject_on_detection is False
+        assert middleware._policy is not None
+        assert middleware._policy.reject_on_detection is False
 
     @pytest.mark.asyncio
     async def test_async_middleware_satisfies_protocol(self) -> None:
