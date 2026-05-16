@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from typing import cast
+from unittest.mock import patch
 
 import pytest
 
@@ -409,16 +410,16 @@ class TestParseRetryAfter:
 
     def test_parse_retry_after_http_date_future(self) -> None:
         """Test parsing Retry-After with future HTTP-date."""
-        # Create a date 30 seconds in the future
-        future = datetime.now(UTC) + timedelta(seconds=30)
-        date_str = future.strftime("%a, %d %b %Y %H:%M:%S GMT")
+        fixed_now = datetime(2026, 5, 16, 12, 0, 0, tzinfo=UTC)
+        fixed_future = fixed_now + timedelta(seconds=30)
+        date_str = fixed_future.strftime("%a, %d %b %Y %H:%M:%S GMT")
 
         response = Response(status_code=429, headers={"retry-after": date_str})
-        result = _parse_retry_after(response)
+        with patch("plynth.middleware.throttle.datetime") as mock_dt:
+            mock_dt.now.return_value = fixed_now
+            result = _parse_retry_after(response)
 
-        # Should be approximately 30 seconds, allow 1 second tolerance
-        assert result is not None
-        assert 29 < result < 31
+        assert result == 30.0
 
     def test_parse_retry_after_http_date_past(self) -> None:
         """Test parsing Retry-After with past HTTP-date returns 0."""
