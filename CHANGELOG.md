@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.1](https://github.com/eschaar/plynth/compare/0.5.0...0.5.1) (2026-05-28)
+
+
+### Maintenance
+
+* **deps:** update pydantic requirement from &gt;=2.7.0 to &gt;=2.13.4 ([37b5ecd](https://github.com/eschaar/plynth/commit/37b5ecd1d3761ab329b85ccbb0627660bd2b9809))
+* **deps:** update pyjwt requirement from &gt;=2.12.1 to &gt;=2.13.0 ([af6a881](https://github.com/eschaar/plynth/commit/af6a8812bd998909abb0f8cb4bf63003b3420c33))
+
 ## [0.5.0](https://github.com/eschaar/plynth/compare/0.4.0...0.5.0) (2026-05-16)
 
 
