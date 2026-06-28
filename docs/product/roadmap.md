@@ -330,6 +330,17 @@ underlying implementation and tests.
 
 **Prerequisite:** ADR-0023 accepted.
 
+#### 1i. SSE support via HTTPX2 client API (optional)
+
+Evaluate optional integration of HTTPX2 `client.sse()` / `async_client.sse()`
+for use cases that benefit from native server-sent events handling.
+
+Scope note:
+
+- Keep existing plynth streaming abstractions as the primary contract.
+- Add SSE support only when it provides clear value over current
+  `stream()`-based flows in connector implementations.
+
 ______________________________________________________________________
 
 ### 2. Salesforce integration — remaining work
