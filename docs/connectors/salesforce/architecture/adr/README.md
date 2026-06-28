@@ -16,8 +16,8 @@ This index tracks Salesforce connector architecture decisions.
 | [SF-0008](sf-0008-metadata-rest-deploy.md)         | Salesforce Metadata REST Deploy         | Accepted |
 | [SF-0009](sf-0009-identity-access-primitives.md)   | Salesforce Identity Access Primitives   | Accepted |
 | [SF-0010](sf-0010-query-response-normalization.md) | Salesforce Query Response Normalization | Accepted |
-| [SF-0011](sf-0011-ai-connector-boundary.md)        | Salesforce AI Connector Boundary        | Proposed |
-| [SF-0012](sf-0012-extraction-strategy.md)          | Salesforce Integration Extraction       | Proposal |
+| [SF-0011](sf-0011-ai-connector-boundary.md)        | Salesforce AI Connector Boundary        | Accepted |
+| [SF-0012](sf-0012-extraction-strategy.md)          | Salesforce Integration Extraction       | Proposed |
 
 ## Numbering
 

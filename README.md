@@ -160,12 +160,10 @@ is implemented, what is planned, and what is explicitly out of scope.
 
 High-level planned areas:
 
-- Logging and observability (`plynth.middleware.logging`)
-- Framework adapters — Django and FastAPI extras
-- Built-in cache backends (`plynth[cache]`)
-- Async OAuth2 (`AsyncOAuth2ClientCredentials`)
-- Salesforce connector (`plynth[salesforce]`) — SOQL queries and auth flows
-  are available; Bulk API 2.0 and Pub/Sub CDC are planned
+- Framework adapters (Django, FastAPI, Flask)
+- gRPC transport (`plynth[grpc]`) as foundation for Salesforce Pub/Sub CDC
+- Generic AI / LLM connector (`plynth.connectors.llm`)
+- SOAP transport (`plynth[soap]`) as long-term extension
 
 ______________________________________________________________________
 

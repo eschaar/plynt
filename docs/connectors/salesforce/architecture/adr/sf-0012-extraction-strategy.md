@@ -1,6 +1,6 @@
 # SF-0012: Salesforce Integration Extraction Strategy
 
-**Status:** Proposal for architectural decision on modularization.
+**Status:** Proposed
 
 **Related ADRs:**
 

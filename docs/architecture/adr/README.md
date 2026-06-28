@@ -4,8 +4,8 @@ This index lists architecture decision records (ADRs) for plynth.
 
 ## Status Summary
 
-- Accepted: 20
-- Proposed: 3
+- Accepted: 21
+- Proposed: 1
 
 ## ADR List
 
@@ -28,11 +28,11 @@ This index lists architecture decision records (ADRs) for plynth.
 | [ADR-0015](0015-header-middleware.md)          | Header Middleware          | Accepted |
 | [ADR-0016](0016-vcr-testsupport.md)            | VCR Testsupport Layer      | Accepted |
 | [ADR-0017](0017-streaming-response.md)         | Streaming Response Support | Accepted |
-| [ADR-0018](0018-raw-response-access.md)        | Raw Response Access        | Proposed |
+| [ADR-0018](0018-raw-response-access.md)        | Raw Response Access        | Accepted |
 | [ADR-0019](0019-circuit-breaker-middleware.md) | Circuit Breaker Middleware | Accepted |
 | [ADR-0020](0020-rate-limit-middleware.md)      | Rate Limit Middleware      | Accepted |
 | [ADR-0021](0021-llm-contract-boundary.md)      | Generic LLM Contract       | Proposed |
-| [ADR-0022](0022-upstream-rate-governance.md)   | Upstream Rate Governance   | Proposed |
+| [ADR-0022](0022-upstream-rate-governance.md)   | Upstream Rate Governance   | Accepted |
 
 ## When to Add a New ADR
 
