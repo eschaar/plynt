@@ -62,9 +62,9 @@ Issues = "https://github.com/eschaar/plynth/issues"
 Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-httpx = ["httpx>=0.28.1"]
+httpx = ["httpx2>=2.5.0"]
 salesforce = [
-  "httpx>=0.28.1",
+  "httpx2>=2.5.0",
   "pydantic>=2.13.4",
   "PyJWT>=2.13.0",
   "cryptography>=48.0.0",
@@ -86,7 +86,7 @@ dev = [
   "types-PyYAML",
   "ruff",
   "mypy",
-  "httpx>=0.28.1",
+  "httpx2>=2.5.0",
   "build",
   "twine",
   "pip-audit",

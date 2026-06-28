@@ -10,7 +10,7 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-import httpx
+import httpx2 as httpx
 import pytest
 
 from plynth.base.middleware import (
