@@ -17,6 +17,7 @@ ______________________________________________________________________
 | --- | -------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------- |
 | —   | `plynth.base` — protocol-agnostic abstractions     | **Done**        | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings        |
 | —   | `plynth.http` — transport, clients, auth, settings | **Done**        | httpx transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
+| —   | `HTTP transport backend (httpx2)`                  | **Planned**     | ADR-0023; migrate internals while keeping transport class names                    |
 | —   | `plynth.middleware` — core middleware suite        | **Done**        | Protocol-agnostic middleware suite                                                 |
 | —   | `plynth.http.middleware` layer                     | **Done**        | HTTP auth middleware and HTTP-only transport concerns                              |
 | 1e  | `TracingMiddleware` `plynth[otel]`                 | **Planned**     | ADR required; OTel auto-instrumentation may cover most needs                       |
@@ -319,6 +320,15 @@ ADR-0003.
 Intercept requests and return pre-configured responses in tests, as a
 middleware-level alternative to httpx's `MockTransport`. See
 [idea](ideas/middleware-extensions.md#mockmiddleware) for interface sketch.
+
+#### 1h. HTTP transport backend migration (`httpx2`)
+
+Migrate internal HTTP transport backend wiring from `httpx` to `httpx2`.
+Keep plynth transport class names unchanged (`HttpxSyncTransport` and
+`HttpxAsyncTransport`) to avoid unnecessary API churn while updating the
+underlying implementation and tests.
+
+**Prerequisite:** ADR-0023 accepted.
 
 ______________________________________________________________________
 
