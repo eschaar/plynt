@@ -920,6 +920,23 @@ class TestAsyncSalesforceBulkService:
         sent = transport.send.call_args[0][0]
         assert f"/services/data/v{DEFAULT_API_VERSION}/jobs/ingest" in sent.url
 
+    @pytest.mark.asyncio
+    async def test_dynamic_version_resolves_for_query_jobs_when_not_configured(
+        self,
+    ) -> None:
+        """Async query-job creation resolves version lazily via get_api_version()."""
+        transport = MockAsyncTransport(
+            status_code=200, content=_job_payload(state="UploadComplete")
+        )
+        client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
+        cast(Any, client).get_api_version = AsyncMock(return_value="64.0")
+        service = AsyncSalesforceBulkService(client)
+
+        await service.create_query_job("SELECT Id FROM Account")
+
+        sent = transport.send.call_args[0][0]
+        assert "/services/data/v64.0/jobs/query" in sent.url
+
     # ------------------------------------------------------------------
     # create_ingest_job
     # ------------------------------------------------------------------

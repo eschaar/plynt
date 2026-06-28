@@ -27,6 +27,13 @@ from plynth.middleware.throttle import (
 )
 
 
+def test_throttle_module_exports_error_class() -> None:
+    """Throttle module __all__ includes the governed-error export."""
+    import plynth.middleware.throttle as throttle_module
+
+    assert "ThrottleGovernedError" in throttle_module.__all__
+
+
 class TestThrottleSignal:
     """Tests for ThrottleSignal model."""
 

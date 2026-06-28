@@ -432,6 +432,24 @@ class TestAsyncSalesforceIdentityAccessService:
     """Test suite for AsyncSalesforceIdentityAccessService."""
 
     @pytest.mark.asyncio
+    async def test_query_records_returns_empty_for_non_dict_payload(self) -> None:
+        """Return empty list when async query payload is not a JSON object."""
+        service, _ = _make_async_service(content=b"[]")
+
+        result = await service._query_records("SELECT Id FROM User")
+
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_query_records_returns_empty_when_records_is_not_list(self) -> None:
+        """Return empty list when async payload contains non-list records."""
+        service, _ = _make_async_service(content=_json_bytes({"records": "invalid"}))
+
+        result = await service._query_records("SELECT Id FROM User")
+
+        assert result == []
+
+    @pytest.mark.asyncio
     async def test_list_permission_set_group_assignments_queries_records(self) -> None:
         """Send SOQL for group assignments on async service."""
         payload = {
@@ -544,6 +562,22 @@ class TestAsyncSalesforceIdentityAccessService:
 
         with pytest.raises(ValueError, match="profile id"):
             await service.list_users(profile_id="bad-id")
+
+    @pytest.mark.asyncio
+    async def test_list_users_with_email_and_profile_filters(self) -> None:
+        """Include Email and ProfileId predicates in async list_users SOQL."""
+        payload: dict[str, list[object]] = {"records": []}
+        service, transport = _make_async_service(content=_json_bytes(payload))
+
+        await service.list_users(
+            email="alice@example.com",
+            profile_id=_PERMISSION_SET_ID,
+        )
+
+        sent = transport.send.call_args[0][0]
+        q = sent.params["q"]
+        assert "Email = 'alice@example.com'" in q
+        assert f"ProfileId = '{_PERMISSION_SET_ID}'" in q
 
     # ------------------------------------------------------------------
     # list_permission_set_assignments (async)

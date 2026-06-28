@@ -307,6 +307,13 @@ class TestSalesforceUtilityService:
         with pytest.raises(SalesforceQueryResponseError, match="missing IsSandbox"):
             svc.is_sandbox()
 
+    def test_is_sandbox_raises_typed_error_for_invalid_payload_shape(self) -> None:
+        """Validate is_sandbox() raises typed error for malformed query payload."""
+        svc, _ = _make_service(content=_json_bytes({"records": "invalid"}))
+
+        with pytest.raises(SalesforceQueryResponseError, match="invalid shape"):
+            svc.is_sandbox()
+
 
 class TestAsyncSalesforceUtilityService:
     """Test suite for AsyncSalesforceUtilityService."""
@@ -530,6 +537,15 @@ class TestAsyncSalesforceUtilityService:
         svc, _ = _make_async_service(content=_json_bytes(payload))
 
         with pytest.raises(SalesforceQueryResponseError, match="missing IsSandbox"):
+            await svc.is_sandbox()
+
+    async def test_is_sandbox_raises_typed_error_for_invalid_payload_shape(
+        self,
+    ) -> None:
+        """Validate async is_sandbox() raises typed error for malformed payload."""
+        svc, _ = _make_async_service(content=_json_bytes({"records": "invalid"}))
+
+        with pytest.raises(SalesforceQueryResponseError, match="invalid shape"):
             await svc.is_sandbox()
 
     def test_facade_utility_returns_service(self, salesforce_base_url: str) -> None:

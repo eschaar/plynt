@@ -600,7 +600,8 @@ class TestHttpxTransportFromSettings:
     def test_build_sync_client_honors_httpx2_options(self) -> None:
         """Client builder wires http2, trust_env, redirects, and limits."""
         captured: dict[str, object] = {}
-        real_client = transport_module.httpx.Client
+        real_client = httpx.Client
+        httpx_mod: Any = httpx
 
         class _DummyClient:
             def close(self) -> None:
@@ -610,7 +611,7 @@ class TestHttpxTransportFromSettings:
             captured.update(kwargs)
             return _DummyClient()
 
-        transport_module.httpx.Client = _fake_client  # type: ignore[assignment]
+        httpx_mod.Client = _fake_client
         try:
             settings = HTTPSettings(
                 http2=True,
@@ -626,14 +627,15 @@ class TestHttpxTransportFromSettings:
             assert captured["trust_env"] is False
             assert captured["max_redirects"] == 9
             limits = captured["limits"]
-            assert isinstance(limits, transport_module.httpx.Limits)
+            assert isinstance(limits, httpx.Limits)
         finally:
-            transport_module.httpx.Client = real_client  # type: ignore[assignment]
+            httpx_mod.Client = real_client
 
     async def test_build_async_client_honors_httpx2_options(self) -> None:
         """Async client builder wires http2, trust_env, redirects, and limits."""
         captured: dict[str, object] = {}
-        real_async_client = transport_module.httpx.AsyncClient
+        real_async_client = httpx.AsyncClient
+        httpx_mod: Any = httpx
 
         class _DummyAsyncClient:
             async def aclose(self) -> None:
@@ -643,7 +645,7 @@ class TestHttpxTransportFromSettings:
             captured.update(kwargs)
             return _DummyAsyncClient()
 
-        transport_module.httpx.AsyncClient = _fake_async_client  # type: ignore[assignment]
+        httpx_mod.AsyncClient = _fake_async_client
         try:
             settings = HTTPSettings(
                 http2=True,
@@ -659,10 +661,10 @@ class TestHttpxTransportFromSettings:
             assert captured["trust_env"] is False
             assert captured["max_redirects"] == 7
             limits = captured["limits"]
-            assert isinstance(limits, transport_module.httpx.Limits)
+            assert isinstance(limits, httpx.Limits)
             await client.aclose()
         finally:
-            transport_module.httpx.AsyncClient = real_async_client  # type: ignore[assignment]
+            httpx_mod.AsyncClient = real_async_client
 
     def test_inherits_base_sync_transport(self) -> None:
         """Validate inherits base sync transport."""

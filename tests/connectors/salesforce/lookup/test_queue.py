@@ -126,3 +126,13 @@ class TestAsyncSalesforceQueueLookupService:
         row = await service.get_by_name("Nonexistent")
 
         assert row is None
+
+    async def test_async_list_returns_empty_when_records_is_not_a_list(self) -> None:
+        """Return empty list when async lookup payload has invalid records type."""
+        payload: dict[str, Any] = {"records": "invalid"}
+        client, _ = make_async_client(content=render_json_bytes(payload))
+        service = AsyncSalesforceQueueLookupService(client)
+
+        rows = await service.list(name="Support")
+
+        assert rows == []
