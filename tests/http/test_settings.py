@@ -31,6 +31,12 @@ class TestHTTPSettings:
         assert s.timeout_write == 10.0
         assert s.timeout_pool == 10.0
         assert s.max_attempts == 3
+        assert s.http2 is False
+        assert s.trust_env is True
+        assert s.max_redirects == 20
+        assert s.max_connections is None
+        assert s.max_keepalive_connections is None
+        assert s.keepalive_expiry is None
         assert s.proxy is None
         assert s.verify is True
         assert s.cert is None
@@ -54,6 +60,12 @@ class TestHTTPSettings:
         monkeypatch.setenv("PLYNTH_TIMEOUT_WRITE", "20.0")
         monkeypatch.setenv("PLYNTH_TIMEOUT_POOL", "15.0")
         monkeypatch.setenv("PLYNTH_MAX_ATTEMPTS", "5")
+        monkeypatch.setenv("PLYNTH_HTTP2", "true")
+        monkeypatch.setenv("PLYNTH_TRUST_ENV", "false")
+        monkeypatch.setenv("PLYNTH_MAX_REDIRECTS", "8")
+        monkeypatch.setenv("PLYNTH_MAX_CONNECTIONS", "50")
+        monkeypatch.setenv("PLYNTH_MAX_KEEPALIVE_CONNECTIONS", "15")
+        monkeypatch.setenv("PLYNTH_KEEPALIVE_EXPIRY", "30.0")
         s = HTTPSettings()
         assert s.base_url == "https://api.example.com"
         assert s.timeout_connect == 3.0
@@ -61,6 +73,12 @@ class TestHTTPSettings:
         assert s.timeout_write == 20.0
         assert s.timeout_pool == 15.0
         assert s.max_attempts == 5
+        assert s.http2 is True
+        assert s.trust_env is False
+        assert s.max_redirects == 8
+        assert s.max_connections == 50
+        assert s.max_keepalive_connections == 15
+        assert s.keepalive_expiry == 30.0
 
     def test_is_subclassable(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Validate is subclassable."""

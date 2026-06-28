@@ -13,6 +13,7 @@ from typing import Any
 import httpx2 as httpx
 import pytest
 
+import plynth.http.transport as transport_module
 from plynth.base.middleware import (
     AsyncMiddleware,
     NextAsyncHandler,
@@ -595,6 +596,73 @@ class TestHttpxTransportFromSettings:
         assert retry_mw._policy.max_attempts == 6
         assert retry_mw._policy.backoff_max == 5.0
         await transport.aclose()
+
+    def test_build_sync_client_honors_httpx2_options(self) -> None:
+        """Client builder wires http2, trust_env, redirects, and limits."""
+        captured: dict[str, object] = {}
+        real_client = transport_module.httpx.Client
+
+        class _DummyClient:
+            def close(self) -> None:
+                return
+
+        def _fake_client(**kwargs: object) -> _DummyClient:
+            captured.update(kwargs)
+            return _DummyClient()
+
+        transport_module.httpx.Client = _fake_client  # type: ignore[assignment]
+        try:
+            settings = HTTPSettings(
+                http2=True,
+                trust_env=False,
+                max_redirects=9,
+                max_connections=40,
+                max_keepalive_connections=12,
+                keepalive_expiry=25.0,
+            )
+            client = transport_module._build_httpx_client(settings)
+            assert isinstance(client, _DummyClient)
+            assert captured["http2"] is True
+            assert captured["trust_env"] is False
+            assert captured["max_redirects"] == 9
+            limits = captured["limits"]
+            assert isinstance(limits, transport_module.httpx.Limits)
+        finally:
+            transport_module.httpx.Client = real_client  # type: ignore[assignment]
+
+    async def test_build_async_client_honors_httpx2_options(self) -> None:
+        """Async client builder wires http2, trust_env, redirects, and limits."""
+        captured: dict[str, object] = {}
+        real_async_client = transport_module.httpx.AsyncClient
+
+        class _DummyAsyncClient:
+            async def aclose(self) -> None:
+                return
+
+        def _fake_async_client(**kwargs: object) -> _DummyAsyncClient:
+            captured.update(kwargs)
+            return _DummyAsyncClient()
+
+        transport_module.httpx.AsyncClient = _fake_async_client  # type: ignore[assignment]
+        try:
+            settings = HTTPSettings(
+                http2=True,
+                trust_env=False,
+                max_redirects=7,
+                max_connections=30,
+                max_keepalive_connections=10,
+                keepalive_expiry=20.0,
+            )
+            client = transport_module._build_httpx_async_client(settings)
+            assert isinstance(client, _DummyAsyncClient)
+            assert captured["http2"] is True
+            assert captured["trust_env"] is False
+            assert captured["max_redirects"] == 7
+            limits = captured["limits"]
+            assert isinstance(limits, transport_module.httpx.Limits)
+            await client.aclose()
+        finally:
+            transport_module.httpx.AsyncClient = real_async_client  # type: ignore[assignment]
 
     def test_inherits_base_sync_transport(self) -> None:
         """Validate inherits base sync transport."""

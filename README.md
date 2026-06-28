@@ -99,7 +99,7 @@ pip install plynth
 Optional extras:
 
 ```bash
-pip install "plynth[httpx]"       # httpx transport
+pip install "plynth[httpx]"       # httpx2 transport backend
 pip install "plynth[salesforce]"  # Salesforce REST connector
 ```
 

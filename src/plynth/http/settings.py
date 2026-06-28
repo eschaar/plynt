@@ -117,6 +117,17 @@ class HTTPSettings(Settings):
             limit.
         max_attempts: Total send attempts including the first
             (default: ``3``).
+        http2: Enable HTTP/2 support when available (default: ``False``).
+        trust_env: Whether HTTPX2 should read proxy and TLS settings from
+            environment variables (default: ``True``).
+        max_redirects: Maximum redirect hops when redirects are enabled
+            (default: ``20``).
+        max_connections: Optional global connection limit for the client
+            pool. ``None`` keeps library defaults.
+        max_keepalive_connections: Optional keep-alive pool size limit.
+            ``None`` keeps library defaults.
+        keepalive_expiry: Optional keep-alive idle expiry in seconds.
+            ``None`` keeps library defaults.
         proxy: Optional proxy URL.
         verify: SSL certificate verification. ``True`` uses system CAs,
             ``False`` disables, or a path to a CA bundle.
@@ -168,6 +179,12 @@ class HTTPSettings(Settings):
     timeout_write: float | None = 10.0
     timeout_pool: float | None = 10.0
     max_attempts: int = 3
+    http2: bool = False
+    trust_env: bool = True
+    max_redirects: int = 20
+    max_connections: int | None = None
+    max_keepalive_connections: int | None = None
+    keepalive_expiry: float | None = None
     proxy: str | None = None
     verify: bool | str = True
     cert: tuple[str, str] | str | None = None

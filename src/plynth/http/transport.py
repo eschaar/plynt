@@ -154,6 +154,12 @@ def scrub_url(url: str) -> str:
 
 def _build_httpx_client(settings: HTTPSettings) -> httpx.Client:
     """Construct an ``httpx.Client`` from ``HTTPSettings``."""
+    limits = httpx.Limits(
+        max_connections=settings.max_connections,
+        max_keepalive_connections=settings.max_keepalive_connections,
+        keepalive_expiry=settings.keepalive_expiry,
+    )
+
     return httpx.Client(
         timeout=httpx.Timeout(
             connect=settings.timeout_connect,
@@ -161,7 +167,11 @@ def _build_httpx_client(settings: HTTPSettings) -> httpx.Client:
             write=settings.timeout_write,
             pool=settings.timeout_pool,
         ),
+        http2=settings.http2,
         proxy=settings.proxy,
+        limits=limits,
+        max_redirects=settings.max_redirects,
+        trust_env=settings.trust_env,
         verify=settings.verify,
         cert=settings.cert,
     )
@@ -169,6 +179,12 @@ def _build_httpx_client(settings: HTTPSettings) -> httpx.Client:
 
 def _build_httpx_async_client(settings: HTTPSettings) -> httpx.AsyncClient:
     """Construct an ``httpx.AsyncClient`` from ``HTTPSettings``."""
+    limits = httpx.Limits(
+        max_connections=settings.max_connections,
+        max_keepalive_connections=settings.max_keepalive_connections,
+        keepalive_expiry=settings.keepalive_expiry,
+    )
+
     return httpx.AsyncClient(
         timeout=httpx.Timeout(
             connect=settings.timeout_connect,
@@ -176,7 +192,11 @@ def _build_httpx_async_client(settings: HTTPSettings) -> httpx.AsyncClient:
             write=settings.timeout_write,
             pool=settings.timeout_pool,
         ),
+        http2=settings.http2,
         proxy=settings.proxy,
+        limits=limits,
+        max_redirects=settings.max_redirects,
+        trust_env=settings.trust_env,
         verify=settings.verify,
         cert=settings.cert,
     )
