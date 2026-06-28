@@ -1,7 +1,7 @@
-"""Concrete HTTP transport implementations backed by ``httpx``.
+"""Concrete HTTP transport implementations backed by ``httpx2``.
 
-Provides both synchronous and asynchronous transports using ``httpx``.
-``httpx`` must be installed via the ``[httpx]`` optional extra:
+Provides both synchronous and asynchronous transports using ``httpx2``.
+``httpx2`` must be installed via the ``[httpx]`` optional extra:
 
     pip install plynth[httpx]
 
@@ -36,10 +36,10 @@ from typing import TYPE_CHECKING
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 try:
-    import httpx
+    import httpx2 as httpx
 except ImportError as exc:  # pragma: no cover
     raise ImportError(
-        "httpx is required for HttpxSyncTransport and HttpxAsyncTransport. "
+        "httpx2 is required for HttpxSyncTransport and HttpxAsyncTransport. "
         "Install it with: pip install plynth[httpx]"
     ) from exc
 
@@ -183,7 +183,7 @@ def _build_httpx_async_client(settings: HTTPSettings) -> httpx.AsyncClient:
 
 
 class HttpxSyncTransport(BaseSyncTransport):
-    """Synchronous HTTP transport backed by ``httpx.Client``.
+    """Synchronous HTTP transport backed by ``httpx2.Client``.
 
     Extends ``BaseSyncTransport`` — auth, retry, and middleware are handled
     by the base class. ``_send_once()`` contains only httpx I/O.
@@ -421,7 +421,7 @@ class HttpxSyncTransport(BaseSyncTransport):
 
 
 class HttpxAsyncTransport(BaseAsyncTransport):
-    """Asynchronous HTTP transport backed by ``httpx.AsyncClient``.
+    """Asynchronous HTTP transport backed by ``httpx2.AsyncClient``.
 
     Extends ``BaseAsyncTransport`` — auth, retry, and caching are handled
     by the base class. ``_send_once()`` contains only httpx I/O.
