@@ -28,7 +28,7 @@ pip install "plynth[salesforce]"  # Salesforce REST connector
 ## Salesforce connector
 
 `plynth[salesforce]` ships a ready-to-use Salesforce REST API integration
-with typed SOQL queries, OAuth2 auth flows, and sync/async support:
+with typed query services, Bulk API 2.0, AI APIs, and sync/async support:
 
 ```python
 from plynth.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
@@ -60,6 +60,9 @@ Current public release line:
 - `0.1.0`: clean core foundation
 - `0.2.0`: Salesforce connector baseline
 - `0.2.1`: patch release
+- `0.3.0`: streaming response support
+- `0.4.0`: Salesforce Models and Agent APIs
+- `0.5.0`: raw response access and throttle governance
 
 ## Documentation
 
