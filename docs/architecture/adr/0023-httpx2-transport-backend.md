@@ -31,6 +31,21 @@ The migration rules are:
 1. Keep migration scope focused on the HTTP transport layer and directly
    affected tests/docs.
 
+## Boundary Note: Transport vs Middleware Responsibilities
+
+To avoid overlap and confusion, plynth keeps a strict separation:
+
+- Connection-level concerns live in the HTTP transport backend:
+  protocol (`http2`), connection pooling limits, keep-alive lifecycle,
+  redirect limits, proxy/TLS environment usage (`trust_env`).
+- Application-level concerns live in middleware:
+  retry/backoff policy, throttle governance, rate limiting, circuit breaker,
+  header injection, and response caching behavior.
+
+This means the new HTTPX2 client-tuning options do not replace middleware.
+They tune connection mechanics, while middleware continues to control
+request/response behavior and reliability policy.
+
 ## Alternatives Considered
 
 ### Option A: Stay on `httpx`
@@ -94,12 +109,15 @@ unnecessary internal churn.
 
 - Subtle behavior differences in timeout, streaming, and low-level transport
   semantics.
+- Misconfiguration risk if connection tuning and middleware policy are treated
+  as interchangeable knobs.
 - Test assumptions tied to `httpx.MockTransport` and `httpx.Response` types.
 
 Mitigations:
 
 - Run full unit and integration test gates.
 - Add focused parity checks for streaming and timeout behavior.
+- Keep transport and middleware ownership documented and tested separately.
 - Keep migration incremental and isolated to HTTP backend wiring.
 
 ## Acceptance Criteria
