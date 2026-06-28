@@ -17,7 +17,8 @@ ______________________________________________________________________
 | --- | -------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------- |
 | —   | `plynth.base` — protocol-agnostic abstractions     | **Done**        | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings        |
 | —   | `plynth.http` — transport, clients, auth, settings | **Done**        | httpx transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
-| —   | `plynth.middleware` — core middleware suite        | **Done**        | Cache, Retry, CircuitBreaker, RateLimit, Logging, Header                           |
+| —   | `plynth.middleware` — core middleware suite        | **Done**        | Protocol-agnostic middleware suite                                                 |
+| —   | `plynth.http.middleware` layer                     | **Done**        | HTTP auth middleware and HTTP-only transport concerns                              |
 | 1e  | `TracingMiddleware` `plynth[otel]`                 | **Planned**     | ADR required; OTel auto-instrumentation may cover most needs                       |
 | 1f  | `MetricsMiddleware` `plynth[prometheus]`           | **Planned**     | ADR required; low priority                                                         |
 | 1g  | `MockMiddleware`                                   | **Planned**     | Test/dev only; Tier 3                                                              |

@@ -1,7 +1,8 @@
 """Protocol-agnostic middleware implementations for Plynth.
 
 This package (``plynth.middleware``) contains concrete middleware that
-can be used with any transport — no HTTP or framework coupling.
+can be used with any transport — no HTTP or framework coupling. Use
+``plynth.http.middleware`` only for HTTP-specific auth or transport behavior.
 
 Available middleware:
 
