@@ -40,6 +40,35 @@ transport = HttpxSyncTransport(
 )
 ```
 
+## Redis shared cache with TLS or custom SSL settings
+
+Use `redis.Redis(...)` SSL options directly and pass the configured client to
+`RedisCache`.
+
+```python
+import redis
+from plynth.cache import RedisCache
+from plynth.middleware.cache import CacheMiddleware
+from plynth.http.transport import HttpxSyncTransport
+
+redis_client = redis.Redis(
+    host="redis.internal",
+    port=6380,
+    db=0,
+    ssl=True,
+    ssl_ca_certs="/etc/ssl/certs/ca.pem",
+    ssl_cert_reqs="required",
+)
+
+cache = RedisCache(redis_client, prefix="my-service:")
+transport = HttpxSyncTransport(
+    middlewares=[CacheMiddleware(cache, ttl=300)]
+)
+```
+
+If your platform requires different TLS options, configure them on the Redis
+client the same way and keep `RedisCache` unchanged.
+
 ## LRU cache with a size limit
 
 ```python
@@ -92,6 +121,69 @@ transport = HttpxAsyncTransport(
     middlewares=[AsyncCacheMiddleware(LocMemCache(), ttl=300)]
 )
 ```
+
+## Wrap framework-native caches behind Plynth's cache protocol
+
+Any object that implements `get`, `set`, and `delete` with compatible
+semantics can be used as a Plynth cache backend.
+
+Example wrapper for Django's `django.core.cache`:
+
+```python
+from typing import Any
+
+
+class DjangoCacheAdapter:
+    def __init__(self, django_cache: Any) -> None:
+        self._cache = django_cache
+
+    def get(self, key: str) -> object | None:
+        return self._cache.get(key)
+
+    def set(self, key: str, value: object, ttl: float | None = None) -> None:
+        timeout = None if ttl is None else int(ttl)
+        self._cache.set(key, value, timeout=timeout)
+
+    def delete(self, key: str) -> None:
+        self._cache.delete(key)
+```
+
+Use this adapter exactly like built-in backends:
+
+```python
+from django.core.cache import caches
+from plynth.middleware.cache import CacheMiddleware
+
+cache_backend = DjangoCacheAdapter(caches["default"])
+middleware = CacheMiddleware(cache_backend, ttl=300)
+```
+
+## Implement a custom cache backend
+
+For non-framework systems, implement a small adapter class with the same three
+methods.
+
+```python
+from collections.abc import MutableMapping
+
+
+class DictCacheAdapter:
+    def __init__(self, store: MutableMapping[str, object]) -> None:
+        self._store = store
+
+    def get(self, key: str) -> object | None:
+        return self._store.get(key)
+
+    def set(self, key: str, value: object, ttl: float | None = None) -> None:
+        # This adapter ignores ttl; add expiry handling if needed.
+        self._store[key] = value
+
+    def delete(self, key: str) -> None:
+        self._store.pop(key, None)
+```
+
+Start simple, then add TTL or eviction behavior only when your runtime needs
+it.
 
 ## Reference
 
