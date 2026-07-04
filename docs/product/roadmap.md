@@ -35,9 +35,24 @@ ______________________________________________________________________
 | 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                      |
 | 9   | Connector package extraction                       | **Planned**     | Policy defined; individual extractions need ADR                                    |
 
+Near-term scope note for item 7:
+
+- Provider adapters (for example OpenAI and Anthropic) are planned but not
+  implemented in the current scope.
+
 ______________________________________________________________________
 
 ## Implemented Baseline (through v0.2.1)
+
+### Terminology baseline
+
+- **Connector**: domain-facing integration package under
+  `plynth.connectors.*`.
+- **Adapter**: boundary translation component (framework, provider, or
+  transport mapping).
+
+For LLM, this means the generic `plynth.connectors.llm` connector is shipped,
+while provider adapters such as OpenAI and Anthropic remain planned.
 
 ### Core abstractions (`plynth.base`)
 
