@@ -29,7 +29,7 @@ ______________________________________________________________________
 | 3   | Streaming response (SSE / chunked HTTP)            | **Done**        | ADR-0017; enables Salesforce AI and LLM connector                                  |
 | 3b  | Raw response access on `APIClient`                 | **Done**        | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                   |
 | 4   | Framework adapters (Django / FastAPI / Flask)      | **Planned**     | ADR required per adapter; deferred until core is stable                            |
-| 5   | Cache backend documentation                        | **Planned**     | Implementation complete; how-to guides remaining                                   |
+| 5   | Cache backend documentation                        | **Done**        | Redis SSL, framework-native wrapping, and custom backend how-to guides added       |
 | 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                       |
 | 7   | AI / LLM connector `plynth.connectors.llm`         | **Planned**     | ADR-0021 scoped; parallel with Salesforce AI                                       |
 | 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                      |
@@ -598,9 +598,11 @@ ______________________________________________________________________
 
 ### 5. Cache backend documentation
 
-**Status:** Implementation complete. Documentation only remaining.
+**Status:** Done.
 
-All cache backends and typed config are implemented. Missing:
+All cache backends and typed config are implemented and documented.
+
+Completed guides:
 
 - How-to guide for using `RedisCache` with custom SSL options
 - How to wrap framework-native caches behind plynth's cache protocol
