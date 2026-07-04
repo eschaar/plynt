@@ -154,15 +154,15 @@ class HttpxSyncTransport(BaseSyncTransport):
     def __init__(
         self,
         *,
-        client: httpx.Client | None = None,
+        client: httpx2.Client | None = None,
         middlewares: list[SyncMiddleware] | None = None,
         log_bodies: bool = False,
     ) -> None:
         super().__init__(middlewares=middlewares)
-        self._client = client or httpx.Client()
+        self._client = client or httpx2.Client()
 
     def _send_once(self, request: Request) -> Response:
-        # Pure httpx I/O — no auth, retry, or cache logic here.
+        # Pure httpx2 I/O — no auth, retry, or cache logic here.
         ...
 ```
 
@@ -192,7 +192,7 @@ from plynth.middleware.cache import CacheMiddleware
 from plynth.http.policies import HttpRetryPolicy
 
 transport = HttpxSyncTransport(
-    client=httpx.Client(...),
+    client=httpx2.Client(...),
     middlewares=[
         CacheMiddleware(LocMemCache()),
         BearerTokenAuthMiddleware(settings.bearer_token),
@@ -205,7 +205,7 @@ transport = HttpxSyncTransport(
 
 | Use case                                | Recommendation                                               |
 | --------------------------------------- | ------------------------------------------------------------ |
-| HTTP-based transport (httpx, aiohttp)   | Extend `BaseSyncTransport` / `BaseAsyncTransport`            |
+| HTTP-based transport (httpx2, aiohttp)  | Extend `BaseSyncTransport` / `BaseAsyncTransport`            |
 | Protocol with its own auth model (gRPC) | Extend `SyncTransport` / `AsyncTransport` directly           |
 | Test double / mock                      | Extend `SyncTransport` — single `send()` method to implement |
 

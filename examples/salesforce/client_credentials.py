@@ -26,7 +26,13 @@ from pathlib import Path
 from _demo import run_demo
 from pydantic_settings import SettingsConfigDict
 
+from plynth.connectors.salesforce.auth import (
+    SalesforceClientCredentialsAuthMiddleware,
+)
+from plynth.connectors.salesforce.client import SalesforceAPIClient
+from plynth.connectors.salesforce.facade import SalesforceAPIFacade
 from plynth.connectors.salesforce.settings import SalesforceSettings
+from plynth.http.transport import HttpxSyncTransport
 
 
 class _Settings(SalesforceSettings):
@@ -40,13 +46,7 @@ class _Settings(SalesforceSettings):
 
 
 def main() -> None:
-    from plynth.connectors.salesforce.auth import (
-        SalesforceClientCredentialsAuthMiddleware,
-    )
-    from plynth.connectors.salesforce.client import SalesforceAPIClient
-    from plynth.connectors.salesforce.facade import SalesforceAPIFacade
-    from plynth.http.transport import HttpxSyncTransport
-
+    """Run the client-credentials Salesforce demo end-to-end."""
     settings = _Settings()
     if not settings.client_id or not settings.client_secret or not settings.token_url:
         print(

@@ -15,7 +15,7 @@ JSON REST API. No external accounts or credentials are needed.
 pip install "plynth[httpx]"
 ```
 
-This installs the core library and the httpx transport. `httpx` is the
+This installs the core library and the httpx2 transport. `httpx2` is the
 only supported transport backend.
 
 ## Step 2 — Make a plain HTTP GET
@@ -123,7 +123,7 @@ print(todo.title)
 - A client that handles base URL and HTTP verbs.
 - A service that handles domain logic and response mapping.
 
-These three layers stay separate — the service does not know about httpx,
+These three layers stay separate — the service does not know about httpx2,
 and the transport does not know about `Todo`.
 
 ## Next steps

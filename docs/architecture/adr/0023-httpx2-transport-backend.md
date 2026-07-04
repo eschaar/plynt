@@ -2,11 +2,11 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
-Plynth currently uses `httpx` as the HTTP backend for
+Plynth previously used `httpx` as the HTTP backend for
 `HttpxSyncTransport` and `HttpxAsyncTransport`.
 
 The project `httpx2` is available as a maintained continuation with active

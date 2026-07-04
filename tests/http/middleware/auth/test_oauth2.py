@@ -1180,7 +1180,7 @@ class TestAsyncOAuth2PasswordMiddleware:
     async def test_internal_transport_is_httpx_async(
         self, oauth_settings: _OAuthTestSettings
     ) -> None:
-        """Validate internal transport is httpx async."""
+        """Validate internal transport is httpx2 async."""
         auth = AsyncOAuth2PasswordMiddleware(
             client_id=DUMMY_CLIENT_ID,
             client_secret=DUMMY_CLIENT_SECRET,

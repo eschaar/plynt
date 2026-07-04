@@ -7,7 +7,7 @@ Auth tests have moved to tests/http/test_auth.py (auth is now
 first-class middleware, not a transport constructor argument).
 Cache middleware tests have moved to tests/middleware/test_cache.py.
 
-Uses lightweight fakes rather than mocking the httpx layer.
+Uses lightweight fakes rather than mocking the httpx2 layer.
 """
 
 from __future__ import annotations

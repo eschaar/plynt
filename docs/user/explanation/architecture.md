@@ -20,7 +20,7 @@ graph TB
 
     subgraph TransportLayer["Transport layer · HttpxSyncTransport / HttpxAsyncTransport"]
         CM["CacheMiddleware"] --> HM["HeaderMiddleware"] --> AM["Auth middleware"]
-        AM --> RM["RetryMiddleware"] --> CB["CircuitBreakerMiddleware"] --> IO["HTTP I/O (httpx)"]
+        AM --> RM["RetryMiddleware"] --> CB["CircuitBreakerMiddleware"] --> IO["HTTP I/O (httpx2)"]
     end
 
     subgraph SettingsLayer["Settings layer"]
@@ -34,7 +34,7 @@ graph TB
 ## The transport layer
 
 The **transport** is the only component that makes network calls. It wraps
-an HTTP library (currently httpx) and applies the middleware chain before
+an HTTP library (currently httpx2) and applies the middleware chain before
 and after every request.
 
 `HttpxSyncTransport` and `HttpxAsyncTransport` are the concrete

@@ -7,7 +7,7 @@ Provides both synchronous and asynchronous transports using ``httpx2``.
 
 Both transports extend ``BaseSyncTransport`` / ``BaseAsyncTransport``
 (ADR-0013) — auth, retry, and caching are handled by the base class;
-``_send_once()`` contains only the actual httpx I/O.
+``_send_once()`` contains only the actual httpx2 I/O.
 
 Each transport exposes a ``from_settings()`` class method that constructs
 a fully configured instance from an ``HTTPSettings`` object (convention as
@@ -153,7 +153,7 @@ def scrub_url(url: str) -> str:
 
 
 def _build_httpx_client(settings: HTTPSettings) -> httpx.Client:
-    """Construct an ``httpx.Client`` from ``HTTPSettings``."""
+    """Construct an ``httpx2.Client`` from ``HTTPSettings``."""
     limits = httpx.Limits(
         max_connections=settings.max_connections,
         max_keepalive_connections=settings.max_keepalive_connections,
@@ -178,7 +178,7 @@ def _build_httpx_client(settings: HTTPSettings) -> httpx.Client:
 
 
 def _build_httpx_async_client(settings: HTTPSettings) -> httpx.AsyncClient:
-    """Construct an ``httpx.AsyncClient`` from ``HTTPSettings``."""
+    """Construct an ``httpx2.AsyncClient`` from ``HTTPSettings``."""
     limits = httpx.Limits(
         max_connections=settings.max_connections,
         max_keepalive_connections=settings.max_keepalive_connections,
@@ -206,13 +206,13 @@ class HttpxSyncTransport(BaseSyncTransport):
     """Synchronous HTTP transport backed by ``httpx2.Client``.
 
     Extends ``BaseSyncTransport`` — auth, retry, and middleware are handled
-    by the base class. ``_send_once()`` contains only httpx I/O.
+    by the base class. ``_send_once()`` contains only httpx2 I/O.
 
     Pass a pre-configured ``client`` for full control over connection
-    pooling and advanced httpx settings.
+    pooling and advanced httpx2 settings.
 
     Args:
-        client: Optional pre-configured ``httpx.Client``. When omitted,
+        client: Optional pre-configured ``httpx2.Client``. When omitted,
             a default client is created.
         middlewares: Optional list of sync middleware. Use
             ``OAuth2AuthMiddleware``, ``BearerTokenAuthMiddleware``,
@@ -252,7 +252,7 @@ class HttpxSyncTransport(BaseSyncTransport):
     def from_settings(cls, settings: HTTPSettings) -> HttpxSyncTransport:
         """Construct a fully configured transport from an ``HTTPSettings`` instance.
 
-        Builds an ``httpx.Client`` and wires auth and retry middleware
+        Builds an ``httpx2.Client`` and wires auth and retry middleware
         from the settings' ``auth`` property (ADR-0011).  Response and
         token caching are wired via the ``caches`` / ``default_cache`` /
         ``default_auth_cache`` properties (ADR-0010).
@@ -308,7 +308,7 @@ class HttpxSyncTransport(BaseSyncTransport):
         )
 
     def _send_once(self, request: Request) -> Response:
-        """Send a request using ``httpx`` (pure I/O, no auth/retry/cache).
+        """Send a request using ``httpx2`` (pure I/O, no auth/retry/cache).
 
         Raises:
             httpx.HTTPError: If a network or protocol error occurs.
@@ -428,7 +428,7 @@ class HttpxSyncTransport(BaseSyncTransport):
         )
 
     def close(self) -> None:
-        """Close the underlying httpx.Client and release all network resources."""
+        """Close the underlying httpx2.Client and release all network resources."""
         self._client.close()
 
     def __enter__(self) -> HttpxSyncTransport:
@@ -444,10 +444,10 @@ class HttpxAsyncTransport(BaseAsyncTransport):
     """Asynchronous HTTP transport backed by ``httpx2.AsyncClient``.
 
     Extends ``BaseAsyncTransport`` — auth, retry, and caching are handled
-    by the base class. ``_send_once()`` contains only httpx I/O.
+    by the base class. ``_send_once()`` contains only httpx2 I/O.
 
     Args:
-        client: Optional pre-configured ``httpx.AsyncClient``. When
+        client: Optional pre-configured ``httpx2.AsyncClient``. When
             omitted, a default client is created.
         middlewares: Optional list of async middleware. Use
             ``AsyncBearerTokenAuthMiddleware``, ``AsyncBasicAuthMiddleware``,
@@ -649,7 +649,7 @@ class HttpxAsyncTransport(BaseAsyncTransport):
         )
 
     async def aclose(self) -> None:
-        """Close the underlying httpx.AsyncClient and release all network resources."""
+        """Close the underlying httpx2.AsyncClient and release all network resources."""
         await self._client.aclose()
 
     async def __aenter__(self) -> HttpxAsyncTransport:

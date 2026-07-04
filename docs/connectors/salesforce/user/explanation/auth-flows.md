@@ -141,7 +141,7 @@ client = SalesforceAPIClient(auth=auth, transport=transport)
 Sandbox: change `token_url` to `https://test.salesforce.com/services/oauth2/token`;
 the JWT `aud` claim is derived automatically.
 
-**Dependencies:** requires `PyJWT>=2.8` and `cryptography>=42`, both included
+**Dependencies:** requires `PyJWT>=2.12.1` and `cryptography>=49.0.0`, both included
 in `pip install 'plynth[salesforce]'`.
 
 ## Choosing a flow

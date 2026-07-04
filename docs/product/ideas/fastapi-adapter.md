@@ -18,7 +18,7 @@ FastAPI applications typically:
 - manage long-lived resources (database connections, HTTP clients) via the
   `lifespan` parameter on the `FastAPI` app
 - access shared resources in route handlers via `Depends()`
-- are async-first — `httpx.AsyncClient` is the natural fit
+- are async-first — `httpx2.AsyncClient` is the natural fit
 
 The adapter removes the boilerplate of wiring these patterns manually so teams
 can focus on their service code.
@@ -29,7 +29,7 @@ ______________________________________________________________________
 
 ### 1. Lifespan helper
 
-`httpx.AsyncClient` must be created once and closed cleanly on shutdown.
+`httpx2.AsyncClient` must be created once and closed cleanly on shutdown.
 Without an adapter, every team writes the same boilerplate:
 
 ```python
@@ -104,7 +104,7 @@ pip install plynth[fastapi]
 ```
 
 Adds `fastapi` as a dependency. The `[httpx]` extra is a prerequisite
-(async transport requires httpx).
+(async transport requires httpx2).
 
 ______________________________________________________________________
 

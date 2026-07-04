@@ -54,7 +54,7 @@ class HttpResponse(Response):
         headers: Response headers as a plain dict.
         content: Raw response body as bytes.
         _raw: The original library response object, for internal use and
-            debugging only (e.g. ``httpx.Response``). Cast to the expected
+            debugging only (e.g. ``httpx2.Response``). Cast to the expected
             type when needed.
         method: HTTP method of the originating request (e.g. ``"GET"``).
         url: URL of the originating request.

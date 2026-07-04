@@ -32,14 +32,14 @@ keywords = [
   "circuit-breaker",
   "retry",
   "caching",
-  "httpx",
+  "httpx2",
   "pydantic",
   "type-hints",
   "salesforce-api",
   "http-client",
 ]
 license-files = ["LICENSE"]
-dependencies = ["pydantic-settings>=2.14.1"]
+dependencies = ["pydantic-settings>=2.14.2"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Web Environment",
@@ -67,7 +67,7 @@ salesforce = [
   "httpx2>=2.5.0",
   "pydantic>=2.13.4",
   "PyJWT>=2.13.0",
-  "cryptography>=48.0.0",
+  "cryptography>=49.0.0",
 ]
 test = [
   "pytest",

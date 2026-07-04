@@ -7,13 +7,13 @@ Accepted
 ## Context
 
 A protocol-agnostic Response abstraction is essential as the counterpart to the
-Request layer in Plynth. The core must support multiple HTTP backends (httpx,
+Request layer in Plynth. The core must support multiple HTTP backends (httpx2,
 requests, aiohttp) without duplicating their functionality or tightly coupling
 higher layers to any specific library.
 
 This raises a key question: how do we define a generic response interface that
 allows all layers to work uniformly with responses, without reinventing what
-libraries like `httpx` already provide (`.json()`, `.text()`, `.raise_for_status()`)?
+libraries like `httpx2` already provide (`.json()`, `.text()`, `.raise_for_status()`)?
 
 ## Decision
 
@@ -29,7 +29,7 @@ The Response Layer uses a two-level design:
 
 1. __`ResponseProtocol` (structural interface)__ — a `typing.Protocol` that
    defines what a response-like object must look like. Any object with the
-   right shape (e.g. `httpx.Response`, `requests.Response`, or
+   right shape (e.g. `httpx2.Response`, `requests.Response`, or
    `plynth.Response`) satisfies this protocol automatically, without needing
    to inherit from it. This is Python structural subtyping.
 
@@ -39,7 +39,7 @@ specific library.
 
 ### Why `typing.Protocol` and not inheritance?
 
-Inheritance would require all response objects (from httpx, requests, aiohttp)
+Inheritance would require all response objects (from httpx2, requests, aiohttp)
 to extend a Plynth base class, introducing coupling. With `typing.Protocol`,
 any object that has the right attributes and methods is automatically compatible.
 This is the standard Python approach for structural interfaces.
@@ -153,7 +153,7 @@ of the structural contract.
 `encoding`, `text`, and `json()` are placed on `HttpResponse` (not on the
 core `Response`) because body decoding is an HTTP-layer concern. The core
 `Response` remains format-agnostic and carries only raw bytes. This matches
-how `httpx.Response` works: `.content` is the raw bytes, `.text` / `.json()`
+how `httpx2.Response` works: `.content` is the raw bytes, `.text` / `.json()`
 are HTTP-layer conveniences.
 
 __`ResponseProtocol`__ — structural interface for all higher layers:
@@ -171,7 +171,7 @@ class ResponseProtocol(Protocol):
     def raise_for_status(self) -> None: ...
 ```
 
-Any response object from httpx, requests, or Plynth itself satisfies this
+Any response object from httpx2, requests, or Plynth itself satisfies this
 protocol without inheritance. Adapters can be provided for libraries that use
 different attribute names (e.g. aiohttp uses `.status` instead of `.status_code`).
 
@@ -192,7 +192,7 @@ BaseError (core)
   `method` and `url` from the originating request for richer error context.
 - Callers catch `HttpStatusError` for HTTP, `StatusError` for general cases,
   or `TransportError` for all transport failures — never a library-specific
-  exception like `httpx.HTTPStatusError`.
+  exception like `httpx2.HTTPStatusError`.
 
 The `status_code` (and for HTTP: `method`, `url`) is always available as a
 structured attribute on the exception and included in `details` for logging

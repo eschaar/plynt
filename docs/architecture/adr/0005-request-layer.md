@@ -84,7 +84,7 @@ class Request:
     timeout: float | None = None
 ```
 
-When `timeout` is set, the httpx transport passes it as the `timeout=`
+When `timeout` is set, the httpx2 transport passes it as the `timeout=`
 argument to `client.request()`, overriding the transport-level timeout
 configured via `HTTPSettings`. When `None` (the default), the transport's
 configured timeout applies unchanged.
