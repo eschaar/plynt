@@ -5,11 +5,11 @@ Install only what your integration needs.
 
 ## Extras
 
-| Extra                | Installs                         | Use when                             |
-| -------------------- | -------------------------------- | ------------------------------------ |
-| `plynth[httpx]`      | `httpx`                          | You need the built-in HTTP transport |
-| `plynth[salesforce]` | `httpx`, `PyJWT`, `cryptography` | Salesforce connector                 |
-| `plynth[oauth]`      | OAuth2 helpers                   | Custom OAuth2 flows                  |
+| Extra                | Installs                          | Use when                             |
+| -------------------- | --------------------------------- | ------------------------------------ |
+| `plynth[httpx]`      | `httpx2`                          | You need the built-in HTTP transport |
+| `plynth[salesforce]` | `httpx2`, `PyJWT`, `cryptography` | Salesforce connector                 |
+| `plynth[oauth]`      | OAuth2 helpers                    | Custom OAuth2 flows                  |
 
 ## Install examples
 

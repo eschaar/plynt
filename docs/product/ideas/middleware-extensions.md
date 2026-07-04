@@ -46,7 +46,7 @@ ______________________________________________________________________
 
 ### `MockMiddleware`
 
-**Problem:** Tests that use plynth today must either mock httpx at the
+**Problem:** Tests that use plynth today must either mock httpx2 at the
 transport level or spin up a real server. A `MockMiddleware` that intercepts
 requests and returns pre-configured responses would make unit tests simpler
 and faster.
@@ -67,7 +67,7 @@ transport = HttpxSyncTransport(middlewares=[mock])
 - Intended for test environments only — not for production use.
 - Raises `AssertionError` for unregistered routes (strict mode) or returns
   404 by default (loose mode).
-- Could replace httpx's own `MockTransport` with a middleware-level
+- Could replace httpx2's own `MockTransport` with a middleware-level
   alternative, keeping tests closer to real transport behaviour.
 - No new runtime dependency (test-only; `pytest` is already a dev
   dependency).

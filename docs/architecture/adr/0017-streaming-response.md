@@ -36,7 +36,7 @@ examples being:
   the pattern is the same: the caller iterates over a stream of events rather
   than receiving a single complete response.
 
-httpx already supports streaming natively via its `client.stream()` context
+httpx2 already supports streaming natively via its `client.stream()` context
 manager, which keeps the connection open and exposes `iter_lines()`,
 `iter_bytes()`, and `aiter_lines()` / `aiter_bytes()`. The gap is entirely
 inside plynth — the `Response` contract and the middleware chain assume a
@@ -117,8 +117,8 @@ class AsyncStreamingResponse(Response):
     async def __aexit__(self, *args: object) -> None: ...
 ```
 
-Both hold a reference to the underlying `httpx.Response` (via `_raw`) and
-delegate iteration to httpx's own streaming primitives.
+Both hold a reference to the underlying `httpx2.Response` (via `_raw`) and
+delegate iteration to httpx2's own streaming primitives.
 
 ### 3. `_send_once()` branches on `request.stream`
 
@@ -129,7 +129,7 @@ def _send_once(self, request: Request) -> Response:
     ...                                     # existing path unchanged
 ```
 
-`_send_stream()` opens the httpx stream context, reads headers, and wraps the
+`_send_stream()` opens the httpx2 stream context, reads headers, and wraps the
 open response in a `StreamingResponse`. The connection remains open; the
 caller is responsible for closing it.
 
@@ -172,7 +172,7 @@ async with transport.send(Request("GET", url, stream=True)) as response:
 
 ### 7. No new runtime dependencies
 
-httpx already supports streaming. This ADR introduces no new dependencies.
+httpx2 already supports streaming. This ADR introduces no new dependencies.
 
 ## Consequences
 
@@ -190,7 +190,7 @@ httpx already supports streaming. This ADR introduces no new dependencies.
 
 - Streaming responses require explicit resource management by the caller
   (`with` / `async with`). This is an intentional trade-off — the same
-  contract httpx itself uses.
+  contract httpx2 itself uses.
 
 - `CacheMiddleware` and `LoggingMiddleware` require small stream-aware
   adaptations. This couples them lightly to `StreamingResponse`.
@@ -216,7 +216,7 @@ httpx already supports streaming. This ADR introduces no new dependencies.
     place to catch and map these to `StreamInterruptedError` — consistent
     with how `raise_for_status()` already maps HTTP errors at the client
     layer before they reach the service layer. The service layer never sees
-    raw httpx types.
+    raw httpx2 types.
 
   An alternative design — ASGI-style iterator-wrapping middleware — would
   allow middleware to intercept chunks. That design is significantly more
@@ -237,7 +237,7 @@ The existing layer separation (ADR-0002) maps cleanly onto streaming:
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Transport** | Opens the stream via `client.stream()`; returns `StreamingResponse` with status + headers populated; connection stays open                                                                                               |
 | **Client**    | Calls `raise_for_status()` before returning (HTTP-level errors, 401/429/5xx, handled here as normal); exposes a `stream()` method; wraps `iter_lines()` to catch transport exceptions and raise `StreamInterruptedError` |
-| **Service**   | Calls `self._client.stream()`; owns the chunk-parsing loop; detects API-level embedded errors in chunks and raises typed domain exceptions (e.g. `RateLimitError`); never sees raw httpx types                           |
+| **Service**   | Calls `self._client.stream()`; owns the chunk-parsing loop; detects API-level embedded errors in chunks and raises typed domain exceptions (e.g. `RateLimitError`); never sees raw httpx2 types                          |
 | **Caller**    | Iterates the typed stream returned by the service; handles domain exceptions; decides whether to restart                                                                                                                 |
 
 This mirrors non-streaming exactly — the client already absorbs

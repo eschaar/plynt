@@ -299,10 +299,10 @@ LOGGING = {
 
 - **`TracingMiddleware` (`plynth[otel]`)**: a dedicated plynth middleware for
   OpenTelemetry tracing is not needed. `opentelemetry-instrumentation-httpx`
-  instruments httpx automatically and covers the common tracing use case
+  instruments httpx2 automatically and covers the common tracing use case
   (spans, HTTP semantic conventions) without any plynth-specific code. A
   plynth middleware would only add value for chain-position-aware span
-  boundaries (latency measured after auth + retry, not raw httpx latency).
+  boundaries (latency measured after auth + retry, not raw httpx2 latency).
   No demonstrated demand exists; no ADR will be written unless that changes.
 - **`MetricsMiddleware` (`plynth[prometheus]`)**: a dedicated prometheus
   metrics middleware is not needed. `opentelemetry-instrumentation-httpx`

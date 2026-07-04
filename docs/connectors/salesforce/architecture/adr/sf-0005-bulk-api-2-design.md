@@ -300,7 +300,7 @@ not fit the synchronous, per-record request/response pattern of
 `SalesforceObjectService`. Mixing them would bloat the service and obscure the
 API contract.
 
-### B. Streaming upload via `httpx` streaming
+### B. Streaming upload via `httpx2` streaming
 
 Deferred. Not required for the 150 MB limit; adds implementation complexity
 and couples this work to roadmap item 3. Revisit if large-file upload becomes

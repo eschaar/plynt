@@ -19,7 +19,7 @@ To minimize conflicts and maintenance overhead, the library enforces a strict de
 
 ### Chosen Libraries
 
-- **HTTP client**: `httpx` (sync and async, single dependency).
+- **HTTP client**: `httpx2` (sync and async, single dependency).
 - **Data model validation and serialization**: `pydantic` v2 (`pydantic.BaseModel`),
   used in connectors and framework adapters.
 - **Settings and configuration**: `pydantic-settings` v2, installed as a core

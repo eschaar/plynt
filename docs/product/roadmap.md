@@ -13,28 +13,28 @@ ______________________________________________________________________
 
 ## Status Overview
 
-| #   | Area                                               | Status          | Notes                                                                              |
-| --- | -------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------- |
-| —   | `plynth.base` — protocol-agnostic abstractions     | **Done**        | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings        |
-| —   | `plynth.http` — transport, clients, auth, settings | **Done**        | httpx transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
-| —   | `HTTP transport backend (httpx2)`                  | **Planned**     | ADR-0023; migrate internals while keeping transport class names                    |
-| —   | `plynth.middleware` — core middleware suite        | **Done**        | Protocol-agnostic middleware suite                                                 |
-| —   | `plynth.http.middleware` layer                     | **Done**        | HTTP auth middleware and HTTP-only transport concerns                              |
-| 1e  | `TracingMiddleware` `plynth[otel]`                 | **Planned**     | ADR required; OTel auto-instrumentation may cover most needs                       |
-| 1f  | `MetricsMiddleware` `plynth[prometheus]`           | **Planned**     | ADR required; low priority                                                         |
-| 1g  | `MockMiddleware`                                   | **Planned**     | Test/dev only; Tier 3                                                              |
-| 2   | Salesforce connector — REST + Bulk + AI            | **Done**        | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API     |
-| 2f  | Salesforce Pub/Sub CDC                             | **Deferred**    | gRPC ADR required first                                                            |
-| 2g  | `plynth-salesforce` package extraction             | **Deferred**    | After multi-connector gate                                                         |
-| 2l  | Salesforce GraphQL API                             | **Conditional** | Implement on repeated demand only                                                  |
-| 3   | Streaming response (SSE / chunked HTTP)            | **Done**        | ADR-0017; enables Salesforce AI and LLM connector                                  |
-| 3b  | Raw response access on `APIClient`                 | **Done**        | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                   |
-| 4   | Framework adapters (Django / FastAPI / Flask)      | **Planned**     | ADR required per adapter; deferred until core is stable                            |
-| 5   | Cache backend documentation                        | **Planned**     | Implementation complete; how-to guides remaining                                   |
-| 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                       |
-| 7   | AI / LLM connector `plynth.connectors.llm`         | **Planned**     | ADR-0021 scoped; parallel with Salesforce AI                                       |
-| 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                      |
-| 9   | Connector package extraction                       | **Planned**     | Policy defined; individual extractions need ADR                                    |
+| #   | Area                                               | Status          | Notes                                                                               |
+| --- | -------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------- |
+| —   | `plynth.base` — protocol-agnostic abstractions     | **Done**        | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings         |
+| —   | `plynth.http` — transport, clients, auth, settings | **Done**        | httpx2 transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
+| —   | `HTTP transport backend (httpx2)`                  | **Done**        | ADR-0023; internals migrated while transport class names stayed stable              |
+| —   | `plynth.middleware` — core middleware suite        | **Done**        | Protocol-agnostic middleware suite                                                  |
+| —   | `plynth.http.middleware` layer                     | **Done**        | HTTP auth middleware and HTTP-only transport concerns                               |
+| 1e  | `TracingMiddleware` `plynth[otel]`                 | **Planned**     | ADR required; OTel auto-instrumentation may cover most needs                        |
+| 1f  | `MetricsMiddleware` `plynth[prometheus]`           | **Planned**     | ADR required; low priority                                                          |
+| 1g  | `MockMiddleware`                                   | **Planned**     | Test/dev only; Tier 3                                                               |
+| 2   | Salesforce connector — REST + Bulk + AI            | **Done**        | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API      |
+| 2f  | Salesforce Pub/Sub CDC                             | **Deferred**    | gRPC ADR required first                                                             |
+| 2g  | `plynth-salesforce` package extraction             | **Deferred**    | After multi-connector gate                                                          |
+| 2l  | Salesforce GraphQL API                             | **Conditional** | Implement on repeated demand only                                                   |
+| 3   | Streaming response (SSE / chunked HTTP)            | **Done**        | ADR-0017; enables Salesforce AI and LLM connector                                   |
+| 3b  | Raw response access on `APIClient`                 | **Done**        | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                    |
+| 4   | Framework adapters (Django / FastAPI / Flask)      | **Planned**     | ADR required per adapter; deferred until core is stable                             |
+| 5   | Cache backend documentation                        | **Planned**     | Implementation complete; how-to guides remaining                                    |
+| 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                        |
+| 7   | AI / LLM connector `plynth.connectors.llm`         | **Planned**     | ADR-0021 scoped; parallel with Salesforce AI                                        |
+| 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                       |
+| 9   | Connector package extraction                       | **Planned**     | Policy defined; individual extractions need ADR                                     |
 
 ______________________________________________________________________
 
@@ -62,7 +62,7 @@ ______________________________________________________________________
 
 ### HTTP transport (`plynth.http`)
 
-- `HttpxSyncTransport` / `HttpxAsyncTransport` — httpx-backed transport
+- `HttpxSyncTransport` / `HttpxAsyncTransport` — httpx2-backed transport
   implementations with full middleware wiring (ADR-0013)
 - `HttpxSyncTransport.from_settings()` / `HttpxAsyncTransport.from_settings()`
   — zero-boilerplate environment-driven construction, including auth wiring
@@ -266,7 +266,7 @@ Covers API key auth use case without a dedicated middleware type.
 #### 1b. `Request.timeout` — per-request timeout override ✓
 
 Added `timeout: float | None = None` to `Request` (ADR-0005-A1). When set,
-the httpx transport passes it directly to `client.request()`, overriding the
+the httpx2 transport passes it directly to `client.request()`, overriding the
 transport-level timeout for that single call. A `TimeoutMiddleware` was
 considered and rejected — a plain field on `Request` is simpler and keeps
 the override at the call site.
@@ -318,17 +318,17 @@ ADR-0003.
 #### 1g. `MockMiddleware` (Tier 3 — test/dev only)
 
 Intercept requests and return pre-configured responses in tests, as a
-middleware-level alternative to httpx's `MockTransport`. See
+middleware-level alternative to httpx2's `MockTransport`. See
 [idea](ideas/middleware-extensions.md#mockmiddleware) for interface sketch.
 
 #### 1h. HTTP transport backend migration (`httpx2`)
 
-Migrate internal HTTP transport backend wiring from `httpx` to `httpx2`.
-Keep plynth transport class names unchanged (`HttpxSyncTransport` and
-`HttpxAsyncTransport`) to avoid unnecessary API churn while updating the
-underlying implementation and tests.
+Internal HTTP transport backend wiring was migrated from `httpx` to
+`httpx2`.
+Plynth transport class names stay unchanged (`HttpxSyncTransport` and
+`HttpxAsyncTransport`) to avoid unnecessary API churn.
 
-**Prerequisite:** ADR-0023 accepted.
+**Status:** Completed.
 
 #### 1i. SSE support via HTTPX2 client API (optional)
 
@@ -574,8 +574,8 @@ Shipped core capabilities:
 - `StreamingResponse` / `AsyncStreamingResponse` subtypes in
   `plynth.base.response` exposing `iter_lines()` / `aiter_lines()` and byte
   iteration helpers.
-- `_send_once()` branches on `request.stream` — uses `httpx.stream()` instead
-  of `httpx.request()`.
+- `_send_once()` branches on `request.stream` — uses `httpx2.stream()` instead
+  of `httpx2.request()`.
 - `CacheMiddleware` and `LoggingMiddleware` get minor stream-aware
   adaptations; all other middleware and service-layer code is unaffected.
 - No new runtime dependencies.

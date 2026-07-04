@@ -52,11 +52,11 @@ src/plynth/
     redis.py         — RedisCache + RedisCacheConfig (requires redis)
     cachetools.py    — CachetoolsCache (requires cachetools)
 
-  http/              ← HTTP-specific layer; requires httpx
+  http/              ← HTTP-specific layer; requires httpx2
     policies.py      — HttpRetryPolicy (retryable status codes)
     middleware/      ← HTTP-specific middleware implementations
       auth.py        — BearerTokenAuthMiddleware, BasicAuthMiddleware,
-                       OAuth2AuthMiddleware (requires httpx for token fetch)
+                       OAuth2AuthMiddleware (requires httpx2 for token fetch)
     client.py        — HTTPClient / AsyncHTTPClient
                        + APIClient / AsyncAPIClient (JSON REST conventions)
     errors.py        — HttpStatusError + typed REST error hierarchy
@@ -107,12 +107,12 @@ Files here import from `base/` only.
 
 **`cache/`** contains protocol-agnostic concrete cache backend implementations
 that satisfy the `CacheBackend` protocol defined in `base/cache.py`. Backends
-here do not touch `httpx` and may be reused by any protocol namespace
+here do not touch `httpx2` and may be reused by any protocol namespace
 (`http/`, `grpc/`, ...). Optional third-party dependencies (`redis`,
 `cachetools`) are isolated per file so that installing only the stdlib-backed
 backends does not require those packages. Files here import from `base/` only.
 
-**`http/`** contains everything that touches `httpx`: the transport
+**`http/`** contains everything that touches `httpx2`: the transport
 implementation, concrete auth middleware, HTTP-specific retry policy,
 response type, error hierarchy, and the client/service/settings types. The
 `http/middleware/` subdirectory groups the HTTP-specific middleware
@@ -161,7 +161,7 @@ flowchart LR
        these and implement only `_send_once()`.
    - `http/transport.py` provides `HttpxSyncTransport` and
      `HttpxAsyncTransport`, which extend the base transports and implement
-     `_send_once()` using `httpx`.
+     `_send_once()` using `httpx2`.
    - Transports are swappable without affecting any higher layer.
 
 1. **Response Layer** (`base/response.py` + `http/response.py`)

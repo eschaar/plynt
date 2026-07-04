@@ -68,11 +68,11 @@ lives alongside the connector:
 
 ## Installation extras
 
-| Extra                | Installs                         | Use when                             |
-| -------------------- | -------------------------------- | ------------------------------------ |
-| `plynth[httpx]`      | `httpx`                          | You need the built-in HTTP transport |
-| `plynth[salesforce]` | `httpx`, `PyJWT`, `cryptography` | Salesforce connector                 |
-| `plynth[oauth]`      | OAuth2 helpers                   | Custom OAuth2 flows                  |
-| `plynth[dev]`        | Test and lint dependencies       | Contributing to Plynth               |
+| Extra                | Installs                          | Use when                             |
+| -------------------- | --------------------------------- | ------------------------------------ |
+| `plynth[httpx]`      | `httpx2`                          | You need the built-in HTTP transport |
+| `plynth[salesforce]` | `httpx2`, `PyJWT`, `cryptography` | Salesforce connector                 |
+| `plynth[oauth]`      | OAuth2 helpers                    | Custom OAuth2 flows                  |
+| `plynth[dev]`        | Test and lint dependencies        | Contributing to Plynth               |
 
 See [Installation reference](reference/installation.md) for details.

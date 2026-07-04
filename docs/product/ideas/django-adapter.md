@@ -94,7 +94,7 @@ pip install plynth[django]
 ```
 
 Adds `django` as a dependency. The `[httpx]` extra is a prerequisite
-(transport still requires httpx).
+(transport still requires httpx2).
 
 ______________________________________________________________________
 

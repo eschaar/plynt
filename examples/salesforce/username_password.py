@@ -39,7 +39,21 @@ from pathlib import Path
 from _demo import configure_logging, run_async_demo, run_demo
 from pydantic_settings import SettingsConfigDict
 
+from plynth.connectors.salesforce.auth import (
+    AsyncSalesforcePasswordAuthMiddleware,
+    SalesforcePasswordAuthMiddleware,
+)
+from plynth.connectors.salesforce.client import (
+    AsyncSalesforceAPIClient,
+    SalesforceAPIClient,
+)
+from plynth.connectors.salesforce.facade import (
+    AsyncSalesforceAPIFacade,
+    SalesforceAPIFacade,
+)
 from plynth.connectors.salesforce.settings import SalesforceSettings
+from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
+from plynth.middleware.logging import AsyncLoggingMiddleware, LoggingMiddleware
 
 
 class _Settings(SalesforceSettings):
@@ -53,6 +67,7 @@ class _Settings(SalesforceSettings):
 
 
 def _check_settings(settings: SalesforceSettings) -> None:
+    """Exit with a clear error when required env vars are missing."""
     missing = [
         var
         for var, val in [
@@ -75,12 +90,7 @@ def _check_settings(settings: SalesforceSettings) -> None:
 
 
 def main_sync(settings: _Settings) -> None:
-    from plynth.connectors.salesforce.auth import SalesforcePasswordAuthMiddleware
-    from plynth.connectors.salesforce.client import SalesforceAPIClient
-    from plynth.connectors.salesforce.facade import SalesforceAPIFacade
-    from plynth.http.transport import HttpxSyncTransport
-    from plynth.middleware.logging import LoggingMiddleware
-
+    """Run the synchronous username/password Salesforce demo."""
     auth = SalesforcePasswordAuthMiddleware(
         client_id=settings.client_id,
         client_secret=settings.client_secret,
@@ -97,14 +107,7 @@ def main_sync(settings: _Settings) -> None:
 
 
 async def main_async(settings: _Settings) -> None:
-    from plynth.connectors.salesforce.auth import (
-        AsyncSalesforcePasswordAuthMiddleware,
-    )
-    from plynth.connectors.salesforce.client import AsyncSalesforceAPIClient
-    from plynth.connectors.salesforce.facade import AsyncSalesforceAPIFacade
-    from plynth.http.transport import HttpxAsyncTransport
-    from plynth.middleware.logging import AsyncLoggingMiddleware
-
+    """Run the asynchronous username/password Salesforce demo."""
     auth = AsyncSalesforcePasswordAuthMiddleware(
         client_id=settings.client_id,
         client_secret=settings.client_secret,

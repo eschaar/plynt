@@ -78,15 +78,15 @@ token_url = "https://test.salesforce.com/services/oauth2/token"
 
 ### 4. Dependency
 
-Salesforce JWT signing requires `PyJWT>=2.8` and `cryptography>=42`.
+Salesforce JWT signing requires `PyJWT>=2.12.1` and `cryptography>=49.0.0`.
 This remains connector-scoped via optional extra `plynth[salesforce]`:
 
 ```toml
 [project.optional-dependencies]
-salesforce = ["httpx>=0.27", "PyJWT>=2.8", "cryptography>=42"]
+salesforce = ["httpx2>=2.5.0", "PyJWT>=2.12.1", "cryptography>=49.0.0"]
 ```
 
-`PyJWT` and `cryptography` are not added to the `httpx` extra because JWT
+`PyJWT` and `cryptography` are not added to the `httpx2` backend extra because JWT
 signing is connector-level behavior. A lazy import with a clear
 `ImportError` message guards the Salesforce code path.
 
