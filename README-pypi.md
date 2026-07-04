@@ -53,6 +53,18 @@ for record in result.records:
 See the [Salesforce connector docs](https://github.com/eschaar/plynth/tree/main/docs/connectors/salesforce)
 for the full guide including JWT Bearer auth, pagination, bulk ingest, and more.
 
+## Generic LLM connector
+
+`plynth.connectors.llm` provides a provider-agnostic contract for:
+
+- neutral message and completion models,
+- sync and async service parity,
+- streaming chunk parsing helpers,
+- optional tool-calling primitives.
+
+Use it with any API that can map to the generic contract, while keeping
+provider-specific fields in opaque `provider_extensions` payloads.
+
 ## Project Status
 
 Current public release line:
