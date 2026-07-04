@@ -121,7 +121,7 @@ client = APIClient(base_url=settings.base_url, transport=transport)
 
 ### Transport-Level Configuration Fields
 
-The four timeout fields map to the corresponding phases of an `httpx.Timeout`
+The four timeout fields map to the corresponding phases of an `httpx2.Timeout`
 object. Setting any field to `None` disables that phase's timeout. Each phase
 can be tuned independently.
 
@@ -144,17 +144,17 @@ inside each transport's `from_settings()`.
 ### Timeout Compatibility Across Transports
 
 `HTTPSettings` defines four timeout phases that map directly to
-`httpx.Timeout`. Not every HTTP library supports all four phases. The contract
+`httpx2.Timeout`. Not every HTTP library supports all four phases. The contract
 is: `HTTPSettings` is the **authoritative, transport-agnostic** model — it
 does not shrink to the lowest common denominator. Each transport maps what
 it can use and documents which fields it ignores.
 
-| Field             | httpx                        | requests          |
-| ----------------- | ---------------------------- | ----------------- |
-| `timeout_connect` | `httpx.Timeout(connect=...)` | `timeout[0]`      |
-| `timeout_read`    | `httpx.Timeout(read=...)`    | `timeout[1]`      |
-| `timeout_write`   | `httpx.Timeout(write=...)`   | *(not supported)* |
-| `timeout_pool`    | `httpx.Timeout(pool=...)`    | *(not supported)* |
+| Field             | httpx2                        | requests          |
+| ----------------- | ----------------------------- | ----------------- |
+| `timeout_connect` | `httpx2.Timeout(connect=...)` | `timeout[0]`      |
+| `timeout_read`    | `httpx2.Timeout(read=...)`    | `timeout[1]`      |
+| `timeout_write`   | `httpx2.Timeout(write=...)`   | *(not supported)* |
+| `timeout_pool`    | `httpx2.Timeout(pool=...)`    | *(not supported)* |
 
 ### Framework Adapters (Extras Only)
 

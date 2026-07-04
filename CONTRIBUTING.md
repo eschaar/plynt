@@ -78,7 +78,7 @@ perf(core): reduce allocations in BaseSyncTransport.send()
 refactor(api): extract error mapping into dedicated module
 docs(adr): add ADR-0014 for logging design
 test(transport): add middleware ordering tests
-chore(deps): update httpx to 0.28
+chore(deps): update httpx2 to 2.5
 ci: upgrade actions/checkout to v5
 feat!: remove timeout_seconds from HTTPSettings
 ```

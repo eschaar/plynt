@@ -21,6 +21,7 @@ from plynth.connectors.salesforce.query import (
     SalesforceObjectQueryService,
     SalesforceQueryService,
 )
+from plynth.connectors.salesforce.query.service import _validate_timestamp_field
 from plynth.http.client import APIClient, AsyncAPIClient
 from plynth.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
@@ -84,6 +85,11 @@ def _make_async_service(
 
 class TestSalesforceQueryService:
     """Test suite for SalesforceQueryService."""
+
+    def test_validate_timestamp_field_rejects_invalid_identifier(self) -> None:
+        """Raise ValueError when timestamp field is not a valid SOQL identifier."""
+        with pytest.raises(ValueError, match="Invalid timestamp field"):
+            _validate_timestamp_field("LastModifiedDate;DROP TABLE")
 
     def test_query_path_and_params(self) -> None:
         """Validate query path and params."""

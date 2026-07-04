@@ -28,8 +28,8 @@ The Transport Layer is split across two files that live in different namespaces:
   framework-agnostic primitive that higher layers depend on, and because
   placing it there avoids a circular import with `base/request.py`.
 - __`plynth.http.transport`__ (`http/transport.py`) — provides the concrete
-  httpx-backed implementations `HttpxSyncTransport` and `HttpxAsyncTransport`.
-  Lives in `http/` because it introduces an `httpx` dependency and is
+  httpx2-backed implementations `HttpxSyncTransport` and `HttpxAsyncTransport`.
+  Lives in `http/` because it introduces an `httpx2` dependency and is
   HTTP-specific.
 
 There is no dedicated `transport/` directory. As documented in ADR-0002, layers
@@ -63,7 +63,7 @@ I/O. See ADR-0013 for the full design.
 
 Plynth defines its own `Request` and `Response` types in `plynth.base.request`
 and `plynth.base.response` respectively. These are library-agnostic data carriers
-that do not depend on `requests`, `httpx`, or any other HTTP library.
+that do not depend on `requests`, `httpx2`, or any other HTTP library.
 
 Two separate abstract base classes define the sync and async contracts
 (`plynth.base.transport`):
@@ -93,7 +93,7 @@ class AsyncTransport(ABC):
 ### Concrete Implementation
 
 `HttpxSyncTransport` and `HttpxAsyncTransport` in `plynth.http.transport`
-implement these contracts using `httpx`. Both return `HttpResponse` (from
+implement these contracts using `httpx2`. Both return `HttpResponse` (from
 `plynth.http.response`), which satisfies `ResponseProtocol` and carries the
 originating request's method and URL for richer error messages.
 
@@ -103,7 +103,7 @@ caching) themselves. These are handled by `BaseSyncTransport` /
 sit between `SyncTransport`/`AsyncTransport` and the concrete implementations.
 See ADR-0013 for the full transport base class design.
 
-`httpx` is an optional dependency and must be installed via:
+`httpx2` is an optional dependency and must be installed via:
 
 ```bash
 pip install plynth[httpx]
@@ -116,7 +116,7 @@ pip install plynth[httpx]
 - Users can swap in their own HTTP libraries or mocks for testing.
 - Sync and async execution are both supported without code duplication.
 - The abstract contracts in `base/transport.py` remain dependency-free and usable
-  without installing `httpx`.
+  without installing `httpx2`.
 - Cross-cutting concerns (auth, retry, cache) are handled once in
   `BaseSyncTransport` / `BaseAsyncTransport` (`plynth.base.transport`) and
   inherited by all concrete transports — see ADR-0013.

@@ -23,8 +23,8 @@ def configure_logging() -> None:
         format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
         datefmt="%H:%M:%S",
     )
-    # Suppress noisy httpx/httpcore transport loggers.
-    logging.getLogger("httpx").setLevel(logging.WARNING)
+    # Suppress noisy httpx2/httpcore transport loggers.
+    logging.getLogger("httpx2").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 

@@ -2,6 +2,39 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.6.0](https://github.com/eschaar/plynth/compare/0.5.1...0.6.0) (2026-07-04)
+
+
+### Features
+
+* **connectors:** implement generic llm connector and docs ([595291b](https://github.com/eschaar/plynth/commit/595291bfb1c18753c3f1919cab2131b2a2941d8a))
+* **http:** add httpx2 http2 and client tuning settings ([2298add](https://github.com/eschaar/plynth/commit/2298add9e594ae2cdaa0a7ef4fbf6fa4602c40c4))
+* **http:** switch transport backend dependency to httpx2 ([57a4b0a](https://github.com/eschaar/plynth/commit/57a4b0ade753571a8797b2f46c7219704fcc3f95))
+
+
+### Refactoring
+
+* **http:** complete httpx2 migration cleanup and pylint fixes ([f1ec72b](https://github.com/eschaar/plynth/commit/f1ec72b57c20ab2427a90ee9cc9096bb7785bb6e))
+* **http:** remove lint warnings and DRY client builders ([0923547](https://github.com/eschaar/plynth/commit/0923547a51583675ecb20f7fc42dc468f5201bf1))
+
+
+### Documentation
+
+* **adr:** accept ADR-0021 and define SF-0012 acceptance triggers ([db1951d](https://github.com/eschaar/plynth/commit/db1951d0f4ef3227b0294e17d1eabf3200499369))
+* **adr:** clarify transport-middleware boundary and add SSE roadmap option ([7674aa5](https://github.com/eschaar/plynth/commit/7674aa5f36e18b8bdee24850c0394b841041362d))
+* **adr:** propose httpx2 transport backend migration ([f269630](https://github.com/eschaar/plynth/commit/f2696309c510ef74b5cdd7320ee31f9100d7c328))
+* **architecture:** define connector and adapter boundaries ([bf8cf7e](https://github.com/eschaar/plynth/commit/bf8cf7e3187325e02bf14a0ae35793e5161b3a7f))
+* **architecture:** relocate ai risk note and refresh ADR statuses ([9e8e574](https://github.com/eschaar/plynth/commit/9e8e574ea600c56e3e9e8db5ba743ac475ae1cd3))
+* **cache:** complete backend how-to guidance and close roadmap item ([b2018f1](https://github.com/eschaar/plynth/commit/b2018f120deaf0c6dc1652a3fa13c80dfe1c7897))
+* **middleware:** clarify generic vs HTTP middleware layers ([05bce16](https://github.com/eschaar/plynth/commit/05bce164c87305c7d3ea72745f021750d1d112d3))
+* **roadmap:** align transport and middleware roadmap narrative ([0b00e32](https://github.com/eschaar/plynth/commit/0b00e3276bf6805997ba20b0479541cb8b509131))
+
+
+### Tests
+
+* **connectors:** harden llm stream parsing coverage ([6409d92](https://github.com/eschaar/plynth/commit/6409d92e5f279b5c56afca6057eb9f0b83cf12e4))
+* **coverage:** close remaining gaps and stabilize httpx2 transport tests ([7f13f70](https://github.com/eschaar/plynth/commit/7f13f708f58f8ba66d3f28e6c3ef24476c059a94))
+
 ## [0.5.1](https://github.com/eschaar/plynth/compare/0.5.0...0.5.1) (2026-05-28)
 
 

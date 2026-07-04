@@ -32,7 +32,7 @@ ______________________________________________________________________
 ## Current Scope
 
 - Core transport, middleware, settings, retry, auth, and error abstractions.
-- HTTP implementation based on httpx.
+- HTTP implementation based on httpx2.
 - Salesforce connector as the primary real-world validation connector.
 
 ______________________________________________________________________

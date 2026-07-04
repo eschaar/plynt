@@ -65,6 +65,7 @@ ______________________________________________________________________
 - [Product Vision](docs/product/vision.md)
 - [Product Requirements](docs/product/requirements.md)
 - [Product Roadmap](docs/product/roadmap.md)
+- [Generic LLM Connector Guide](docs/connectors/llm/README.md)
 - [Salesforce Integration Guide](docs/connectors/salesforce/README.md)
 - [Contributing](CONTRIBUTING.md)
 
@@ -99,7 +100,7 @@ pip install plynth
 Optional extras:
 
 ```bash
-pip install "plynth[httpx]"       # httpx transport
+pip install "plynth[httpx]"       # httpx2 transport backend
 pip install "plynth[salesforce]"  # Salesforce REST connector
 ```
 
@@ -160,12 +161,14 @@ is implemented, what is planned, and what is explicitly out of scope.
 
 High-level planned areas:
 
-- Logging and observability (`plynth.middleware.logging`)
-- Framework adapters — Django and FastAPI extras
-- Built-in cache backends (`plynth[cache]`)
-- Async OAuth2 (`AsyncOAuth2ClientCredentials`)
-- Salesforce connector (`plynth[salesforce]`) — SOQL queries and auth flows
-  are available; Bulk API 2.0 and Pub/Sub CDC are planned
+- Framework adapters (Django, FastAPI, Flask)
+- gRPC transport (`plynth[grpc]`) as foundation for Salesforce Pub/Sub CDC
+- SOAP transport (`plynth[soap]`) as long-term extension
+
+Shipped connector highlights:
+
+- Generic AI / LLM connector (`plynth.connectors.llm`) with neutral request,
+  completion, and streaming chunk contract models.
 
 ______________________________________________________________________
 

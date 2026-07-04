@@ -36,7 +36,7 @@ from plynth.base.policies import (
 )
 from plynth.base.response import Response
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from plynth.base.request import Request
 
 __all__ = [

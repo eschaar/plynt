@@ -246,6 +246,14 @@ class TestSalesforceAPIClient:
         assert client.api_version == "61.0"
         assert transport.send.call_count == 0
 
+    def test_api_version_property_uses_cached_resolved_value(self) -> None:
+        """Validate api_version returns a manually cached resolved value."""
+        client, _, transport = _make_client(content=_json_bytes([]))
+        client.set_resolved_api_version("65.0")
+
+        assert client.api_version == "65.0"
+        assert transport.send.call_count == 0
+
     def test_api_version_falls_back_to_default_on_invalid_discovery_payload(
         self,
     ) -> None:
@@ -254,9 +262,30 @@ class TestSalesforceAPIClient:
 
         assert client.api_version == DEFAULT_API_VERSION
 
+    def test_api_version_falls_back_to_default_on_empty_discovery_list(self) -> None:
+        """Validate discovery fallback when the versions payload is an empty list."""
+        client, _, _ = _make_client(content=_json_bytes([]))
+
+        assert client.api_version == DEFAULT_API_VERSION
+
     def test_api_version_falls_back_to_default_when_latest_has_no_version(self) -> None:
         """Validate discovery fallback when latest item lacks version field."""
         payload = _json_bytes([{"label": "vLatest", "url": "/services/data/v99.0"}])
+        client, _, _ = _make_client(content=payload)
+
+        assert client.api_version == DEFAULT_API_VERSION
+
+    def test_api_version_falls_back_when_latest_version_is_empty_string(self) -> None:
+        """Validate fallback when discovery returns an empty version string."""
+        payload = _json_bytes(
+            [
+                {
+                    "label": "vLatest",
+                    "url": "/services/data/v99.0",
+                    "version": "",
+                }
+            ]
+        )
         client, _, _ = _make_client(content=payload)
 
         assert client.api_version == DEFAULT_API_VERSION
@@ -481,9 +510,32 @@ class TestAsyncSalesforceAPIClient:
 
         assert await client.get_api_version() == DEFAULT_API_VERSION
 
+    async def test_get_api_version_falls_back_on_empty_discovery_list(self) -> None:
+        """Validate async fallback to default for an empty versions list."""
+        client, _, _ = _make_async_client(content=_json_bytes([]))
+
+        assert await client.get_api_version() == DEFAULT_API_VERSION
+
     async def test_get_api_version_falls_back_when_latest_has_no_version(self) -> None:
         """Validate async fallback when latest version item lacks version value."""
         payload = _json_bytes([{"label": "vLatest", "url": "/services/data/v99.0"}])
+        client, _, _ = _make_async_client(content=payload)
+
+        assert await client.get_api_version() == DEFAULT_API_VERSION
+
+    async def test_get_api_version_falls_back_when_latest_version_is_empty(
+        self,
+    ) -> None:
+        """Validate async fallback when latest version is an empty string."""
+        payload = _json_bytes(
+            [
+                {
+                    "label": "vLatest",
+                    "url": "/services/data/v99.0",
+                    "version": "",
+                }
+            ]
+        )
         client, _, _ = _make_async_client(content=payload)
 
         assert await client.get_api_version() == DEFAULT_API_VERSION

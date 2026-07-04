@@ -21,14 +21,14 @@ pip install plynth
 Optional extras:
 
 ```bash
-pip install "plynth[httpx]"       # httpx transport
+pip install "plynth[httpx]"       # httpx2 transport
 pip install "plynth[salesforce]"  # Salesforce REST connector
 ```
 
 ## Salesforce connector
 
 `plynth[salesforce]` ships a ready-to-use Salesforce REST API integration
-with typed SOQL queries, OAuth2 auth flows, and sync/async support:
+with typed query services, Bulk API 2.0, AI APIs, and sync/async support:
 
 ```python
 from plynth.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
@@ -53,6 +53,18 @@ for record in result.records:
 See the [Salesforce connector docs](https://github.com/eschaar/plynth/tree/main/docs/connectors/salesforce)
 for the full guide including JWT Bearer auth, pagination, bulk ingest, and more.
 
+## Generic LLM connector
+
+`plynth.connectors.llm` provides a provider-agnostic contract for:
+
+- neutral message and completion models,
+- sync and async service parity,
+- streaming chunk parsing helpers,
+- optional tool-calling primitives.
+
+Use it with any API that can map to the generic contract, while keeping
+provider-specific fields in opaque `provider_extensions` payloads.
+
 ## Project Status
 
 Current public release line:
@@ -60,6 +72,9 @@ Current public release line:
 - `0.1.0`: clean core foundation
 - `0.2.0`: Salesforce connector baseline
 - `0.2.1`: patch release
+- `0.3.0`: streaming response support
+- `0.4.0`: Salesforce Models and Agent APIs
+- `0.5.0`: raw response access and throttle governance
 
 ## Documentation
 

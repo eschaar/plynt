@@ -6,8 +6,8 @@ standalone package.
 
 ## Scope
 
-The current Salesforce integration focuses on the standard SObject REST API,
-with sync and async support.
+The current Salesforce integration covers Salesforce REST capabilities,
+including data APIs, utility APIs, and AI APIs, with sync and async support.
 
 Implemented capabilities include:
 
@@ -16,9 +16,14 @@ Implemented capabilities include:
 - SObject metadata and describe endpoints
 - Layout, deleted-window, and updated-window endpoints
 - Utility REST endpoints: limits, tooling_execute, objects
+- Bulk API 2.0 ingest and query operations
+- Composite REST primitives (composite, batch, tree)
+- Metadata REST deploy operations
 - Identity access primitives: generic user retrieval/listing and permission
   set assignment operations
 - Search capability: SOSL search and quick_search
+- Models API and Agent API services (including streaming support)
+- Apex REST passthrough support
 - Typed Salesforce error mapping
 - OAuth2 client credentials flow; OAuth2 password flow (implemented but
   deprecated by Salesforce — blocked by default in orgs created Summer '23
@@ -481,7 +486,8 @@ application on top of [SF-0003](architecture/adr/sf-0003-query-service-design.md
 ## API Scope Note
 
 The utility service in this module targets Salesforce Platform REST API
-endpoints only. It does not cover SOAP, Bulk, or Pub/Sub APIs.
+endpoints only. It does not cover SOAP or Pub/Sub APIs. Bulk API support is
+available through the dedicated bulk services.
 
 ## Authentication Modes
 
@@ -489,8 +495,12 @@ Supported auth middlewares:
 
 - SalesforceClientCredentialsAuthMiddleware
 - SalesforcePasswordAuthMiddleware
+- SalesforceJWTBearerAuthMiddleware
+- SalesforceSessionAuthMiddleware
 - AsyncSalesforceClientCredentialsAuthMiddleware
 - AsyncSalesforcePasswordAuthMiddleware
+- AsyncSalesforceJWTBearerAuthMiddleware
+- AsyncSalesforceSessionAuthMiddleware
 
 Use one flow per client instance.
 

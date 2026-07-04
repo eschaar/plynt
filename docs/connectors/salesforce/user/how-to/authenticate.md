@@ -90,7 +90,7 @@ transport = HttpxAsyncTransport(middlewares=[auth])
 
 ### Dependencies
 
-JWT Bearer requires `PyJWT>=2.8` and `cryptography>=42`. Both are included in
+JWT Bearer requires `PyJWT>=2.12.1` and `cryptography>=49.0.0`. Both are included in
 the `plynth[salesforce]` extra:
 
 ```bash

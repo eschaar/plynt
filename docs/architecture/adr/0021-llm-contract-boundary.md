@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -150,10 +150,10 @@ Mitigations:
 - Add boundary tests that block cross-provider imports.
 - Review extension usage in architecture reviews before expansion.
 
-## Acceptance Criteria
+## Implementation Readiness Criteria
 
-The decision can be considered accepted for implementation when all criteria
-below are satisfied:
+Use these criteria as implementation gates for connector work that depends on
+this ADR:
 
 1. A generic contract module exists with only neutral primitives for message,
    tool call, tool result, completion, usage, stream chunk, and request

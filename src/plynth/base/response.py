@@ -6,7 +6,7 @@ the essential raw data (status code, headers, raw body) and raises a
 
 ``ResponseProtocol`` is a structural interface (``typing.Protocol``) that
 any response-like object satisfies if it exposes the right attributes and
-``raise_for_status()``. This includes ``httpx.Response``, ``requests.Response``,
+``raise_for_status()``. This includes ``httpx2.Response``, ``requests.Response``,
 and ``plynth.Response`` itself — without any inheritance.
 
 Higher layers (middleware, client, service) should depend on
@@ -37,7 +37,7 @@ class Response:
     """Minimal, library-agnostic data carrier for raw transport responses.
 
     Transports produce ``Response`` instances by mapping the underlying
-    library response (e.g. ``httpx.Response``) into this neutral form.
+    library response (e.g. ``httpx2.Response``) into this neutral form.
     It holds only the essential raw data and performs no parsing.
 
     Attributes:
@@ -47,7 +47,7 @@ class Response:
         _raw: The original library-specific response object, for internal
             use and debugging only. Typed as ``object | None`` to stay
             library-agnostic. Cast to the expected type when needed
-            (e.g. ``httpx.Response``). Not included in ``repr`` or equality.
+            (e.g. ``httpx2.Response``). Not included in ``repr`` or equality.
 
     Example:
         resp = Response(status_code=200, content=b'{"ok": true}')
@@ -77,7 +77,7 @@ class Response:
 class StreamingResponse(Response):
     """Response whose body is consumed lazily via iteration.
 
-    Holds a reference to the underlying httpx response as an entered
+    Holds a reference to the underlying httpx2 response as an entered
     context manager. The response body is not buffered; instead, callers
     iterate over lines or bytes on demand via ``iter_lines()`` or
     ``iter_bytes()``.
@@ -89,7 +89,7 @@ class StreamingResponse(Response):
         status_code: HTTP response status (e.g. 200, 404).
         headers: Response headers as a mapping.
         content: Always ``b""`` for streaming responses (body not buffered).
-        _raw: An entered ``httpx.Response`` object. Call methods on this via
+        _raw: An entered ``httpx2.Response`` object. Call methods on this via
             the public iteration interface (``iter_lines()``, etc.).
 
     Example::
@@ -165,7 +165,7 @@ class StreamingResponse(Response):
 class AsyncStreamingResponse(Response):
     """Async response whose body is consumed lazily via async iteration.
 
-    Holds a reference to the underlying httpx async response as an entered
+    Holds a reference to the underlying httpx2 async response as an entered
     context manager. The response body is not buffered; instead, callers
     iterate asynchronously over lines or bytes on demand via ``aiter_lines()``
     or ``aiter_bytes()``.
@@ -177,7 +177,7 @@ class AsyncStreamingResponse(Response):
         status_code: HTTP response status (e.g. 200, 404).
         headers: Response headers as a mapping.
         content: Always ``b""`` for streaming responses (body not buffered).
-        _raw: An entered ``httpx.AsyncResponse`` object. Call methods on this
+        _raw: An entered ``httpx2.Response`` object. Call methods on this
             via the public async iteration interface (``aiter_lines()``, etc.).
 
     Example::
@@ -254,7 +254,7 @@ class ResponseProtocol(Protocol):
 
     Any object that exposes ``status_code``, ``headers``, ``content``, and
     ``raise_for_status()`` satisfies this protocol — including
-    ``httpx.Response``, ``requests.Response``, and ``plynth.Response`` —
+    ``httpx2.Response``, ``requests.Response``, and ``plynth.Response`` —
     without inheriting from this class.
 
     Use this protocol as the type annotation in middleware, client, and
@@ -273,4 +273,3 @@ class ResponseProtocol(Protocol):
 
     def raise_for_status(self) -> None:
         """Raise an exception if the response status indicates failure."""
-        ...  # pragma: no cover

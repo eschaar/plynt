@@ -61,7 +61,7 @@ class SyncTransport(ABC):
     """Contract for synchronous transports.
 
     Implement this class to provide a sync transport backed by any HTTP
-    library (e.g. ``requests``, ``httpx``), or a non-HTTP protocol (e.g.
+    library (e.g. ``requests``, ``httpx2``), or a non-HTTP protocol (e.g.
     gRPC) that manages its own auth and retry.
 
     Extension:
@@ -79,7 +79,7 @@ class AsyncTransport(ABC):
     """Contract for asynchronous transports.
 
     Implement this class to provide an async transport backed by any HTTP
-    library (e.g. ``httpx``, ``aiohttp``), or a non-HTTP protocol that
+    library (e.g. ``httpx2``, ``aiohttp``), or a non-HTTP protocol that
     manages its own auth and retry.
 
     Extension:

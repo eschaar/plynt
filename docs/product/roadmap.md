@@ -17,7 +17,8 @@ ______________________________________________________________________
 | --- | -------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------- |
 | —   | `plynth.base` — protocol-agnostic abstractions     | **Done**        | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings        |
 | —   | `plynth.http` — transport, clients, auth, settings | **Done**        | httpx transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
-| —   | `plynth.middleware` — core middleware suite        | **Done**        | Cache, Retry, CircuitBreaker, RateLimit, Logging, Header                           |
+| —   | `plynth.middleware` — core middleware suite        | **Done**        | Protocol-agnostic middleware suite                                                 |
+| —   | `plynth.http.middleware` layer                     | **Done**        | HTTP auth middleware and HTTP-only transport concerns                              |
 | 1e  | `TracingMiddleware` `plynth[otel]`                 | **Planned**     | ADR required; OTel auto-instrumentation may cover most needs                       |
 | 1f  | `MetricsMiddleware` `plynth[prometheus]`           | **Planned**     | ADR required; low priority                                                         |
 | 1g  | `MockMiddleware`                                   | **Planned**     | Test/dev only; Tier 3                                                              |
@@ -28,15 +29,30 @@ ______________________________________________________________________
 | 3   | Streaming response (SSE / chunked HTTP)            | **Done**        | ADR-0017; enables Salesforce AI and LLM connector                                  |
 | 3b  | Raw response access on `APIClient`                 | **Done**        | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                   |
 | 4   | Framework adapters (Django / FastAPI / Flask)      | **Planned**     | ADR required per adapter; deferred until core is stable                            |
-| 5   | Cache backend documentation                        | **Planned**     | Implementation complete; how-to guides remaining                                   |
+| 5   | Cache backend documentation                        | **Done**        | Redis SSL, framework-native wrapping, and custom backend how-to guides added       |
 | 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                       |
-| 7   | AI / LLM connector `plynth.connectors.llm`         | **Planned**     | ADR-0021 scoped; parallel with Salesforce AI                                       |
+| 7   | AI / LLM connector `plynth.connectors.llm`         | **Done**        | Generic contract models and sync/async service parity implemented                  |
 | 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                      |
 | 9   | Connector package extraction                       | **Planned**     | Policy defined; individual extractions need ADR                                    |
+
+Near-term scope note for item 7:
+
+- Provider adapters (for example OpenAI and Anthropic) are planned but not
+  implemented in the current scope.
 
 ______________________________________________________________________
 
 ## Implemented Baseline (through v0.2.1)
+
+### Terminology baseline
+
+- **Connector**: domain-facing integration package under
+  `plynth.connectors.*`.
+- **Adapter**: boundary translation component (framework, provider, or
+  transport mapping).
+
+For LLM, this means the generic `plynth.connectors.llm` connector is shipped,
+while provider adapters such as OpenAI and Anthropic remain planned.
 
 ### Core abstractions (`plynth.base`)
 
@@ -597,9 +613,11 @@ ______________________________________________________________________
 
 ### 5. Cache backend documentation
 
-**Status:** Implementation complete. Documentation only remaining.
+**Status:** Done.
 
-All cache backends and typed config are implemented. Missing:
+All cache backends and typed config are implemented and documented.
+
+Completed guides:
 
 - How-to guide for using `RedisCache` with custom SSL options
 - How to wrap framework-native caches behind plynth's cache protocol
@@ -632,13 +650,13 @@ ______________________________________________________________________
 
 ### 7. AI / LLM connector (`plynth.connectors.llm`)
 
-**Status:** Scoped. Generic contract proposed in ADR-0021.
+**Status:** Implemented.
 
 Plynth's transport and middleware chain is well-suited for LLM API clients:
 auth (API key via `BearerTokenAuthMiddleware`), retry, and rate limiting are
 already available, and streaming response support is already shipped.
 
-Anticipated scope:
+Implemented scope:
 
 - Generic `LLMService` contract on top of `APIService`.
 - Typed, provider-agnostic request and response primitives.
@@ -646,10 +664,16 @@ Anticipated scope:
 - Optional tool-calling workflow in neutral contract types.
 - Provider-local extensions that stay opaque to the generic layer.
 
-**Prerequisite:**
+Shipped in this implementation:
 
-1. ADR-0021 must be accepted.
-1. Contract conformance and connector-boundary tests must be defined.
+- `LLMService` / `AsyncLLMService` on top of `APIService` and `AsyncAPIService`
+- Typed, provider-agnostic request and response primitives in
+  `plynth.connectors.llm.models`
+- Streaming and non-streaming parity with one shared contract model
+- Optional tool-calling workflow in neutral contract types
+- Opaque provider extension fields (`provider_extensions`) for provider-local
+  behavior
+- Contract conformance tests and connector-boundary tests
 
 **Roadmap note:**
 

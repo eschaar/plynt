@@ -1,13 +1,13 @@
-"""Concrete HTTP transport implementations backed by ``httpx``.
+"""Concrete HTTP transport implementations backed by ``httpx2``.
 
-Provides both synchronous and asynchronous transports using ``httpx``.
-``httpx`` must be installed via the ``[httpx]`` optional extra:
+Provides both synchronous and asynchronous transports using ``httpx2``.
+``httpx2`` must be installed via the ``[httpx]`` optional extra:
 
     pip install plynth[httpx]
 
 Both transports extend ``BaseSyncTransport`` / ``BaseAsyncTransport``
 (ADR-0013) — auth, retry, and caching are handled by the base class;
-``_send_once()`` contains only the actual httpx I/O.
+``_send_once()`` contains only the actual httpx2 I/O.
 
 Each transport exposes a ``from_settings()`` class method that constructs
 a fully configured instance from an ``HTTPSettings`` object (convention as
@@ -32,14 +32,14 @@ Example (async)::
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 try:
-    import httpx
+    import httpx2 as httpx
 except ImportError as exc:  # pragma: no cover
     raise ImportError(
-        "httpx is required for HttpxSyncTransport and HttpxAsyncTransport. "
+        "httpx2 is required for HttpxSyncTransport and HttpxAsyncTransport. "
         "Install it with: pip install plynth[httpx]"
     ) from exc
 
@@ -62,6 +62,8 @@ __all__ = [
 ]
 
 _logger = logging.getLogger(__name__)
+
+HttpxClientT = TypeVar("HttpxClientT", httpx.Client, httpx.AsyncClient)
 
 # Headers that must never appear in log output (case-insensitive match).
 _SCRUBBED_HEADERS: frozenset[str] = frozenset(
@@ -152,47 +154,85 @@ def scrub_url(url: str) -> str:
     )
 
 
-def _build_httpx_client(settings: HTTPSettings) -> httpx.Client:
-    """Construct an ``httpx.Client`` from ``HTTPSettings``."""
-    return httpx.Client(
-        timeout=httpx.Timeout(
-            connect=settings.timeout_connect,
-            read=settings.timeout_read,
-            write=settings.timeout_write,
-            pool=settings.timeout_pool,
-        ),
+def _build_httpx_timeout(settings: HTTPSettings) -> httpx.Timeout:
+    """Return a timeout object derived from ``HTTPSettings``."""
+    return httpx.Timeout(
+        connect=settings.timeout_connect,
+        read=settings.timeout_read,
+        write=settings.timeout_write,
+        pool=settings.timeout_pool,
+    )
+
+
+def _build_httpx_limits(settings: HTTPSettings) -> httpx.Limits | None:
+    """Return ``httpx.Limits`` only when limits are explicitly configured."""
+    if (
+        settings.max_connections is None
+        and settings.max_keepalive_connections is None
+        and settings.keepalive_expiry is None
+    ):
+        return None
+
+    return httpx.Limits(
+        max_connections=settings.max_connections,
+        max_keepalive_connections=settings.max_keepalive_connections,
+        keepalive_expiry=settings.keepalive_expiry,
+    )
+
+
+def _build_httpx_client_common(
+    settings: HTTPSettings,
+    *,
+    factory: type[HttpxClientT],
+) -> HttpxClientT:
+    """Construct sync/async httpx clients from shared ``HTTPSettings`` input."""
+    timeout = _build_httpx_timeout(settings)
+    limits = _build_httpx_limits(settings)
+
+    if limits is not None:
+        return factory(
+            timeout=timeout,
+            http2=settings.http2,
+            proxy=settings.proxy,
+            limits=limits,
+            max_redirects=settings.max_redirects,
+            trust_env=settings.trust_env,
+            verify=settings.verify,
+            cert=settings.cert,
+        )
+
+    return factory(
+        timeout=timeout,
+        http2=settings.http2,
         proxy=settings.proxy,
+        max_redirects=settings.max_redirects,
+        trust_env=settings.trust_env,
         verify=settings.verify,
         cert=settings.cert,
     )
+
+
+def _build_httpx_client(settings: HTTPSettings) -> httpx.Client:
+    """Construct an ``httpx2.Client`` from ``HTTPSettings``."""
+    return _build_httpx_client_common(settings, factory=httpx.Client)
 
 
 def _build_httpx_async_client(settings: HTTPSettings) -> httpx.AsyncClient:
-    """Construct an ``httpx.AsyncClient`` from ``HTTPSettings``."""
-    return httpx.AsyncClient(
-        timeout=httpx.Timeout(
-            connect=settings.timeout_connect,
-            read=settings.timeout_read,
-            write=settings.timeout_write,
-            pool=settings.timeout_pool,
-        ),
-        proxy=settings.proxy,
-        verify=settings.verify,
-        cert=settings.cert,
-    )
+    """Construct an ``httpx2.AsyncClient`` from ``HTTPSettings``."""
+    return _build_httpx_client_common(settings, factory=httpx.AsyncClient)
 
 
 class HttpxSyncTransport(BaseSyncTransport):
-    """Synchronous HTTP transport backed by ``httpx.Client``.
+    """Synchronous HTTP transport backed by ``httpx2.Client``.
 
     Extends ``BaseSyncTransport`` — auth, retry, and middleware are handled
-    by the base class. ``_send_once()`` contains only httpx I/O.
+    by the base class. ``_send_once()`` contains only httpx2 I/O.
 
     Pass a pre-configured ``client`` for full control over connection
-    pooling and advanced httpx settings.
+    pooling and advanced httpx2 settings.
 
     Args:
-        client: Optional pre-configured ``httpx.Client``. When omitted,
+        client: Optional pre-configured ``httpx2.Client``. When omitted,
             a default client is created.
         middlewares: Optional list of sync middleware. Use
             ``OAuth2AuthMiddleware``, ``BearerTokenAuthMiddleware``,
@@ -232,7 +272,7 @@ class HttpxSyncTransport(BaseSyncTransport):
     def from_settings(cls, settings: HTTPSettings) -> HttpxSyncTransport:
         """Construct a fully configured transport from an ``HTTPSettings`` instance.
 
-        Builds an ``httpx.Client`` and wires auth and retry middleware
+        Builds an ``httpx2.Client`` and wires auth and retry middleware
         from the settings' ``auth`` property (ADR-0011).  Response and
         token caching are wired via the ``caches`` / ``default_cache`` /
         ``default_auth_cache`` properties (ADR-0010).
@@ -288,7 +328,7 @@ class HttpxSyncTransport(BaseSyncTransport):
         )
 
     def _send_once(self, request: Request) -> Response:
-        """Send a request using ``httpx`` (pure I/O, no auth/retry/cache).
+        """Send a request using ``httpx2`` (pure I/O, no auth/retry/cache).
 
         Raises:
             httpx.HTTPError: If a network or protocol error occurs.
@@ -408,7 +448,7 @@ class HttpxSyncTransport(BaseSyncTransport):
         )
 
     def close(self) -> None:
-        """Close the underlying httpx.Client and release all network resources."""
+        """Close the underlying httpx2.Client and release all network resources."""
         self._client.close()
 
     def __enter__(self) -> HttpxSyncTransport:
@@ -421,13 +461,13 @@ class HttpxSyncTransport(BaseSyncTransport):
 
 
 class HttpxAsyncTransport(BaseAsyncTransport):
-    """Asynchronous HTTP transport backed by ``httpx.AsyncClient``.
+    """Asynchronous HTTP transport backed by ``httpx2.AsyncClient``.
 
     Extends ``BaseAsyncTransport`` — auth, retry, and caching are handled
-    by the base class. ``_send_once()`` contains only httpx I/O.
+    by the base class. ``_send_once()`` contains only httpx2 I/O.
 
     Args:
-        client: Optional pre-configured ``httpx.AsyncClient``. When
+        client: Optional pre-configured ``httpx2.AsyncClient``. When
             omitted, a default client is created.
         middlewares: Optional list of async middleware. Use
             ``AsyncBearerTokenAuthMiddleware``, ``AsyncBasicAuthMiddleware``,
@@ -629,7 +669,7 @@ class HttpxAsyncTransport(BaseAsyncTransport):
         )
 
     async def aclose(self) -> None:
-        """Close the underlying httpx.AsyncClient and release all network resources."""
+        """Close the underlying httpx2.AsyncClient and release all network resources."""
         await self._client.aclose()
 
     async def __aenter__(self) -> HttpxAsyncTransport:

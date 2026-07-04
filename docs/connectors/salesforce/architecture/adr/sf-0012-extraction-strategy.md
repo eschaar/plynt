@@ -1,6 +1,16 @@
 # SF-0012: Salesforce Integration Extraction Strategy
 
-**Status:** Proposal for architectural decision on modularization.
+**Status:** Proposed
+
+## Acceptance Triggers
+
+Keep this ADR in Proposed until all trigger criteria below are true:
+
+1. A target extraction window is scheduled and owned.
+1. Contract-freeze scope is complete for the current in-repo Salesforce API.
+1. A migration and compatibility policy is approved for downstream consumers.
+1. CI and release ownership are defined for the new Salesforce package.
+1. A rollback plan exists in case extraction introduces regressions.
 
 **Related ADRs:**
 
@@ -161,6 +171,6 @@ Avoid long-lived branches that span both repos without integration checks.
 
 ## Next Steps
 
-1. Confirm this ADR
+1. Keep this ADR Proposed until all acceptance triggers are met
 1. Proceed with Phase 1: contract freeze and documentation
 1. Record phase completion milestones in follow-up PRs

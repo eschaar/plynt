@@ -10,9 +10,10 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-import httpx
+import httpx2 as httpx
 import pytest
 
+import plynth.http.transport as transport_module
 from plynth.base.middleware import (
     AsyncMiddleware,
     NextAsyncHandler,
@@ -90,12 +91,12 @@ class _OAuth2Settings(HTTPSettings):
 
 
 def _make_sync_client(handler: httpx.MockTransport) -> httpx.Client:
-    """Create an httpx.Client with a mock transport for testing."""
+    """Create an httpx2.Client with a mock transport for testing."""
     return httpx.Client(transport=handler)
 
 
 def _make_async_client(handler: httpx.MockTransport) -> httpx.AsyncClient:
-    """Create an httpx.AsyncClient with a mock transport for testing."""
+    """Create an httpx2.AsyncClient with a mock transport for testing."""
     return httpx.AsyncClient(transport=handler)
 
 
@@ -104,7 +105,7 @@ def _mock_response(
     body: bytes = b"{}",
     headers: dict[str, str] | None = None,
 ) -> httpx.MockTransport:
-    """Return an httpx.MockTransport that always returns the given response."""
+    """Return an httpx2.MockTransport that always returns the given response."""
     response_headers = dict(headers or {})
 
     def handler(_request: httpx.Request) -> httpx.Response:
@@ -136,7 +137,7 @@ class TestHttpxSyncTransport:
         assert isinstance(getattr(resp, "_raw", None), httpx.Response)
 
     def test_send_passes_method_and_url(self) -> None:
-        """The method and URL are forwarded to httpx correctly."""
+        """The method and URL are forwarded to httpx2 correctly."""
         seen: dict[str, str] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -153,7 +154,7 @@ class TestHttpxSyncTransport:
         assert "api.example.com" in seen["url"]
 
     def test_send_passes_headers(self) -> None:
-        """Custom headers are forwarded to httpx."""
+        """Custom headers are forwarded to httpx2."""
         seen: dict[str, str] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -174,7 +175,7 @@ class TestHttpxSyncTransport:
         assert seen.get("authorization") == "Bearer token"
 
     def test_send_passes_content(self) -> None:
-        """Request body (content) is forwarded to httpx."""
+        """Request body (content) is forwarded to httpx2."""
         seen: dict[str, bytes] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -200,7 +201,7 @@ class TestHttpxSyncTransport:
         assert resp.status_code == 404
 
     def test_response_headers_mapped(self) -> None:
-        """Response headers from httpx are mapped to the Response object."""
+        """Response headers from httpx2 are mapped to the Response object."""
         client = _make_sync_client(
             _mock_response(200, b"", headers={"X-Custom": "value"})
         )
@@ -224,7 +225,7 @@ class TestHttpxSyncTransport:
         transport.close()
 
     def test_per_request_timeout_overrides_transport_timeout(self) -> None:
-        """When Request.timeout is set it is forwarded to httpx as a timeout kwarg."""
+        """When Request.timeout is set it is forwarded to httpx2 as a timeout kwarg."""
         seen: dict[str, object] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -236,7 +237,7 @@ class TestHttpxSyncTransport:
         transport = HttpxSyncTransport(client=client)
         transport.send(Request(method="GET", url="https://example.com", timeout=120.0))
 
-        # httpx converts the float to a Timeout mapping in extensions
+        # httpx2 converts the float to a Timeout mapping in extensions
         assert seen["timeout"] is not None
 
     def test_no_per_request_timeout_uses_client_default(self) -> None:
@@ -255,7 +256,7 @@ class TestHttpxSyncTransport:
         transport = HttpxSyncTransport(client=client)
         transport.send(Request(method="GET", url="https://example.com"))
 
-        # transport-level timeout is still applied by httpx itself
+        # transport-level timeout is still applied by httpx2 itself
         assert seen["timeout"] is not None
 
     def test_stream_request_returns_streaming_response(self) -> None:
@@ -274,7 +275,7 @@ class TestHttpxSyncTransport:
         response.close()
 
     def test_stream_request_forwards_timeout(self) -> None:
-        """A stream request forwards per-request timeout to httpx.send()."""
+        """A stream request forwards per-request timeout to httpx2.send()."""
         seen: dict[str, object] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -317,7 +318,7 @@ class TestHttpxAsyncTransport:
         assert isinstance(getattr(resp, "_raw", None), httpx.Response)
 
     async def test_send_passes_method_and_url(self) -> None:
-        """The method and URL are forwarded to httpx correctly."""
+        """The method and URL are forwarded to httpx2 correctly."""
         seen: dict[str, str] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -334,7 +335,7 @@ class TestHttpxAsyncTransport:
         assert "api.example.com" in seen["url"]
 
     async def test_send_passes_headers(self) -> None:
-        """Custom headers are forwarded to httpx."""
+        """Custom headers are forwarded to httpx2."""
         seen: dict[str, str] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -355,7 +356,7 @@ class TestHttpxAsyncTransport:
         assert seen.get("x-api-key") == "secret"
 
     async def test_send_passes_content(self) -> None:
-        """Request body (content) is forwarded to httpx."""
+        """Request body (content) is forwarded to httpx2."""
         seen: dict[str, bytes] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -381,7 +382,7 @@ class TestHttpxAsyncTransport:
         assert resp.status_code == 503
 
     async def test_response_headers_mapped(self) -> None:
-        """Response headers from httpx are mapped to the Response object."""
+        """Response headers from httpx2 are mapped to the Response object."""
         client = _make_async_client(
             _mock_response(200, b"", headers={"X-Rate-Limit": "100"})
         )
@@ -407,7 +408,7 @@ class TestHttpxAsyncTransport:
         await transport.aclose()
 
     async def test_per_request_timeout_overrides_transport_timeout(self) -> None:
-        """When Request.timeout is set it is forwarded to httpx as a timeout kwarg."""
+        """When Request.timeout is set it is forwarded to httpx2 as a timeout kwarg."""
         seen: dict[str, object] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -440,7 +441,7 @@ class TestHttpxAsyncTransport:
         await response.aclose()
 
     async def test_stream_request_forwards_timeout(self) -> None:
-        """An async stream request forwards timeout to httpx.send()."""
+        """An async stream request forwards timeout to httpx2.send()."""
         seen: dict[str, object] = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -595,6 +596,130 @@ class TestHttpxTransportFromSettings:
         assert retry_mw._policy.max_attempts == 6
         assert retry_mw._policy.backoff_max == 5.0
         await transport.aclose()
+
+    def test_build_sync_client_honors_httpx2_options(self) -> None:
+        """Client builder wires http2, trust_env, redirects, and limits."""
+        captured: dict[str, object] = {}
+        real_client = httpx.Client
+        httpx_mod: Any = httpx
+
+        class _DummyClient:
+            def close(self) -> None:
+                return
+
+        def _fake_client(**kwargs: object) -> _DummyClient:
+            captured.update(kwargs)
+            return _DummyClient()
+
+        httpx_mod.Client = _fake_client
+        try:
+            settings = HTTPSettings(
+                http2=True,
+                trust_env=False,
+                max_redirects=9,
+                max_connections=40,
+                max_keepalive_connections=12,
+                keepalive_expiry=25.0,
+            )
+            client = transport_module._build_httpx_client(settings)
+            assert isinstance(client, _DummyClient)
+            assert captured["http2"] is True
+            assert captured["trust_env"] is False
+            assert captured["max_redirects"] == 9
+            limits = captured["limits"]
+            assert isinstance(limits, httpx.Limits)
+        finally:
+            httpx_mod.Client = real_client
+
+    def test_build_sync_client_omits_limits_when_not_set(self) -> None:
+        """Client builder omits limits kwarg when all limit settings are None."""
+        captured: dict[str, object] = {}
+        real_client = httpx.Client
+        httpx_mod: Any = httpx
+
+        class _DummyClient:
+            def close(self) -> None:
+                return
+
+        def _fake_client(**kwargs: object) -> _DummyClient:
+            captured.update(kwargs)
+            return _DummyClient()
+
+        httpx_mod.Client = _fake_client
+        try:
+            settings = HTTPSettings(
+                max_connections=None,
+                max_keepalive_connections=None,
+                keepalive_expiry=None,
+            )
+            client = transport_module._build_httpx_client(settings)
+            assert isinstance(client, _DummyClient)
+            assert "limits" not in captured
+        finally:
+            httpx_mod.Client = real_client
+
+    async def test_build_async_client_honors_httpx2_options(self) -> None:
+        """Async client builder wires http2, trust_env, redirects, and limits."""
+        captured: dict[str, object] = {}
+        real_async_client = httpx.AsyncClient
+        httpx_mod: Any = httpx
+
+        class _DummyAsyncClient:
+            async def aclose(self) -> None:  # C0116
+                return
+
+        def _fake_async_client(**kwargs: object) -> _DummyAsyncClient:
+            captured.update(kwargs)
+            return _DummyAsyncClient()
+
+        httpx_mod.AsyncClient = _fake_async_client
+        try:
+            settings = HTTPSettings(
+                http2=True,
+                trust_env=False,
+                max_redirects=7,
+                max_connections=30,
+                max_keepalive_connections=10,
+                keepalive_expiry=20.0,
+            )
+            client = transport_module._build_httpx_async_client(settings)
+            assert isinstance(client, _DummyAsyncClient)
+            assert captured["http2"] is True
+            assert captured["trust_env"] is False
+            assert captured["max_redirects"] == 7
+            limits = captured["limits"]
+            assert isinstance(limits, httpx.Limits)
+            await client.aclose()
+        finally:
+            httpx_mod.AsyncClient = real_async_client
+
+    async def test_build_async_client_omits_limits_when_not_set(self) -> None:
+        """Async builder omits limits kwarg when all limit settings are None."""
+        captured: dict[str, object] = {}
+        real_async_client = httpx.AsyncClient
+        httpx_mod: Any = httpx
+
+        class _DummyAsyncClient:
+            async def aclose(self) -> None:
+                return
+
+        def _fake_async_client(**kwargs: object) -> _DummyAsyncClient:
+            captured.update(kwargs)
+            return _DummyAsyncClient()
+
+        httpx_mod.AsyncClient = _fake_async_client
+        try:
+            settings = HTTPSettings(
+                max_connections=None,
+                max_keepalive_connections=None,
+                keepalive_expiry=None,
+            )
+            client = transport_module._build_httpx_async_client(settings)
+            assert isinstance(client, _DummyAsyncClient)
+            assert "limits" not in captured
+            await client.aclose()
+        finally:
+            httpx_mod.AsyncClient = real_async_client
 
     def test_inherits_base_sync_transport(self) -> None:
         """Validate inherits base sync transport."""
@@ -785,7 +910,7 @@ class TestHttpxTransportFromSettingsCache:
 
 
 class TestHttpxTransportMiddlewaresParam:
-    """Tests that middlewares can be passed to httpx transport constructors."""
+    """Tests that middlewares can be passed to httpx2 transport constructors."""
 
     def test_sync_transport_stores_middlewares(self) -> None:
         """Validate sync transport stores middlewares."""
