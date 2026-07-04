@@ -249,7 +249,7 @@ class LLMService(APIService):
         """Yield parsed stream chunks from a streaming response."""
         lines = (_line_to_text(line) for line in response.iter_lines())
         for event_payload in _iter_sse_event_data(lines):
-            chunk = self._parse_event_payload(event_payload)
+            chunk = self.parse_stream_line(event_payload)
             if chunk is not None:
                 yield chunk
 
@@ -327,6 +327,6 @@ class AsyncLLMService(AsyncAPIService):
         """Yield parsed stream chunks from an async streaming response."""
         lines = (_line_to_text(line) async for line in response.aiter_lines())
         async for event_payload in _aiter_sse_event_data(lines):
-            chunk = LLMService._parse_event_payload(event_payload)
+            chunk = self.parse_stream_line(event_payload)
             if chunk is not None:
                 yield chunk

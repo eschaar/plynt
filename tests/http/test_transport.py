@@ -631,6 +631,33 @@ class TestHttpxTransportFromSettings:
         finally:
             httpx_mod.Client = real_client
 
+    def test_build_sync_client_omits_limits_when_not_set(self) -> None:
+        """Client builder omits limits kwarg when all limit settings are None."""
+        captured: dict[str, object] = {}
+        real_client = httpx.Client
+        httpx_mod: Any = httpx
+
+        class _DummyClient:
+            def close(self) -> None:
+                return
+
+        def _fake_client(**kwargs: object) -> _DummyClient:
+            captured.update(kwargs)
+            return _DummyClient()
+
+        httpx_mod.Client = _fake_client
+        try:
+            settings = HTTPSettings(
+                max_connections=None,
+                max_keepalive_connections=None,
+                keepalive_expiry=None,
+            )
+            client = transport_module._build_httpx_client(settings)
+            assert isinstance(client, _DummyClient)
+            assert "limits" not in captured
+        finally:
+            httpx_mod.Client = real_client
+
     async def test_build_async_client_honors_httpx2_options(self) -> None:
         """Async client builder wires http2, trust_env, redirects, and limits."""
         captured: dict[str, object] = {}
@@ -662,6 +689,34 @@ class TestHttpxTransportFromSettings:
             assert captured["max_redirects"] == 7
             limits = captured["limits"]
             assert isinstance(limits, httpx.Limits)
+            await client.aclose()
+        finally:
+            httpx_mod.AsyncClient = real_async_client
+
+    async def test_build_async_client_omits_limits_when_not_set(self) -> None:
+        """Async builder omits limits kwarg when all limit settings are None."""
+        captured: dict[str, object] = {}
+        real_async_client = httpx.AsyncClient
+        httpx_mod: Any = httpx
+
+        class _DummyAsyncClient:
+            async def aclose(self) -> None:
+                return
+
+        def _fake_async_client(**kwargs: object) -> _DummyAsyncClient:
+            captured.update(kwargs)
+            return _DummyAsyncClient()
+
+        httpx_mod.AsyncClient = _fake_async_client
+        try:
+            settings = HTTPSettings(
+                max_connections=None,
+                max_keepalive_connections=None,
+                keepalive_expiry=None,
+            )
+            client = transport_module._build_httpx_async_client(settings)
+            assert isinstance(client, _DummyAsyncClient)
+            assert "limits" not in captured
             await client.aclose()
         finally:
             httpx_mod.AsyncClient = real_async_client
