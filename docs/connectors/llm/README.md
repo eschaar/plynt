@@ -14,6 +14,17 @@ The connector provides:
 The connector intentionally avoids provider-specific endpoint schemas and
 does not depend on Salesforce connector internals.
 
+## Terminology and scope
+
+- `plynth.connectors.llm` is a **connector**: it defines a neutral LLM domain
+  contract and orchestration surface.
+- Provider-specific mapping components are **adapters** under this connector.
+
+Current scope for this connector is the generic contract and generic services.
+Provider-specific adapters are planned but not shipped yet.
+
+Initial candidates for provider adapters are OpenAI and Anthropic.
+
 ## Public API
 
 - `LLMService` / `AsyncLLMService`

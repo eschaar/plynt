@@ -23,6 +23,22 @@ Core abstractions live in `plynth.base` and are protocol-agnostic.
 HTTP-specific implementations live in `plynth.http`.
 Business connectors (for example Salesforce) live in `plynth.connectors.*`.
 
+## Connector vs Adapter
+
+Use these terms consistently:
+
+- **Connector**: domain-facing integration surface for an external platform.
+  A connector owns domain models and service orchestration for that platform.
+  Examples: `plynth.connectors.salesforce`, `plynth.connectors.llm`.
+- **Adapter**: interface translation component between two boundaries.
+  Adapters translate payloads, framework contracts, or transport concerns.
+
+Typical placement:
+
+- Framework adapters live near core boundaries.
+- Provider adapters can live inside a connector when one connector supports
+  multiple providers under a shared contract.
+
 ## Runtime Flow
 
 A typical request path is:
