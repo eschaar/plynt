@@ -65,6 +65,7 @@ ______________________________________________________________________
 - [Product Vision](docs/product/vision.md)
 - [Product Requirements](docs/product/requirements.md)
 - [Product Roadmap](docs/product/roadmap.md)
+- [Generic LLM Connector Guide](docs/connectors/llm/README.md)
 - [Salesforce Integration Guide](docs/connectors/salesforce/README.md)
 - [Contributing](CONTRIBUTING.md)
 
@@ -162,8 +163,12 @@ High-level planned areas:
 
 - Framework adapters (Django, FastAPI, Flask)
 - gRPC transport (`plynth[grpc]`) as foundation for Salesforce Pub/Sub CDC
-- Generic AI / LLM connector (`plynth.connectors.llm`)
 - SOAP transport (`plynth[soap]`) as long-term extension
+
+Shipped connector highlights:
+
+- Generic AI / LLM connector (`plynth.connectors.llm`) with neutral request,
+  completion, and streaming chunk contract models.
 
 ______________________________________________________________________
 

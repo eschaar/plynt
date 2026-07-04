@@ -64,6 +64,7 @@ full walkthrough.
 Plynth ships with a Salesforce connector. Connector-specific documentation
 lives alongside the connector:
 
+- [Generic LLM connector](../connectors/llm/README.md)
 - [Salesforce connector](../connectors/salesforce/user/README.md)
 
 ## Installation extras

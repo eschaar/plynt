@@ -31,7 +31,7 @@ ______________________________________________________________________
 | 4   | Framework adapters (Django / FastAPI / Flask)      | **Planned**     | ADR required per adapter; deferred until core is stable                            |
 | 5   | Cache backend documentation                        | **Done**        | Redis SSL, framework-native wrapping, and custom backend how-to guides added       |
 | 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                       |
-| 7   | AI / LLM connector `plynth.connectors.llm`         | **Planned**     | ADR-0021 scoped; parallel with Salesforce AI                                       |
+| 7   | AI / LLM connector `plynth.connectors.llm`         | **Done**        | Generic contract models and sync/async service parity implemented                  |
 | 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                      |
 | 9   | Connector package extraction                       | **Planned**     | Policy defined; individual extractions need ADR                                    |
 
@@ -635,13 +635,13 @@ ______________________________________________________________________
 
 ### 7. AI / LLM connector (`plynth.connectors.llm`)
 
-**Status:** Scoped. Generic contract proposed in ADR-0021.
+**Status:** Implemented.
 
 Plynth's transport and middleware chain is well-suited for LLM API clients:
 auth (API key via `BearerTokenAuthMiddleware`), retry, and rate limiting are
 already available, and streaming response support is already shipped.
 
-Anticipated scope:
+Implemented scope:
 
 - Generic `LLMService` contract on top of `APIService`.
 - Typed, provider-agnostic request and response primitives.
@@ -649,10 +649,16 @@ Anticipated scope:
 - Optional tool-calling workflow in neutral contract types.
 - Provider-local extensions that stay opaque to the generic layer.
 
-**Prerequisite:**
+Shipped in this implementation:
 
-1. ADR-0021 must be accepted.
-1. Contract conformance and connector-boundary tests must be defined.
+- `LLMService` / `AsyncLLMService` on top of `APIService` and `AsyncAPIService`
+- Typed, provider-agnostic request and response primitives in
+  `plynth.connectors.llm.models`
+- Streaming and non-streaming parity with one shared contract model
+- Optional tool-calling workflow in neutral contract types
+- Opaque provider extension fields (`provider_extensions`) for provider-local
+  behavior
+- Contract conformance tests and connector-boundary tests
 
 **Roadmap note:**
 
