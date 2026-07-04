@@ -13,7 +13,12 @@ from plynth.connectors.llm.models import (
     LLMToolDefinition,
     LLMUsage,
 )
-from plynth.connectors.llm.service import AsyncLLMService, LLMService
+from plynth.connectors.llm.service import (
+    AsyncLLMService,
+    LLMRequestPayloadAdapter,
+    LLMService,
+    LLMStreamParseError,
+)
 
 __all__ = [
     "AsyncLLMService",
@@ -22,9 +27,11 @@ __all__ = [
     "LLMExecutionOptions",
     "LLMGenerateRequest",
     "LLMMessage",
+    "LLMRequestPayloadAdapter",
     "LLMService",
     "LLMStreamChoice",
     "LLMStreamChunk",
+    "LLMStreamParseError",
     "LLMToolCall",
     "LLMToolCallFunction",
     "LLMToolDefinition",
