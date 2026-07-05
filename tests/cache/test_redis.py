@@ -22,7 +22,7 @@ class TestRedisCache:
 
     def _make(self, prefix: str = "test:") -> RedisCache:
         """Handle make."""
-        return RedisCache(fakeredis.FakeRedis(), prefix=prefix)
+        return RedisCache(fakeredis.FakeRedis(host="127.0.0.1"), prefix=prefix)
 
     def test_satisfies_cache_backend_protocol(self) -> None:
         """Validate satisfies cache backend protocol."""
@@ -57,7 +57,7 @@ class TestRedisCache:
 
     def test_clear_removes_only_prefixed_keys(self) -> None:
         """Validate clear removes only prefixed keys."""
-        fake = fakeredis.FakeRedis()
+        fake = fakeredis.FakeRedis(host="127.0.0.1")
         backend = RedisCache(fake, prefix="plynth:")
         backend.set("a", 1)
         backend.set("b", 2)
@@ -127,7 +127,7 @@ class TestRedisCacheConfig:
     def test_requires_location(self) -> None:
         """Validate requires location."""
         with pytest.raises(TypeError):
-            RedisCacheConfig()  # type: ignore[call-arg]
+            RedisCacheConfig(**{})
 
     def test_empty_location_raises(self) -> None:
         """Validate empty location raises."""

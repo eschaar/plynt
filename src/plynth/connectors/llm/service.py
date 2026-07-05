@@ -8,11 +8,15 @@ opaque extension fields without leaking into this layer.
 from __future__ import annotations
 
 import json
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Iterator
 from json import JSONDecodeError
 from typing import Any
 
 from plynth.base.response import AsyncStreamingResponse, StreamingResponse
+from plynth.connectors.llm.adapters.base import (
+    LLMAdapterSet,
+    build_default_adapter_set,
+)
 from plynth.connectors.llm.models import (
     LLMCompletion,
     LLMGenerateRequest,
@@ -22,13 +26,12 @@ from plynth.http.client import APIClient, AsyncAPIClient
 from plynth.http.renderer import Renderer
 from plynth.http.service import APIService, AsyncAPIService
 
-LLMRequestPayloadAdapter = Callable[[LLMGenerateRequest, bool], dict[str, Any]]
-
 __all__ = [
     "AsyncLLMService",
-    "LLMRequestPayloadAdapter",
+    "LLMAdapterSet",
     "LLMService",
     "LLMStreamParseError",
+    "build_default_adapter_set",
 ]
 
 
@@ -158,12 +161,12 @@ class LLMService(APIService):
         *,
         renderer: Renderer | None = None,
         base_path: str = "/v1/llm",
-        payload_adapter: LLMRequestPayloadAdapter | None = None,
+        adapter_set: LLMAdapterSet | None = None,
     ) -> None:
         """Initialize LLMService."""
         super().__init__(client, renderer=renderer)
         self._base_path = base_path.rstrip("/")
-        self._payload_adapter = payload_adapter
+        self._adapter_set = adapter_set or build_default_adapter_set()
 
     def _serialize_request(
         self,
@@ -171,13 +174,11 @@ class LLMService(APIService):
         *,
         stream: bool,
     ) -> dict[str, Any]:
-        """Return request payload using optional provider adapter."""
-        if self._payload_adapter is not None:
-            return self._payload_adapter(request, stream)
-
-        if stream:
-            return request.with_stream(True).to_payload()
-        return request.to_payload()
+        """Return request payload using configured adapter set."""
+        return self._adapter_set.request_adapter.to_provider_payload(
+            request,
+            stream=stream,
+        )
 
     def generate(
         self,
@@ -193,7 +194,13 @@ class LLMService(APIService):
             ),
         )
         payload = json.loads(resp.content or b"{}")
-        return LLMCompletion.from_payload(payload)
+        if not isinstance(payload, dict):
+            payload = {}
+
+        normalized_payload = (
+            self._adapter_set.completion_adapter.to_neutral_completion_payload(payload)
+        )
+        return LLMCompletion.from_payload(normalized_payload)
 
     def generate_stream(
         self,
@@ -211,22 +218,6 @@ class LLMService(APIService):
         )
 
     @staticmethod
-    def _parse_event_payload(payload_line: str) -> LLMStreamChunk | None:
-        """Parse one event payload string into a normalized stream chunk."""
-        stripped = payload_line.strip()
-        if not stripped or stripped == "[DONE]":
-            return None
-
-        try:
-            payload = json.loads(stripped)
-        except JSONDecodeError as exc:
-            raise LLMStreamParseError(
-                "Failed to parse LLM stream event payload"
-            ) from exc
-
-        return LLMStreamChunk.from_payload(payload)
-
-    @staticmethod
     def parse_stream_line(line: str) -> LLMStreamChunk | None:
         """Parse one SSE or JSON line into a normalized stream chunk.
 
@@ -240,7 +231,14 @@ class LLMService(APIService):
         if stripped.startswith("data:"):
             stripped = stripped[len("data:") :].strip()
 
-        return LLMService._parse_event_payload(stripped)
+        try:
+            return build_default_adapter_set().stream_adapter.parse_event_payload(
+                stripped
+            )
+        except ValueError as exc:
+            raise LLMStreamParseError(
+                "Failed to parse LLM stream event payload"
+            ) from exc
 
     def iter_stream_chunks(
         self,
@@ -249,7 +247,14 @@ class LLMService(APIService):
         """Yield parsed stream chunks from a streaming response."""
         lines = (_line_to_text(line) for line in response.iter_lines())
         for event_payload in _iter_sse_event_data(lines):
-            chunk = self.parse_stream_line(event_payload)
+            try:
+                chunk = self._adapter_set.stream_adapter.parse_event_payload(
+                    event_payload
+                )
+            except ValueError as exc:
+                raise LLMStreamParseError(
+                    "Failed to parse LLM stream event payload"
+                ) from exc
             if chunk is not None:
                 yield chunk
 
@@ -263,12 +268,12 @@ class AsyncLLMService(AsyncAPIService):
         *,
         renderer: Renderer | None = None,
         base_path: str = "/v1/llm",
-        payload_adapter: LLMRequestPayloadAdapter | None = None,
+        adapter_set: LLMAdapterSet | None = None,
     ) -> None:
         """Initialize AsyncLLMService."""
         super().__init__(client, renderer=renderer)
         self._base_path = base_path.rstrip("/")
-        self._payload_adapter = payload_adapter
+        self._adapter_set = adapter_set or build_default_adapter_set()
 
     def _serialize_request(
         self,
@@ -276,13 +281,11 @@ class AsyncLLMService(AsyncAPIService):
         *,
         stream: bool,
     ) -> dict[str, Any]:
-        """Return request payload using optional provider adapter."""
-        if self._payload_adapter is not None:
-            return self._payload_adapter(request, stream)
-
-        if stream:
-            return request.with_stream(True).to_payload()
-        return request.to_payload()
+        """Return request payload using configured adapter set."""
+        return self._adapter_set.request_adapter.to_provider_payload(
+            request,
+            stream=stream,
+        )
 
     async def generate(
         self,
@@ -298,7 +301,13 @@ class AsyncLLMService(AsyncAPIService):
             ),
         )
         payload = json.loads(resp.content or b"{}")
-        return LLMCompletion.from_payload(payload)
+        if not isinstance(payload, dict):
+            payload = {}
+
+        normalized_payload = (
+            self._adapter_set.completion_adapter.to_neutral_completion_payload(payload)
+        )
+        return LLMCompletion.from_payload(normalized_payload)
 
     async def generate_stream(
         self,
@@ -327,6 +336,13 @@ class AsyncLLMService(AsyncAPIService):
         """Yield parsed stream chunks from an async streaming response."""
         lines = (_line_to_text(line) async for line in response.aiter_lines())
         async for event_payload in _aiter_sse_event_data(lines):
-            chunk = self.parse_stream_line(event_payload)
+            try:
+                chunk = self._adapter_set.stream_adapter.parse_event_payload(
+                    event_payload
+                )
+            except ValueError as exc:
+                raise LLMStreamParseError(
+                    "Failed to parse LLM stream event payload"
+                ) from exc
             if chunk is not None:
                 yield chunk

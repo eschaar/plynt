@@ -85,7 +85,7 @@ class RedisCache(CacheBackend, SupportsTTL, SupportsStats):
         data = pickle.dumps(value)
         rkey = self._key(key)
         if ttl is not None:
-            self._client.setex(rkey, max(1, int(ttl)), data)
+            self._client.set(rkey, data, ex=max(1, int(ttl)))
         else:
             self._client.set(rkey, data)
 

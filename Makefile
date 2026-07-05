@@ -4,6 +4,7 @@
 #   make              - show help
 #   make install      - create .venv and install all dev dependencies
 #   make clean        - remove build artifacts
+#   make purge        - remove build artifacts, .venv, and .tox
 #   make lint         - run all linters
 #   make lint-fix     - auto-fix ruff lint issues
 #   make format       - auto-format code and markdown
@@ -44,7 +45,7 @@ help:
 	@echo ""
 	@echo "  install       Create .venv and install all dev dependencies"
 	@echo "  clean         Remove build artifacts (keeps .venv)"
-	@echo "  purge         Remove build artifacts and .venv (full clean)"
+	@echo "  purge         Remove build artifacts, .venv, and .tox (full clean)"
 	@echo "  lint          Run all linters (ruff, mypy)"
 	@echo "  lint-fix      Auto-fix ruff lint issues"
 	@echo "  format        Auto-format source code and markdown"
@@ -102,6 +103,7 @@ clean: pyclean
 .PHONY: purge
 purge: clean
 	rm -rf $(VENV)
+	rm -rf .tox
 
 # ---------------------------------------------------------------------------
 # Linting
