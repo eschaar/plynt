@@ -14,6 +14,7 @@ from plynth.connectors.llm import (
     LLMService,
     LLMStreamParseError,
 )
+from plynth.connectors.llm.adapters import LLMAdapterSet, build_default_adapter_set
 from plynth.http.client import APIClient, AsyncAPIClient
 from plynth.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
@@ -62,24 +63,62 @@ def _make_service(
     *,
     status_code: int = 200,
     content: bytes = b"{}",
-    payload_adapter: Any | None = None,
+    adapter_set: LLMAdapterSet | None = None,
 ) -> tuple[LLMService, MockSyncTransport]:
     """Build LLMService with a sync mock transport."""
     transport = MockSyncTransport(status_code=status_code, content=content)
     client = APIClient(base_url=_DUMMY_BASE_URL, transport=transport)
-    return LLMService(client, payload_adapter=payload_adapter), transport
+    return LLMService(client, adapter_set=adapter_set), transport
 
 
 def _make_async_service(
     *,
     status_code: int = 200,
     content: bytes = b"{}",
-    payload_adapter: Any | None = None,
+    adapter_set: LLMAdapterSet | None = None,
 ) -> tuple[AsyncLLMService, MockAsyncTransport]:
     """Build AsyncLLMService with an async mock transport."""
     transport = MockAsyncTransport(status_code=status_code, content=content)
     client = AsyncAPIClient(base_url=_DUMMY_BASE_URL, transport=transport)
-    return AsyncLLMService(client, payload_adapter=payload_adapter), transport
+    return AsyncLLMService(client, adapter_set=adapter_set), transport
+
+
+class _TestRequestAdapter:
+    """Test request adapter that records invocation metadata."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[bool, str | None]] = []
+
+    def to_provider_payload(
+        self,
+        request: LLMGenerateRequest,
+        *,
+        stream: bool,
+    ) -> dict[str, Any]:
+        self.calls.append((stream, request.model))
+        return {
+            "input": request.to_payload()["messages"],
+            "streaming": stream,
+        }
+
+
+class _TestResponseAdapter:
+    """Test response adapter mapping provider payload to neutral completion shape."""
+
+    def to_neutral_completion_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        text = payload.get("text", "")
+        if not isinstance(text, str):
+            text = ""
+
+        return {
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": text},
+                    "finish_reason": "stop",
+                }
+            ]
+        }
 
 
 class TestLLMService:
@@ -133,53 +172,45 @@ class TestLLMService:
         }
         assert isinstance(result, StreamingResponse)
 
-    def test_generate_uses_payload_adapter_for_provider_mapping(self) -> None:
-        """generate uses adapter output when provider payload shape differs."""
-        adapter_calls: list[tuple[bool, str | None]] = []
+    def test_generate_uses_request_and_response_adapters(self) -> None:
+        """generate uses adapter set for provider request and response mapping."""
+        request_adapter = _TestRequestAdapter()
+        response_adapter = _TestResponseAdapter()
 
-        def adapter(request: LLMGenerateRequest, stream: bool) -> dict[str, Any]:
-            adapter_calls.append((stream, request.model))
-            return {
-                "input": request.to_payload()["messages"],
-                "streaming": stream,
-            }
-
-        payload = {
-            "choices": [
-                {
-                    "index": 0,
-                    "message": {"role": "assistant", "content": "ok"},
-                    "finish_reason": "stop",
-                }
-            ]
-        }
+        payload = {"text": "ok"}
         svc, transport = _make_service(
             content=_json_bytes(payload),
-            payload_adapter=adapter,
+            adapter_set=LLMAdapterSet(
+                request_adapter=request_adapter,
+                completion_adapter=response_adapter,
+                stream_adapter=build_default_adapter_set().stream_adapter,
+            ),
         )
 
         request = LLMGenerateRequest(
             messages=[{"role": "user", "content": "Hello"}],
             model="demo",
         )
-        svc.generate(request)
+        result = svc.generate(request)
 
         sent = transport.send.call_args[0][0]
         assert json.loads(sent.content or b"{}") == {
             "input": [{"role": "user", "content": "Hello"}],
             "streaming": False,
         }
-        assert adapter_calls == [(False, "demo")]
+        assert request_adapter.calls == [(False, "demo")]
+        assert result.choices[0].message.content == "ok"
 
-    def test_generate_stream_uses_payload_adapter(self) -> None:
-        """generate_stream uses adapter output with stream flag enabled."""
-        adapter_calls: list[bool] = []
-
-        def adapter(_: LLMGenerateRequest, stream: bool) -> dict[str, Any]:
-            adapter_calls.append(stream)
-            return {"streaming": stream}
-
-        svc, transport = _make_service(payload_adapter=adapter)
+    def test_generate_stream_uses_request_adapter(self) -> None:
+        """generate_stream uses configured request adapter with stream flag."""
+        request_adapter = _TestRequestAdapter()
+        svc, transport = _make_service(
+            adapter_set=LLMAdapterSet(
+                request_adapter=request_adapter,
+                completion_adapter=build_default_adapter_set().completion_adapter,
+                stream_adapter=build_default_adapter_set().stream_adapter,
+            )
+        )
         streaming = StreamingResponse(
             status_code=200,
             headers={},
@@ -192,8 +223,11 @@ class TestLLMService:
         svc.generate_stream(request)
 
         sent = transport.send.call_args[0][0]
-        assert json.loads(sent.content or b"{}") == {"streaming": True}
-        assert adapter_calls == [True]
+        assert json.loads(sent.content or b"{}") == {
+            "input": [{"role": "user", "content": "Hello"}],
+            "streaming": True,
+        }
+        assert request_adapter.calls == [(True, None)]
 
     def test_parse_stream_line_handles_sse_and_done_marker(self) -> None:
         """parse_stream_line parses SSE data lines and ignores [DONE]."""
@@ -392,53 +426,45 @@ class TestAsyncLLMService:
         }
         assert isinstance(result, AsyncStreamingResponse)
 
-    async def test_generate_uses_payload_adapter_for_provider_mapping(self) -> None:
-        """Async generate uses adapter output when provider shape differs."""
-        adapter_calls: list[tuple[bool, str | None]] = []
+    async def test_generate_uses_request_and_response_adapters(self) -> None:
+        """Async generate uses adapter set for request and response mapping."""
+        request_adapter = _TestRequestAdapter()
+        response_adapter = _TestResponseAdapter()
 
-        def adapter(request: LLMGenerateRequest, stream: bool) -> dict[str, Any]:
-            adapter_calls.append((stream, request.model))
-            return {
-                "input": request.to_payload()["messages"],
-                "streaming": stream,
-            }
-
-        payload = {
-            "choices": [
-                {
-                    "index": 0,
-                    "message": {"role": "assistant", "content": "ok"},
-                    "finish_reason": "stop",
-                }
-            ]
-        }
+        payload = {"text": "ok"}
         svc, transport = _make_async_service(
             content=_json_bytes(payload),
-            payload_adapter=adapter,
+            adapter_set=LLMAdapterSet(
+                request_adapter=request_adapter,
+                completion_adapter=response_adapter,
+                stream_adapter=build_default_adapter_set().stream_adapter,
+            ),
         )
 
         request = LLMGenerateRequest(
             messages=[{"role": "user", "content": "Hello"}],
             model="demo",
         )
-        await svc.generate(request)
+        result = await svc.generate(request)
 
         sent = transport.send.call_args[0][0]
         assert json.loads(sent.content or b"{}") == {
             "input": [{"role": "user", "content": "Hello"}],
             "streaming": False,
         }
-        assert adapter_calls == [(False, "demo")]
+        assert request_adapter.calls == [(False, "demo")]
+        assert result.choices[0].message.content == "ok"
 
-    async def test_generate_stream_uses_payload_adapter(self) -> None:
-        """Async generate_stream uses adapter output with stream flag enabled."""
-        adapter_calls: list[bool] = []
-
-        def adapter(_: LLMGenerateRequest, stream: bool) -> dict[str, Any]:
-            adapter_calls.append(stream)
-            return {"streaming": stream}
-
-        svc, transport = _make_async_service(payload_adapter=adapter)
+    async def test_generate_stream_uses_request_adapter(self) -> None:
+        """Async generate_stream uses configured request adapter."""
+        request_adapter = _TestRequestAdapter()
+        svc, transport = _make_async_service(
+            adapter_set=LLMAdapterSet(
+                request_adapter=request_adapter,
+                completion_adapter=build_default_adapter_set().completion_adapter,
+                stream_adapter=build_default_adapter_set().stream_adapter,
+            )
+        )
         streaming = AsyncStreamingResponse(
             status_code=200,
             headers={},
@@ -451,8 +477,11 @@ class TestAsyncLLMService:
         await svc.generate_stream(request)
 
         sent = transport.send.call_args[0][0]
-        assert json.loads(sent.content or b"{}") == {"streaming": True}
-        assert adapter_calls == [True]
+        assert json.loads(sent.content or b"{}") == {
+            "input": [{"role": "user", "content": "Hello"}],
+            "streaming": True,
+        }
+        assert request_adapter.calls == [(True, None)]
 
     async def test_iter_stream_chunks_yields_parsed_chunks(self) -> None:
         """Async iter_stream_chunks yields normalized chunks from lines."""

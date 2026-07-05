@@ -1,5 +1,13 @@
 """Generic, provider-agnostic LLM connector for plynth."""
 
+from plynth.connectors.llm.adapters import (
+    LLMAdapterSet,
+    OpenAIResponsesCompletionAdapter,
+    OpenAIResponsesRequestAdapter,
+    OpenAIResponsesStreamAdapter,
+    build_default_adapter_set,
+    build_openai_responses_adapter_set,
+)
 from plynth.connectors.llm.models import (
     LLMCompletion,
     LLMCompletionChoice,
@@ -15,19 +23,18 @@ from plynth.connectors.llm.models import (
 )
 from plynth.connectors.llm.service import (
     AsyncLLMService,
-    LLMRequestPayloadAdapter,
     LLMService,
     LLMStreamParseError,
 )
 
 __all__ = [
     "AsyncLLMService",
+    "LLMAdapterSet",
     "LLMCompletion",
     "LLMCompletionChoice",
     "LLMExecutionOptions",
     "LLMGenerateRequest",
     "LLMMessage",
-    "LLMRequestPayloadAdapter",
     "LLMService",
     "LLMStreamChoice",
     "LLMStreamChunk",
@@ -36,4 +43,9 @@ __all__ = [
     "LLMToolCallFunction",
     "LLMToolDefinition",
     "LLMUsage",
+    "OpenAIResponsesCompletionAdapter",
+    "OpenAIResponsesRequestAdapter",
+    "OpenAIResponsesStreamAdapter",
+    "build_default_adapter_set",
+    "build_openai_responses_adapter_set",
 ]
