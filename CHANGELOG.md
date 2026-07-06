@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.6.2](https://github.com/eschaar/plynth/compare/0.6.1...0.6.2) (2026-07-06)
+
+
+### Maintenance
+
+* **ci:** bump actions/checkout from 6 to 7 ([06f2ffc](https://github.com/eschaar/plynth/commit/06f2ffc6c0ee8f21ed0a44c2e82f6375e5f6483e))
+* **ci:** bump trufflesecurity/trufflehog in the gha-patch-minor group ([743ba7e](https://github.com/eschaar/plynth/commit/743ba7eca7210150c40cb792a0d4721e99538877))
+
 ## [0.6.1](https://github.com/eschaar/plynth/compare/0.6.0...0.6.1) (2026-07-05)
 
 
