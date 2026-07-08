@@ -117,6 +117,28 @@ class TestOpenAIInternalMappers:
 
         assert mapped == {"role": "user", "content": ""}
 
+    def test_request_mapper_normalizes_invalid_dict_role_and_content(self) -> None:
+        """Request mapper normalizes raw dict role/content to stable values."""
+        mapped = _OpenAIRequestMapper.message_to_input_item(
+            {"role": None, "content": None}
+        )
+
+        assert mapped == {"role": "user", "content": ""}
+
+    def test_request_mapper_keeps_typed_multimodal_content_shape(self) -> None:
+        """Request mapper preserves typed list content for multimodal messages."""
+        message = LLMMessage(
+            role="user",
+            content=[{"type": "input_text", "text": "hello"}],
+        )
+
+        mapped = _OpenAIRequestMapper.message_to_input_item(message)
+
+        assert mapped == {
+            "role": "user",
+            "content": [{"type": "input_text", "text": "hello"}],
+        }
+
     def test_request_mapper_tool_without_optional_fields(self) -> None:
         """Tool mapping keeps required fields when optional data is absent."""
         mapped = _OpenAIRequestMapper.tool_to_openai_function(

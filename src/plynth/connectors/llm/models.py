@@ -115,7 +115,7 @@ class LLMExecutionOptions(BaseModel):
 
 
 class LLMGenerateRequest(BaseModel):
-    """Request contract for chat-style generation."""
+    """Represent a neutral generation request for chat-style models."""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -127,7 +127,15 @@ class LLMGenerateRequest(BaseModel):
     provider_extensions: dict[str, Any] | None = None
 
     def with_stream(self, stream: bool = True) -> LLMGenerateRequest:
-        """Return a copy with ``options.stream`` set to the given value."""
+        """Return a cloned request with ``options.stream`` set.
+
+        Args:
+            stream: Streaming flag to apply on the cloned request.
+
+        Returns:
+            Deep-cloned request with updated stream option.
+
+        """
         clone = self.model_copy(deep=True)
         if clone.options is None:
             clone.options = LLMExecutionOptions(stream=stream)
@@ -137,7 +145,12 @@ class LLMGenerateRequest(BaseModel):
         return clone
 
     def to_payload(self) -> dict[str, Any]:
-        """Serialize the request using neutral wire keys only."""
+        """Serialize request data to a neutral payload.
+
+        Returns:
+            JSON-serializable neutral payload.
+
+        """
         payload = self.model_dump(mode="json", by_alias=True, exclude_none=True)
         payload["messages"] = [
             msg.model_dump(mode="json", by_alias=True, exclude_none=True)
@@ -167,7 +180,16 @@ class LLMCompletion(BaseModel):
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> LLMCompletion:
-        """Normalize a provider payload into an ``LLMCompletion``."""
+        """Normalize a provider payload to a completion model.
+
+        Args:
+            payload: Provider payload in arbitrary completion shape.
+
+        Returns:
+            Completion model with normalized choices, message defaults, and
+            usage fields.
+
+        """
         choices: list[LLMCompletionChoice] = []
 
         for item in payload.get("choices", []):
@@ -201,7 +223,7 @@ class LLMStreamChoice(BaseModel):
 
 
 class LLMStreamChunk(BaseModel):
-    """Normalized streaming chunk emitted by a provider."""
+    """Normalized stream chunk emitted by a provider."""
 
     id: str | None = None
     model: str | None = None
@@ -210,7 +232,15 @@ class LLMStreamChunk(BaseModel):
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> LLMStreamChunk:
-        """Normalize a provider payload into an ``LLMStreamChunk``."""
+        """Normalize a provider payload to a stream chunk model.
+
+        Args:
+            payload: Provider stream payload in arbitrary shape.
+
+        Returns:
+            Stream chunk model with normalized deltas and optional metadata.
+
+        """
         choices: list[LLMStreamChoice] = []
 
         for item in payload.get("choices", []):

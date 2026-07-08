@@ -15,7 +15,7 @@ from plynth.connectors.llm.models import (
 
 
 class LLMRequestAdapter(Protocol):
-    """Contract for mapping neutral requests to provider payloads."""
+    """Define how neutral payloads are serialized for a provider."""
 
     def to_provider_payload(
         self,
@@ -23,27 +23,53 @@ class LLMRequestAdapter(Protocol):
         *,
         stream: bool,
     ) -> dict[str, Any]:
-        """Map neutral request to provider-specific request payload."""
+        """Map one neutral request to a provider payload.
+
+        Args:
+            request: Neutral generation request model.
+            stream: Whether payload should request streaming mode.
+
+        Returns:
+            Provider-specific request payload.
+
+        """
         raise NotImplementedError
 
 
 class LLMCompletionAdapter(Protocol):
-    """Contract for mapping provider responses to neutral completion payloads."""
+    """Define how provider payloads are normalized for completions."""
 
     def to_neutral_completion_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Map provider completion payload to neutral completion payload."""
+        """Map one provider payload to a neutral completion payload.
+
+        Args:
+            payload: Raw provider completion payload.
+
+        Returns:
+            Completion payload matching neutral response keys.
+
+        """
         raise NotImplementedError
 
 
 class LLMStreamAdapter(Protocol):
-    """Contract for mapping one provider stream event payload to chunk."""
+    """Define how provider stream events are normalized to stream chunks."""
 
     def parse_event_payload(self, payload_line: str) -> LLMStreamChunk | None:
-        """Parse one provider stream event payload."""
+        """Parse one provider stream payload line.
+
+        Args:
+            payload_line: Raw payload line from a provider stream.
+
+        Returns:
+            Normalized stream chunk, or ``None`` for ignorable events.
+
+        """
+        raise NotImplementedError
 
 
 class DefaultLLMRequestAdapter:
-    """Default request adapter using the neutral request wire shape."""
+    """Default request adapter using the neutral payload shape."""
 
     def to_provider_payload(
         self,
@@ -134,7 +160,7 @@ class RoutedEventStreamAdapter(DefaultLLMStreamAdapter):
 
 @dataclass(slots=True)
 class LLMAdapterSet:
-    """Grouped adapters used by LLM services."""
+    """Bundle request, completion, and stream adapters for one provider."""
 
     request_adapter: LLMRequestAdapter
     completion_adapter: LLMCompletionAdapter
@@ -142,7 +168,7 @@ class LLMAdapterSet:
 
 
 def build_default_adapter_set() -> LLMAdapterSet:
-    """Return default adapter set for neutral provider payloads."""
+    """Build adapters for providers that already use neutral payload shapes."""
     return LLMAdapterSet(
         request_adapter=DefaultLLMRequestAdapter(),
         completion_adapter=DefaultLLMCompletionAdapter(),

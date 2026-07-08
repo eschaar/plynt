@@ -7,6 +7,8 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any
 from unittest.mock import MagicMock
 
+import pytest
+
 from plynth.base.response import AsyncStreamingResponse, StreamingResponse
 from plynth.connectors.llm import (
     AsyncLLMService,
@@ -215,6 +217,52 @@ class TestLLMService:
         }
         assert request_adapter.calls == [(False, "demo")]
         assert result.choices[0].message.content == "ok"
+
+    def test_generate_supports_deprecated_payload_adapter_alias(self) -> None:
+        """generate supports legacy payload_adapter constructor argument."""
+
+        def payload_adapter(request: LLMGenerateRequest) -> dict[str, Any]:
+            return {
+                "legacy_input": request.to_payload()["messages"],
+                "legacy_stream": False,
+            }
+
+        payload = {
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "ok"},
+                    "finish_reason": "stop",
+                }
+            ]
+        }
+        transport = MockSyncTransport(content=_json_bytes(payload))
+        client = APIClient(base_url=_DUMMY_BASE_URL, transport=transport)
+        svc = LLMService(client, payload_adapter=payload_adapter)
+
+        request = LLMGenerateRequest(messages=[{"role": "user", "content": "Hi"}])
+        result = svc.generate(request)
+
+        sent = transport.send.call_args[0][0]
+        assert json.loads(sent.content or b"{}") == {
+            "legacy_input": [{"role": "user", "content": "Hi"}],
+            "legacy_stream": False,
+        }
+        assert result.choices[0].message.content == "ok"
+
+    def test_constructor_rejects_adapter_set_and_payload_adapter_together(
+        self,
+    ) -> None:
+        """LLMService rejects mutually exclusive adapter constructor options."""
+        transport = MockSyncTransport(status_code=200, content=b"{}")
+        client = APIClient(base_url=_DUMMY_BASE_URL, transport=transport)
+
+        with pytest.raises(ValueError):
+            LLMService(
+                client,
+                adapter_set=build_default_adapter_set(),
+                payload_adapter=lambda request: request.to_payload(),
+            )
 
     def test_generate_falls_back_for_non_object_completion_payload(self) -> None:
         """Generate normalizes non-object JSON responses to an empty payload."""
@@ -502,6 +550,41 @@ class TestAsyncLLMService:
         }
         assert request_adapter.calls == [(False, "demo")]
         assert result.choices[0].message.content == "ok"
+
+    async def test_generate_stream_supports_payload_adapter_with_stream_kwarg(
+        self,
+    ) -> None:
+        """Async service supports payload_adapter(request, stream=...) callables."""
+
+        def payload_adapter(
+            request: LLMGenerateRequest,
+            *,
+            stream: bool,
+        ) -> dict[str, Any]:
+            return {
+                "legacy_input": request.to_payload()["messages"],
+                "legacy_stream": stream,
+            }
+
+        transport = MockAsyncTransport(status_code=200, content=b"{}")
+        client = AsyncAPIClient(base_url=_DUMMY_BASE_URL, transport=transport)
+        svc = AsyncLLMService(client, payload_adapter=payload_adapter)
+        streaming = AsyncStreamingResponse(
+            status_code=200,
+            headers={},
+            content=b"",
+            _raw=MagicMock(),
+        )
+        transport.send.return_value = streaming
+
+        request = LLMGenerateRequest(messages=[{"role": "user", "content": "Hello"}])
+        await svc.generate_stream(request)
+
+        sent = transport.send.call_args[0][0]
+        assert json.loads(sent.content or b"{}") == {
+            "legacy_input": [{"role": "user", "content": "Hello"}],
+            "legacy_stream": True,
+        }
 
     async def test_generate_falls_back_for_non_object_completion_payload(self) -> None:
         """Async generate normalizes non-object JSON responses to empty payload."""

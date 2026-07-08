@@ -23,14 +23,40 @@ class _OpenAIRequestMapper:
     """Static mapping helpers for OpenAI Responses request payloads."""
 
     @staticmethod
+    def normalize_role(role: Any) -> str:
+        """Return a stable role value for OpenAI payload messages."""
+        if isinstance(role, str):
+            normalized = role.strip()
+            if normalized:
+                return normalized
+        return "user"
+
+    @staticmethod
+    def normalize_content(content: Any) -> str | list[dict[str, Any]]:
+        """Return message content in one of the neutral content shapes."""
+        if content is None:
+            return ""
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            blocks = [item for item in content if isinstance(item, dict)]
+            if blocks:
+                return blocks
+            return ""
+        return str(content)
+
+    @staticmethod
     def message_to_input_item(message: LLMMessage | dict[str, Any]) -> dict[str, Any]:
         """Convert one neutral message to a Responses API input item."""
         if isinstance(message, dict):
-            role = str(message.get("role", "user"))
-            content = message.get("content", "")
+            role = _OpenAIRequestMapper.normalize_role(message.get("role"))
+            content = _OpenAIRequestMapper.normalize_content(message.get("content"))
             return {"role": role, "content": content}
 
-        return {"role": message.role, "content": message.content or ""}
+        return {
+            "role": _OpenAIRequestMapper.normalize_role(message.role),
+            "content": _OpenAIRequestMapper.normalize_content(message.content),
+        }
 
     @staticmethod
     def tool_to_openai_function(tool: LLMToolDefinition) -> dict[str, Any]:
@@ -68,7 +94,7 @@ class _OpenAIRequestMapper:
 
 
 class OpenAIResponsesRequestAdapter(LLMRequestAdapter):
-    """Map neutral requests to OpenAI Responses payloads."""
+    """Serialize neutral requests to OpenAI Responses API payloads."""
 
     def to_provider_payload(
         self,
@@ -76,7 +102,16 @@ class OpenAIResponsesRequestAdapter(LLMRequestAdapter):
         *,
         stream: bool,
     ) -> dict[str, Any]:
-        """Build provider payload for the OpenAI Responses API."""
+        """Build OpenAI Responses request payload.
+
+        Args:
+            request: Neutral generation request.
+            stream: Whether to request streaming mode.
+
+        Returns:
+            Provider payload compatible with the Responses API.
+
+        """
         payload: dict[str, Any] = {
             "input": [
                 _OpenAIRequestMapper.message_to_input_item(message)
@@ -170,10 +205,18 @@ class _OpenAICompletionMapper:
 
 
 class OpenAIResponsesCompletionAdapter(DefaultLLMCompletionAdapter):
-    """Map OpenAI Responses completion payloads to neutral completions."""
+    """Normalize OpenAI completion payloads to the neutral contract."""
 
     def to_neutral_completion_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Map provider payload into neutral completion shape."""
+        """Normalize OpenAI provider payload keys and structure.
+
+        Args:
+            payload: Raw completion payload from OpenAI.
+
+        Returns:
+            Neutral completion payload with choices and usage.
+
+        """
         raw_output = payload.get("output")
         output_items: list[dict[str, Any]] = (
             [item for item in raw_output if isinstance(item, dict)]
@@ -857,7 +900,7 @@ class _OpenAIStreamEventRouter:
 
 
 class OpenAIResponsesStreamAdapter(RoutedEventStreamAdapter):
-    """Map OpenAI Responses stream events to neutral stream chunks."""
+    """Normalize OpenAI stream events to neutral stream chunks."""
 
     def get_event_parsers(
         self,
@@ -867,7 +910,7 @@ class OpenAIResponsesStreamAdapter(RoutedEventStreamAdapter):
 
 
 def build_openai_responses_adapter_set() -> LLMAdapterSet:
-    """Return adapter set for OpenAI Responses API integrations."""
+    """Build adapter set for OpenAI Responses API integrations."""
     return LLMAdapterSet(
         request_adapter=OpenAIResponsesRequestAdapter(),
         completion_adapter=OpenAIResponsesCompletionAdapter(),

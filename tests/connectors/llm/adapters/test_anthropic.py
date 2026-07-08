@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterator
+from contextvars import copy_context
 from typing import Any
 
 import pytest
@@ -587,6 +588,60 @@ class TestAnthropicMessagesStreamAdapter:
         assert tool_calls is not None
         assert tool_calls[0].id is None
         assert tool_calls[0].function.name == "function"
+
+    def test_isolates_stream_state_per_execution_context(self) -> None:
+        """Stream parser state stays isolated across independent contexts."""
+        adapter = AnthropicMessagesStreamAdapter()
+
+        first_context = copy_context()
+        second_context = copy_context()
+
+        first_context.run(
+            adapter.parse_event_payload,
+            json.dumps(
+                {
+                    "type": "message_start",
+                    "message": {"id": "msg_ctx_a", "model": "claude-a"},
+                }
+            ),
+        )
+        second_context.run(
+            adapter.parse_event_payload,
+            json.dumps(
+                {
+                    "type": "message_start",
+                    "message": {"id": "msg_ctx_b", "model": "claude-b"},
+                }
+            ),
+        )
+
+        chunk_a = first_context.run(
+            adapter.parse_event_payload,
+            json.dumps(
+                {
+                    "type": "content_block_delta",
+                    "index": 0,
+                    "delta": {"type": "text_delta", "text": "A"},
+                }
+            ),
+        )
+        chunk_b = second_context.run(
+            adapter.parse_event_payload,
+            json.dumps(
+                {
+                    "type": "content_block_delta",
+                    "index": 0,
+                    "delta": {"type": "text_delta", "text": "B"},
+                }
+            ),
+        )
+
+        assert chunk_a is not None
+        assert chunk_b is not None
+        assert chunk_a.id == "msg_ctx_a"
+        assert chunk_b.id == "msg_ctx_b"
+        assert chunk_a.model == "claude-a"
+        assert chunk_b.model == "claude-b"
 
     def test_passthrough_for_choices_payload(self) -> None:
         """Stream adapter parses neutral choice payloads as passthrough chunks."""
