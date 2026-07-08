@@ -139,7 +139,7 @@ Regression path:
 1. Exposed adapter types and helpers through
    `src/plynth/connectors/llm/__init__.py`.
 1. Added focused adapter tests in
-   `tests/connectors/llm/test_openai_adapter.py`.
+   `tests/connectors/llm/adapters/test_openai.py`.
 1. Verified lint, type-check, and focused tests for this increment.
 
 2026-07-05 (adapter architecture generalization):

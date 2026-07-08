@@ -31,7 +31,7 @@ ______________________________________________________________________
 | 4   | Framework adapters (Django / FastAPI / Flask)      | **Planned**     | ADR required per adapter; deferred until core is stable                            |
 | 5   | Cache backend documentation                        | **Done**        | Redis SSL, framework-native wrapping, and custom backend how-to guides added       |
 | 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                       |
-| 7   | AI / LLM connector `plynth.connectors.llm`         | **Done**        | Generic contract models and sync/async service parity implemented                  |
+| 7   | AI / LLM connector `plynth.connectors.llm`         | **Done**        | Generic contract, sync/async parity, OpenAI and Anthropic adapters                 |
 | 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                      |
 | 9   | Connector package extraction                       | **Planned**     | Policy defined; individual extractions need ADR                                    |
 
@@ -42,7 +42,7 @@ Near-term scope note for item 7:
 
 ______________________________________________________________________
 
-## Implemented Baseline (through v0.2.1)
+## Implemented Baseline (through v0.6.2)
 
 ### Terminology baseline
 
@@ -209,6 +209,16 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
 - tox matrix: Python 3.11, 3.12, 3.13, 3.14
 - ADR set maintained as the source of architectural truth
 
+### Delivered Since v0.2.1
+
+Major delivered milestones now reflected in release history:
+
+- `v0.3.0`: streaming response support foundation (ADR-0017)
+- `v0.5.0`: raw response mode and throttle governance hardening
+- `v0.6.0`: generic LLM connector shipped
+- `v0.6.x`: OpenAI and Anthropic adapter hardening, plus CI maintenance
+- `v0.6.0`: HTTP transport migration to httpx2 with client tuning settings
+
 ______________________________________________________________________
 
 ## Release Strategy
@@ -218,6 +228,11 @@ Current release history:
 1. `0.1.0` core baseline release.
 1. `0.2.0` Salesforce connector baseline release.
 1. `0.2.1` release process and documentation stabilization release.
+1. `0.3.0` streaming foundation release.
+1. `0.4.0` Salesforce models and agent API expansion release.
+1. `0.5.0` raw response mode and throttle governance release.
+1. `0.6.0` generic LLM connector release.
+1. `0.6.1` and `0.6.2` maintenance and hardening releases.
 
 Forward path:
 

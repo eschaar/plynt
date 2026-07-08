@@ -12,6 +12,7 @@ from plynth.connectors.llm.adapters.base import (
     DefaultLLMStreamAdapter,
     LLMCompletionAdapter,
     LLMRequestAdapter,
+    LLMStreamAdapter,
     RoutedEventStreamAdapter,
 )
 from plynth.connectors.llm.models import LLMExecutionOptions, LLMGenerateRequest
@@ -79,7 +80,8 @@ class TestDefaultLLMStreamAdapter:
         adapter = DefaultLLMStreamAdapter()
 
         chunk = adapter.parse_event_payload(
-            '{"id":"chunk-1","choices":[{"index":0,"delta":{"role":"assistant","content":"A"}}]}'
+            '{"id":"chunk-1","choices":[{"index":0,'
+            '"delta":{"role":"assistant","content":"A"}}]}'
         )
 
         assert chunk is not None
@@ -117,3 +119,8 @@ class TestAdapterContracts:
         """Routed stream adapter base requires event parser mapping override."""
         with pytest.raises(NotImplementedError):
             RoutedEventStreamAdapter().get_event_parsers()
+
+    def test_stream_protocol_stub_raises_not_implemented(self) -> None:
+        """Stream protocol stub raises NotImplementedError when called directly."""
+        with pytest.raises(NotImplementedError):
+            LLMStreamAdapter.parse_event_payload(cast(Any, object()), "{}")

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextvars
 import json
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Any
 
 from plynth.connectors.llm.adapters.base import (
@@ -322,8 +324,17 @@ class _AnthropicStreamChunkFactory:
         )
 
 
+@dataclass
+class _AnthropicStreamState:
+    """Per-stream parsing state for Anthropic stream-event normalization."""
+
+    response_id: str | None = None
+    model: str | None = None
+    tool_state: dict[int, tuple[str | None, str]] = field(default_factory=dict)
+
+
 class AnthropicMessagesRequestAdapter(LLMRequestAdapter):
-    """Map neutral requests to Anthropic Messages payloads."""
+    """Serialize neutral requests to Anthropic Messages API payloads."""
 
     def to_provider_payload(
         self,
@@ -331,7 +342,16 @@ class AnthropicMessagesRequestAdapter(LLMRequestAdapter):
         *,
         stream: bool,
     ) -> dict[str, Any]:
-        """Build provider payload for the Anthropic Messages API."""
+        """Build Anthropic Messages request payload.
+
+        Args:
+            request: Neutral generation request.
+            stream: Whether to request streaming mode.
+
+        Returns:
+            Provider payload compatible with the Messages API.
+
+        """
         payload: dict[str, Any] = {
             "messages": [],
             "stream": stream,
@@ -372,10 +392,18 @@ class AnthropicMessagesRequestAdapter(LLMRequestAdapter):
 
 
 class AnthropicMessagesCompletionAdapter(DefaultLLMCompletionAdapter):
-    """Map Anthropic message payloads to neutral completions."""
+    """Normalize Anthropic completion payloads to the neutral contract."""
 
     def to_neutral_completion_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Map provider payload into neutral completion shape."""
+        """Normalize Anthropic provider payload keys and structure.
+
+        Args:
+            payload: Raw completion payload from Anthropic.
+
+        Returns:
+            Neutral completion payload with choices and usage.
+
+        """
         content = payload.get("content")
 
         message: dict[str, Any] = {
@@ -413,14 +441,25 @@ class AnthropicMessagesCompletionAdapter(DefaultLLMCompletionAdapter):
 
 
 class AnthropicMessagesStreamAdapter(RoutedEventStreamAdapter):
-    """Map Anthropic stream events to neutral stream chunks."""
+    """Normalize Anthropic stream events to neutral stream chunks."""
 
     def __init__(self) -> None:
-        """Initialize stream event state."""
-        self._current_response_id: str | None = None
-        self._current_model: str | None = None
-        self._tool_state: dict[int, tuple[str | None, str]] = {}
+        """Initialize stream parser routing and isolated parse-state storage."""
+        self._state_var: contextvars.ContextVar[_AnthropicStreamState | None] = (
+            contextvars.ContextVar(
+                f"{self.__class__.__name__}.state",
+                default=None,
+            )
+        )
         self._event_parsers = self._build_event_parsers()
+
+    def _state(self) -> _AnthropicStreamState:
+        """Return the current context-local parser state."""
+        state = self._state_var.get()
+        if state is None:
+            state = _AnthropicStreamState()
+            self._state_var.set(state)
+        return state
 
     def _build_event_parsers(
         self,
@@ -443,18 +482,21 @@ class AnthropicMessagesStreamAdapter(RoutedEventStreamAdapter):
 
     def _parse_message_start(self, payload: dict[str, Any]) -> LLMStreamChunk | None:
         """Parse ``message_start`` events."""
+        state = self._state()
         message = payload.get("message")
         if isinstance(message, dict):
-            self._current_response_id = message.get("id")
-            self._current_model = message.get("model")
-        self._tool_state.clear()
+            state.response_id = message.get("id")
+            state.model = message.get("model")
+        state.tool_state.clear()
         return None
 
     def _parse_message_stop(self, payload: dict[str, Any]) -> LLMStreamChunk:
         """Parse ``message_stop`` events."""
+        state = self._state()
+        state.tool_state.clear()
         return _AnthropicStreamChunkFactory.build_text_chunk(
-            response_id=self._current_response_id,
-            model=self._current_model,
+            response_id=state.response_id,
+            model=state.model,
             content="",
             event_type=str(payload.get("type", "message_stop")),
             finish_reason="stop",
@@ -462,9 +504,11 @@ class AnthropicMessagesStreamAdapter(RoutedEventStreamAdapter):
 
     def _parse_error(self, payload: dict[str, Any]) -> LLMStreamChunk:
         """Parse ``error`` events."""
+        state = self._state()
+        state.tool_state.clear()
         return _AnthropicStreamChunkFactory.build_text_chunk(
-            response_id=self._current_response_id,
-            model=self._current_model,
+            response_id=state.response_id,
+            model=state.model,
             content="",
             event_type=str(payload.get("type", "error")),
             finish_reason="error",
@@ -490,7 +534,8 @@ class AnthropicMessagesStreamAdapter(RoutedEventStreamAdapter):
         if not isinstance(name, str) or not name:
             name = "function"
         call_id = block.get("id") if isinstance(block.get("id"), str) else None
-        self._tool_state[index] = (call_id, name)
+        state = self._state()
+        state.tool_state[index] = (call_id, name)
 
         input_payload = block.get("input")
         arguments = (
@@ -500,8 +545,8 @@ class AnthropicMessagesStreamAdapter(RoutedEventStreamAdapter):
         )
 
         return _AnthropicStreamChunkFactory.build_function_chunk(
-            response_id=self._current_response_id,
-            model=self._current_model,
+            response_id=state.response_id,
+            model=state.model,
             call_id=call_id,
             name=name,
             arguments=arguments,
@@ -522,9 +567,10 @@ class AnthropicMessagesStreamAdapter(RoutedEventStreamAdapter):
             text = delta.get("text")
             if not isinstance(text, str):
                 return None
+            state = self._state()
             return _AnthropicStreamChunkFactory.build_text_chunk(
-                response_id=self._current_response_id,
-                model=self._current_model,
+                response_id=state.response_id,
+                model=state.model,
                 content=text,
                 event_type="content_block_delta.text_delta",
             )
@@ -538,10 +584,11 @@ class AnthropicMessagesStreamAdapter(RoutedEventStreamAdapter):
             if not isinstance(index, int):
                 return None
 
-            call_id, name = self._tool_state.get(index, (None, "function"))
+            state = self._state()
+            call_id, name = state.tool_state.get(index, (None, "function"))
             return _AnthropicStreamChunkFactory.build_function_chunk(
-                response_id=self._current_response_id,
-                model=self._current_model,
+                response_id=state.response_id,
+                model=state.model,
                 call_id=call_id,
                 name=name,
                 arguments=partial_json,
@@ -562,9 +609,10 @@ class AnthropicMessagesStreamAdapter(RoutedEventStreamAdapter):
         if finish_reason is None:
             return None
 
+        state = self._state()
         return _AnthropicStreamChunkFactory.build_text_chunk(
-            response_id=self._current_response_id,
-            model=self._current_model,
+            response_id=state.response_id,
+            model=state.model,
             content="",
             event_type="message_delta",
             finish_reason=finish_reason,
@@ -572,7 +620,7 @@ class AnthropicMessagesStreamAdapter(RoutedEventStreamAdapter):
 
 
 def build_anthropic_messages_adapter_set() -> LLMAdapterSet:
-    """Return adapter set for Anthropic Messages API integrations."""
+    """Build adapter set for Anthropic Messages API integrations."""
     return LLMAdapterSet(
         request_adapter=AnthropicMessagesRequestAdapter(),
         completion_adapter=AnthropicMessagesCompletionAdapter(),
