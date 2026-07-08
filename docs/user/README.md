@@ -67,6 +67,14 @@ lives alongside the connector:
 - [Generic LLM connector](../connectors/llm/README.md)
 - [Salesforce connector](../connectors/salesforce/user/README.md)
 
+## Runnable examples
+
+Use runnable examples when you want to validate credentials, endpoint setup,
+and basic service behavior end-to-end.
+
+- [LLM examples](../../examples/llm/README.md)
+- [Salesforce examples](../../examples/salesforce/README.md)
+
 ## Installation extras
 
 | Extra                | Installs                          | Use when                             |

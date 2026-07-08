@@ -5,7 +5,7 @@
 This note captures architecture risks at the boundary between:
 
 - Salesforce AI services in the Salesforce connector
-- the planned generic LLM connector
+- the generic LLM connector
 
 The goal is to prevent coupling and rework while both tracks evolve.
 

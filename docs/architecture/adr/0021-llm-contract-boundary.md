@@ -6,10 +6,11 @@ Accepted
 
 ## Context
 
-Plynth now includes Salesforce AI services and plans a generic LLM connector.
-Without a shared contract boundary, each provider integration will likely
-define different request and response shapes. That would increase adapter
-complexity and make cross-provider switching harder for consumers.
+Plynth now includes Salesforce AI services and a generic LLM connector.
+Provider adapters for OpenAI Responses and Anthropic Messages are shipped.
+Without a shared contract boundary, provider integrations would drift toward
+different request and response shapes. That increases adapter complexity and
+makes cross-provider switching harder for consumers.
 
 The shared layer must stay minimal. It should capture only provider-agnostic
 concepts and must not encode provider endpoint shapes, auth assumptions, or

@@ -2,13 +2,13 @@
 
 **Status:** Accepted
 **Date:** 2026-05-14
-**Scope:** `plynth.connectors.salesforce`, planned `plynth.connectors.llm`
+**Scope:** `plynth.connectors.salesforce`, `plynth.connectors.llm`
 
 ______________________________________________________________________
 
 ## Context
 
-Plynth plans two parallel AI tracks:
+Plynth has two parallel AI tracks:
 
 - Salesforce-specific AI APIs (`Models` and `Agent` services)
 - A generic provider-agnostic LLM connector
@@ -45,10 +45,10 @@ inside Salesforce services and models.
 Generic provider abstractions stay in the LLM connector scope and must not
 encode Salesforce-specific assumptions.
 
-### 4. Allow parallel delivery
+### 4. Keep parallel delivery independent
 
-Salesforce Models API and Agent API may ship before the generic LLM connector,
-as long as they follow the boundary rules above.
+Salesforce Models API and Agent API can ship independently from the generic
+LLM connector, as long as they follow the boundary rules above.
 
 ______________________________________________________________________
 

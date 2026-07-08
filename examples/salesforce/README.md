@@ -3,6 +3,15 @@
 Runnable scripts that demonstrate the Plynth Salesforce integration against a
 real Salesforce org.
 
+These scripts are not just auth demos. They run a small end-to-end flow over
+the connector services:
+
+1. API versions discovery (`utility.versions()`)
+1. Org limits retrieval (`utility.limits()`)
+1. SObject metadata read (`sobject.describe()`)
+1. SOQL query (`query.query(...)`)
+1. SOSL search (`utility.search(...)`)
+
 ## Scripts
 
 | Script                  | OAuth2 flow                                | When to use                                                                 |
@@ -23,6 +32,16 @@ cp examples/salesforce/example.env examples/salesforce/.env
 # Fill in your credentials, then:
 python examples/salesforce/username_password.py
 ```
+
+Expected output includes sections named:
+
+- `AVAILABLE API VERSIONS`
+- `ORG LIMITS`
+- `ACCOUNT SOBJECT — describe()`
+- `SOQL: SELECT Id, Name FROM Account LIMIT 5`
+- `SOSL: FIND ...`
+
+If those sections print with real values, the connector path is healthy.
 
 ______________________________________________________________________
 
@@ -123,3 +142,23 @@ The `.env` file is never committed to git.
 | `SF_PASSWORD`       | password flow     | Salesforce password                                                                                                          |
 | `SF_SECURITY_TOKEN` | if IP not trusted | Security token appended to password                                                                                          |
 | `SF_API_VERSION`    | no                | REST API version, e.g. `62.0` (defaults to library default)                                                                  |
+
+______________________________________________________________________
+
+## Troubleshooting
+
+### `INVALID_LOGIN` with username/password
+
+- Verify username and password are correct.
+- Add `SF_SECURITY_TOKEN` when your IP is not trusted.
+- Check that the password flow is enabled in OAuth policies.
+
+### `request not supported on this domain`
+
+- This usually means Client Credentials is not fully configured.
+- Verify the ECA has a `Run As` user for Client Credentials.
+
+### Calls succeed but query returns no rows
+
+- Confirm the integration user can read `Account` records.
+- Try the same SOQL query in Salesforce Developer Console.
