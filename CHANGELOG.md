@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.0](https://github.com/eschaar/plynth/compare/0.6.2...0.7.0) (2026-07-08)
+
+
+### Features
+
+* **llm:** add Anthropic adapter and stream normalization ([f74299c](https://github.com/eschaar/plynth/commit/f74299ce6f7e2c53a6040ce3fc7f81f926e5635e))
+* **llm:** harden OpenAI responses adapters and stream parsing ([658ca4c](https://github.com/eschaar/plynth/commit/658ca4c5733c77cac37e0ea5c4eee4a32f336156))
+
+
+### Refactoring
+
+* **llm:** harden adapter flow and align docs roadmap ([9843b18](https://github.com/eschaar/plynth/commit/9843b18df5dcf2f08fad77a785cd4a2707c1a891))
+
+
+### Documentation
+
+* **llm:** align ADRs, roadmap, and runnable examples ([7503f73](https://github.com/eschaar/plynth/commit/7503f73bc4d540f7ac6b874eb2674216131ccba6))
+
 ## [0.6.2](https://github.com/eschaar/plynth/compare/0.6.1...0.6.2) (2026-07-06)
 
 
