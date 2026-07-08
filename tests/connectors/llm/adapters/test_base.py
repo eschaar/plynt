@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 
 from plynth.connectors.llm.adapters.base import (
     DefaultLLMCompletionAdapter,
     DefaultLLMRequestAdapter,
     DefaultLLMStreamAdapter,
+    LLMCompletionAdapter,
+    LLMRequestAdapter,
+    RoutedEventStreamAdapter,
 )
 from plynth.connectors.llm.models import LLMExecutionOptions, LLMGenerateRequest
 
@@ -87,3 +92,28 @@ class TestDefaultLLMStreamAdapter:
 
         with pytest.raises(ValueError):
             adapter.parse_event_payload("not-json")
+
+
+class TestAdapterContracts:
+    """Tests for defensive contract stubs on protocol and base adapters."""
+
+    def test_request_protocol_stub_raises_not_implemented(self) -> None:
+        """Request protocol stub raises NotImplementedError when called directly."""
+        request = LLMGenerateRequest(messages=[{"role": "user", "content": "x"}])
+
+        with pytest.raises(NotImplementedError):
+            LLMRequestAdapter.to_provider_payload(
+                cast(Any, object()),
+                request,
+                stream=False,
+            )
+
+    def test_completion_protocol_stub_raises_not_implemented(self) -> None:
+        """Completion protocol stub raises NotImplementedError when called directly."""
+        with pytest.raises(NotImplementedError):
+            LLMCompletionAdapter.to_neutral_completion_payload(cast(Any, object()), {})
+
+    def test_routed_adapter_event_parser_stub_raises_not_implemented(self) -> None:
+        """Routed stream adapter base requires event parser mapping override."""
+        with pytest.raises(NotImplementedError):
+            RoutedEventStreamAdapter().get_event_parsers()
