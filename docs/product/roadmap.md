@@ -37,8 +37,8 @@ ______________________________________________________________________
 
 Near-term scope note for item 7:
 
-- Provider adapters (for example OpenAI and Anthropic) are planned but not
-  implemented in the current scope.
+- Provider adapters for OpenAI Responses and Anthropic Messages are
+  implemented.
 
 ______________________________________________________________________
 
@@ -52,7 +52,7 @@ ______________________________________________________________________
   transport mapping).
 
 For LLM, this means the generic `plynth.connectors.llm` connector is shipped,
-while provider adapters such as OpenAI and Anthropic remain planned.
+with provider adapters for OpenAI and Anthropic shipped in the same connector.
 
 ### Core abstractions (`plynth.base`)
 

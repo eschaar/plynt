@@ -20,10 +20,10 @@ does not depend on Salesforce connector internals.
   contract and orchestration surface.
 - Provider-specific mapping components are **adapters** under this connector.
 
-Current scope for this connector is the generic contract and generic services.
-Provider-specific adapters are planned but not shipped yet.
+Current scope includes the generic contract, generic services, and provider
+adapters for OpenAI Responses and Anthropic Messages.
 
-Initial candidates for provider adapters are OpenAI and Anthropic.
+Additional providers can reuse the same adapter contracts.
 
 ## Public API
 
@@ -72,6 +72,35 @@ with stream as response:
 
 `iter_stream_chunks()` expects SSE-style `data:` lines or raw JSON lines.
 Terminal `[DONE]` markers are ignored.
+
+Use `iter_stream_chunks()` as the primary stream API. It handles SSE framing,
+multi-line `data:` payloads, and parse error normalization. Keep
+`parse_stream_line()` for utility and test scenarios where you have one fully
+formed payload line.
+
+## Stream event metadata
+
+Provider adapters keep provider-specific event names in
+`chunk.provider_extensions` and also emit a neutral `event_kind` value for
+cross-provider observability.
+
+- OpenAI examples: `text`, `tool`, `lifecycle`, `audio`, `error`.
+- Anthropic examples: `text`, `tool`, `lifecycle`, `error`.
+
+This keeps adapter behavior provider-specific while enabling generic metrics,
+logging, and dashboards at the connector layer.
+
+Runnable scripts are available in [examples/llm](../../../examples/llm/README.md).
+
+Example usage:
+
+```python
+provider_meta = chunk.provider_extensions or {}
+openai_meta = provider_meta.get("openai") or provider_meta.get("anthropic") or {}
+event_kind = openai_meta.get("event_kind", "unknown")
+
+metrics.increment("llm.stream.event", tags={"event_kind": event_kind})
+```
 
 ## Async
 
