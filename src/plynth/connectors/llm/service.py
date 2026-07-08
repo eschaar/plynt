@@ -15,6 +15,7 @@ from typing import Any
 from plynth.base.response import AsyncStreamingResponse, StreamingResponse
 from plynth.connectors.llm.adapters.base import (
     LLMAdapterSet,
+    LLMStreamAdapter,
     build_default_adapter_set,
 )
 from plynth.connectors.llm.models import (
@@ -39,113 +40,132 @@ class LLMStreamParseError(ValueError):
     """Raised when a stream event payload cannot be parsed."""
 
 
-def _line_to_text(line: str | bytes) -> str:
-    """Normalize one stream line to text."""
-    if isinstance(line, bytes):
-        return line.decode("utf-8", errors="replace")
-    return line
+class _SSEEventDataParser:
+    """Utility parser that assembles logical SSE event payloads."""
 
+    @staticmethod
+    def line_to_text(line: str | bytes) -> str:
+        """Normalize one stream line value to text."""
+        if isinstance(line, bytes):
+            return line.decode("utf-8", errors="replace")
+        return line
 
-def _is_complete_json(data_lines: list[str]) -> bool:
-    """Return True when buffered SSE data lines form a complete JSON value."""
-    if not data_lines:
-        return False
+    @staticmethod
+    def is_complete_json(data_lines: list[str]) -> bool:
+        """Return True when buffered SSE data lines form complete JSON."""
+        if not data_lines:
+            return False
 
-    try:
-        json.loads("\n".join(data_lines))
-    except JSONDecodeError:
-        return False
-    return True
+        try:
+            json.loads("\n".join(data_lines))
+        except JSONDecodeError:
+            return False
+        return True
 
+    @staticmethod
+    def consume_data_value(
+        data_lines: list[str],
+        data_value: str,
+    ) -> tuple[list[str], list[str]]:
+        """Consume one SSE ``data:`` value and return emitted events + buffer."""
+        emitted_events: list[str] = []
 
-def _consume_sse_data_value(
-    data_lines: list[str],
-    data_value: str,
-) -> tuple[list[str], list[str]]:
-    """Consume one SSE ``data:`` value and return emitted events + buffer."""
-    emitted_events: list[str] = []
+        if data_value == "[DONE]":
+            if data_lines:
+                emitted_events.append("\n".join(data_lines))
+            emitted_events.append(data_value)
+            return emitted_events, []
 
-    if data_value == "[DONE]":
-        if data_lines:
+        if _SSEEventDataParser.is_complete_json(data_lines):
             emitted_events.append("\n".join(data_lines))
-        emitted_events.append(data_value)
-        return emitted_events, []
+            data_lines = []
 
-    if _is_complete_json(data_lines):
-        emitted_events.append("\n".join(data_lines))
-        data_lines = []
+        data_lines.append(data_value)
+        return emitted_events, data_lines
 
-    data_lines.append(data_value)
-    return emitted_events, data_lines
+    @staticmethod
+    def iter_event_data(lines: Iterator[str]) -> Iterator[str]:
+        """Yield logical SSE event payload strings from raw line iteration."""
+        data_lines: list[str] = []
 
+        for raw_line in lines:
+            line = raw_line.rstrip("\r\n")
+            if not line:
+                if data_lines:
+                    yield "\n".join(data_lines)
+                    data_lines.clear()
+                continue
 
-def _iter_sse_event_data(lines: Iterator[str]) -> Iterator[str]:
-    """Yield logical SSE event payload strings from raw line iteration."""
-    data_lines: list[str] = []
+            if line.startswith(":"):
+                continue
 
-    for raw_line in lines:
-        line = raw_line.rstrip("\r\n")
-        if not line:
+            if line.startswith("data:"):
+                data_value = line[len("data:") :].lstrip()
+                emitted_events, data_lines = _SSEEventDataParser.consume_data_value(
+                    data_lines,
+                    data_value,
+                )
+                yield from emitted_events
+                continue
+
             if data_lines:
                 yield "\n".join(data_lines)
                 data_lines.clear()
-            continue
 
-        if line.startswith(":"):
-            continue
-
-        if line.startswith("data:"):
-            data_value = line[len("data:") :].lstrip()
-            emitted_events, data_lines = _consume_sse_data_value(
-                data_lines,
-                data_value,
-            )
-            yield from emitted_events
-            continue
+            yield line.strip()
 
         if data_lines:
             yield "\n".join(data_lines)
-            data_lines.clear()
 
-        yield line.strip()
+    @staticmethod
+    async def aiter_event_data(lines: AsyncIterator[str]) -> AsyncIterator[str]:
+        """Yield logical SSE event payload strings from async line iteration."""
+        data_lines: list[str] = []
 
-    if data_lines:
-        yield "\n".join(data_lines)
+        async for raw_line in lines:
+            line = raw_line.rstrip("\r\n")
+            if not line:
+                if data_lines:
+                    yield "\n".join(data_lines)
+                    data_lines.clear()
+                continue
 
+            if line.startswith(":"):
+                continue
 
-async def _aiter_sse_event_data(lines: AsyncIterator[str]) -> AsyncIterator[str]:
-    """Yield logical SSE event payload strings from async line iteration."""
-    data_lines: list[str] = []
+            if line.startswith("data:"):
+                data_value = line[len("data:") :].lstrip()
+                emitted_events, data_lines = _SSEEventDataParser.consume_data_value(
+                    data_lines,
+                    data_value,
+                )
+                for event in emitted_events:
+                    yield event
+                continue
 
-    async for raw_line in lines:
-        line = raw_line.rstrip("\r\n")
-        if not line:
             if data_lines:
                 yield "\n".join(data_lines)
                 data_lines.clear()
-            continue
 
-        if line.startswith(":"):
-            continue
-
-        if line.startswith("data:"):
-            data_value = line[len("data:") :].lstrip()
-            emitted_events, data_lines = _consume_sse_data_value(
-                data_lines,
-                data_value,
-            )
-            for event in emitted_events:
-                yield event
-            continue
+            yield line.strip()
 
         if data_lines:
             yield "\n".join(data_lines)
-            data_lines.clear()
 
-        yield line.strip()
 
-    if data_lines:
-        yield "\n".join(data_lines)
+_DEFAULT_ADAPTER_SET = build_default_adapter_set()
+
+
+def _parse_stream_event_payload(
+    payload_line: str,
+    *,
+    stream_adapter: LLMStreamAdapter,
+) -> LLMStreamChunk | None:
+    """Parse one stream payload and normalize parser failures."""
+    try:
+        return stream_adapter.parse_event_payload(payload_line)
+    except ValueError as exc:
+        raise LLMStreamParseError("Failed to parse LLM stream event payload") from exc
 
 
 class LLMService(APIService):
@@ -218,11 +238,20 @@ class LLMService(APIService):
         )
 
     @staticmethod
-    def parse_stream_line(line: str) -> LLMStreamChunk | None:
+    def parse_stream_line(
+        line: str,
+        *,
+        adapter_set: LLMAdapterSet | None = None,
+    ) -> LLMStreamChunk | None:
         """Parse one SSE or JSON line into a normalized stream chunk.
 
         Returns ``None`` for empty lines, comments, and terminal ``[DONE]``
-        markers.
+        markers. Pass ``adapter_set`` for provider-specific stream formats.
+
+        This helper parses a single payload line only. Use
+        ``iter_stream_chunks`` for production stream processing because it
+        handles SSE framing, multi-line ``data:`` events, and incremental
+        stream buffering.
         """
         stripped = line.strip()
         if not stripped or stripped.startswith(":"):
@@ -231,30 +260,29 @@ class LLMService(APIService):
         if stripped.startswith("data:"):
             stripped = stripped[len("data:") :].strip()
 
-        try:
-            return build_default_adapter_set().stream_adapter.parse_event_payload(
-                stripped
-            )
-        except ValueError as exc:
-            raise LLMStreamParseError(
-                "Failed to parse LLM stream event payload"
-            ) from exc
+        stream_adapter = (
+            adapter_set.stream_adapter
+            if adapter_set is not None
+            else _DEFAULT_ADAPTER_SET.stream_adapter
+        )
+        return _parse_stream_event_payload(
+            stripped,
+            stream_adapter=stream_adapter,
+        )
 
     def iter_stream_chunks(
         self,
         response: StreamingResponse,
     ) -> Iterator[LLMStreamChunk]:
         """Yield parsed stream chunks from a streaming response."""
-        lines = (_line_to_text(line) for line in response.iter_lines())
-        for event_payload in _iter_sse_event_data(lines):
-            try:
-                chunk = self._adapter_set.stream_adapter.parse_event_payload(
-                    event_payload
-                )
-            except ValueError as exc:
-                raise LLMStreamParseError(
-                    "Failed to parse LLM stream event payload"
-                ) from exc
+        lines = (
+            _SSEEventDataParser.line_to_text(line) for line in response.iter_lines()
+        )
+        for event_payload in _SSEEventDataParser.iter_event_data(lines):
+            chunk = _parse_stream_event_payload(
+                event_payload,
+                stream_adapter=self._adapter_set.stream_adapter,
+            )
             if chunk is not None:
                 yield chunk
 
@@ -325,24 +353,32 @@ class AsyncLLMService(AsyncAPIService):
         )
 
     @staticmethod
-    def parse_stream_line(line: str) -> LLMStreamChunk | None:
-        """Parse one SSE or JSON line into a normalized stream chunk."""
-        return LLMService.parse_stream_line(line)
+    def parse_stream_line(
+        line: str,
+        *,
+        adapter_set: LLMAdapterSet | None = None,
+    ) -> LLMStreamChunk | None:
+        """Parse one SSE or JSON line into a normalized stream chunk.
+
+        This helper delegates to ``LLMService.parse_stream_line`` and remains
+        a single-line utility. Prefer ``iter_stream_chunks`` for full async
+        stream parsing.
+        """
+        return LLMService.parse_stream_line(line, adapter_set=adapter_set)
 
     async def iter_stream_chunks(
         self,
         response: AsyncStreamingResponse,
     ) -> AsyncIterator[LLMStreamChunk]:
         """Yield parsed stream chunks from an async streaming response."""
-        lines = (_line_to_text(line) async for line in response.aiter_lines())
-        async for event_payload in _aiter_sse_event_data(lines):
-            try:
-                chunk = self._adapter_set.stream_adapter.parse_event_payload(
-                    event_payload
-                )
-            except ValueError as exc:
-                raise LLMStreamParseError(
-                    "Failed to parse LLM stream event payload"
-                ) from exc
+        lines = (
+            _SSEEventDataParser.line_to_text(line)
+            async for line in response.aiter_lines()
+        )
+        async for event_payload in _SSEEventDataParser.aiter_event_data(lines):
+            chunk = _parse_stream_event_payload(
+                event_payload,
+                stream_adapter=self._adapter_set.stream_adapter,
+            )
             if chunk is not None:
                 yield chunk

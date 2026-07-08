@@ -13,7 +13,10 @@ from plynth.connectors.llm.adapters.openai import (
     OpenAIResponsesCompletionAdapter,
     OpenAIResponsesRequestAdapter,
     OpenAIResponsesStreamAdapter,
-    _message_to_input_item,
+    _OpenAICompletionMapper,
+    _OpenAIRequestMapper,
+    _OpenAIStreamChunkFactory,
+    _OpenAIStreamEventRouter,
     build_openai_responses_adapter_set,
 )
 from plynth.connectors.llm.models import (
@@ -46,12 +49,6 @@ class _SyncLineRaw:
 
 class TestOpenAIResponsesPayloadAdapter:
     """Tests for request payload mapping."""
-
-    def test_message_helper_accepts_raw_dict_messages(self) -> None:
-        """Helper maps raw dict messages without pydantic conversion."""
-        mapped = _message_to_input_item({"role": "user", "content": "hello"})
-
-        assert mapped == {"role": "user", "content": "hello"}
 
     def test_maps_neutral_request_to_openai_responses_shape(self) -> None:
         """Adapter maps core request fields to Responses payload fields."""
@@ -111,6 +108,364 @@ class TestOpenAIResponsesPayloadAdapter:
         assert payload["input"] == [{"role": "system", "content": "be brief"}]
 
 
+class TestOpenAIInternalMappers:
+    """Tests for internal request/completion mapper behavior."""
+
+    def test_request_mapper_handles_raw_dict_with_default_content(self) -> None:
+        """Request mapper falls back to empty content for raw dict messages."""
+        mapped = _OpenAIRequestMapper.message_to_input_item({"role": "user"})
+
+        assert mapped == {"role": "user", "content": ""}
+
+    def test_request_mapper_tool_without_optional_fields(self) -> None:
+        """Tool mapping keeps required fields when optional data is absent."""
+        mapped = _OpenAIRequestMapper.tool_to_openai_function(
+            LLMToolDefinition(name="lookup")
+        )
+
+        assert mapped == {"type": "function", "name": "lookup"}
+
+    def test_completion_mapper_ignores_non_function_output_items(self) -> None:
+        """Function tool-call extraction skips non-function output items."""
+        tool_calls = _OpenAICompletionMapper.extract_function_tool_calls(
+            [{"type": "message", "content": "no tool"}]
+        )
+
+        assert tool_calls == []
+
+    def test_classify_event_kind_returns_unknown_for_unmapped_event(self) -> None:
+        """Event-kind classifier returns unknown for unsupported event types."""
+        kind = _OpenAIStreamChunkFactory.classify_event_kind("response.unknown.custom")
+
+        assert kind == "unknown"
+
+    def test_router_parser_for_returns_parser_or_none(self) -> None:
+        """Router lookup returns parser for known event and none otherwise."""
+        assert _OpenAIStreamEventRouter.parser_for("response.created") is not None
+        assert _OpenAIStreamEventRouter.parser_for("response.unknown.custom") is None
+
+
+class TestOpenAIInternalStreamParsers:
+    """Tests that validate parser behavior through the public stream adapter."""
+
+    @staticmethod
+    def _parse(payload: dict[str, Any]) -> Any:
+        adapter = OpenAIResponsesStreamAdapter()
+        return adapter.parse_event_payload(json.dumps(payload))
+
+    def test_parse_created_event_keeps_top_level_response_fields(self) -> None:
+        """Created-event parsing keeps top-level fields when no nested response."""
+        chunk = self._parse(
+            {
+                "type": "response.created",
+                "response_id": "resp_1",
+                "model": "gpt-test",
+            }
+        )
+
+        assert chunk is not None
+        assert chunk.id == "resp_1"
+        assert chunk.model == "gpt-test"
+
+    def test_parse_output_item_event_handles_invalid_and_message_items(self) -> None:
+        """Output-item parsing skips invalid items and maps message items."""
+        assert self._parse({"type": "response.output_item.done", "item": None}) is None
+
+        chunk = self._parse(
+            {
+                "type": "response.output_item.done",
+                "response_id": "resp_msg",
+                "item": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "hello"}],
+                },
+            }
+        )
+
+        assert chunk is not None
+        assert chunk.choices[0].delta.content == "hello"
+        assert (
+            self._parse(
+                {
+                    "type": "response.output_item.done",
+                    "response_id": "resp_unknown",
+                    "item": {"type": "reasoning"},
+                }
+            )
+            is None
+        )
+
+    def test_completion_mapper_skips_non_output_text_content_parts(self) -> None:
+        """Completion mapper ignores content parts that are not output_text."""
+        text = _OpenAICompletionMapper.extract_output_text(
+            [
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {"type": "other", "text": "x"},
+                        {"type": "output_text", "text": "y"},
+                    ],
+                }
+            ]
+        )
+
+        assert text == "y"
+
+    def test_parse_refusal_delta_event_handles_valid_and_invalid_payload(self) -> None:
+        """Refusal delta parsing maps strings and rejects invalid deltas."""
+        chunk = self._parse(
+            {
+                "type": "response.refusal.delta",
+                "response_id": "resp_refusal",
+                "delta": "no",
+            }
+        )
+
+        assert chunk is not None
+        assert chunk.choices[0].delta.content == "no"
+        assert self._parse({"type": "response.refusal.delta", "delta": 1}) is None
+
+    def test_parse_function_done_event_rejects_non_function_items(self) -> None:
+        """Function arguments done parsing returns none for non-function items."""
+        chunk = self._parse(
+            {
+                "type": "response.function_call_arguments.done",
+                "item": {"type": "message"},
+            }
+        )
+
+        assert chunk is None
+
+    def test_parse_function_done_event_without_item_uses_payload_fields(self) -> None:
+        """Function arguments done parsing supports payload-level function fields."""
+        chunk = self._parse(
+            {
+                "type": "response.function_call_arguments.done",
+                "response_id": "resp_fn_done",
+                "item_id": "item_fn_done",
+                "name": "lookup",
+                "arguments": "{}",
+            }
+        )
+
+        assert chunk is not None
+        tool_calls = chunk.choices[0].delta.tool_calls
+        assert tool_calls is not None
+        assert tool_calls[0].id == "item_fn_done"
+
+    def test_parse_function_call_event_rejects_invalid_items(self) -> None:
+        """Function-call parsing returns none for missing or non-function items."""
+        assert self._parse({"type": "response.function_call.completed"}) is None
+        assert (
+            self._parse(
+                {
+                    "type": "response.function_call.completed",
+                    "item": {"type": "message"},
+                }
+            )
+            is None
+        )
+
+    def test_parse_function_call_event_maps_valid_function_item(self) -> None:
+        """Function-call parsing maps valid function call lifecycle payloads."""
+        chunk = self._parse(
+            {
+                "type": "response.function_call.completed",
+                "response_id": "resp_fc",
+                "item": {
+                    "type": "function_call",
+                    "id": "fc_1",
+                    "call_id": "call_1",
+                    "name": "lookup",
+                    "arguments": "{}",
+                },
+            }
+        )
+
+        assert chunk is not None
+        tool_calls = chunk.choices[0].delta.tool_calls
+        assert tool_calls is not None
+        assert tool_calls[0].function.name == "lookup"
+
+    def test_parse_annotation_content_and_tool_events(self) -> None:
+        """Annotation/content/tool events map to empty content chunks."""
+        annotation = self._parse(
+            {
+                "type": "response.output_text.annotation.added",
+                "response_id": "resp_ann",
+            }
+        )
+        content_part = self._parse(
+            {
+                "type": "response.content_part.done",
+                "response_id": "resp_part",
+            }
+        )
+        tool = self._parse(
+            {
+                "type": "response.web_search_call.in_progress",
+                "response_id": "resp_tool",
+            }
+        )
+
+        assert annotation is not None
+        assert content_part is not None
+        assert tool is not None
+        assert annotation.choices[0].delta.content == ""
+        assert content_part.choices[0].delta.content == ""
+        assert tool.choices[0].delta.content == ""
+
+    @pytest.mark.parametrize(
+        ("payload", "expected_finish", "expected_content"),
+        [
+            (
+                {
+                    "type": "response.refusal.done",
+                    "response_id": "r1",
+                    "refusal": "cannot",
+                },
+                None,
+                "cannot",
+            ),
+            (
+                {
+                    "type": "response.reasoning_text.delta",
+                    "response_id": "r2",
+                    "delta": "think",
+                },
+                None,
+                "think",
+            ),
+            (
+                {
+                    "type": "response.reasoning_text.done",
+                    "response_id": "r3",
+                    "text": "done",
+                },
+                None,
+                "done",
+            ),
+            (
+                {
+                    "type": "response.reasoning_summary_text.delta",
+                    "response_id": "r4",
+                    "delta": "sum",
+                },
+                None,
+                "sum",
+            ),
+            (
+                {
+                    "type": "response.reasoning_summary_text.done",
+                    "response_id": "r5",
+                    "text": "summary",
+                },
+                None,
+                "summary",
+            ),
+            (
+                {
+                    "type": "response.audio.delta",
+                    "response_id": "r6",
+                    "delta": "pcm",
+                },
+                None,
+                "pcm",
+            ),
+            ({"type": "response.audio.done", "response_id": "r7"}, None, ""),
+            (
+                {
+                    "type": "response.audio.transcript.delta",
+                    "response_id": "r8",
+                    "delta": "transcript-part",
+                },
+                None,
+                "transcript-part",
+            ),
+            (
+                {
+                    "type": "response.audio.transcript.done",
+                    "response_id": "r9",
+                    "transcript": "full transcript",
+                },
+                None,
+                "full transcript",
+            ),
+            (
+                {
+                    "type": "response.created",
+                    "response": {
+                        "id": "r10",
+                        "model": "gpt-x",
+                        "status": "in_progress",
+                    },
+                },
+                None,
+                "",
+            ),
+            ({"type": "response.in_progress", "response_id": "r11"}, None, ""),
+            ({"type": "response.queued", "response_id": "r12"}, None, ""),
+            (
+                {"type": "response.cancelled", "response_id": "r13"},
+                "error",
+                "",
+            ),
+            (
+                {"type": "response.incomplete", "response_id": "r14"},
+                "error",
+                "",
+            ),
+            ({"type": "error", "response_id": "r15"}, "error", ""),
+        ],
+    )
+    def test_parser_methods_map_supported_event_variants(
+        self,
+        payload: dict[str, Any],
+        expected_finish: str | None,
+        expected_content: str,
+    ) -> None:
+        """Adapter maps supported event variants to expected chunks."""
+        chunk = self._parse(payload)
+
+        assert chunk is not None
+        assert chunk.choices[0].delta.content == expected_content
+        assert chunk.choices[0].finish_reason == expected_finish
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"type": "response.refusal.done", "refusal": 1},
+            {"type": "response.reasoning_text.delta", "delta": 1},
+            {"type": "response.reasoning_text.done", "text": 1},
+            {"type": "response.reasoning_summary_text.delta", "delta": 1},
+            {"type": "response.reasoning_summary_text.done", "text": 1},
+            {"type": "response.audio.delta", "delta": 1},
+            {"type": "response.audio.transcript.delta", "delta": 1},
+            {"type": "response.audio.transcript.done", "transcript": 1},
+        ],
+    )
+    def test_parser_methods_return_none_for_invalid_value_shapes(
+        self,
+        payload: dict[str, Any],
+    ) -> None:
+        """Adapter returns none for unsupported value shapes."""
+        assert self._parse(payload) is None
+
+    def test_stream_chunk_factory_rejects_non_string_arguments(self) -> None:
+        """Function chunk factory rejects non-string function arguments."""
+        chunk = _OpenAIStreamChunkFactory.build_function_chunk_from_parts(
+            {"response_id": "r_bad"},
+            name="tool",
+            arguments={"a": 1},
+            call_id="call_bad",
+            event_type="response.function_call_arguments.delta",
+        )
+
+        assert chunk is None
+
+
 class TestOpenAIResponsesCompletionAdapter:
     """Tests for response normalization."""
 
@@ -145,6 +500,7 @@ class TestOpenAIResponsesCompletionAdapter:
         assert normalized["choices"][0]["message"]["content"] == "Hello world"
         assert normalized["choices"][0]["finish_reason"] == "stop"
         assert normalized["usage"]["total_tokens"] == 12
+        assert normalized["provider_extensions"]["openai"]["event_kind"] == "completion"
 
     def test_maps_string_message_content(self) -> None:
         """Adapter supports provider output items with plain string content."""
@@ -273,6 +629,7 @@ class TestOpenAIResponsesStreamAdapter:
             chunk.provider_extensions["openai"]["event_type"]
             == "response.output_text.delta"
         )
+        assert chunk.provider_extensions["openai"]["event_kind"] == "text"
 
     def test_maps_function_arguments_delta_event(self) -> None:
         """Stream adapter maps function argument deltas to tool call chunks."""
@@ -361,6 +718,8 @@ class TestOpenAIResponsesStreamAdapter:
 
         assert chunk is not None
         assert chunk.choices[0].finish_reason == "error"
+        assert chunk.provider_extensions is not None
+        assert chunk.provider_extensions["openai"]["event_kind"] == "error"
 
     def test_maps_completed_event_to_stop_reason(self) -> None:
         """Stream adapter maps completed response event to stop finish reason."""
@@ -372,6 +731,8 @@ class TestOpenAIResponsesStreamAdapter:
 
         assert chunk is not None
         assert chunk.choices[0].finish_reason == "stop"
+        assert chunk.provider_extensions is not None
+        assert chunk.provider_extensions["openai"]["event_kind"] == "lifecycle"
 
     def test_maps_output_text_done_event(self) -> None:
         """Stream adapter maps output_text.done events."""

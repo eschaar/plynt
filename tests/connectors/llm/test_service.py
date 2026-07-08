@@ -12,6 +12,7 @@ from plynth.connectors.llm import (
     AsyncLLMService,
     LLMGenerateRequest,
     LLMService,
+    LLMStreamChunk,
     LLMStreamParseError,
 )
 from plynth.connectors.llm.adapters import LLMAdapterSet, build_default_adapter_set
@@ -121,6 +122,20 @@ class _TestResponseAdapter:
         }
 
 
+class _TestStreamAdapter:
+    """Test stream adapter that records payload lines passed for parsing."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def parse_event_payload(self, payload_line: str) -> LLMStreamChunk | None:
+        self.calls.append(payload_line)
+        return LLMService.parse_stream_line(
+            payload_line,
+            adapter_set=build_default_adapter_set(),
+        )
+
+
 class TestLLMService:
     """Tests for LLMService."""
 
@@ -200,6 +215,15 @@ class TestLLMService:
         }
         assert request_adapter.calls == [(False, "demo")]
         assert result.choices[0].message.content == "ok"
+
+    def test_generate_falls_back_for_non_object_completion_payload(self) -> None:
+        """Generate normalizes non-object JSON responses to an empty payload."""
+        svc, _ = _make_service(content=_json_bytes(["unexpected"]))
+        request = LLMGenerateRequest(messages=[{"role": "user", "content": "Hi"}])
+
+        result = svc.generate(request)
+
+        assert result.choices == []
 
     def test_generate_stream_uses_request_adapter(self) -> None:
         """generate_stream uses configured request adapter with stream flag."""
@@ -375,6 +399,30 @@ class TestLLMService:
         assert chunk is not None
         assert chunk.id == "chunk-raw"
 
+    def test_parse_stream_line_uses_provided_adapter_set(self) -> None:
+        """parse_stream_line routes parsing through provided adapter set."""
+        stream_adapter = _TestStreamAdapter()
+        adapter_set = LLMAdapterSet(
+            request_adapter=build_default_adapter_set().request_adapter,
+            completion_adapter=build_default_adapter_set().completion_adapter,
+            stream_adapter=stream_adapter,
+        )
+
+        chunk = LLMService.parse_stream_line(
+            (
+                'data: {"id":"chunk-custom","choices":[{"index":0,'
+                '"delta":{"role":"assistant","content":"X"}}]}'
+            ),
+            adapter_set=adapter_set,
+        )
+
+        assert stream_adapter.calls == [
+            '{"id":"chunk-custom","choices":[{"index":0,'
+            '"delta":{"role":"assistant","content":"X"}}]}'
+        ]
+        assert chunk is not None
+        assert chunk.id == "chunk-custom"
+
 
 class TestAsyncLLMService:
     """Tests for AsyncLLMService."""
@@ -454,6 +502,15 @@ class TestAsyncLLMService:
         }
         assert request_adapter.calls == [(False, "demo")]
         assert result.choices[0].message.content == "ok"
+
+    async def test_generate_falls_back_for_non_object_completion_payload(self) -> None:
+        """Async generate normalizes non-object JSON responses to empty payload."""
+        svc, _ = _make_async_service(content=_json_bytes(["unexpected"]))
+        request = LLMGenerateRequest(messages=[{"role": "user", "content": "Hi"}])
+
+        result = await svc.generate(request)
+
+        assert result.choices == []
 
     async def test_generate_stream_uses_request_adapter(self) -> None:
         """Async generate_stream uses configured request adapter."""
@@ -597,3 +654,27 @@ class TestAsyncLLMService:
 
         assert chunk is not None
         assert chunk.id == "chunk-delegate"
+
+    def test_parse_stream_line_supports_custom_adapter_set(self) -> None:
+        """Async parse_stream_line supports explicit adapter-set parsing."""
+        stream_adapter = _TestStreamAdapter()
+        adapter_set = LLMAdapterSet(
+            request_adapter=build_default_adapter_set().request_adapter,
+            completion_adapter=build_default_adapter_set().completion_adapter,
+            stream_adapter=stream_adapter,
+        )
+
+        chunk = AsyncLLMService.parse_stream_line(
+            (
+                'data: {"id":"chunk-adelegate","choices":[{"index":0,'
+                '"delta":{"role":"assistant","content":"A"}}]}'
+            ),
+            adapter_set=adapter_set,
+        )
+
+        assert stream_adapter.calls == [
+            '{"id":"chunk-adelegate","choices":[{"index":0,'
+            '"delta":{"role":"assistant","content":"A"}}]}'
+        ]
+        assert chunk is not None
+        assert chunk.id == "chunk-adelegate"

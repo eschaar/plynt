@@ -1,10 +1,14 @@
 """Generic, provider-agnostic LLM connector for plynth."""
 
 from plynth.connectors.llm.adapters import (
+    AnthropicMessagesCompletionAdapter,
+    AnthropicMessagesRequestAdapter,
+    AnthropicMessagesStreamAdapter,
     LLMAdapterSet,
     OpenAIResponsesCompletionAdapter,
     OpenAIResponsesRequestAdapter,
     OpenAIResponsesStreamAdapter,
+    build_anthropic_messages_adapter_set,
     build_default_adapter_set,
     build_openai_responses_adapter_set,
 )
@@ -28,6 +32,9 @@ from plynth.connectors.llm.service import (
 )
 
 __all__ = [
+    "AnthropicMessagesCompletionAdapter",
+    "AnthropicMessagesRequestAdapter",
+    "AnthropicMessagesStreamAdapter",
     "AsyncLLMService",
     "LLMAdapterSet",
     "LLMCompletion",
@@ -46,6 +53,7 @@ __all__ = [
     "OpenAIResponsesCompletionAdapter",
     "OpenAIResponsesRequestAdapter",
     "OpenAIResponsesStreamAdapter",
+    "build_anthropic_messages_adapter_set",
     "build_default_adapter_set",
     "build_openai_responses_adapter_set",
 ]

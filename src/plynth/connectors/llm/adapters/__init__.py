@@ -1,5 +1,11 @@
 """Provider adapter helpers for the generic LLM connector."""
 
+from plynth.connectors.llm.adapters.anthropic import (
+    AnthropicMessagesCompletionAdapter,
+    AnthropicMessagesRequestAdapter,
+    AnthropicMessagesStreamAdapter,
+    build_anthropic_messages_adapter_set,
+)
 from plynth.connectors.llm.adapters.base import (
     DefaultLLMCompletionAdapter,
     DefaultLLMRequestAdapter,
@@ -18,6 +24,9 @@ from plynth.connectors.llm.adapters.openai import (
 )
 
 __all__ = [
+    "AnthropicMessagesCompletionAdapter",
+    "AnthropicMessagesRequestAdapter",
+    "AnthropicMessagesStreamAdapter",
     "DefaultLLMCompletionAdapter",
     "DefaultLLMRequestAdapter",
     "DefaultLLMStreamAdapter",
@@ -28,6 +37,7 @@ __all__ = [
     "OpenAIResponsesCompletionAdapter",
     "OpenAIResponsesRequestAdapter",
     "OpenAIResponsesStreamAdapter",
+    "build_anthropic_messages_adapter_set",
     "build_default_adapter_set",
     "build_openai_responses_adapter_set",
 ]
