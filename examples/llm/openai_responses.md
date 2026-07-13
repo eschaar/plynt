@@ -1,12 +1,16 @@
-"""OpenAI Responses example using the generic LLM connector.
+# OpenAI Responses example
+
+Use this snippet as a copy-paste starting point for the generic LLM connector
+with the OpenAI Responses API.
 
 Environment variables:
-- OPENAI_API_KEY (required)
-- OPENAI_BASE_URL (optional, default: https://api.openai.com)
-- LLM_MODEL (optional, default: gpt-4.1-mini)
-- LLM_PROMPT (optional)
-"""
 
+- `OPENAI_API_KEY` (required)
+- `OPENAI_BASE_URL` (optional, default: `https://api.openai.com`)
+- `LLM_MODEL` (optional, default: `gpt-4.1-mini`)
+- `LLM_PROMPT` (optional)
+
+```python
 from __future__ import annotations
 
 import os
@@ -62,3 +66,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+```

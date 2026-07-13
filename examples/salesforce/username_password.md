@@ -1,35 +1,19 @@
-"""Salesforce quickstart — OAuth2 Username/Password (ROPC) flow.
+# Salesforce Username/Password example
 
-Demonstrates both sync and async workflows using the Plynth Salesforce
-integration with the OAuth2 Resource Owner Password Credentials (ROPC)
-grant type. Debug logging is enabled so you can see the auth/transport
-activity (token fetch, cache hit/miss, requests) in the console.
+Use this snippet as a copy-paste starting point for OAuth2 Resource Owner
+Password Credentials (ROPC), with both sync and async flows.
 
-Use this flow when you are running server-side automation under a named
-Salesforce user and cannot use Client Credentials.
+Required variables (see `example.env`):
 
-.. warning::
-    The ROPC flow is considered legacy. Prefer Client Credentials for
-    machine-to-machine integrations wherever supported.
+- `SF_CLIENT_ID`
+- `SF_CLIENT_SECRET`
+- `SF_TOKEN_URL`
+- `SF_USERNAME`
+- `SF_PASSWORD`
+- `SF_SECURITY_TOKEN` (optional, appended when set)
+- `SF_API_VERSION` (optional)
 
-Copy ``example.env`` to ``.env`` in this same directory and fill in your
-values before running::
-
-    cp examples/salesforce/example.env examples/salesforce/.env
-    python examples/salesforce/username_password.py
-
-Required variables (see ``example.env``)::
-
-    SF_CLIENT_ID
-    SF_CLIENT_SECRET
-    SF_TOKEN_URL
-    SF_USERNAME
-    SF_PASSWORD
-    SF_SECURITY_TOKEN   (optional — appended to password when set)
-    SF_API_VERSION      (optional)
-
-"""
-
+```python
 from __future__ import annotations
 
 import asyncio
@@ -67,7 +51,6 @@ class _Settings(SalesforceSettings):
 
 
 def _check_settings(settings: SalesforceSettings) -> None:
-    """Exit with a clear error when required env vars are missing."""
     missing = [
         var
         for var, val in [
@@ -90,7 +73,6 @@ def _check_settings(settings: SalesforceSettings) -> None:
 
 
 def main_sync(settings: _Settings) -> None:
-    """Run the synchronous username/password Salesforce demo."""
     auth = SalesforcePasswordAuthMiddleware(
         client_id=settings.client_id,
         client_secret=settings.client_secret,
@@ -107,7 +89,6 @@ def main_sync(settings: _Settings) -> None:
 
 
 async def main_async(settings: _Settings) -> None:
-    """Run the asynchronous username/password Salesforce demo."""
     auth = AsyncSalesforcePasswordAuthMiddleware(
         client_id=settings.client_id,
         client_secret=settings.client_secret,
@@ -139,3 +120,4 @@ if __name__ == "__main__":
     print("# ASYNC")
     print("#" * 60)
     asyncio.run(main_async(_settings))
+```

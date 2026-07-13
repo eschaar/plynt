@@ -1,6 +1,6 @@
 # LLM Examples
 
-Runnable scripts for the generic LLM connector with provider adapters.
+Markdown snippets for the generic LLM connector with provider adapters.
 
 These examples are intentionally small but they demonstrate the full contract
 path in this repository:
@@ -10,12 +10,12 @@ path in this repository:
 1. Call one `LLMService` API for non-streaming and streaming.
 1. Receive one neutral completion or stream-chunk shape.
 
-## Scripts
+## Snippets
 
 | Script                  | Provider route                | Notes                                                                                             |
 | ----------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------- |
-| `openai_responses.py`   | OpenAI `POST /v1/responses`   | Uses `build_openai_responses_adapter_set()`                                                       |
-| `anthropic_messages.py` | Anthropic `POST /v1/messages` | Uses `build_anthropic_messages_adapter_set()` and sends `x-api-key` + `anthropic-version` headers |
+| `openai_responses.md`   | OpenAI `POST /v1/responses`   | Uses `build_openai_responses_adapter_set()`                                                       |
+| `anthropic_messages.md` | Anthropic `POST /v1/messages` | Uses `build_anthropic_messages_adapter_set()` and sends `x-api-key` + `anthropic-version` headers |
 
 ## Quick start
 
@@ -24,8 +24,9 @@ cp examples/llm/example.env examples/llm/.env
 # Fill values in examples/llm/.env, then export them in your shell.
 set -a && source examples/llm/.env && set +a
 
-python examples/llm/openai_responses.py
-python examples/llm/anthropic_messages.py
+# Open the markdown snippets and copy the code into your project.
+# examples/llm/openai_responses.md
+# examples/llm/anthropic_messages.md
 ```
 
 ## How these examples map to the connector

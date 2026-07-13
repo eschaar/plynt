@@ -1,13 +1,17 @@
-"""Anthropic Messages example using the generic LLM connector.
+# Anthropic Messages example
+
+Use this snippet as a copy-paste starting point for the generic LLM connector
+with the Anthropic Messages API.
 
 Environment variables:
-- ANTHROPIC_API_KEY (required)
-- ANTHROPIC_BASE_URL (optional, default: https://api.anthropic.com)
-- ANTHROPIC_API_VERSION (optional, default: 2023-06-01)
-- ANTHROPIC_MODEL (optional, default: claude-sonnet-4-20250514)
-- LLM_PROMPT (optional)
-"""
 
+- `ANTHROPIC_API_KEY` (required)
+- `ANTHROPIC_BASE_URL` (optional, default: `https://api.anthropic.com`)
+- `ANTHROPIC_API_VERSION` (optional, default: `2023-06-01`)
+- `ANTHROPIC_MODEL` (optional, default: `claude-sonnet-4-20250514`)
+- `LLM_PROMPT` (optional)
+
+```python
 from __future__ import annotations
 
 import os
@@ -70,3 +74,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+```
