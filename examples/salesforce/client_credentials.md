@@ -1,23 +1,16 @@
-"""Salesforce quickstart — OAuth2 Client Credentials flow.
+# Salesforce Client Credentials example
 
-Demonstrates a complete sync workflow using the Plynth Salesforce integration
-with the OAuth2 Client Credentials (machine-to-machine) grant type.
+Use this snippet as a copy-paste starting point for a complete sync workflow
+using OAuth2 Client Credentials (machine-to-machine).
 
-Copy ``example.env`` to ``.env`` in this same directory and fill in your
-values before running::
+Required variables (see `example.env`):
 
-    cp examples/salesforce/example.env examples/salesforce/.env
-    python examples/salesforce/client_credentials.py
+- `SF_CLIENT_ID`
+- `SF_CLIENT_SECRET`
+- `SF_TOKEN_URL`
+- `SF_API_VERSION` (optional)
 
-Required variables (see ``example.env``)::
-
-    SF_CLIENT_ID
-    SF_CLIENT_SECRET
-    SF_TOKEN_URL
-    SF_API_VERSION   (optional)
-
-"""
-
+```python
 from __future__ import annotations
 
 import sys
@@ -46,7 +39,6 @@ class _Settings(SalesforceSettings):
 
 
 def main() -> None:
-    """Run the client-credentials Salesforce demo end-to-end."""
     settings = _Settings()
     if not settings.client_id or not settings.client_secret or not settings.token_url:
         print(
@@ -74,3 +66,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+```

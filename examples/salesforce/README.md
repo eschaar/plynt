@@ -1,6 +1,6 @@
 # Salesforce Examples
 
-Runnable scripts that demonstrate the Plynth Salesforce integration against a
+Markdown snippets that demonstrate the Plynth Salesforce integration against a
 real Salesforce org.
 
 These scripts are not just auth demos. They run a small end-to-end flow over
@@ -12,16 +12,16 @@ the connector services:
 1. SOQL query (`query.query(...)`)
 1. SOSL search (`utility.search(...)`)
 
-## Scripts
+## Snippets
 
 | Script                  | OAuth2 flow                                | When to use                                                                 |
 | ----------------------- | ------------------------------------------ | --------------------------------------------------------------------------- |
-| `username_password.py`  | Resource Owner Password Credentials (ROPC) | Automation under a named user; orgs where Client Credentials is unavailable |
-| `client_credentials.py` | Client Credentials                         | Machine-to-machine; requires ECA with a *Run As* user configured            |
+| `username_password.md`  | Resource Owner Password Credentials (ROPC) | Automation under a named user; orgs where Client Credentials is unavailable |
+| `client_credentials.md` | Client Credentials                         | Machine-to-machine; requires ECA with a *Run As* user configured            |
 
-> **Note:** `client_credentials.py` requires additional Salesforce setup. If
+> **Note:** `client_credentials.md` requires additional Salesforce setup. If
 > you have not yet configured a *Run As* user on the External Client App, use
-> `username_password.py` first.
+> `username_password.md` first.
 
 ______________________________________________________________________
 
@@ -29,8 +29,8 @@ ______________________________________________________________________
 
 ```bash
 cp examples/salesforce/example.env examples/salesforce/.env
-# Fill in your credentials, then:
-python examples/salesforce/username_password.py
+# Fill in your credentials, then copy the snippet into your project.
+# examples/salesforce/username_password.md
 ```
 
 Expected output includes sections named:
@@ -76,7 +76,7 @@ App** (ECA). The steps below use the current ECA UI.
    - *Manage user data via APIs (api)*
    - *Perform requests at any time (refresh_token, offline_access)*
 1. Enable **Enable Client Credentials Flow** if you intend to use
-   `client_credentials.py`.
+   `client_credentials.md`.
 1. Optionally disable **Require Proof Key for Code Exchange (PKCE)** — not
    needed for server-side flows.
 1. Click **Save**.
@@ -116,7 +116,7 @@ not in the org's trusted IP range.
 
 ### Step 6 (optional) — Configure Client Credentials flow
 
-This step is only needed for `client_credentials.py`.
+This step is only needed for `client_credentials.md`.
 
 1. Open the ECA → click **Manage** → **Edit Policies**.
 1. Under **Client Credentials Flow**, set **Run As** to the integration user

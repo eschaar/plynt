@@ -1,9 +1,8 @@
-"""Shared demo logic for the Salesforce quickstart examples.
+# Salesforce shared demo logic
 
-Not intended to be run directly — imported by ``client_credentials.py``
-and ``username_password.py``.
-"""
+This snippet contains the shared helper logic used by the Salesforce examples.
 
+```python
 from __future__ import annotations
 
 import logging
@@ -17,13 +16,11 @@ from plynth.connectors.salesforce.settings import SalesforceSettings
 
 
 def configure_logging() -> None:
-    """Enable DEBUG logging for Plynth to show auth and transport activity."""
     logging.basicConfig(
         level=logging.DEBUG,
-        format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
+        format="%(asctime)s %(levelname)-8s %(name)s - %(message)s",
         datefmt="%H:%M:%S",
     )
-    # Suppress noisy httpx2/httpcore transport loggers.
     logging.getLogger("httpx2").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 
@@ -34,22 +31,19 @@ def run_demo(
     *,
     search_term: str = "Inc",
 ) -> None:
-    """Execute the standard demo sequence against an authenticated facade."""
     utility = facade.utility(api_version=settings.api_version)
     query_svc = facade.query(api_version=settings.api_version)
     account_svc = facade.sobject("Account", api_version=settings.api_version)
 
-    # --- 0. Available API versions ------------------------------------------
     print("=" * 60)
     print("AVAILABLE API VERSIONS")
     print("=" * 60)
     api_versions = utility.versions()
-    for v in api_versions[-5:]:  # show only the 5 most recent
+    for v in api_versions[-5:]:
         print(f"  {v.version:<8} {v.label}")
     if api_versions:
         print(f"  -> Latest: {api_versions[-1].version}")
 
-    # --- 1. Org limits ------------------------------------------------------
     print()
     print("=" * 60)
     print("ORG LIMITS")
@@ -60,10 +54,9 @@ def run_demo(
         pct = (used / limit.max_value * 100) if limit.max_value else 0
         print(f"  {name:<45} {used:>8} / {limit.max_value:<8}  ({pct:.1f}%)")
 
-    # --- 2. Account SObject description (schema) ----------------------------
     print()
     print("=" * 60)
-    print("ACCOUNT SOBJECT — describe()")
+    print("ACCOUNT SOBJECT - describe()")
     print("=" * 60)
     meta: dict[str, Any] = account_svc.describe()
     fields = meta.get("fields", [])
@@ -75,7 +68,6 @@ def run_demo(
         standard = [f["name"] for f in fields if not f["name"].endswith("__c")][:10]
         print(f"  First fields: {', '.join(standard)}")
 
-    # --- 3. SOQL query — first 5 Accounts -----------------------------------
     print()
     print("=" * 60)
     print("SOQL: SELECT Id, Name FROM Account LIMIT 5")
@@ -87,7 +79,6 @@ def run_demo(
     for record in result.records:
         print(f"  {record.get('Id')}  {record.get('Name')}")
 
-    # --- 4. SOSL quick search -----------------------------------------------
     print()
     print("=" * 60)
     print(f"SOSL: FIND {{{search_term}}} IN NAME FIELDS RETURNING Account(Id, Name)")
@@ -110,22 +101,19 @@ async def run_async_demo(
     *,
     search_term: str = "Inc",
 ) -> None:
-    """Async variant — mirrors run_demo() using the async facade."""
     utility = facade.utility(api_version=settings.api_version)
     query_svc = facade.query(api_version=settings.api_version)
     account_svc = facade.sobject("Account", api_version=settings.api_version)
 
-    # --- 0. Available API versions ------------------------------------------
     print("=" * 60)
     print("AVAILABLE API VERSIONS  (async)")
     print("=" * 60)
     api_versions = await utility.versions()
-    for v in api_versions[-5:]:  # show only the 5 most recent
+    for v in api_versions[-5:]:
         print(f"  {v.version:<8} {v.label}")
     if api_versions:
         print(f"  -> Latest: {api_versions[-1].version}")
 
-    # --- 1. Org limits ------------------------------------------------------
     print()
     print("=" * 60)
     print("ORG LIMITS  (async)")
@@ -136,10 +124,9 @@ async def run_async_demo(
         pct = (used / limit.max_value * 100) if limit.max_value else 0
         print(f"  {name:<45} {used:>8} / {limit.max_value:<8}  ({pct:.1f}%)")
 
-    # --- 2. Account SObject description (schema) ----------------------------
     print()
     print("=" * 60)
-    print("ACCOUNT SOBJECT — describe()  (async)")
+    print("ACCOUNT SOBJECT - describe()  (async)")
     print("=" * 60)
     meta: dict[str, Any] = await account_svc.describe()
     fields = meta.get("fields", [])
@@ -151,7 +138,6 @@ async def run_async_demo(
         standard = [f["name"] for f in fields if not f["name"].endswith("__c")][:10]
         print(f"  First fields: {', '.join(standard)}")
 
-    # --- 3. SOQL query — first 5 Accounts -----------------------------------
     print()
     print("=" * 60)
     print("SOQL: SELECT Id, Name FROM Account LIMIT 5  (async)")
@@ -163,7 +149,6 @@ async def run_async_demo(
     for record in result.records:
         print(f"  {record.get('Id')}  {record.get('Name')}")
 
-    # --- 4. SOSL quick search -----------------------------------------------
     print()
     print("=" * 60)
     print(
@@ -181,3 +166,4 @@ async def run_async_demo(
 
     print()
     print("Done.")
+```
