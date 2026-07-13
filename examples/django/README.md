@@ -5,8 +5,12 @@ applications.
 
 ## Available examples
 
-- [Django cache backend](cache_backend.py) — build `HttpxSyncTransport` with
+- [Django cache backend](cache_backend.md) — build `HttpxSyncTransport` with
   `DjangoCacheBackend` and `CacheMiddleware`
+- [Django transport from settings](transport_from_settings.md) — build
+  `HttpxSyncTransport` via `transport_from_django_settings`
+- [DRF service view](drf_service_view.md) — configure `PlynthServiceMixin`
+  with named service factories
 
 ## Prerequisites
 
