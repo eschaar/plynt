@@ -78,3 +78,8 @@ response.raise_for_status()
 1. `ttl` is converted to Django `timeout` semantics.
 1. Negative TTL values are clamped to `0`.
 1. `ttl=None` uses Django backend defaults.
+
+## Next step
+
+If you also want settings-driven auth + retry + cache wiring in one call, see
+[How to build a transport from Django settings](use-django-transport-helper.md).

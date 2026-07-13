@@ -14,6 +14,10 @@ specific goal. They assume you are already familiar with the basics.
 - [Use caching](use-cache.md) — choose and configure a cache backend
 - [Use Django cache backend](use-django-cache-backend.md) — reuse Django
   `CACHES` aliases with `DjangoCacheBackend`
+- [Use Django transport helper](use-django-transport-helper.md) — build a
+  typed plynth transport from Django settings and cache aliases
+- [Use DRF service mixin](use-drf-plynth-service-mixin.md) — build plynth
+  services lazily inside APIView and ViewSet classes
 - [Configure logging](configure-logging.md) — structured JSON logging,
   log throttling, and exception filters
 - [Handle errors](handle-errors.md) — catch and inspect typed HTTP exceptions
