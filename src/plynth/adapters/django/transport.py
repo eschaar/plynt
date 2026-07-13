@@ -1,37 +1,85 @@
-"""Django transport helper placeholders for Plynth.
+"""Django transport helpers for Plynth.
 
-Concrete transport-wiring behavior will be added in WP4.
+Builds a sync ``HttpxSyncTransport`` from a named Django settings block and
+optional Django cache aliases.
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TypeVar
+
+from plynth.adapters.django.cache import DjangoCacheBackend
+from plynth.adapters.django.settings import from_django_settings
+from plynth.base.middleware import SyncMiddleware
+from plynth.http.auth import auth_from_config
+from plynth.http.policies import HttpRetryPolicy
+from plynth.http.settings import HTTPSettings
+from plynth.http.transport import HttpxSyncTransport, _build_httpx_client
+from plynth.middleware.cache import CacheMiddleware
+from plynth.middleware.retry import RetryMiddleware
 
 __all__ = ["transport_from_django_settings"]
+
+SettingsT = TypeVar("SettingsT", bound=HTTPSettings)
 
 
 def transport_from_django_settings(
     name: str,
-    settings_class: type[Any],
+    settings_class: type[SettingsT],
     *,
     settings_obj: object | None = None,
     response_cache_alias: str | None = None,
     auth_cache_alias: str | None = None,
-    middlewares: list[object] | None = None,
-) -> Any:  # pragma: no cover - placeholder until WP4
-    """Placeholder helper for building a plynth transport from Django config.
+    middlewares: list[SyncMiddleware] | None = None,
+) -> HttpxSyncTransport:
+    """Build a sync transport from one Django settings mapping.
 
-    The implementation is intentionally deferred to WP4. This placeholder keeps
-    the public import surface stable while WP1 establishes package structure.
+    Args:
+        name: Attribute name on the Django settings object.
+        settings_class: ``HTTPSettings`` subclass used to parse the mapping.
+        settings_obj: Optional settings-like object used instead of
+            ``django.conf.settings``.
+        response_cache_alias: Optional Django cache alias used for response
+            caching middleware.
+        auth_cache_alias: Optional Django cache alias used as OAuth2 token
+            cache for auth middleware.
+        middlewares: Optional preconfigured middleware list to prepend.
+
+    Returns:
+        Fully configured sync transport with auth/cache/retry wiring.
+
     """
-    del (
+    if not issubclass(settings_class, HTTPSettings):
+        raise TypeError("settings_class must be an HTTPSettings subclass")
+
+    settings = from_django_settings(
         name,
         settings_class,
-        settings_obj,
-        response_cache_alias,
-        auth_cache_alias,
-        middlewares,
+        settings_obj=settings_obj,
     )
-    raise NotImplementedError(
-        "transport_from_django_settings is planned but not implemented yet"
+
+    resolved_middlewares: list[SyncMiddleware] = list(middlewares or [])
+
+    auth_config = settings.auth
+    if auth_config is not None:
+        auth_token_cache = (
+            DjangoCacheBackend(alias=auth_cache_alias)
+            if auth_cache_alias is not None
+            else None
+        )
+        resolved_middlewares.append(
+            auth_from_config(auth_config, token_cache=auth_token_cache)
+        )
+
+    if response_cache_alias is not None:
+        resolved_middlewares.append(
+            CacheMiddleware(DjangoCacheBackend(alias=response_cache_alias))
+        )
+
+    retry_policy = settings.retry or HttpRetryPolicy(max_attempts=settings.max_attempts)
+    resolved_middlewares.append(RetryMiddleware(retry_policy))
+
+    return HttpxSyncTransport(
+        client=_build_httpx_client(settings),
+        middlewares=resolved_middlewares,
     )
