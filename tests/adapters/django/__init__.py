@@ -1,0 +1,1 @@
+"""Django adapter tests package."""
