@@ -73,6 +73,7 @@ Use runnable examples when you want to validate credentials, endpoint setup,
 and basic service behavior end-to-end.
 
 - [LLM examples](../../examples/llm/README.md)
+- [Django examples](../../examples/django/README.md)
 - [Salesforce examples](../../examples/salesforce/README.md)
 
 ## Installation extras

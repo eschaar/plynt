@@ -12,6 +12,8 @@ specific goal. They assume you are already familiar with the basics.
 - [Write custom middleware](write-middleware.md) — implement the
   `SyncMiddleware` or `AsyncMiddleware` protocol
 - [Use caching](use-cache.md) — choose and configure a cache backend
+- [Use Django cache backend](use-django-cache-backend.md) — reuse Django
+  `CACHES` aliases with `DjangoCacheBackend`
 - [Configure logging](configure-logging.md) — structured JSON logging,
   log throttling, and exception filters
 - [Handle errors](handle-errors.md) — catch and inspect typed HTTP exceptions
