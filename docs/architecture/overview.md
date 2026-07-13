@@ -81,8 +81,3 @@ Architecture decisions are captured in ADRs under `docs/architecture/adr/`.
 Use the ADR index for status and scope:
 
 - [ADR Index](adr/README.md)
-
-## Current Status Notes
-
-- ADR-0017 (streaming response support) is implemented.
-- ADR-0018 (raw response access mode for API clients) remains proposed.

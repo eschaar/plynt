@@ -4,8 +4,8 @@ This index lists architecture decision records (ADRs) for plynth.
 
 ## Status Summary
 
-- Accepted: 22
-- Proposed: 1
+- Accepted: 24
+- Proposed: 0
 
 ## ADR List
 
@@ -34,6 +34,7 @@ This index lists architecture decision records (ADRs) for plynth.
 | [ADR-0021](0021-llm-contract-boundary.md)      | Generic LLM Contract                       | Accepted |
 | [ADR-0022](0022-upstream-rate-governance.md)   | Upstream Rate Governance                   | Accepted |
 | [ADR-0023](0023-httpx2-transport-backend.md)   | HTTP Transport Backend Migration to httpx2 | Accepted |
+| [ADR-0024](0024-framework-adapter-strategy.md) | Framework Adapter Strategy                 | Accepted |
 
 ## When to Add a New ADR
 
@@ -45,4 +46,4 @@ Add an ADR for changes that affect:
 - middleware execution semantics,
 - installation extras or optional-framework strategy.
 
-Use the next sequential number (currently: `0024`).
+Use the next sequential number (currently: `0025`).
