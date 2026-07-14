@@ -1,8 +1,9 @@
 # How to build a transport from Django settings
 
-Use `transport_from_django_settings(...)` when your service keeps external API
-config in Django `settings.py` and you want first-party plynth wiring for auth,
-response caching, and retry behavior.
+Use `transport_from_django_settings(...)` or
+`async_transport_from_django_settings(...)` when your service keeps external
+API config in Django `settings.py` and you want first-party plynth wiring for
+auth, response caching, and retry behavior.
 
 ## Install extras
 
@@ -67,7 +68,7 @@ class ExternalAPISettings(HTTPSettings):
         )
 ```
 
-## Build transport from Django settings
+## Build sync transport from Django settings
 
 ```python
 from plynth.adapters.django.transport import transport_from_django_settings
@@ -89,6 +90,31 @@ Middleware order in the helper is:
 1. `CacheMiddleware` for `response_cache_alias` (optional)
 1. `RetryMiddleware` from `settings.retry` or `MAX_ATTEMPTS`
 
+## Build async transport from Django settings
+
+Use the async helper for ASGI-native Django flows that call async plynth
+clients or services.
+
+```python
+from plynth.adapters.django.transport import async_transport_from_django_settings
+from plynth.middleware.logging import AsyncLoggingMiddleware
+
+transport = async_transport_from_django_settings(
+    "EXTERNAL_API",
+    ExternalAPISettings,
+    response_cache_alias="plynth_responses",
+    auth_cache_alias="plynth_tokens",
+    middlewares=[AsyncLoggingMiddleware()],
+)
+```
+
+Middleware order in the async helper is:
+
+1. your custom async `middlewares`
+1. auth middleware from `settings.auth` (optional)
+1. `AsyncCacheMiddleware` for `response_cache_alias` (optional)
+1. `AsyncRetryMiddleware` from `settings.retry` or `MAX_ATTEMPTS`
+
 ## Use with APIClient
 
 ```python
@@ -96,6 +122,16 @@ from plynth.http.client import APIClient
 
 client = APIClient(base_url="https://api.example.com", transport=transport)
 response = client.get("/products")
+response.raise_for_status()
+```
+
+For async flows:
+
+```python
+from plynth.http.client import AsyncAPIClient
+
+client = AsyncAPIClient(base_url="https://api.example.com", transport=transport)
+response = await client.get("/products")
 response.raise_for_status()
 ```
 
@@ -127,7 +163,7 @@ LOGGING = {
 }
 ```
 
-See [How to configure logging](configure-logging.md) for structured output,
+See [How to configure logging](../configure-logging.md) for structured output,
 throttling, and exception filters.
 
 ## Proxy and security middleware notes

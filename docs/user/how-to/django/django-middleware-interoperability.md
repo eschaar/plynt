@@ -16,12 +16,13 @@ Use this as the baseline integration profile for production services.
    1. `traceparent`
    1. `tracestate`
 
-   In DRF, enable `plynth_auto_request_headers` in `PlynthServiceMixin`.
+   In DRF, set `request_headers = RequestHeadersConfig(enabled=True)` on
+   `PlynthServiceMixin`.
 
 1. Auth and tenant context propagation
 
    If ingress middleware enriches request context (tenant, org, user), map only
-   explicit values to outbound headers using `plynth_request_header_map`.
+   explicit values to outbound headers using `request_headers.mapping`.
 
    Avoid forwarding broad request metadata by default.
 
@@ -66,14 +67,14 @@ Use this as the baseline integration profile for production services.
 
 ## Recommended implementation checklist
 
-1. Use `PlynthServiceMixin` with `plynth_auto_request_headers = True`.
-1. Define `plynth_request_header_map` for tenant/auth context when needed.
+1. Use `PlynthServiceMixin` with `request_headers = RequestHeadersConfig(...)`.
+1. Define `request_headers.mapping` for tenant/auth context when needed.
 1. Configure dedicated cache aliases for response and auth token caches.
 1. Configure `plynth_exception_handler` in DRF settings.
 1. Validate with adapter tests and smoke tests in CI.
 
 ## Related guides
 
-- [Use DRF service mixin](use-drf-plynth-service-mixin.md)
+- [Use DRF service mixin](../drf/use-drf-plynth-service-mixin.md)
 - [Use Django transport helper](use-django-transport-helper.md)
 - [Use Django cache backend](use-django-cache-backend.md)

@@ -2,7 +2,10 @@
 
 import importlib
 
-from plynth.adapters.django import from_django_settings
+from plynth.adapters.django import (
+    async_transport_from_django_settings,
+    from_django_settings,
+)
 
 
 class TestDjangoAdapterPackage:
@@ -14,6 +17,7 @@ class TestDjangoAdapterPackage:
 
         assert module.__all__ == [
             "DjangoCacheBackend",
+            "async_transport_from_django_settings",
             "from_django_settings",
             "transport_from_django_settings",
         ]
@@ -23,7 +27,12 @@ class TestDjangoAdapterPackage:
         module = importlib.import_module("plynth.adapters.django")
 
         assert module.from_django_settings is from_django_settings
+        assert (
+            module.async_transport_from_django_settings
+            is async_transport_from_django_settings
+        )
         assert module.DjangoCacheBackend.__name__ == "DjangoCacheBackend"
+        assert callable(module.async_transport_from_django_settings)
         assert callable(module.transport_from_django_settings)
 
     def test_submodules_import_without_django_installed(self) -> None:

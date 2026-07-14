@@ -1,11 +1,19 @@
-"""DRF error-mapping helpers for plynth exceptions."""
+"""Provide DRF error-mapping helpers for plynth exceptions"""
 
 from __future__ import annotations
 
 import importlib
 from typing import Any
 
-from plynth.base.errors import BaseError
+from plynth.base.errors import (
+    BaseError,
+    ConfigurationError,
+    DependencyUnavailableError,
+    FeatureDisabledError,
+    InvalidInputError,
+    OperationFailedError,
+    TransportError,
+)
 from plynth.http.errors import HttpStatusError
 
 __all__ = [
@@ -15,12 +23,33 @@ __all__ = [
 ]
 
 
+_BASE_ERROR_STATUS_MAP: dict[type[BaseError], int] = {
+    InvalidInputError: 400,
+    OperationFailedError: 422,
+    FeatureDisabledError: 503,
+    DependencyUnavailableError: 503,
+    ConfigurationError: 500,
+    TransportError: 502,
+}
+
+
+def _status_code_for_base_error(exc: BaseError) -> int:
+    """Resolve HTTP status for known plynth base errors
+
+    Uses ``isinstance`` matching so subclasses inherit parent mapping.
+    """
+    for error_type, status_code in _BASE_ERROR_STATUS_MAP.items():
+        if isinstance(exc, error_type):
+            return status_code
+    return 500
+
+
 def build_error_payload(
     exc: Exception,
     *,
     include_details: bool = False,
 ) -> dict[str, Any]:
-    """Build a safe external error payload from an exception.
+    """Build safe external error payload from an exception
 
     Args:
         exc: Raised exception.
@@ -28,7 +57,7 @@ def build_error_payload(
             ``BaseError`` and details are available.
 
     Returns:
-        A JSON-serializable payload suitable for DRF responses.
+        JSON-serializable payload suitable for DRF responses
 
     """
     if isinstance(exc, BaseError):
@@ -51,14 +80,14 @@ def map_exception_to_drf_response(
     *,
     include_details: bool = False,
 ) -> Any:
-    """Convert an exception into a DRF ``Response`` object.
+    """Convert exception into DRF ``Response`` object
 
     Args:
         exc: Raised exception.
         include_details: Include plynth error ``details`` in the payload.
 
     Returns:
-        DRF ``Response`` instance with mapped status and payload.
+        DRF ``Response`` instance with mapped status and payload
 
     """
     response_mod = importlib.import_module("rest_framework.response")
@@ -67,13 +96,15 @@ def map_exception_to_drf_response(
     status_code = 500
     if isinstance(exc, HttpStatusError):
         status_code = exc.status_code
+    elif isinstance(exc, BaseError):
+        status_code = _status_code_for_base_error(exc)
 
     payload = build_error_payload(exc, include_details=include_details)
     return response_cls(payload, status=status_code)
 
 
 def plynth_exception_handler(exc: Exception, context: dict[str, Any]) -> Any:
-    """Fallback-aware DRF exception handler for plynth-backed views.
+    """Handle plynth exceptions with DRF fallback behavior
 
     First delegates to DRF's default exception handler. When DRF does not map
     the exception, this returns a mapped plynth error response.

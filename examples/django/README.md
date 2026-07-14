@@ -8,9 +8,12 @@ applications.
 - [Django cache backend](cache_backend.md) — build `HttpxSyncTransport` with
   `DjangoCacheBackend` and `CacheMiddleware`
 - [Django transport from settings](transport_from_settings.md) — build
-  `HttpxSyncTransport` via `transport_from_django_settings`
-- [DRF service view](drf_service_view.md) — configure `PlynthServiceMixin`
-  with named service factories
+  `HttpxSyncTransport` or `HttpxAsyncTransport` via Django adapter helpers
+- [Django middleware profile](middleware_profile.md) — align inbound Django
+  middleware context with outbound plynth behavior
+
+For DRF-specific examples, see
+[../drf/README.md](../drf/README.md).
 
 ## Prerequisites
 

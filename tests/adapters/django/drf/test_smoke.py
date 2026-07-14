@@ -7,9 +7,9 @@ from typing import ClassVar, cast
 
 import pytest
 
-from plynth.adapters.django.drf.views import PlynthServiceMixin
+from plynth.adapters.django.drf.views import AsyncPlynthServiceMixin, PlynthServiceMixin
 from plynth.http.settings import HTTPSettings
-from plynth.http.transport import HttpxSyncTransport
+from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
 
 django = pytest.importorskip("django")
 pytest.importorskip("rest_framework")
@@ -35,9 +35,19 @@ class _SmokeSettings(HTTPSettings):
 class _SmokeView(PlynthServiceMixin):
     """Concrete mixin config that can be combined with DRF APIView."""
 
-    plynth_settings_name = "SERVICE"
-    plynth_settings_class = _SmokeSettings
-    plynth_service_factories: ClassVar = {
+    settings_name = "SERVICE"
+    settings_class = _SmokeSettings
+    service_factories: ClassVar = {
+        "client": lambda transport: {"transport": transport, "name": "client"}
+    }
+
+
+class _AsyncSmokeView(AsyncPlynthServiceMixin):
+    """Concrete async mixin config that can be combined with DRF APIView."""
+
+    settings_name = "SERVICE"
+    settings_class = _SmokeSettings
+    service_factories: ClassVar = {
         "client": lambda transport: {"transport": transport, "name": "client"}
     }
 
@@ -48,6 +58,12 @@ def _build_view() -> PlynthServiceMixin:
     return cast(PlynthServiceMixin, smoke_api_view_cls())
 
 
+def _build_async_view() -> AsyncPlynthServiceMixin:
+    """Create a concrete DRF APIView + AsyncPlynthServiceMixin instance."""
+    smoke_api_view_cls = type("_AsyncSmokeAPIView", (_AsyncSmokeView, APIView), {})
+    return cast(AsyncPlynthServiceMixin, smoke_api_view_cls())
+
+
 class TestDjangoDRFAdapterSmoke:
     """Run fast runtime checks for DRF integration helpers."""
 
@@ -56,7 +72,7 @@ class TestDjangoDRFAdapterSmoke:
         with override_settings(SERVICE={"BASE_URL": "https://api.example.test"}):
             view = _build_view()
 
-            transport = view.get_plynth_transport()
+            transport = view.get_transport()
             client = view.get_client()
 
         assert isinstance(transport, HttpxSyncTransport)
@@ -72,3 +88,21 @@ class TestDjangoDRFAdapterSmoke:
             second = cast(object, view.get_client())
 
         assert first is second
+
+    @pytest.mark.asyncio
+    async def test_async_mixin_builds_transport_and_client_without_monkeypatch(
+        self,
+    ) -> None:
+        """Build one async transport and one named client through real helpers."""
+        with override_settings(SERVICE={"BASE_URL": "https://api.example.test"}):
+            view = _build_async_view()
+
+            transport = view.get_transport()
+            client = view.get_client()
+
+        try:
+            assert isinstance(transport, HttpxAsyncTransport)
+            assert client["name"] == "client"
+            assert client["transport"] is transport
+        finally:
+            await transport.aclose()

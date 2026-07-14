@@ -10,10 +10,14 @@ users do not need Django REST Framework installed.
 
 from plynth.adapters.django.cache import DjangoCacheBackend
 from plynth.adapters.django.settings import from_django_settings
-from plynth.adapters.django.transport import transport_from_django_settings
+from plynth.adapters.django.transport import (
+    async_transport_from_django_settings,
+    transport_from_django_settings,
+)
 
 __all__ = [
     "DjangoCacheBackend",
+    "async_transport_from_django_settings",
     "from_django_settings",
     "transport_from_django_settings",
 ]

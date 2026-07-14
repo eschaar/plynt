@@ -3,7 +3,7 @@
 status: BUILD
 type: feature
 reference: ROADMAP-4A
-last_modified: 2026-07-13
+last_modified: 2026-07-15
 
 ## Goal and Context
 
@@ -48,8 +48,11 @@ Constraints and dependencies:
    [ADR-0004](../architecture/adr/0004-settings-and-configuration.md),
    [ADR-0010](../architecture/adr/0010-caching.md), and
    [ADR-0024](../architecture/adr/0024-framework-adapter-strategy.md).
+1. Follow [ADR-0025](../architecture/adr/0025-django-adapter-sync-async-strategy.md)
+   for approved async Django and async DRF follow-up scope.
 1. Keep all Django imports under the framework-adapter boundary.
-1. Keep the first release sync-first and avoid DRF-specific abstractions.
+1. Keep sync and async as explicit adapter concerns and preserve config parity
+   between both paths.
 
 ## AS-IS
 
@@ -147,6 +150,55 @@ adapter:
 The first DRF slice should stay small. It should help with request-aware
 service construction and header propagation, but it should not define a
 generic upstream-to-DRF exception policy in the first release.
+
+### Approved async follow-up slice
+
+ADR-0025 approves an explicit async follow-up for the Django adapter family.
+That slice should preserve naming and configuration symmetry with the sync
+adapter and should start with thin `APIView`-style DRF integrations.
+
+The first async slice should expose these public entry points:
+
+1. `async_transport_from_django_settings(name, settings_class, *,`
+   `settings_obj=None, response_cache_alias=None, auth_cache_alias=None,`
+   `middlewares=None)` in `plynth.adapters.django.transport`.
+1. `AsyncPlynthServiceMixin` in `plynth.adapters.django.drf.views` for async
+   `APIView` handlers that need one or more async plynth transports or service
+   factories.
+1. `build_async_request_header_middleware(request, headers=None, *,`
+   `deny_headers=None)` in `plynth.adapters.django.drf.headers` to build
+   `AsyncHeaderMiddleware` with the same denylist and mapping semantics as the
+   sync helper.
+
+The async slice should reuse these existing config objects rather than create
+async-specific variants:
+
+1. `CacheAliasesConfig`
+1. `RequestHeadersConfig`
+
+Sync and async entry points should stay explicit. The adapter should not try to
+auto-detect execution mode or hide sync versus async service construction.
+
+### Async DRF scope and non-goals
+
+The first async DRF slice should be intentionally narrow.
+
+In scope:
+
+1. async `APIView` method handlers such as `async def get(...)`
+1. async plynth service factories returning clients or services backed by
+   `HttpxAsyncTransport`
+1. async request-header propagation using `AsyncHeaderMiddleware`
+1. smoke tests that prove one async request path works with adapter-managed
+   transport and service caching
+
+Out of scope for the first async slice:
+
+1. DRF generic views built around queryset and ORM assumptions
+1. async support claims for DRF mixins and viewsets
+1. sync-to-async bridge wrappers as the main integration strategy
+1. adapter-level abstraction that hides whether a consumer is using sync or
+   async plynth services
 
 ### External-backend API layer support
 
@@ -282,6 +334,51 @@ Implementation should be executed as these work packages:
 1. Evaluate exception translation from plynth errors to DRF `APIException`.
 1. Add test helpers for DRF view tests that rely on adapter-backed services.
 
+#### WP8. Async Django transport helper
+
+1. Add `async_transport_from_django_settings(...)` next to the existing sync
+   helper in `plynth.adapters.django.transport`.
+1. Mirror the existing settings parsing and cache alias semantics.
+1. Build `HttpxAsyncTransport` and wire `async_auth_from_config(...)`,
+   `AsyncCacheMiddleware`, and `AsyncRetryMiddleware` in the same canonical
+   order as the sync path.
+1. Extract or reuse a small internal middleware-assembly helper only if that
+   keeps sync and async parity obvious and avoids Django imports leaking into
+   core.
+
+#### WP9. Async DRF APIView integration
+
+1. Add `AsyncPlynthServiceMixin` in `plynth.adapters.django.drf.views`.
+1. Keep class-level configuration names aligned with `PlynthServiceMixin`:
+   `settings_name`, `settings_class`, `cache_aliases`, `middlewares`,
+   `service_factories`, and `request_headers`.
+1. Provide explicit async methods such as `get_transport()`,
+   `get_service_factories()`, `get_service(name)`, and `get_client(name)`.
+1. Cache transports and named services per view instance just like the sync
+   mixin, but do not share instances across requests.
+
+#### WP10. Async header propagation and parity tests
+
+1. Add `build_async_request_header_middleware(...)` using
+   `AsyncHeaderMiddleware`.
+1. Keep the same default forwarded header map and sensitive-header denylist as
+   the sync helper.
+1. Add parity tests that compare sync and async behavior for settings loading,
+   response-cache alias wiring, auth-token cache alias wiring, request-header
+   propagation configuration, and unknown service-name failures.
+1. Add smoke tests for async Django and async DRF `APIView` integration.
+
+### Recommended implementation order for the async slice
+
+Implement the async follow-up in this order:
+
+1. WP8 first, because all async framework integration depends on an async
+   transport helper with stable cache and auth semantics.
+1. WP10 header helper parity next, because it is small and de-risks the
+   request-aware DRF path.
+1. WP9 mixin work after the transport and header pieces are already validated.
+1. Async documentation and examples only after smoke tests prove the path.
+
 ### Other Django and DRF adapter opportunities
 
 These are not part of the first committed scope, but they are realistic and
@@ -314,15 +411,13 @@ interesting extensions if plynth adoption in Django APIs grows:
    a thin helper for projects that already rely on thread-local request
    middleware and want request-aware outbound policies without hard-coding
    Django access inside service code.
-1. Async Django support:
-   a later slice for ASGI-native Django deployments using
-   `HttpxAsyncTransport`, once the sync-first layer is stable.
+1. Async generic-view and viewset support for DRF, but only after direct
+   runtime validation shows the execution path is worth maintaining.
 
 ### Deferred from Phase 1
 
 These are useful, but they should stay out of the first implementation slice:
 
-1. async Django adapter behavior,
 1. DRF support,
 1. request-context helpers built on thread-local middleware,
 1. automatic request-id propagation helpers.
@@ -332,6 +427,8 @@ These are useful, but they should stay out of the first implementation slice:
 If real demand appears after the core Django adapter ships, the next useful
 additions are:
 
+1. Async Django transport and async DRF `APIView` integration under the
+   approved ADR-0025 scope.
 1. DRF integration under `plynth[drf]`, including `PlynthServiceMixin` and
    request-header propagation helpers.
 1. `RequestContextAccessor` for projects that already install thread-local
