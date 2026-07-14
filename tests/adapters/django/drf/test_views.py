@@ -11,6 +11,7 @@ import plynth.adapters.django.drf.views as drf_views
 from plynth.adapters.django.drf.views import PlynthServiceMixin
 from plynth.http.settings import HTTPSettings
 from plynth.http.transport import HttpxSyncTransport
+from plynth.middleware.header import HeaderMiddleware
 
 
 class _DemoSettings(HTTPSettings):
@@ -24,6 +25,7 @@ class _DemoView(PlynthServiceMixin):
     plynth_settings_class = _DemoSettings
     plynth_response_cache_alias = "responses"
     plynth_auth_cache_alias = "tokens"
+    plynth_auto_request_headers = False
 
     def __init__(self) -> None:
         self._settings_obj = SimpleNamespace(SERVICE={"BASE_URL": "https://api"})
@@ -79,6 +81,94 @@ class TestPlynthServiceMixin:
         assert calls[0]["args"][0] == "SERVICE"
         assert calls[0]["kwargs"]["response_cache_alias"] == "responses"
         assert calls[0]["kwargs"]["auth_cache_alias"] == "tokens"
+        assert calls[0]["kwargs"]["middlewares"] == []
+
+    def test_injects_request_header_middleware_when_enabled(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Prepend request-header middleware when auto propagation is enabled."""
+        calls: list[dict[str, Any]] = []
+
+        def _fake_transport_from_settings(*args: object, **kwargs: object) -> object:
+            calls.append({"args": args, "kwargs": kwargs})
+            return object()
+
+        monkeypatch.setattr(
+            drf_views,
+            "transport_from_django_settings",
+            _fake_transport_from_settings,
+        )
+
+        class _AutoHeaderView(_DemoView):
+            plynth_auto_request_headers = True
+
+            def __init__(self) -> None:
+                super().__init__()
+                self.request = SimpleNamespace(headers={"X-Request-Id": "req-1"})
+
+        _AutoHeaderView().get_plynth_transport()
+
+        middlewares = calls[0]["kwargs"]["middlewares"]
+        assert len(middlewares) == 1
+        assert isinstance(middlewares[0], HeaderMiddleware)
+
+    def test_prepends_auto_header_middleware_before_custom_middlewares(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Keep auto request-header middleware ahead of custom middleware list."""
+        calls: list[dict[str, Any]] = []
+        custom = HeaderMiddleware({"X-Custom": "1"})
+
+        def _fake_transport_from_settings(*args: object, **kwargs: object) -> object:
+            calls.append({"args": args, "kwargs": kwargs})
+            return object()
+
+        monkeypatch.setattr(
+            drf_views,
+            "transport_from_django_settings",
+            _fake_transport_from_settings,
+        )
+
+        class _AutoHeaderView(_DemoView):
+            plynth_auto_request_headers = True
+            plynth_middlewares: ClassVar = [custom]
+
+            def __init__(self) -> None:
+                super().__init__()
+                self.request = SimpleNamespace(headers={"X-Request-Id": "req-1"})
+
+        _AutoHeaderView().get_plynth_transport()
+
+        middlewares = calls[0]["kwargs"]["middlewares"]
+        assert len(middlewares) == 2
+        assert isinstance(middlewares[0], HeaderMiddleware)
+        assert middlewares[1] is custom
+
+    def test_skips_auto_header_middleware_when_request_missing(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Do not inject request header middleware when no request is available."""
+        calls: list[dict[str, Any]] = []
+
+        def _fake_transport_from_settings(*args: object, **kwargs: object) -> object:
+            calls.append({"args": args, "kwargs": kwargs})
+            return object()
+
+        monkeypatch.setattr(
+            drf_views,
+            "transport_from_django_settings",
+            _fake_transport_from_settings,
+        )
+
+        class _AutoHeaderView(_DemoView):
+            plynth_auto_request_headers = True
+
+        _AutoHeaderView().get_plynth_transport()
+
+        assert calls[0]["kwargs"]["middlewares"] == []
 
     def test_get_plynth_service_builds_and_caches_named_services(
         self,
