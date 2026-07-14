@@ -19,6 +19,9 @@ specific goal. They assume you are already familiar with the basics.
 - [Use DRF service mixin](use-drf-plynth-service-mixin.md) — build plynth
   services lazily inside APIView and ViewSet classes, with optional request
   header propagation and exception mapping
+- [Django middleware interoperability](django-middleware-interoperability.md)
+  — contract for tracing, auth context, cache boundaries, exception mapping,
+  and logging alignment
 - [Configure logging](configure-logging.md) — structured JSON logging,
   log throttling, and exception filters
 - [Handle errors](handle-errors.md) — catch and inspect typed HTTP exceptions

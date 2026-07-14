@@ -129,3 +129,19 @@ LOGGING = {
 
 See [How to configure logging](configure-logging.md) for structured output,
 throttling, and exception filters.
+
+## Proxy and security middleware notes
+
+When running behind ingress or reverse proxies, Django middleware and settings
+determine trusted scheme and host values. Keep these aligned with outbound
+plynth behavior:
+
+1. Configure trusted proxy headers in Django (for example
+   `SECURE_PROXY_SSL_HEADER`) so request scheme is accurate.
+1. Prefer fixed upstream `BASE_URL` values from settings; do not derive them
+   from inbound request host headers.
+1. Forward only the headers you explicitly trust when using DRF header
+   propagation.
+
+This keeps callback links, tracing headers, and auth context predictable across
+environments.
