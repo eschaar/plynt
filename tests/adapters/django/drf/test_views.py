@@ -210,6 +210,61 @@ class TestPlynthServiceMixin:
 
         assert client["name"] == "client"
 
+    def test_transport_is_not_reused_across_distinct_view_instances(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Build separate transports for separate view instances."""
+        call_count = {"value": 0}
+
+        def _fake_transport_from_settings(*args: object, **kwargs: object) -> object:
+            call_count["value"] += 1
+            return object()
+
+        monkeypatch.setattr(
+            drf_views,
+            "transport_from_django_settings",
+            _fake_transport_from_settings,
+        )
+
+        first_view = _DemoView()
+        second_view = _DemoView()
+
+        first_transport = first_view.get_plynth_transport()
+        second_transport = second_view.get_plynth_transport()
+
+        assert first_transport is not second_transport
+        assert call_count["value"] == 2
+
+    def test_named_service_is_not_reused_across_distinct_view_instances(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Build separate named services for separate view instances."""
+
+        def _fake_transport_from_settings(*args: object, **kwargs: object) -> object:
+            return object()
+
+        monkeypatch.setattr(
+            drf_views,
+            "transport_from_django_settings",
+            _fake_transport_from_settings,
+        )
+
+        class _ServiceView(_DemoView):
+            plynth_service_factories: ClassVar = {
+                "client": lambda t: {"transport": t, "name": "client"}
+            }
+
+        first_view = _ServiceView()
+        second_view = _ServiceView()
+
+        first_client = first_view.get_client()
+        second_client = second_view.get_client()
+
+        assert first_client is not second_client
+        assert first_client["transport"] is not second_client["transport"]
+
     def test_get_plynth_service_raises_for_unknown_name(self) -> None:
         """Raise with available names when requested service is unknown."""
         view = _DemoView()

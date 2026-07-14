@@ -90,6 +90,38 @@ class ProductListView(PlynthServiceMixin, APIView):
 `get_client("catalog")` is a convenience alias for
 `get_plynth_service("catalog")`. Both are lazy and cached per view instance.
 
+## ViewSet example
+
+```python
+from rest_framework import mixins, viewsets
+from rest_framework.response import Response
+
+from plynth.adapters.django.drf.views import PlynthServiceMixin
+
+
+class ProductViewSet(
+    PlynthServiceMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    plynth_settings_name = "EXTERNAL_API"
+    plynth_settings_class = ExternalAPISettings
+    plynth_auto_request_headers = True
+    plynth_service_factories = {
+        "catalog": build_catalog_service,
+    }
+
+    def list(self, request, *args, **kwargs):
+        catalog = self.get_client("catalog")
+        upstream = catalog.get("/products")
+        upstream.raise_for_status()
+        return Response(upstream.json())
+```
+
+The mixin cache scope is per view instance, so transports and services are not
+shared across different requests.
+
 ## Propagate request headers to outbound calls
 
 Use `build_request_header_middleware(...)` when correlation headers from the
@@ -145,3 +177,16 @@ Behavior:
 1. If DRF returns `None`, plynth mapping returns a safe error payload.
 1. `HttpStatusError` subclasses keep their status code; other exceptions map
    to HTTP 500.
+
+## Logging and correlation alignment
+
+For end-to-end observability, use the same correlation identifiers in inbound
+Django/DRF logs and outbound plynth logs:
+
+1. `X-Request-Id`
+1. `X-Correlation-Id`
+1. `traceparent`
+1. `tracestate`
+
+Enable `plynth_auto_request_headers` when these headers are set by Django
+middleware at request ingress.
