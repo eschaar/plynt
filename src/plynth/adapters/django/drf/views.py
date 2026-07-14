@@ -6,6 +6,7 @@ import importlib
 from collections.abc import Callable
 from typing import Any, ClassVar, cast
 
+from plynth.adapters.django.drf.headers import build_request_header_middleware
 from plynth.adapters.django.transport import transport_from_django_settings
 from plynth.base.middleware import SyncMiddleware
 from plynth.http.settings import HTTPSettings
@@ -36,6 +37,8 @@ class PlynthServiceMixin:
     plynth_auth_cache_alias: ClassVar[str | None] = None
     plynth_middlewares: ClassVar[list[SyncMiddleware] | None] = None
     plynth_service_factories: ClassVar[dict[str, ServiceFactory] | None] = None
+    plynth_auto_request_headers: ClassVar[bool] = False
+    plynth_request_header_map: ClassVar[dict[str, str] | None] = None
 
     def get_django_settings_object(self) -> object:
         """Return Django's global settings object lazily."""
@@ -53,16 +56,39 @@ class PlynthServiceMixin:
         if self.plynth_settings_class is None:
             raise ValueError("plynth_settings_class must be configured on the view")
 
+        middlewares = list(self.plynth_middlewares or [])
+        request_header_middleware = self.get_request_header_middleware()
+        if request_header_middleware is not None:
+            middlewares.insert(0, request_header_middleware)
+
         transport = transport_from_django_settings(
             self.plynth_settings_name,
             self.plynth_settings_class,
             settings_obj=self.get_django_settings_object(),
             response_cache_alias=self.plynth_response_cache_alias,
             auth_cache_alias=self.plynth_auth_cache_alias,
-            middlewares=list(self.plynth_middlewares or []),
+            middlewares=middlewares,
         )
         self._plynth_transport = transport
         return transport
+
+    def get_request_header_middleware(self) -> SyncMiddleware | None:
+        """Return optional middleware that propagates inbound request headers.
+
+        Header propagation is disabled by default and can be enabled by setting
+        ``plynth_auto_request_headers = True`` on the concrete view class.
+        """
+        if not self.plynth_auto_request_headers:
+            return None
+
+        request = getattr(self, "request", None)
+        if request is None:
+            return None
+
+        return build_request_header_middleware(
+            request,
+            headers=self.plynth_request_header_map,
+        )
 
     def get_plynth_service_factories(self) -> dict[str, ServiceFactory]:
         """Return named service factories configured on this view."""

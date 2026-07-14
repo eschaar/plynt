@@ -75,6 +75,7 @@ class ProductListView(PlynthServiceMixin, APIView):
     plynth_settings_class = ExternalAPISettings
     plynth_response_cache_alias = "plynth_responses"
     plynth_auth_cache_alias = "plynth_tokens"
+    plynth_auto_request_headers = True
     plynth_service_factories = {
         "catalog": build_catalog_service,
     }
@@ -115,3 +116,32 @@ build_request_header_middleware(
     headers={"X-Upstream-Tenant": "X-Tenant-Id"},
 )
 ```
+
+Set a class-level mapping when using automatic propagation from the mixin:
+
+```python
+class ProductListView(PlynthServiceMixin, APIView):
+    plynth_auto_request_headers = True
+    plynth_request_header_map = {
+        "X-Upstream-Tenant": "X-Tenant-Id",
+    }
+```
+
+## DRF exception mapping for plynth errors
+
+Use the provided exception handler to map unhandled plynth exceptions to
+safe DRF JSON responses.
+
+```python
+# settings.py
+REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "plynth.adapters.django.drf.errors.plynth_exception_handler",
+}
+```
+
+Behavior:
+
+1. DRF default exception handler runs first.
+1. If DRF returns `None`, plynth mapping returns a safe error payload.
+1. `HttpStatusError` subclasses keep their status code; other exceptions map
+   to HTTP 500.

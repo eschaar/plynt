@@ -17,7 +17,8 @@ specific goal. They assume you are already familiar with the basics.
 - [Use Django transport helper](use-django-transport-helper.md) — build a
   typed plynth transport from Django settings and cache aliases
 - [Use DRF service mixin](use-drf-plynth-service-mixin.md) — build plynth
-  services lazily inside APIView and ViewSet classes
+  services lazily inside APIView and ViewSet classes, with optional request
+  header propagation and exception mapping
 - [Configure logging](configure-logging.md) — structured JSON logging,
   log throttling, and exception filters
 - [Handle errors](handle-errors.md) — catch and inspect typed HTTP exceptions

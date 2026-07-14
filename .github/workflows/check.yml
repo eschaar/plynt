@@ -46,7 +46,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e .[httpx,salesforce,test]
+        run: pip install -e .[httpx,salesforce,django,drf,test]
 
       - name: Test
         run: pytest --tb=short -q

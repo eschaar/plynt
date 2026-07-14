@@ -5,6 +5,7 @@ core Django adapter surface.
 """
 
 __all__ = [
+    "errors",
     "headers",
     "views",
 ]
