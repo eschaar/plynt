@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -29,6 +30,9 @@ __all__ = [
 
 SyncServiceFactory = Callable[[HttpxSyncTransport], Any]
 AsyncServiceFactory = Callable[[HttpxAsyncTransport], Any]
+
+
+_background_transport_cleanup_tasks: set[asyncio.Task[Any]] = set()
 
 
 @dataclass(frozen=True)
@@ -109,6 +113,38 @@ class _BasePlynthServiceMixin:
             self._services = cached_services
         return cast(dict[str, Any], cached_services)
 
+    def _close_cached_transport(self) -> None:
+        """Close and discard a cached transport when one exists"""
+        cached_transport = getattr(self, "_transport", None)
+        if cached_transport is None:
+            return
+
+        close = getattr(cached_transport, "close", None)
+        if close is not None:
+            cast(Any, close)()
+
+        try:
+            delattr(self, "_transport")
+        except AttributeError:
+            pass
+
+    async def _aclose_cached_transport(self) -> None:
+        """Async-close and discard a cached transport when one exists"""
+        cached_transport = getattr(self, "_transport", None)
+        if cached_transport is None:
+            return
+
+        close = getattr(cached_transport, "aclose", None)
+        if close is not None:
+            await cast(Any, close)()
+        else:
+            self._close_cached_transport()
+
+        try:
+            delattr(self, "_transport")
+        except AttributeError:
+            pass
+
 
 class PlynthServiceMixin(_BasePlynthServiceMixin):
     """Build plynth transports and services inside DRF views
@@ -126,6 +162,22 @@ class PlynthServiceMixin(_BasePlynthServiceMixin):
 
     middlewares: ClassVar[list[SyncMiddleware] | None] = None
     service_factories: ClassVar[dict[str, SyncServiceFactory] | None] = None
+
+    def finalize_response(
+        self,
+        request: object,
+        response: object,
+        *args: object,
+        **kwargs: object,
+    ) -> Any:
+        """Finalize the response and release the cached transport"""
+        try:
+            finalize_response = getattr(super(), "finalize_response", None)
+            if finalize_response is not None:
+                return cast(Any, finalize_response)(request, response, *args, **kwargs)
+            return response
+        finally:
+            self._close_cached_transport()
 
     def get_transport(self) -> HttpxSyncTransport:
         """Return cached plynth transport for this view instance"""
@@ -203,6 +255,35 @@ class AsyncPlynthServiceMixin(_BasePlynthServiceMixin):
 
     middlewares: ClassVar[list[AsyncMiddleware] | None] = None
     service_factories: ClassVar[dict[str, AsyncServiceFactory] | None] = None
+
+    def finalize_response(
+        self,
+        request: object,
+        response: object,
+        *args: object,
+        **kwargs: object,
+    ) -> Any:
+        """Finalize the response and release the cached async transport"""
+        try:
+            finalize_response = getattr(super(), "finalize_response", None)
+            if finalize_response is not None:
+                return cast(Any, finalize_response)(request, response, *args, **kwargs)
+            return response
+        finally:
+            try:
+                asyncio.run(self._aclose_cached_transport())
+            except RuntimeError as exc:
+                if (
+                    "asyncio.run() cannot be called from a running event loop"
+                    not in str(exc)
+                ):
+                    raise
+                loop = asyncio.get_running_loop()
+                cleanup_task = loop.create_task(self._aclose_cached_transport())
+                _background_transport_cleanup_tasks.add(cleanup_task)
+                cleanup_task.add_done_callback(
+                    _background_transport_cleanup_tasks.discard
+                )
 
     def get_transport(self) -> HttpxAsyncTransport:
         """Return cached async plynth transport for this view instance"""

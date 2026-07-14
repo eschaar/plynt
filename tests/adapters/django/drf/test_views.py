@@ -293,6 +293,28 @@ class TestPlynthServiceMixin:
 
         assert client["name"] == "client"
 
+    def test_finalize_response_closes_cached_transport(self) -> None:
+        """Close the cached transport after the response is finalized"""
+        close_calls = {"value": 0}
+
+        class _FinalizeView(PlynthServiceMixin):
+            settings_name = "SERVICE"
+            settings_class = _DemoSettings
+
+            def __init__(self) -> None:
+                self._transport = cast(Any, SimpleNamespace(close=_close))
+
+        def _close() -> None:
+            close_calls["value"] += 1
+
+        view = _FinalizeView()
+
+        response = object()
+
+        assert view.finalize_response(object(), response) is response
+        assert close_calls["value"] == 1
+        assert "_transport" not in view.__dict__
+
     def test_transport_is_not_reused_across_distinct_view_instances(
         self,
         monkeypatch: pytest.MonkeyPatch,
@@ -589,6 +611,27 @@ class TestAsyncPlynthServiceMixin:
         client = view.get_client()
 
         assert client["name"] == "client"
+
+    def test_finalize_response_closes_cached_async_transport(self) -> None:
+        """Close the cached async transport after the response is finalized"""
+        close_calls = {"value": 0}
+
+        class _FinalizeView(AsyncPlynthServiceMixin):
+            settings_name = "SERVICE"
+            settings_class = _DemoSettings
+
+            def __init__(self) -> None:
+                self._transport = cast(Any, SimpleNamespace(aclose=self._aclose))
+
+            async def _aclose(self) -> None:
+                close_calls["value"] += 1
+
+        view = _FinalizeView()
+        response = object()
+
+        assert view.finalize_response(object(), response) is response
+        assert close_calls["value"] == 1
+        assert "_transport" not in view.__dict__
 
     def test_transport_is_not_reused_across_distinct_view_instances(
         self,

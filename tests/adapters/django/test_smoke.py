@@ -49,18 +49,18 @@ class TestDjangoAdapterSmoke:
                 _SmokeSettings,
                 settings_obj=django_settings,
             )
+            assert isinstance(transport, HttpxSyncTransport)
+            assert len(transport._middlewares) == 1  # pylint: disable=protected-access
+            assert isinstance(
+                transport._middlewares[0],  # pylint: disable=protected-access
+                RetryMiddleware,
+            )
         finally:
+            transport.close()
             if had_previous:
                 django_settings.SERVICE = previous
             else:
                 delattr(django_settings, "SERVICE")
-
-        assert isinstance(transport, HttpxSyncTransport)
-        assert len(transport._middlewares) == 1  # pylint: disable=protected-access
-        assert isinstance(
-            transport._middlewares[0],  # pylint: disable=protected-access
-            RetryMiddleware,
-        )
 
     @pytest.mark.asyncio
     async def test_async_transport_from_django_settings_builds_real_transport(

@@ -12,11 +12,8 @@ from plynth.http.settings import HTTPSettings
 from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
 
 django = pytest.importorskip("django")
-pytest.importorskip("rest_framework")
 
 django_settings = importlib.import_module("django.conf").settings
-override_settings = importlib.import_module("django.test.utils").override_settings
-APIView = importlib.import_module("rest_framework.views").APIView
 
 if not django_settings.configured:
     django_settings.configure(
@@ -26,6 +23,11 @@ if not django_settings.configured:
         MIDDLEWARE=[],
     )
     django.setup()
+
+pytest.importorskip("rest_framework")
+
+override_settings = importlib.import_module("django.test.utils").override_settings
+APIView = importlib.import_module("rest_framework.views").APIView
 
 
 class _SmokeSettings(HTTPSettings):
