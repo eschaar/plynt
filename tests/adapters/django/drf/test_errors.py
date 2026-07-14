@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+import importlib
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
 import plynth.adapters.django.drf.errors as drf_errors
-from plynth.base.errors import InvalidInputError
+from plynth.base.errors import (
+    ConfigurationError,
+    DependencyUnavailableError,
+    FeatureDisabledError,
+    InvalidInputError,
+    OperationFailedError,
+    StreamInterruptedError,
+)
 from plynth.http.errors import NotFoundError
 
 
@@ -55,7 +63,7 @@ class TestMapExceptionToDrfResponse:
                 self.status_code = status
 
         monkeypatch.setattr(
-            drf_errors.importlib,
+            importlib,
             "import_module",
             lambda name: (
                 SimpleNamespace(Response=_FakeResponse)
@@ -80,7 +88,7 @@ class TestMapExceptionToDrfResponse:
                 self.status_code = status
 
         monkeypatch.setattr(
-            drf_errors.importlib,
+            importlib,
             "import_module",
             lambda name: (
                 SimpleNamespace(Response=_FakeResponse)
@@ -93,6 +101,204 @@ class TestMapExceptionToDrfResponse:
 
         assert response.status_code == 500
         assert response.data["code"] == "INTERNAL_SERVER_ERROR"
+
+    def test_maps_invalid_input_error_to_400(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Map plynth invalid input errors to HTTP 400."""
+
+        class _FakeResponse:
+            def __init__(self, data: dict[str, Any], *, status: int) -> None:
+                self.data = data
+                self.status_code = status
+
+        monkeypatch.setattr(
+            importlib,
+            "import_module",
+            lambda name: (
+                SimpleNamespace(Response=_FakeResponse)
+                if name == "rest_framework.response"
+                else (_ for _ in ()).throw(AssertionError(name))
+            ),
+        )
+
+        response = drf_errors.map_exception_to_drf_response(
+            InvalidInputError("bad request")
+        )
+
+        assert response.status_code == 400
+        assert response.data["code"] == "INVALID_INPUT"
+
+    def test_maps_dependency_unavailable_error_to_503(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Map dependency unavailability to HTTP 503."""
+
+        class _FakeResponse:
+            def __init__(self, data: dict[str, Any], *, status: int) -> None:
+                self.data = data
+                self.status_code = status
+
+        monkeypatch.setattr(
+            importlib,
+            "import_module",
+            lambda name: (
+                SimpleNamespace(Response=_FakeResponse)
+                if name == "rest_framework.response"
+                else (_ for _ in ()).throw(AssertionError(name))
+            ),
+        )
+
+        response = drf_errors.map_exception_to_drf_response(
+            DependencyUnavailableError("upstream down")
+        )
+
+        assert response.status_code == 503
+        assert response.data["code"] == "DEPENDENCY_UNAVAILABLE"
+
+    def test_maps_feature_disabled_error_to_503(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Map feature availability failures to HTTP 503."""
+
+        class _FakeResponse:
+            def __init__(self, data: dict[str, Any], *, status: int) -> None:
+                self.data = data
+                self.status_code = status
+
+        monkeypatch.setattr(
+            importlib,
+            "import_module",
+            lambda name: (
+                SimpleNamespace(Response=_FakeResponse)
+                if name == "rest_framework.response"
+                else (_ for _ in ()).throw(AssertionError(name))
+            ),
+        )
+
+        response = drf_errors.map_exception_to_drf_response(
+            FeatureDisabledError("maintenance window")
+        )
+
+        assert response.status_code == 503
+        assert response.data["code"] == "FEATURE_DISABLED"
+
+    def test_maps_operation_failed_error_to_422(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Map generic operation failures to HTTP 422."""
+
+        class _FakeResponse:
+            def __init__(self, data: dict[str, Any], *, status: int) -> None:
+                self.data = data
+                self.status_code = status
+
+        monkeypatch.setattr(
+            importlib,
+            "import_module",
+            lambda name: (
+                SimpleNamespace(Response=_FakeResponse)
+                if name == "rest_framework.response"
+                else (_ for _ in ()).throw(AssertionError(name))
+            ),
+        )
+
+        response = drf_errors.map_exception_to_drf_response(
+            OperationFailedError("business rule failed")
+        )
+
+        assert response.status_code == 422
+        assert response.data["code"] == "OPERATION_FAILED"
+
+    def test_maps_transport_error_to_502(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Map transport failures to HTTP 502."""
+
+        class _FakeResponse:
+            def __init__(self, data: dict[str, Any], *, status: int) -> None:
+                self.data = data
+                self.status_code = status
+
+        monkeypatch.setattr(
+            importlib,
+            "import_module",
+            lambda name: (
+                SimpleNamespace(Response=_FakeResponse)
+                if name == "rest_framework.response"
+                else (_ for _ in ()).throw(AssertionError(name))
+            ),
+        )
+
+        response = drf_errors.map_exception_to_drf_response(
+            StreamInterruptedError("upstream stream broke")
+        )
+
+        assert response.status_code == 502
+        assert response.data["code"] == "STREAM_INTERRUPTED"
+
+    def test_maps_configuration_error_to_500(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Keep server configuration errors on HTTP 500."""
+
+        class _FakeResponse:
+            def __init__(self, data: dict[str, Any], *, status: int) -> None:
+                self.data = data
+                self.status_code = status
+
+        monkeypatch.setattr(
+            importlib,
+            "import_module",
+            lambda name: (
+                SimpleNamespace(Response=_FakeResponse)
+                if name == "rest_framework.response"
+                else (_ for _ in ()).throw(AssertionError(name))
+            ),
+        )
+
+        response = drf_errors.map_exception_to_drf_response(
+            ConfigurationError("missing service endpoint")
+        )
+
+        assert response.status_code == 500
+        assert response.data["code"] == "CONFIGURATION_ERROR"
+
+    def test_maps_subclass_of_invalid_input_error_to_400(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Apply parent class mapping to BaseError subclasses."""
+
+        class _CustomInvalidInputError(InvalidInputError):
+            pass
+
+        class _FakeResponse:
+            def __init__(self, data: dict[str, Any], *, status: int) -> None:
+                self.data = data
+                self.status_code = status
+
+        monkeypatch.setattr(
+            importlib,
+            "import_module",
+            lambda name: (
+                SimpleNamespace(Response=_FakeResponse)
+                if name == "rest_framework.response"
+                else (_ for _ in ()).throw(AssertionError(name))
+            ),
+        )
+
+        response = drf_errors.map_exception_to_drf_response(
+            _CustomInvalidInputError("bad request")
+        )
+
+        assert response.status_code == 400
 
 
 class TestPlynthExceptionHandler:
@@ -110,7 +316,7 @@ class TestPlynthExceptionHandler:
                 return SimpleNamespace(exception_handler=lambda exc, context: sentinel)
             raise AssertionError(name)
 
-        monkeypatch.setattr(drf_errors.importlib, "import_module", _import_module)
+        monkeypatch.setattr(importlib, "import_module", _import_module)
 
         response = drf_errors.plynth_exception_handler(RuntimeError("boom"), {})
 
@@ -134,7 +340,7 @@ class TestPlynthExceptionHandler:
                 return SimpleNamespace(exception_handler=lambda exc, context: None)
             raise AssertionError(name)
 
-        monkeypatch.setattr(drf_errors.importlib, "import_module", _import_module)
+        monkeypatch.setattr(importlib, "import_module", _import_module)
 
         response = drf_errors.plynth_exception_handler(RuntimeError("boom"), {})
 

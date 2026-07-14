@@ -12,21 +12,30 @@ specific goal. They assume you are already familiar with the basics.
 - [Write custom middleware](write-middleware.md) — implement the
   `SyncMiddleware` or `AsyncMiddleware` protocol
 - [Use caching](use-cache.md) — choose and configure a cache backend
-- [Use Django cache backend](use-django-cache-backend.md) — reuse Django
-  `CACHES` aliases with `DjangoCacheBackend`
-- [Use Django transport helper](use-django-transport-helper.md) — build a
-  typed plynth transport from Django settings and cache aliases
-- [Use DRF service mixin](use-drf-plynth-service-mixin.md) — build plynth
-  services lazily inside APIView and ViewSet classes, with optional request
-  header propagation and exception mapping
-- [Django middleware interoperability](django-middleware-interoperability.md)
-  — contract for tracing, auth context, cache boundaries, exception mapping,
-  and logging alignment
 - [Configure logging](configure-logging.md) — structured JSON logging,
   log throttling, and exception filters
 - [Handle errors](handle-errors.md) — catch and inspect typed HTTP exceptions
 - [Use async](use-async.md) — switch to async/await for concurrent workloads
 
+## Django how-to guides
+
+- [Use Django cache backend](django/use-django-cache-backend.md) — reuse Django
+  `CACHES` aliases with `DjangoCacheBackend`
+- [Use Django transport helper](django/use-django-transport-helper.md) — build
+  a typed plynth transport from Django settings and cache aliases
+- [Django middleware interoperability](django/django-middleware-interoperability.md)
+  — contract for tracing, auth context, cache boundaries, exception mapping,
+  and logging alignment
+
+## DRF how-to guides
+
+- [Use DRF service mixin](drf/use-drf-plynth-service-mixin.md) — build plynth
+  services lazily inside APIView and ViewSet classes, with optional request
+  header propagation and exception mapping
+- [DRF serializer and business-layer patterns](drf/drf-serializer-business-patterns.md)
+  — structure serializer-first endpoint contracts with a separate business
+  orchestration layer for backend service calls
+
 ## Connector how-to guides
 
-- [Salesforce how-to guides](../../connectors/salesforce/user/how-to/README.md)
+- [Salesforce how-to guides](salesforce/README.md)
