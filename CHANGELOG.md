@@ -2,6 +2,36 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8.0](https://github.com/eschaar/plynth/compare/0.7.1...0.8.0) (2026-07-14)
+
+
+### Features
+
+* **django-drf:** add DRF helpers and usage guides ([c110994](https://github.com/eschaar/plynth/commit/c110994b1814413bd76fd94177abd6a8d6bbcd3e))
+* **django-drf:** complete middleware and error integration ([b5308fc](https://github.com/eschaar/plynth/commit/b5308fcd23abd9fe55523d94dcde3b5ed0d00300))
+* **django:** add adapter skeleton and settings bridge ([60fac3e](https://github.com/eschaar/plynth/commit/60fac3e9b6048498f8e2b8e9c92602c05a9d122c))
+* **django:** add async django and drf adapter support ([072e884](https://github.com/eschaar/plynth/commit/072e884f91a7687c8aeb74277e9fca8b7d8f3306))
+* **django:** implement cache backend with usage docs ([f0936ec](https://github.com/eschaar/plynth/commit/f0936ec7d9bb99b87408b6d073be29841dc5606a))
+* **django:** implement settings-based transport helper ([0c01bce](https://github.com/eschaar/plynth/commit/0c01bce51854046a461d99cd5230a9c9d69ddd64))
+
+
+### Fixes
+
+* **django-drf:** close transport resources in tests ([93c1894](https://github.com/eschaar/plynth/commit/93c1894f6efde402d787a5d62376888d4b0d84cd))
+
+
+### Documentation
+
+* **django-drf:** add interoperability contract and ViewSet guidance ([df647ad](https://github.com/eschaar/plynth/commit/df647ad0b89daa0b35d3d9a1049dd3a65e10fbb1))
+* **django:** align roadmap, ADR, and change plan ([05911eb](https://github.com/eschaar/plynth/commit/05911ebf261f1ee326375ecfcb19f830d755f9c0))
+* **examples:** migrate django examples to markdown snippets ([63f19d0](https://github.com/eschaar/plynth/commit/63f19d00c58faf268a7155fee386febd4365b234))
+* **examples:** migrate llm and salesforce examples to markdown snippets ([585b6a5](https://github.com/eschaar/plynth/commit/585b6a585ee7059078373eb39d52e555712767ac))
+
+
+### Tests
+
+* **django-drf:** add framework-aware adapter smoke tests ([933553f](https://github.com/eschaar/plynth/commit/933553f703488ee6763fc964bb6b7bf1a609def8))
+
 ## [0.7.1](https://github.com/eschaar/plynth/compare/0.7.0...0.7.1) (2026-07-10)
 
 
