@@ -63,8 +63,8 @@ Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 httpx = ["httpx2>=2.5.0"]
-django = ["django>=4.2,<6", "httpx2>=2.5.0"]
-drf = ["django>=4.2,<6", "djangorestframework>=3.15,<4", "httpx2>=2.5.0"]
+django = ["django>=5.2.16,<6", "httpx2>=2.5.0"]
+drf = ["django>=5.2.16,<6", "djangorestframework>=3.15,<4", "httpx2>=2.5.0"]
 salesforce = [
   "httpx2>=2.5.0",
   "pydantic>=2.13.4",
