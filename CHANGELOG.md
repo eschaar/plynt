@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8.1](https://github.com/eschaar/plynth/compare/0.8.0...0.8.1) (2026-07-15)
+
+
+### Maintenance
+
+* **deps:** update django requirement from &lt;6,&gt;=4.2 to &gt;=5.2.16,&lt;6 ([b3b7463](https://github.com/eschaar/plynth/commit/b3b74630787edf69ab54edbb04492f70602479c0))
+* **deps:** update djangorestframework requirement ([533492f](https://github.com/eschaar/plynth/commit/533492feac9cfe350435f23dc2d9c02f55ef3164))
+* **deps:** update httpx2 requirement from &gt;=2.5.0 to &gt;=2.7.0 ([5a7245e](https://github.com/eschaar/plynth/commit/5a7245e47a68840ec85e41e18a01797920dd241a))
+
 ## [0.8.0](https://github.com/eschaar/plynth/compare/0.7.1...0.8.0) (2026-07-14)
 
 
