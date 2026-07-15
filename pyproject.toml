@@ -62,11 +62,11 @@ Issues = "https://github.com/eschaar/plynth/issues"
 Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-httpx = ["httpx2>=2.5.0"]
-django = ["django>=5.2.16,<6", "httpx2>=2.5.0"]
-drf = ["django>=5.2.16,<6", "djangorestframework>=3.17.1,<4", "httpx2>=2.5.0"]
+httpx = ["httpx2>=2.7.0"]
+django = ["django>=5.2.16,<6", "httpx2>=2.7.0"]
+drf = ["django>=5.2.16,<6", "djangorestframework>=3.17.1,<4", "httpx2>=2.7.0"]
 salesforce = [
-  "httpx2>=2.5.0",
+  "httpx2>=2.7.0",
   "pydantic>=2.13.4",
   "PyJWT>=2.13.0",
   "cryptography>=49.0.0",
@@ -88,7 +88,7 @@ dev = [
   "types-PyYAML",
   "ruff",
   "mypy",
-  "httpx2>=2.5.0",
+  "httpx2>=2.7.0",
   "build",
   "twine",
   "pip-audit",
