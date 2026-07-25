@@ -1,21 +1,17 @@
 # Commit workflow.
 # Purpose: enforce commit policy and quality checks (format/lint/typecheck).
-# Runs on branch pushes and PRs so commit/quality policy can be merge-blocking.
+# Runs on branch pushes and merge queue refs so policy stays merge-blocking.
 # Unit tests are split into check.yml (single-version) and verify.yml (matrix).
 name: Commit
 
 on:
   push:
-    # Mainline, merge-queue, and release-please refs are covered by other workflows.
+    # Mainline and release-please refs are covered by other workflows.
     branches-ignore:
       - main
       - master
-      - merge/**
-      - gh-readonly-queue/**
       - release-please--branches--**
       - dependabot/**
-  pull_request:
-    branches: [main]
   merge_group:
     branches: [main]
 
@@ -53,48 +49,6 @@ jobs:
           author-email: false
           job-summary: true
           pr-comments: false
-
-      - name: Validate commit messages with commit-check
-        if: github.event_name == 'pull_request'
-        uses: commit-check/commit-check-action@v2
-        with:
-          # On PR events, validate commit messages only (branch refs are pull/*,
-          # so branch validation is done separately in the next step).
-          message: true
-          branch: false
-          author-name: false
-          author-email: false
-          job-summary: true
-          pr-comments: false
-
-      - name: Validate PR branch name
-        if: github.event_name == 'pull_request'
-        shell: bash
-        run: |
-          BRANCH="${{ github.head_ref }}"
-
-          # Release-please uses its own generated branch naming format.
-          if [[ "$BRANCH" =~ ^release-please--branches--.+$ ]]; then
-            echo "release-please branch is allowed: $BRANCH"
-            exit 0
-          fi
-
-          if [[ ! "$BRANCH" =~ ^([a-z0-9-]+)/.+$ ]]; then
-            echo "ERROR: invalid branch name '$BRANCH'. Expected 'type/description'."
-            exit 1
-          fi
-
-          TYPE="${BASH_REMATCH[1]}"
-          case "$TYPE" in
-              feature|bugfix|hotfix|release|chore|feat|fix|docs|refactor|perf|test|ci|build|style|opt|patch|dependabot)
-                echo "branch type '$TYPE' is allowed."
-                ;;
-              *)
-                echo "ERROR: branch type '$TYPE' is not allowed."
-                echo "Allowed types: feature bugfix hotfix release chore feat fix docs refactor perf test ci build style opt patch dependabot"
-                exit 1
-              ;;
-          esac
 
       - name: Reserve docs(changelog) scope for automation
         shell: bash
