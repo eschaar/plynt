@@ -1,18 +1,9 @@
 # Check workflow.
-# Purpose: run fast single-version unit tests for branch and PR feedback.
+# Purpose: run fast single-version unit tests for PR feedback.
 # This complements verify.yml, which runs the full cross-version matrix.
 name: Check
 
 on:
-  push:
-    # Mainline and merge-queue refs are covered by other workflows.
-    branches-ignore:
-      - main
-      - master
-      - merge/**
-      - gh-readonly-queue/**
-      - release-please--branches--**
-      - dependabot/**
   pull_request:
     branches: [main]
   merge_group:
