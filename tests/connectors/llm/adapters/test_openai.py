@@ -139,6 +139,22 @@ class TestOpenAIInternalMappers:
             "content": [{"type": "input_text", "text": "hello"}],
         }
 
+    def test_request_mapper_normalizes_non_dict_list_content_to_empty(self) -> None:
+        """Request mapper drops non-dict list content blocks to empty content."""
+        mapped = _OpenAIRequestMapper.message_to_input_item(
+            {"role": "user", "content": ["text", 1, None]}
+        )
+
+        assert mapped == {"role": "user", "content": ""}
+
+    def test_request_mapper_normalizes_scalar_content_to_string(self) -> None:
+        """Request mapper converts scalar content values to stable strings."""
+        mapped = _OpenAIRequestMapper.message_to_input_item(
+            {"role": "user", "content": 123}
+        )
+
+        assert mapped == {"role": "user", "content": "123"}
+
     def test_request_mapper_tool_without_optional_fields(self) -> None:
         """Tool mapping keeps required fields when optional data is absent."""
         mapped = _OpenAIRequestMapper.tool_to_openai_function(
@@ -153,7 +169,7 @@ class TestOpenAIInternalMappers:
             [{"type": "message", "content": "no tool"}]
         )
 
-        assert tool_calls == []
+        assert not tool_calls
 
     def test_classify_event_kind_returns_unknown_for_unmapped_event(self) -> None:
         """Event-kind classifier returns unknown for unsupported event types."""

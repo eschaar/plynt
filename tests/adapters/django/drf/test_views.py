@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 from types import SimpleNamespace
 from typing import Any, ClassVar, cast
@@ -314,6 +315,58 @@ class TestPlynthServiceMixin:
         assert view.finalize_response(object(), response) is response
         assert close_calls["value"] == 1
         assert "_transport" not in view.__dict__
+
+    def test_finalize_response_uses_super_when_available(self) -> None:
+        """Delegate to parent finalize_response when class MRO provides it."""
+
+        class _ParentFinalize:
+            def finalize_response(
+                self,
+                request: object,
+                response: object,
+                *args: object,
+                **kwargs: object,
+            ) -> object:
+                del request, args, kwargs
+                return response
+
+        class _FinalizeView(PlynthServiceMixin, _ParentFinalize):
+            settings_name = "SERVICE"
+            settings_class = _DemoSettings
+
+            def __init__(self) -> None:
+                self._transport = cast(Any, SimpleNamespace(close=lambda: None))
+
+        view = _FinalizeView()
+        sentinel = object()
+
+        assert view.finalize_response(object(), sentinel) is sentinel
+
+    def test_close_cached_transport_is_noop_without_transport(self) -> None:
+        """Return silently when no cached transport exists."""
+        view = _DemoView()
+        cast(Any, getattr(view, "_close_cached_transport"))()  # noqa: B009
+        assert "_transport" not in view.__dict__
+
+    def test_close_cached_transport_ignores_delattr_attribute_error(self) -> None:
+        """Do not fail when deleting cached transport raises AttributeError."""
+
+        class _DeleteFailsView(_DemoView):
+            def __delattr__(self, name: str) -> None:
+                raise AttributeError(name)
+
+        close_calls = {"value": 0}
+        view = _DeleteFailsView()
+        transport = SimpleNamespace(close=lambda: close_calls.__setitem__("value", 1))
+        object.__setattr__(
+            view,
+            "_transport",
+            cast(Any, transport),
+        )
+
+        cast(Any, getattr(view, "_close_cached_transport"))()  # noqa: B009
+
+        assert close_calls["value"] == 1
 
     def test_transport_is_not_reused_across_distinct_view_instances(
         self,
@@ -632,6 +685,135 @@ class TestAsyncPlynthServiceMixin:
         assert view.finalize_response(object(), response) is response
         assert close_calls["value"] == 1
         assert "_transport" not in view.__dict__
+
+    def test_finalize_response_uses_super_when_available(self) -> None:
+        """Delegate to parent finalize_response when class MRO provides it."""
+
+        class _ParentFinalize:
+            def finalize_response(
+                self,
+                request: object,
+                response: object,
+                *args: object,
+                **kwargs: object,
+            ) -> object:
+                del request, args, kwargs
+                return response
+
+        class _FinalizeView(AsyncPlynthServiceMixin, _ParentFinalize):
+            settings_name = "SERVICE"
+            settings_class = _DemoSettings
+
+            def __init__(self) -> None:
+                self._transport = cast(Any, SimpleNamespace(aclose=self._aclose))
+
+            async def _aclose(self) -> None:
+                return None
+
+        view = _FinalizeView()
+        sentinel = object()
+
+        assert view.finalize_response(object(), sentinel) is sentinel
+
+    def test_aclose_cached_transport_is_noop_without_transport(self) -> None:
+        """Return silently when no async cached transport exists."""
+        view = _AsyncDemoView()
+        asyncio.run(
+            cast(Any, getattr(view, "_aclose_cached_transport"))()  # noqa: B009
+        )
+        assert "_transport" not in view.__dict__
+
+    def test_aclose_cached_transport_falls_back_to_sync_close(self) -> None:
+        """Use sync close path when async close is unavailable."""
+        close_calls = {"value": 0}
+
+        class _SyncCloseView(_AsyncDemoView):
+            def __init__(self) -> None:
+                super().__init__()
+                self._transport = cast(
+                    Any,
+                    SimpleNamespace(close=lambda: close_calls.__setitem__("value", 1)),
+                )
+
+        view = _SyncCloseView()
+        asyncio.run(
+            cast(Any, getattr(view, "_aclose_cached_transport"))()  # noqa: B009
+        )
+
+        assert close_calls["value"] == 1
+        assert "_transport" not in view.__dict__
+
+    def test_aclose_cached_transport_ignores_delattr_attribute_error(self) -> None:
+        """Do not fail when async cleanup cannot delete cached transport."""
+
+        class _DeleteFailsAsyncView(_AsyncDemoView):
+            def __init__(self) -> None:
+                super().__init__()
+                self._transport = cast(Any, SimpleNamespace(aclose=self._aclose))
+
+            async def _aclose(self) -> None:
+                return None
+
+            def __delattr__(self, name: str) -> None:
+                raise AttributeError(name)
+
+        delete_fails_view = _DeleteFailsAsyncView()
+        asyncio.run(
+            cast(Any, getattr(delete_fails_view, "_aclose_cached_transport"))()  # noqa: B009
+        )
+
+    @pytest.mark.asyncio
+    async def test_finalize_response_handles_running_event_loop_cleanup(self) -> None:
+        """Schedule cleanup task when finalize_response runs inside event loop."""
+        close_calls = {"value": 0}
+
+        class _FinalizeInLoopView(AsyncPlynthServiceMixin):
+            settings_name = "SERVICE"
+            settings_class = _DemoSettings
+
+            def __init__(self) -> None:
+                self._transport = cast(Any, SimpleNamespace(aclose=self._aclose))
+
+            async def _aclose(self) -> None:
+                close_calls["value"] += 1
+
+        view = _FinalizeInLoopView()
+
+        response = object()
+        assert view.finalize_response(object(), response) is response
+        await asyncio.sleep(0)
+
+        assert close_calls["value"] == 1
+
+    def test_finalize_response_reraises_unexpected_runtime_error(self) -> None:
+        """Re-raise runtime errors that are not loop-state related."""
+
+        class _FinalizeView(AsyncPlynthServiceMixin):
+            settings_name = "SERVICE"
+            settings_class = _DemoSettings
+
+            def __init__(self) -> None:
+                self._transport = cast(Any, SimpleNamespace(aclose=self._aclose))
+
+            async def _aclose(self) -> None:
+                return None
+
+        view = _FinalizeView()
+
+        original_run = asyncio.run
+
+        def _raise(*_args: object, **_kwargs: object) -> None:
+            if _args and asyncio.iscoroutine(_args[0]):
+                _args[0].close()
+            raise RuntimeError("boom")
+
+        asyncio_module = cast(Any, asyncio)
+        asyncio_module.run = _raise
+        try:
+            with pytest.raises(RuntimeError, match="boom"):
+                view.finalize_response(object(), object())
+        finally:
+            asyncio_module.run = original_run
 
     def test_transport_is_not_reused_across_distinct_view_instances(
         self,

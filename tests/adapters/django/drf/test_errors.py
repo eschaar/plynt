@@ -10,6 +10,7 @@ import pytest
 
 import plynth.adapters.django.drf.errors as drf_errors
 from plynth.base.errors import (
+    BaseError,
     ConfigurationError,
     DependencyUnavailableError,
     FeatureDisabledError,
@@ -269,6 +270,36 @@ class TestMapExceptionToDrfResponse:
 
         assert response.status_code == 500
         assert response.data["code"] == "CONFIGURATION_ERROR"
+
+    def test_maps_unmapped_base_error_to_500(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Fallback to status 500 for BaseError subclasses without mapping."""
+
+        class _FakeResponse:
+            def __init__(self, data: dict[str, Any], *, status: int) -> None:
+                self.data = data
+                self.status_code = status
+
+        class _CustomBaseError(BaseError):
+            code = "CUSTOM_BASE"
+            message = "custom"
+
+        monkeypatch.setattr(
+            importlib,
+            "import_module",
+            lambda name: (
+                SimpleNamespace(Response=_FakeResponse)
+                if name == "rest_framework.response"
+                else (_ for _ in ()).throw(AssertionError(name))
+            ),
+        )
+
+        response = drf_errors.map_exception_to_drf_response(_CustomBaseError())
+
+        assert response.status_code == 500
+        assert response.data["code"] == "CUSTOM_BASE"
 
     def test_maps_subclass_of_invalid_input_error_to_400(
         self,

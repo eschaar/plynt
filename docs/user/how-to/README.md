@@ -36,6 +36,12 @@ specific goal. They assume you are already familiar with the basics.
   — structure serializer-first endpoint contracts with a separate business
   orchestration layer for backend service calls
 
+## FastAPI how-to guides
+
+- [Build a FastAPI service facade](fastapi/use-fastapi-service-facade.md) —
+  lifecycle and dependency wiring for outbound SaaS and internal backend
+  integrations
+
 ## Connector how-to guides
 
 - [Salesforce how-to guides](salesforce/README.md)

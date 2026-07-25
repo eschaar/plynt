@@ -65,6 +65,7 @@ Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
 httpx = ["httpx2>=2.7.0"]
 django = ["django>=5.2.16,<6", "httpx2>=2.7.0"]
 drf = ["django>=5.2.16,<6", "djangorestframework>=3.17.1,<4", "httpx2>=2.7.0"]
+fastapi = ["fastapi>=0.110,<1", "httpx2>=2.7.0"]
 salesforce = [
   "httpx2>=2.7.0",
   "pydantic>=2.13.4",
@@ -97,9 +98,12 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=plynth --cov-report=term-missing --tb=short"
+addopts = "--cov=plynth --cov-report=term-missing --tb=short -m 'not external'"
 asyncio_mode = "auto"
 junit_family = "xunit2"
+markers = [
+  "external: tests that require external systems, org features, or manual cassettes",
+]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -215,3 +219,6 @@ typeCheckingMode = "basic"
 
 [tool.pylint.main]
 ignore-paths = ["^tests/.*$"]
+
+[tool.pylint.messages_control]
+disable = ["missing-function-docstring"]

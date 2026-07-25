@@ -96,6 +96,8 @@ def _cassette(request: pytest.FixtureRequest) -> Path:
 class TestSalesforceAIVCRSmoke:
     """Smoke tests for Salesforce-hosted Models and Agent API calls."""
 
+    pytestmark = pytest.mark.external
+
     def test_models_generate_text(self, request: pytest.FixtureRequest) -> None:
         """Models generate_text returns typed output for a minimal prompt."""
         try:

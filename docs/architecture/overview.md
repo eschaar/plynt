@@ -39,6 +39,24 @@ Typical placement:
 - Provider adapters can live inside a connector when one connector supports
   multiple providers under a shared contract.
 
+Current FastAPI adapter capabilities include:
+
+1. lifespan-based transport lifecycle management,
+1. dependency factories for transport/client/service resolution,
+1. bundled service-dependency helpers for router setup,
+1. request-header propagation helpers,
+1. plynth exception-to-JSON response mapping helpers.
+
+## Framework Adapter Capability Matrix
+
+This matrix summarizes the currently shipped adapter surface.
+
+| Adapter          | Lifecycle boundary | Transport/client DI | Service DI | Header propagation | Error mapping | Sync | Async |
+| ---------------- | ------------------ | ------------------- | ---------- | ------------------ | ------------- | ---- | ----- |
+| Django core      | Request/view scope | Via helper function | N/A        | N/A                | N/A           | Yes  | Yes   |
+| Django DRF layer | Request lifecycle  | Yes                 | Yes        | Yes                | Yes           | Yes  | Yes   |
+| FastAPI adapter  | ASGI lifespan      | Yes                 | Yes        | Yes                | Yes           | Yes  | Yes   |
+
 ## Runtime Flow
 
 A typical request path is:

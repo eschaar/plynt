@@ -1,4 +1,4 @@
-"""Framework adapters for Plynth (Django, FastAPI, Flask — planned).
+"""Framework adapters for Plynth.
 
 This package is reserved for thin bridging modules that connect Plynth's
 core to specific web frameworks. Adapters depend on the core through its
