@@ -137,7 +137,9 @@ def fake_next(request: Request) -> Response:
 
 settings = VCRSettings(mode=VCRMode.NEW_EPISODES)
 
-with use_vcr(cassette_path="tests/cassettes/example.yaml", settings=settings) as session:
+with use_vcr(
+    cassette_path="tests/cassettes/example.yaml", settings=settings
+) as session:
     req = Request(method="GET", url="https://api.example.test/items/1")
     res = session.handle_sync(req, fake_next)
     assert res.content == b"ok"
@@ -157,7 +159,9 @@ async def fake_next(request: Request) -> Response:
 
 settings = VCRSettings(mode=VCRMode.NEW_EPISODES)
 
-with use_vcr(cassette_path="tests/cassettes/example-async.yaml", settings=settings) as session:
+with use_vcr(
+    cassette_path="tests/cassettes/example-async.yaml", settings=settings
+) as session:
     req = Request(method="GET", url="https://api.example.test/items/1")
     res = await session.handle_async(req, fake_next)
     assert res.content == b"ok"
