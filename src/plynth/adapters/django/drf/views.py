@@ -270,14 +270,17 @@ class AsyncPlynthServiceMixin(_BasePlynthServiceMixin):
                 return cast(Any, finalize_response)(request, response, *args, **kwargs)
             return response
         finally:
+            close_transport_coro = self._aclose_cached_transport()
             try:
-                asyncio.run(self._aclose_cached_transport())
+                asyncio.run(close_transport_coro)
             except RuntimeError as exc:
                 if (
                     "asyncio.run() cannot be called from a running event loop"
                     not in str(exc)
                 ):
+                    close_transport_coro.close()
                     raise
+                close_transport_coro.close()
                 loop = asyncio.get_running_loop()
                 cleanup_task = loop.create_task(self._aclose_cached_transport())
                 _background_transport_cleanup_tasks.add(cleanup_task)

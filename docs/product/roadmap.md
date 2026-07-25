@@ -13,6 +13,8 @@ ______________________________________________________________________
 
 ## Status Overview
 
+<!-- markdownlint-disable MD060 -->
+
 | #   | Area                                               | Status          | Notes                                                                              |
 | --- | -------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------- |
 | —   | `plynth.base` — protocol-agnostic abstractions     | **Done**        | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings        |
@@ -28,15 +30,17 @@ ______________________________________________________________________
 | 2l  | Salesforce GraphQL API                             | **Conditional** | Implement on repeated demand only                                                  |
 | 3   | Streaming response (SSE / chunked HTTP)            | **Done**        | ADR-0017; enables Salesforce AI and LLM connector                                  |
 | 3b  | Raw response access on `APIClient`                 | **Done**        | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                   |
-| 4a  | Django core adapter `plynth[django]`               | **Planned**     | ADR-0024 accepted; first framework adapter                                         |
-| 4b  | DRF integration layer `plynth[drf]`                | **Planned**     | Separate slice on top of Django core adapter                                       |
-| 4c  | FastAPI framework adapter `plynth[fastapi]`        | **Planned**     | Separate ADR required before implementation; after Django and DRF validation       |
+| 4a  | Django core adapter `plynth[django]`               | **Done**        | Shipped in v0.8.0; settings bridge, cache backend, transport helpers               |
+| 4b  | DRF integration layer `plynth[drf]`                | **Done**        | Shipped in v0.8.0; mixins, header helpers, sync/async support                      |
+| 4c  | FastAPI framework adapter `plynth[fastapi]`        | **Done**        | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs       |
 | 4d  | Flask framework adapter `plynth[flask]`            | **Conditional** | Convenience layer only; validate demand before ADR                                 |
 | 5   | Cache backend documentation                        | **Done**        | Redis SSL, framework-native wrapping, and custom backend how-to guides added       |
 | 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                       |
 | 7   | AI / LLM connector `plynth.connectors.llm`         | **Done**        | Generic contract, sync/async parity, OpenAI and Anthropic adapters                 |
 | 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                      |
 | 9   | Connector package extraction                       | **Planned**     | Policy defined; individual extractions need ADR                                    |
+
+<!-- markdownlint-enable MD060 -->
 
 Near-term scope note for item 7:
 
@@ -601,13 +605,16 @@ ______________________________________________________________________
 
 ### 4. Framework adapters
 
-**Status:** Not started. Django planning now lives in `docs/changes/`.
+**Status:** Implemented for Django, DRF, and FastAPI. Flask remains
+conditional.
 
-Deferred until the Salesforce integration (item 2) has validated that the
-core abstractions are stable enough. See
+The framework-adapter direction is validated by shipped Django, DRF, and
+FastAPI support. Current implementation focus is complete for those adapters.
+See
 [changes/django-framework-adapter_django_adapter_20260713.md](../changes/django-framework-adapter_django_adapter_20260713.md),
-[ideas/fastapi-adapter.md](ideas/fastapi-adapter.md), and
-[ideas/flask-adapter.md](ideas/flask-adapter.md) for design sketches.
+[changes/fastapi-framework-adapter_fastapi_adapter_20260725.md](../changes/fastapi-framework-adapter_fastapi_adapter_20260725.md),
+[ADR-0026](../architecture/adr/0026-fastapi-adapter-lifecycle-and-di.md), and
+[ideas/flask-adapter.md](ideas/flask-adapter.md).
 
 Plynth intentionally uses the term **framework adapter**. These modules adapt
 plynth's public interfaces to framework conventions. They are not separate
@@ -618,7 +625,7 @@ accepted, deferred, or shipped independently.
 
 #### 4a. Django core adapter (`plynth[django]`) — [changedoc](../changes/django-framework-adapter_django_adapter_20260713.md)
 
-**Status:** Planned first framework adapter. See
+**Status:** Implemented and shipped in v0.8.0. See
 [ADR-0024](../architecture/adr/0024-framework-adapter-strategy.md).
 
 - `from_django_settings()` factory — reads plynth config from `settings.py`
@@ -628,18 +635,33 @@ accepted, deferred, or shipped independently.
 
 #### 4b. DRF integration layer (`plynth[drf]`) — [changedoc](../changes/django-framework-adapter_django_adapter_20260713.md)
 
-**Status:** Planned second slice, after Django core adapter.
+**Status:** Implemented and shipped in v0.8.0.
 
 - `PlynthServiceMixin` for `APIView` and `ViewSet` service wiring
 - request-header propagation helpers for correlation headers such as `X-Request-Id`
 - DRF-focused docs showing integration with `APIView` and `ViewSet`
 
-#### 4c. FastAPI extra (`plynth[fastapi]`) — [idea](ideas/fastapi-adapter.md)
+#### 4c. FastAPI extra (`plynth[fastapi]`) — [changedoc](../changes/fastapi-framework-adapter_fastapi_adapter_20260725.md)
 
-**Status:** Planned after Django and DRF validation.
+**Status:** Implemented with accepted
+[ADR-0026](../architecture/adr/0026-fastapi-adapter-lifecycle-and-di.md).
 
-- `PlynthLifespan` — handles transport creation and `aclose()` via FastAPI lifespan
-- `get_transport()` / `get_client()` — `Depends`-compatible DI factories
+Primary use case:
+
+- FastAPI services as API facades over external backends.
+
+- Plynth as outbound integration layer for SaaS and internal backends.
+
+- `PlynthLifespan` — handles transport creation and `close()` / `aclose()` via FastAPI lifespan
+
+- `get_transport()` / `get_client()` / `get_service()` — `Depends`-compatible DI factories
+
+- `build_service_dependencies()` — bundled service dependency helper for router setup
+
+- request-header propagation helpers for correlation/tracing headers
+
+- plynth exception-mapping helpers for FastAPI JSON responses
+
 - Settings: no adapter needed; `HTTPSettings` subclasses work directly
 
 #### 4d. Flask extra (`plynth[flask]`) — [idea](ideas/flask-adapter.md)
@@ -650,7 +672,8 @@ accepted, deferred, or shipped independently.
 - `PlynthFlask` extension — stores transport in `app.extensions`, `init_app()` pattern
 - Validate real demand before writing an ADR
 
-**Prerequisite:** Write ADRs for each adapter before implementation.
+**Prerequisite:** Flask still requires a dedicated ADR before
+implementation.
 
 ______________________________________________________________________
 

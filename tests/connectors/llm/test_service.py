@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
@@ -238,7 +239,8 @@ class TestLLMService:
         }
         transport = MockSyncTransport(content=_json_bytes(payload))
         client = APIClient(base_url=_DUMMY_BASE_URL, transport=transport)
-        svc = LLMService(client, payload_adapter=payload_adapter)
+        with pytest.warns(DeprecationWarning, match="payload_adapter is deprecated"):
+            svc = LLMService(client, payload_adapter=payload_adapter)
 
         request = LLMGenerateRequest(messages=[{"role": "user", "content": "Hi"}])
         result = svc.generate(request)
@@ -471,6 +473,117 @@ class TestLLMService:
         assert chunk is not None
         assert chunk.id == "chunk-custom"
 
+    def test_payload_adapter_object_must_return_dict(self) -> None:
+        """Raise TypeError when adapter object returns a non-dict payload."""
+
+        class _BadAdapterObject:
+            def to_provider_payload(
+                self,
+                request: LLMGenerateRequest,
+                *,
+                stream: bool,
+            ) -> list[str]:
+                del request, stream
+                return ["invalid"]
+
+        transport = MockSyncTransport(status_code=200, content=b"{}")
+        client = APIClient(base_url=_DUMMY_BASE_URL, transport=transport)
+        with pytest.warns(DeprecationWarning, match="payload_adapter is deprecated"):
+            svc = LLMService(client, payload_adapter=_BadAdapterObject())
+
+        with pytest.raises(TypeError, match="dictionary payload"):
+            svc.generate(
+                LLMGenerateRequest(
+                    messages=[{"role": "user", "content": "x"}],
+                )
+            )
+
+    def test_constructor_rejects_non_callable_payload_adapter(self) -> None:
+        """Raise TypeError when payload_adapter is neither callable nor adapter."""
+        transport = MockSyncTransport(status_code=200, content=b"{}")
+        client = APIClient(base_url=_DUMMY_BASE_URL, transport=transport)
+
+        with pytest.warns(DeprecationWarning, match="payload_adapter is deprecated"):
+            with pytest.raises(TypeError, match="payload_adapter"):
+                LLMService(client, payload_adapter=object())
+
+    def test_payload_adapter_var_kwargs_supports_stream_keyword(self) -> None:
+        """Detect ``**kwargs`` payload adapters as stream-compatible."""
+
+        def payload_adapter(
+            request: LLMGenerateRequest,
+            **kwargs: Any,
+        ) -> dict[str, Any]:
+            return {
+                "legacy_input": request.to_payload()["messages"],
+                "legacy_stream": kwargs.get("stream", False),
+            }
+
+        transport = MockSyncTransport(status_code=200, content=b"{}")
+        client = APIClient(base_url=_DUMMY_BASE_URL, transport=transport)
+        with pytest.warns(DeprecationWarning, match="payload_adapter is deprecated"):
+            svc = LLMService(client, payload_adapter=payload_adapter)
+        streaming = StreamingResponse(
+            status_code=200,
+            headers={},
+            content=b"",
+            _raw=MagicMock(),
+        )
+        transport.send.return_value = streaming
+
+        svc.generate_stream(
+            LLMGenerateRequest(messages=[{"role": "user", "content": "Hello"}])
+        )
+
+        sent = transport.send.call_args[0][0]
+        assert json.loads(sent.content or b"{}") == {
+            "legacy_input": [{"role": "user", "content": "Hello"}],
+            "legacy_stream": True,
+        }
+
+    def test_payload_adapter_signature_failure_defaults_stream_keyword(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Treat unknown signatures as stream-compatible for backward compatibility."""
+
+        def payload_adapter(
+            request: LLMGenerateRequest,
+            **kwargs: Any,
+        ) -> dict[str, Any]:
+            return {
+                "legacy_input": request.to_payload()["messages"],
+                "legacy_stream": kwargs.get("stream", False),
+            }
+
+        monkeypatch.setattr(
+            inspect,
+            "signature",
+            lambda _: (_ for _ in ()).throw(ValueError("no signature")),
+        )
+
+        transport = MockSyncTransport(status_code=200, content=b"{}")
+        client = APIClient(base_url=_DUMMY_BASE_URL, transport=transport)
+        with pytest.warns(DeprecationWarning, match="payload_adapter is deprecated"):
+            svc = LLMService(client, payload_adapter=payload_adapter)
+        streaming = StreamingResponse(
+            status_code=200,
+            headers={},
+            content=b"",
+            _raw=MagicMock(),
+        )
+        transport.send.return_value = streaming
+
+        svc.generate_stream(
+            LLMGenerateRequest(messages=[{"role": "user", "content": "Hello"}])
+        )
+
+        sent = transport.send.call_args[0][0]
+        assert json.loads(sent.content or b"{}") == {
+            "legacy_input": [{"role": "user", "content": "Hello"}],
+            "legacy_stream": True,
+        }
+
 
 class TestAsyncLLMService:
     """Tests for AsyncLLMService."""
@@ -568,7 +681,8 @@ class TestAsyncLLMService:
 
         transport = MockAsyncTransport(status_code=200, content=b"{}")
         client = AsyncAPIClient(base_url=_DUMMY_BASE_URL, transport=transport)
-        svc = AsyncLLMService(client, payload_adapter=payload_adapter)
+        with pytest.warns(DeprecationWarning, match="payload_adapter is deprecated"):
+            svc = AsyncLLMService(client, payload_adapter=payload_adapter)
         streaming = AsyncStreamingResponse(
             status_code=200,
             headers={},

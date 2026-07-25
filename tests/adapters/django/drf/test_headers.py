@@ -103,6 +103,22 @@ class TestBuildRequestHeaderMiddleware:
 
         middleware.handle(outbound, _next_handler)
 
+    def test_blocks_header_when_inbound_name_is_denied(self) -> None:
+        """Do not forward headers when inbound name is in denylist."""
+        incoming = SimpleNamespace(headers={"Authorization": "Bearer secret"})
+        middleware = build_request_header_middleware(
+            incoming,
+            headers={"X-Upstream-Auth": "Authorization"},
+        )
+
+        outbound = Request(method="GET", url="https://api.example.test")
+
+        def _next_handler(request: Request) -> Response:
+            assert "X-Upstream-Auth" not in request.headers
+            return Response(status_code=200, headers={}, content=b"")
+
+        middleware.handle(outbound, _next_handler)
+
     def test_allows_sensitive_headers_when_denylist_is_empty(self) -> None:
         """Allow advanced opt-in by overriding denylist with an empty set."""
         incoming = SimpleNamespace(headers={"Authorization": "Bearer secret"})
