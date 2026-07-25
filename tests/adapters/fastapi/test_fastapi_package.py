@@ -2,6 +2,10 @@
 
 import importlib
 
+import pytest
+
+pytest.importorskip("fastapi")
+
 from plynth.adapters.fastapi import (
     PlynthLifespan,
     build_async_request_header_middleware,

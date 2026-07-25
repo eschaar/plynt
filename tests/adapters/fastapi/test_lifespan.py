@@ -9,13 +9,19 @@ from collections.abc import Callable
 
 import pytest
 
-from plynth.adapters.fastapi import PlynthLifespan, get_client, get_transport
+pytest.importorskip("fastapi")
+
+from plynth.adapters.fastapi import (
+    PlynthLifespan,
+    get_client,
+    get_transport,
+)
 from plynth.base.request import Request
 from plynth.base.response import Response
 from plynth.base.transport import AsyncTransport
 
-fastapi = pytest.importorskip("fastapi")
-fastapi_testclient = pytest.importorskip("fastapi.testclient")
+fastapi = __import__("fastapi")
+fastapi_testclient = __import__("fastapi.testclient", fromlist=["TestClient"])
 
 FastAPI = fastapi.FastAPI
 Depends = fastapi.Depends

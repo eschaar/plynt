@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import pytest
+
+pytest.importorskip("fastapi")
+
 from plynth.adapters.fastapi.headers import (
     build_async_request_header_middleware,
     build_request_header_middleware,
