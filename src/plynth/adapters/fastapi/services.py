@@ -86,14 +86,13 @@ def get_service(
 
 def _resolve_service_cache(request: Request) -> dict[str, Any]:
     """Resolve or initialize service cache on FastAPI request state."""
-    app = getattr(request, "app", None)
-    state = getattr(app, "state", None)
+    state = getattr(request, "state", None)
     if state is None:
-        raise RuntimeError("FastAPI request app object must expose .state")
+        raise RuntimeError("FastAPI request object must expose .state")
 
-    cache = getattr(state, "plynth_services", None)
+    cache = getattr(state, "_plynth_services", None)
     if not isinstance(cache, dict):
         cache = {}
-        cast(Any, state).plynth_services = cache
+        cast(Any, state)._plynth_services = cache
 
     return cache

@@ -221,6 +221,12 @@ async def get_order_view(
 Use header helpers to forward correlation and trace headers from inbound
 FastAPI requests into outbound plynth calls.
 
+Note: the scoped-transport example below uses protected
+`HttpxAsyncTransport` attributes (`_client`, `_middlewares`) to reuse the
+existing transport client and middleware chain. These are internal details
+and may change across versions. Keep this pattern isolated in one helper so
+it can be updated easily if adapter internals evolve.
+
 ```python
 from fastapi import Depends, Request
 
@@ -229,13 +235,19 @@ from plynth.http.client import AsyncAPIClient
 from plynth.http.transport import HttpxAsyncTransport
 
 
-def build_scoped_client(request: Request, transport: HttpxAsyncTransport) -> AsyncAPIClient:
+def build_scoped_client(
+    request: Request,
+    transport: HttpxAsyncTransport,
+) -> AsyncAPIClient:
     header_mw = build_async_request_header_middleware(request)
     scoped_transport = HttpxAsyncTransport(
         client=transport._client,  # share existing httpx client
         middlewares=[header_mw, *transport._middlewares],
     )
-    return AsyncAPIClient(base_url="https://api.backend-a.example", transport=scoped_transport)
+    return AsyncAPIClient(
+        base_url="https://api.backend-a.example",
+        transport=scoped_transport,
+    )
 ```
 
 Use an explicit denylist when required:
