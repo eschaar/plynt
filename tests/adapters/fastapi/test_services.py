@@ -188,9 +188,10 @@ class TestFastAPIServiceHelper:
         )
 
         request = SimpleNamespace(
+            state=SimpleNamespace(),
             app=SimpleNamespace(
                 state=SimpleNamespace(_plynth_transports={"backend": transport})
-            )
+            ),
         )
 
         first = dependency(cast(Any, request))
@@ -203,7 +204,7 @@ class TestFastAPIServiceHelper:
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """Raise clear error when request app does not expose state."""
+        """Raise clear error when request does not expose state."""
         monkeypatch.setattr(
             fastapi_services,
             "get_transport",
@@ -215,7 +216,7 @@ class TestFastAPIServiceHelper:
             transport_name="backend",
             factory=lambda transport: _Service(transport=transport),
         )
-        bad_request = SimpleNamespace(app=SimpleNamespace(state=None))
+        bad_request = SimpleNamespace(app=SimpleNamespace(state=None), state=None)
 
-        with pytest.raises(RuntimeError, match=r"must expose \.state"):
+        with pytest.raises(RuntimeError, match=r"request object must expose \.state"):
             dependency(cast(Any, bad_request))
