@@ -8,16 +8,16 @@ import json
 
 import pytest
 
-from plynth.adapters.fastapi.errors import (
+fastapi = pytest.importorskip("fastapi")
+fastapi_testclient = pytest.importorskip("fastapi.testclient")
+
+from plynth.adapters.fastapi.errors import (  # noqa: E402
     build_error_payload,
     install_plynth_exception_handlers,
     map_exception_to_fastapi_response,
 )
-from plynth.base.errors import BaseError, InvalidInputError
-from plynth.http.errors import NotFoundError
-
-fastapi = pytest.importorskip("fastapi")
-fastapi_testclient = pytest.importorskip("fastapi.testclient")
+from plynth.base.errors import BaseError, InvalidInputError  # noqa: E402
+from plynth.http.errors import NotFoundError  # noqa: E402
 
 FastAPI = fastapi.FastAPI
 TestClient = fastapi_testclient.TestClient

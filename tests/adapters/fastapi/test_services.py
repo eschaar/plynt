@@ -10,6 +10,8 @@ from typing import Any, cast
 
 import pytest
 
+pytest.importorskip("fastapi")
+
 import plynth.adapters.fastapi.services as fastapi_services
 from plynth.adapters.fastapi import (
     PlynthLifespan,
@@ -17,8 +19,8 @@ from plynth.adapters.fastapi import (
     get_service,
 )
 
-fastapi = pytest.importorskip("fastapi")
-fastapi_testclient = pytest.importorskip("fastapi.testclient")
+fastapi = __import__("fastapi")
+fastapi_testclient = __import__("fastapi.testclient", fromlist=["TestClient"])
 
 FastAPI = fastapi.FastAPI
 Depends = fastapi.Depends
