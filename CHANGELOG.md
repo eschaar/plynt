@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.0](https://github.com/eschaar/plynth/compare/0.8.1...0.9.0) (2026-07-25)
+
+
+### Features
+
+* **fastapi:** ship adapter lifecycle, DI, docs, and tests ([11bf7be](https://github.com/eschaar/plynth/commit/11bf7be98f97ba1a85ac165e0c9452a0244d29e9))
+
+
+### Fixes
+
+* **fastapi:** keep service cache on request state ([e8f6035](https://github.com/eschaar/plynth/commit/e8f6035ddc529790ad4ab63692d9f144403327b3))
+
+
+### Documentation
+
+* **vcr:** wrap README example calls ([dea145d](https://github.com/eschaar/plynth/commit/dea145d864f635091bb65a588cbeee6df7699db2))
+
+
+### Maintenance
+
+* **ci:** bump actions/setup-python from 6 to 7 ([7c6fe3c](https://github.com/eschaar/plynth/commit/7c6fe3c3a50fa5f39985d6a1568cedc0ee9aad18))
+
+
+### Tests
+
+* **fastapi:** guard optional imports during collection ([33fed24](https://github.com/eschaar/plynth/commit/33fed24f651df89ad3b9a50db177b792984f917d))
+
 ## [0.8.1](https://github.com/eschaar/plynth/compare/0.8.0...0.8.1) (2026-07-15)
 
 
