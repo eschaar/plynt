@@ -57,7 +57,7 @@ jobs:
         # Scan only PR diff range to reduce noise and speed up checks.
         # Skipped on schedule trigger (no PR context available).
         if: github.event_name == 'pull_request'
-        uses: trufflesecurity/trufflehog@v3.95.9
+        uses: trufflesecurity/trufflehog@v3.96.0
         with:
           path: ./
           base: ${{ github.event.pull_request.base.sha }}
