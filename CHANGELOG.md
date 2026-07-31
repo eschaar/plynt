@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.1](https://github.com/eschaar/plynth/compare/0.9.0...0.9.1) (2026-07-31)
+
+
+### Maintenance
+
+* **ci:** bump trufflesecurity/trufflehog in the gha-patch-minor group ([f5a6e5d](https://github.com/eschaar/plynth/commit/f5a6e5dcdb2ea8a17a5e81ed45411c9f2510c619))
+* **deps:** update fastapi requirement from &lt;1,&gt;=0.110 to &gt;=0.140.13,&lt;1 ([f0d4a6a](https://github.com/eschaar/plynth/commit/f0d4a6a5046ab7082d08a13e2a460fd769dfaaaa))
+* **deps:** update httpx2 requirement from &gt;=2.7.0 to &gt;=2.9.1 ([9a0ca8c](https://github.com/eschaar/plynth/commit/9a0ca8c217548bb167547fd20268b5c42f87f7bd))
+
 ## [0.9.0](https://github.com/eschaar/plynth/compare/0.8.1...0.9.0) (2026-07-25)
 
 
