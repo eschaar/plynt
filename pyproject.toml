@@ -63,6 +63,7 @@ Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 httpx = ["httpx2>=2.9.1"]
+grpc = []
 django = ["django>=5.2.16,<6", "httpx2>=2.9.1"]
 drf = ["django>=5.2.16,<6", "djangorestframework>=3.17.1,<4", "httpx2>=2.9.1"]
 fastapi = ["fastapi>=0.140.13,<1", "httpx2>=2.9.1"]
