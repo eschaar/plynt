@@ -20,6 +20,11 @@ from plynth.connectors.salesforce.bulk import (
     BulkOperation,
     SalesforceBulkService,
 )
+from plynth.connectors.salesforce.cdc import (
+    AsyncSalesforceCDCSubscriber,
+    SalesforceCDCEvent,
+    SalesforceCDCSubscribeRequest,
+)
 from plynth.connectors.salesforce.composite import (
     AsyncSalesforceCompositeService,
     CompositeBatchRequest,
@@ -121,6 +126,7 @@ __all__ = [
     "AsyncSalesforceAgentService",
     "AsyncSalesforceApexRestService",
     "AsyncSalesforceBulkService",
+    "AsyncSalesforceCDCSubscriber",
     "AsyncSalesforceCompositeService",
     "AsyncSalesforceIdentityAccessService",
     "AsyncSalesforceLookupService",
@@ -166,6 +172,8 @@ __all__ = [
     "SalesforceApexRestService",
     "SalesforceBulkJobError",
     "SalesforceBulkService",
+    "SalesforceCDCEvent",
+    "SalesforceCDCSubscribeRequest",
     "SalesforceCompositeService",
     "SalesforceGlobalDescribeResponse",
     "SalesforceIdentityAccessService",

@@ -36,6 +36,18 @@ TO-BE
 1. Salesforce eventing has an accepted, phased architecture compatible with
    package-level stability goals.
 
+Phase-1 implementation slice added here
+
+1. Generic Salesforce CDC models now live in `src/plynth/connectors/salesforce/cdc/models.py`.
+1. The async CDC subscriber contract now lives in `src/plynth/connectors/salesforce/cdc/service.py`.
+1. The Salesforce connector package exports the CDC surface from `src/plynth/connectors/salesforce/__init__.py`.
+1. Shadow-store consumers remain out of package and out of connector scope.
+1. No tenant-, customer-, or instance-specific CDC logic is introduced in the generic CDC package boundary.
+1. The phase-1 envelope is aligned to the generic Salesforce CDC/Pub/Sub
+   message shape, including replay metadata and commit context.
+1. Shadow-store materialization remains external and is not implemented in
+   plynth or the Salesforce connector.
+
 ## Scope In / Out
 
 In scope
@@ -131,6 +143,13 @@ Scope
    required before implementation.
 1. Prove or reject a first implementation slice focused on subscribe,
    checkpoint/replay handling, and typed event envelope mapping.
+
+Current slice status
+
+1. Implemented: typed generic subscribe request and CDC event envelope.
+1. Implemented: async placeholder subscriber contract with a clear not-yet-implemented error.
+1. Deferred: checkpoint/replay storage, transport wiring, and shadow-store consumer implementation.
+1. Deferred: any tenant-, customer-, or instance-specific CDC behavior.
 
 Non-goals
 
@@ -474,21 +493,21 @@ Status
    reconnect-exhausted errors.
 1. `src/plynth/grpc/interceptor.py`: define async lifecycle hook protocols and
    context objects.
-1. `src/plynth/connectors/salesforce/eventing/__init__.py`: export
+1. `src/plynth/connectors/salesforce/cdc/__init__.py`: export
    `AsyncSalesforceCDCSubscriber`, `SalesforceCDCSubscribeRequest`, and
    `SalesforceCDCEvent`.
-1. `src/plynth/connectors/salesforce/eventing/cdc.py`: expose the public async
+1. `src/plynth/connectors/salesforce/cdc/service.py`: expose the public async
    subscribe surface for phase 1.
-1. `src/plynth/connectors/salesforce/eventing/models.py`: hold typed CDC event,
+1. `src/plynth/connectors/salesforce/cdc/models.py`: hold typed CDC event,
    replay input, and cursor models.
 1. Keep Salesforce CDC implementation in this package generic across orgs and
    instances. Put tenant-, customer-, or instance-specific behavior in
    consumer or integration-specific adapters outside this package boundary.
-1. `src/plynth/connectors/salesforce/eventing/settings.py`: hold the minimal
-   eventing config layered on existing Salesforce auth settings.
-1. `src/plynth/connectors/salesforce/eventing/_mapping.py`,
-   `src/plynth/connectors/salesforce/eventing/_subscribe.py`, and
-   `src/plynth/connectors/salesforce/eventing/_ack.py`: keep protobuf decode,
+1. `src/plynth/connectors/salesforce/cdc/settings.py`: hold the minimal
+   CDC config layered on existing Salesforce auth settings.
+1. `src/plynth/connectors/salesforce/cdc/_mapping.py`,
+   `src/plynth/connectors/salesforce/cdc/_subscribe.py`, and
+   `src/plynth/connectors/salesforce/cdc/_ack.py`: keep protobuf decode,
    subscribe-loop state, and ack dispatch internal in phase 1.
 
 ### Primary public entry points for phase 1
@@ -497,13 +516,13 @@ Status
    connector-owned gRPC stubs and streams.
 1. `plynth.grpc.GrpcClientSettings`: stable config object for endpoint, TLS,
    metadata, timeout, and bounded reconnect behavior.
-1. `plynth.connectors.salesforce.eventing.AsyncSalesforceCDCSubscriber`:
+1. `plynth.connectors.salesforce.cdc.AsyncSalesforceCDCSubscriber`:
    connector entry point that exposes `subscribe(request)` as an async iterator
    of typed CDC events.
-1. `plynth.connectors.salesforce.eventing.SalesforceCDCSubscribeRequest`:
+1. `plynth.connectors.salesforce.cdc.SalesforceCDCSubscribeRequest`:
    public request object carrying topic name, replay input, and flow-control
    options.
-1. `plynth.connectors.salesforce.eventing.SalesforceCDCEvent`: typed phase-1
+1. `plynth.connectors.salesforce.cdc.SalesforceCDCEvent`: typed phase-1
    event envelope returned to consumers.
 
 ### Internal-only pieces for phase 1
@@ -540,10 +559,10 @@ Status
    propagation, graceful close, and bounded reconnect stop conditions.
 1. `tests/grpc/test_settings.py`: stable settings defaults and config
    validation for the public gRPC surface.
-1. `tests/connectors/salesforce/eventing/test_cdc_subscribe_contract.py`:
+1. `tests/connectors/salesforce/cdc/test_service.py`:
    typed envelope mapping, replay resume input, at-least-once duplicate
    posture, bounded reconnect behavior, and no public ack surface.
-1. `tests/connectors/salesforce/eventing/test_cdc_ordering_contract.py`:
+1. `tests/connectors/salesforce/cdc/test_cdc_ordering_contract.py`:
    ordering only within a live subscription segment and explicit no-promise
    across reconnect boundaries.
 
@@ -577,6 +596,18 @@ Status
   Salesforce eventing spike planning added to this plan.
 - Next session: carry the accepted ADR constraints into implementation and
   contract validation for the first eventing slice.
+
+## Next Steps (Saved 2026-08-03)
+
+1. Implement concrete async gRPC transport wiring for current gRPC contracts.
+1. Replace CDC subscriber placeholder with real subscribe flow in
+   salesforce/cdc.
+1. Add bounded reconnect and replay-resume behavior; keep ack internal.
+1. Expand CDC tests for reconnect, replay, ordering guarantees, and failure
+   paths.
+1. Keep shadow-store consumer and materialization out of plynth and out of
+   the connector.
+1. Update docs for runtime-wired status and rerun lint, type, and test gates.
 
 ## Archive/Remove Note
 
