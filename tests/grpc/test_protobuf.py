@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 
@@ -28,6 +29,19 @@ class _FakeMessage:
 
 class TestProtobufContract:
     """Verify generic protobuf helper behavior and error handling."""
+
+    def test_protocol_stub_methods_raise_not_implemented(self) -> None:
+        """Validate protocol method stubs are not callable by default."""
+        with pytest.raises(NotImplementedError):
+            protobuf.ProtobufSerializable.SerializeToString(
+                cast(protobuf.ProtobufSerializable, object())
+            )
+
+        with pytest.raises(NotImplementedError):
+            protobuf.ProtobufParseTarget.ParseFromString(
+                cast(protobuf.ProtobufParseTarget, object()),
+                b"payload",
+            )
 
     def test_serialize_message_returns_wire_bytes(
         self,

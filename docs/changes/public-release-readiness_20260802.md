@@ -530,9 +530,9 @@ Status
 
 ### Contract test targets
 
-1. `tests/grpc/test_client_contract.py`: interceptor order, metadata
+1. `tests/grpc/test_client.py`: interceptor order, metadata
    propagation, graceful close, and bounded reconnect stop conditions.
-1. `tests/grpc/test_settings_contract.py`: stable settings defaults and config
+1. `tests/grpc/test_settings.py`: stable settings defaults and config
    validation for the public gRPC surface.
 1. `tests/connectors/salesforce/eventing/test_cdc_subscribe_contract.py`:
    typed envelope mapping, replay resume input, at-least-once duplicate
