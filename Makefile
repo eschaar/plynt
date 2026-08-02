@@ -55,7 +55,7 @@ help:
 	@echo "  check         Full local quality gate (format-check + lint + test)"
 	@echo "  pre-commit-install  Install git pre-commit hooks"
 	@echo "  test          Run linters + tests"
-	@echo "  test-all      Run tests across Python 3.11, 3.12, 3.13 via tox"
+	@echo "  test-all      Run tests across Python 3.11, 3.12, 3.13, 3.14 via tox"
 	@echo "  unittests     Run pytest only"
 	@echo "  coverage      Run tests with HTML coverage report"
 	@echo "  build         Build sdist and wheel into dist/"
