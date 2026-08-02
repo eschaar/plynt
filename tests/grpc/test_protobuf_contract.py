@@ -16,11 +16,11 @@ class _FakeMessage:
         """Initialize fake protobuf message state."""
         self.payload = payload
 
-    def SerializeToString(self) -> bytes:  # noqa: N802
+    def SerializeToString(self) -> bytes:  # noqa: N802  # pylint: disable=invalid-name
         """Return payload bytes for serialization contracts."""
         return self.payload
 
-    def ParseFromString(self, data: bytes) -> int:  # noqa: N802
+    def ParseFromString(self, data: bytes) -> int:  # noqa: N802  # pylint: disable=invalid-name
         """Capture parsed payload and return parsed byte length."""
         self.payload = data
         return len(data)

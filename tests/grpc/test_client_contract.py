@@ -276,4 +276,4 @@ class TestAsyncGrpcClientContract:
         with pytest.raises(ValueError, match="method must not be empty"):
             await client.unary_unary("   ", {})
 
-        assert transport.calls == []
+        assert not transport.calls

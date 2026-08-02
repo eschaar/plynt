@@ -15,11 +15,11 @@ __all__ = [
 ]
 
 try:  # pragma: no cover
-    _has_protobuf = find_spec("google.protobuf.message") is not None
+    HAS_PROTOBUF = find_spec("google.protobuf.message") is not None
 except ModuleNotFoundError:  # pragma: no cover
-    _has_protobuf = False
+    HAS_PROTOBUF = False
 
-if not _has_protobuf:  # pragma: no cover
+if not HAS_PROTOBUF:  # pragma: no cover
     _PROTOBUF_IMPORT_ERROR: Exception | None = ModuleNotFoundError(
         "No module named 'google.protobuf'"
     )
@@ -31,7 +31,7 @@ else:  # pragma: no cover
 class ProtobufSerializable(Protocol):
     """Duck-typed protocol for protobuf-like outbound messages."""
 
-    def SerializeToString(self) -> bytes:  # noqa: N802
+    def SerializeToString(self) -> bytes:  # noqa: N802  # pylint: disable=invalid-name
         """Return the wire-encoded protobuf payload."""
         raise NotImplementedError
 
@@ -40,12 +40,12 @@ class ProtobufSerializable(Protocol):
 class ProtobufParseTarget(Protocol):
     """Duck-typed protocol for protobuf-like parse targets."""
 
-    def ParseFromString(self, data: bytes) -> int:  # noqa: N802
+    def ParseFromString(self, data: bytes) -> int:  # noqa: N802  # pylint: disable=invalid-name
         """Parse a protobuf payload into the receiving instance."""
         raise NotImplementedError
 
 
-_TParseTarget = TypeVar("_TParseTarget", bound=ProtobufParseTarget)
+ParseTargetT = TypeVar("ParseTargetT", bound=ProtobufParseTarget)
 
 
 def ensure_protobuf_runtime() -> None:
@@ -64,8 +64,8 @@ def serialize_message(message: ProtobufSerializable) -> bytes:
 
 def deserialize_message(
     payload: bytes,
-    factory: Callable[[], _TParseTarget],
-) -> _TParseTarget:
+    factory: Callable[[], ParseTargetT],
+) -> ParseTargetT:
     """Create and populate a protobuf-like message from wire bytes."""
     ensure_protobuf_runtime()
     message = factory()

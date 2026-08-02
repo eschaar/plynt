@@ -58,6 +58,9 @@ Phase 2 guardrail:
 1. Promote reconnect, backpressure, or subscribe-loop behavior into a more
    generic protocol layer only after implementation evidence shows reuse beyond
    the Salesforce connector.
+1. Consider moving Avro handling into a generic layer only when implementation
+   evidence shows non-Salesforce reuse and clear net reduction in connector
+   complexity.
 
 ## Alternatives Considered
 
