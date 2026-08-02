@@ -139,6 +139,9 @@ Non-goals
    extraction in this session.
 1. Do not redesign unrelated Salesforce REST, Bulk, AI, or framework adapter
    surfaces.
+1. Do not place tenant-, customer-, or instance-specific CDC business logic,
+   mappings, or hardcoded assumptions inside the generic Salesforce CDC
+   package boundary.
 
 Success criteria
 
@@ -478,6 +481,9 @@ Status
    subscribe surface for phase 1.
 1. `src/plynth/connectors/salesforce/eventing/models.py`: hold typed CDC event,
    replay input, and cursor models.
+1. Keep Salesforce CDC implementation in this package generic across orgs and
+   instances. Put tenant-, customer-, or instance-specific behavior in
+   consumer or integration-specific adapters outside this package boundary.
 1. `src/plynth/connectors/salesforce/eventing/settings.py`: hold the minimal
    eventing config layered on existing Salesforce auth settings.
 1. `src/plynth/connectors/salesforce/eventing/_mapping.py`,

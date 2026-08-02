@@ -38,6 +38,13 @@ Phase 1 boundaries:
 1. Keep Salesforce-specific semantics in
    `plynth.connectors.salesforce`, including CDC envelope mapping, replay or
    checkpoint semantics, and subscription-facing behavior.
+1. Keep Salesforce eventing implementation in this package generic across
+   Salesforce orgs and instances.
+1. Do not add tenant-, customer-, or instance-specific business rules,
+   mappings, or hardcoded assumptions to the generic CDC package surface.
+1. Place tenant-, customer-, or instance-specific behavior outside this
+   package boundary, for example in consumer-layer or
+   integration-specific adapters.
 1. Keep ack internal to the Salesforce connector in phase 1 rather than part
    of the public package-level subscription contract.
 1. Do not assume direct reuse of HTTP middleware. If cross-cutting protocol
@@ -102,6 +109,7 @@ Positive:
 - Salesforce CDC can move forward behind a clear async-only boundary.
 - Optional-install and extraction strategy remain consistent with existing ADRs.
 - The phase-1 public install path is unambiguous: `plynth[grpc,salesforce]`.
+- The CDC connector surface remains reusable across orgs and instances.
 
 Negative:
 
@@ -111,6 +119,8 @@ Negative:
   shared abstractions are promoted.
 - Middleware-style cross-cutting behavior for gRPC will need its own focused
   shape instead of piggybacking on HTTP middleware.
+- Tenant- or customer-specific rules require a separate consumer or
+  integration adapter layer.
 
 ## Related ADRs
 
