@@ -14,7 +14,7 @@ Framework views.
 
 ## Prerequisites
 
-1. Install DRF support:
+1. Install required extras:
 
 ```bash
 pip install "plynth[drf]"
@@ -22,3 +22,9 @@ pip install "plynth[drf]"
 
 1. Configure your Django settings block for upstream API credentials.
 1. Run snippets from a Django-aware runtime (for example `manage.py shell`).
+
+## Validation checklist
+
+- Confirm `PlynthServiceMixin` resolves configured service factories.
+- Trigger a mapped plynth exception and verify DRF-safe error output.
+- For async snippets, verify view execution without sync/async boundary errors.

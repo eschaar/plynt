@@ -17,6 +17,17 @@ path in this repository:
 | `openai_responses.md`   | OpenAI `POST /v1/responses`   | Uses `build_openai_responses_adapter_set()`                                                       |
 | `anthropic_messages.md` | Anthropic `POST /v1/messages` | Uses `build_anthropic_messages_adapter_set()` and sends `x-api-key` + `anthropic-version` headers |
 
+## Prerequisites
+
+1. Install required extras:
+
+```bash
+pip install "plynth[httpx]"
+```
+
+1. Set provider credentials in `examples/llm/.env`.
+1. Export variables in the active shell before running snippets.
+
 ## Quick start
 
 ```bash
@@ -43,19 +54,13 @@ Only adapter set and endpoint path differ:
 
 This is the intended usage model for new provider integrations.
 
-## What output to expect
+## Validation checklist
 
-Each script prints two sections:
+- Script prints `== Non-streaming ==` with non-empty assistant text.
+- Script prints `== Streaming ==` with one or more chunk deltas.
+- OpenAI and Anthropic snippets both run with the same neutral request model.
 
-1. `== Non-streaming ==`
-   This prints the final assembled assistant text from one completion call.
-1. `== Streaming ==`
-   This prints incremental deltas from `iter_stream_chunks()` as tokens arrive.
-
-If streaming prints nothing, check API key, model name, and provider endpoint.
-
-Each script runs both a non-streaming and streaming request using the same
-neutral `LLMGenerateRequest` model and `LLMService` API.
+If streaming prints nothing, check API key, model, and provider endpoint.
 
 ## Required environment variables
 

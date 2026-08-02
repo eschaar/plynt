@@ -23,6 +23,17 @@ the connector services:
 > you have not yet configured a *Run As* user on the External Client App, use
 > `username_password.md` first.
 
+## Prerequisites
+
+1. Install required extras:
+
+```bash
+pip install "plynth[salesforce,httpx]"
+```
+
+1. Create or access a Salesforce External Client App with OAuth enabled.
+1. Copy `examples/salesforce/example.env` to `.env` and set credentials.
+
 ______________________________________________________________________
 
 ## Quick start
@@ -33,15 +44,13 @@ cp examples/salesforce/example.env examples/salesforce/.env
 # examples/salesforce/username_password.md
 ```
 
-Expected output includes sections named:
+## Validation checklist
 
-- `AVAILABLE API VERSIONS`
-- `ORG LIMITS`
-- `ACCOUNT SOBJECT — describe()`
-- `SOQL: SELECT Id, Name FROM Account LIMIT 5`
-- `SOSL: FIND ...`
-
-If those sections print with real values, the connector path is healthy.
+- Output includes `AVAILABLE API VERSIONS` with at least one version.
+- Output includes `ORG LIMITS` with populated values.
+- Output includes `ACCOUNT SOBJECT` metadata for `Account`.
+- SOQL and SOSL sections return results or an empty set without auth errors.
+- These sections print with real values when the connector path is healthy.
 
 ______________________________________________________________________
 

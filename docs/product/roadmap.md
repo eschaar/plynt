@@ -47,6 +47,15 @@ Near-term scope note for item 7:
 - Provider adapters for OpenAI Responses and Anthropic Messages are
   implemented.
 
+## Delivery Principles
+
+- Preserve sync and async support as one architectural principle across the
+  product roadmap.
+- Phase delivery by capability, not by one global transport milestone.
+- Keep stable HTTP capabilities on a sync/async parity path.
+- Treat gRPC and Salesforce eventing as async-first roadmap work.
+- Evaluate sync eventing later; it is not a current delivery promise.
+
 ______________________________________________________________________
 
 ## Implemented Baseline (through v0.7.1)

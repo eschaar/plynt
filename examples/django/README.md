@@ -17,7 +17,7 @@ For DRF-specific examples, see
 
 ## Prerequisites
 
-1. Install Django support:
+1. Install required extras:
 
 ```bash
 pip install "plynth[django,httpx]"
@@ -26,3 +26,9 @@ pip install "plynth[django,httpx]"
 1. Configure at least one cache alias in `settings.CACHES`.
 1. Run the example from a Django-aware runtime (for example `manage.py shell`)
    so `django.core.cache` is importable.
+
+## Validation checklist
+
+- Build a transport from the example without import errors.
+- Confirm configured cache alias is resolved at runtime.
+- Run one outbound request and verify middleware executes in order.

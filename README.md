@@ -104,6 +104,25 @@ pip install "plynth[httpx]"       # httpx2 transport backend
 pip install "plynth[salesforce]"  # Salesforce REST connector
 ```
 
+### Canonical extras matrix
+
+| Extra        | Installs                                | Typical use                                       |
+| ------------ | --------------------------------------- | ------------------------------------------------- |
+| `httpx`      | `httpx2` transport backend              | Core HTTP transport for sync and async clients    |
+| `django`     | Django adapter support + `httpx2`       | Django integration helpers and cache adapters     |
+| `drf`        | DRF adapter support + Django + `httpx2` | DRF service mixins and exception mapping patterns |
+| `fastapi`    | FastAPI adapter support + `httpx2`      | FastAPI dependency wiring for plynth clients      |
+| `salesforce` | Salesforce connector dependencies       | Typed Salesforce REST APIs, bulk, and AI services |
+
+### Public API surface
+
+Plynth treats package exports in `plynth.base` and `plynth.http` as the main
+public contract boundaries for core usage.
+
+- Prefer importing from these package roots instead of internal submodules.
+- Internal module paths may evolve as long as public exports remain compatible.
+- Compatibility and deprecation policy is defined in [ADR-0027](docs/architecture/adr/0027-public-api-compatibility-and-deprecation-policy.md).
+
 ______________________________________________________________________
 
 ## Authentication
