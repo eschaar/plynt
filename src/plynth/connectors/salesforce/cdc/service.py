@@ -26,6 +26,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, Protocol
 
+from plynth.connectors.salesforce.cdc.checkpoint import SalesforceCDCCheckpointStore
 from plynth.connectors.salesforce.cdc.models import (
     SalesforceCDCAuthMetadata,
     SalesforceCDCEnvelope,
@@ -38,11 +39,24 @@ from plynth.connectors.salesforce.cdc.pubsub import (
 )
 from plynth.grpc.errors import GrpcStatusError, GrpcTransportError
 
-__all__ = ["AsyncSalesforceCDCSubscriber"]
+__all__ = [
+    "AsyncSalesforceCDCSubscriber",
+    "SalesforceCDCGapError",
+    "SalesforceCDCOverflowError",
+]
 
 
 SchemaLoader = Callable[[str, dict[str, str]], Awaitable[str]]
 PayloadDecoder = Callable[[str, bytes], dict[str, Any]]
+CheckpointKeyBuilder = Callable[[SalesforceCDCSubscribeRequest], str]
+
+
+class SalesforceCDCGapError(RuntimeError):
+    """Raised when Salesforce reports a replay gap in the CDC stream."""
+
+
+class SalesforceCDCOverflowError(RuntimeError):
+    """Raised when Salesforce reports an overflow event in the CDC stream."""
 
 
 class _GrpcClientProtocol(Protocol):
@@ -85,7 +99,48 @@ class _UnimplementedCDCStream(AsyncIterator[SalesforceCDCEvent]):
         )
 
 
-# pylint: disable=too-few-public-methods
+class _CheckpointingCDCStream(AsyncIterator[SalesforceCDCEvent]):
+    """Checkpoint replay cursors only after the caller advanced the stream.
+
+    This preserves at-least-once delivery semantics: a replay cursor is stored
+    only when the consumer asks for the next item or when the stream ends.
+    """
+
+    def __init__(
+        self,
+        stream: AsyncIterator[SalesforceCDCEvent],
+        *,
+        checkpoint_store: SalesforceCDCCheckpointStore,
+        stream_key: str,
+    ) -> None:
+        """Initialize checkpointing wrapper state."""
+        self._stream = stream
+        self._checkpoint_store = checkpoint_store
+        self._stream_key = stream_key
+        self._pending_replay_id: int | None = None
+
+    def __aiter__(self) -> _CheckpointingCDCStream:
+        return self
+
+    async def __anext__(self) -> SalesforceCDCEvent:
+        self._flush_pending()
+        try:
+            event = await anext(self._stream)
+        except StopAsyncIteration:
+            self._flush_pending()
+            raise
+        self._pending_replay_id = event.replay_id
+        return event
+
+    def _flush_pending(self) -> None:
+        """Persist the last delivered replay cursor once it is acknowledged."""
+        if self._pending_replay_id is None:
+            return
+        self._checkpoint_store.save(self._stream_key, self._pending_replay_id)
+        self._pending_replay_id = None
+
+
+# pylint: disable=too-few-public-methods,too-many-instance-attributes
 class AsyncSalesforceCDCSubscriber:
     """Subscribe to Salesforce CDC channels through the Pub/Sub API.
 
@@ -97,11 +152,17 @@ class AsyncSalesforceCDCSubscriber:
     - downstream replication logic outside the connector
     """
 
+    # The subscriber intentionally centralizes all CDC orchestration concerns
+    # for one stream surface, so its constructor stays explicit rather than
+    # hiding dependencies in nested config objects.
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         client: _GrpcClientProtocol | None = None,
         *,
         pubsub: SalesforcePubSubAdapter | None = None,
+        checkpoint_store: SalesforceCDCCheckpointStore | None = None,
+        checkpoint_key_builder: CheckpointKeyBuilder | None = None,
         auth_metadata: SalesforceCDCAuthMetadata | None = None,
         auth_metadata_provider: (
             Callable[[], Awaitable[SalesforceCDCAuthMetadata]] | None
@@ -119,6 +180,8 @@ class AsyncSalesforceCDCSubscriber:
                 when ``pubsub`` is not supplied.
             pubsub: Optional Salesforce Pub/Sub adapter. When supplied, this
                 becomes the canonical Subscribe/GetSchema integration surface.
+            checkpoint_store: Optional replay cursor checkpoint store.
+            checkpoint_key_builder: Optional builder for checkpoint stream keys.
             auth_metadata: Static Salesforce Pub/Sub auth metadata.
             auth_metadata_provider: Async provider for auth metadata when the
                 values are fetched lazily.
@@ -134,6 +197,10 @@ class AsyncSalesforceCDCSubscriber:
         """
         self._client = client
         self._pubsub = pubsub
+        self._checkpoint_store = checkpoint_store
+        self._checkpoint_key_builder = (
+            checkpoint_key_builder or self._default_checkpoint_key
+        )
         self._auth_metadata = auth_metadata
         self._auth_metadata_provider = auth_metadata_provider
         self._payload_decoder = payload_decoder
@@ -162,8 +229,22 @@ class AsyncSalesforceCDCSubscriber:
         if self._pubsub is None or self._payload_decoder is None:
             return _UnimplementedCDCStream()
 
+        checkpoint_store = self._checkpoint_store
+        stream_key = self._checkpoint_key_builder(request)
+        if checkpoint_store is not None and request.replay_id is None:
+            stored_replay_id = checkpoint_store.load(stream_key)
+            if stored_replay_id is not None:
+                request = request.model_copy(update={"replay_id": stored_replay_id})
+
         metadata = await self._resolve_metadata()
-        return self._subscribe_with_reconnect(request, metadata)
+        stream = self._subscribe_with_reconnect(request, metadata)
+        if checkpoint_store is None:
+            return stream
+        return _CheckpointingCDCStream(
+            stream,
+            checkpoint_store=checkpoint_store,
+            stream_key=stream_key,
+        )
 
     async def _subscribe_with_reconnect(
         self,
@@ -226,6 +307,7 @@ class AsyncSalesforceCDCSubscriber:
         service without leaking reconnect state into the public event model.
         """
         async for response in stream:
+            self._raise_for_gap_or_overflow(response)
             latest_replay_id = self._extract_latest_replay_id(response)
             for raw_event in self._extract_events(response):
                 event = await self._to_cdc_event(
@@ -358,6 +440,45 @@ class AsyncSalesforceCDCSubscriber:
         }
 
     @staticmethod
+    def _raise_for_gap_or_overflow(response: Any) -> None:
+        """Raise clear stream errors for normalized gap or overflow signals."""
+        if not isinstance(response, dict):
+            return
+
+        latest_replay_id = AsyncSalesforceCDCSubscriber._coerce_optional_int(
+            response.get("latest_replay_id")
+        )
+        detail = response.get("error_message")
+        suffix = AsyncSalesforceCDCSubscriber._format_stream_error_suffix(
+            latest_replay_id,
+            detail,
+        )
+
+        if response.get("gap") is True:
+            raise SalesforceCDCGapError(
+                f"Salesforce CDC stream reported a replay gap{suffix}"
+            )
+        if response.get("overflow") is True:
+            raise SalesforceCDCOverflowError(
+                f"Salesforce CDC stream reported an overflow event{suffix}"
+            )
+
+    @staticmethod
+    def _format_stream_error_suffix(
+        latest_replay_id: int | None,
+        detail: Any,
+    ) -> str:
+        """Build a stable diagnostic suffix for normalized stream errors."""
+        parts: list[str] = []
+        if latest_replay_id is not None:
+            parts.append(f"latest_replay_id={latest_replay_id}")
+        if isinstance(detail, str) and detail:
+            parts.append(detail)
+        if not parts:
+            return ""
+        return f" ({'; '.join(parts)})"
+
+    @staticmethod
     def _extract_latest_replay_id(response: Any) -> int | None:
         """Extract the latest replay ID from a raw FetchResponse."""
         if isinstance(response, dict):
@@ -434,3 +555,8 @@ class AsyncSalesforceCDCSubscriber:
         if not isinstance(value, list):
             return []
         return [item for item in value if isinstance(item, str)]
+
+    @staticmethod
+    def _default_checkpoint_key(request: SalesforceCDCSubscribeRequest) -> str:
+        """Build the default checkpoint key for one CDC subscription."""
+        return request.channel

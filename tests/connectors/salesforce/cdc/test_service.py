@@ -15,8 +15,12 @@ from typing import Any
 import pytest
 
 from plynth.connectors.salesforce.cdc import (
+    AsyncSalesforceCDCAuthMetadataProvider,
     AsyncSalesforceCDCSubscriber,
+    InMemorySalesforceCDCCheckpointStore,
     SalesforceCDCAuthMetadata,
+    SalesforceCDCGapError,
+    SalesforceCDCOverflowError,
     SalesforceCDCSubscribeRequest,
 )
 from plynth.grpc.errors import GrpcTransportError
@@ -79,6 +83,16 @@ class _FakeAsyncGrpcClient:
             }
         )
         return {"schema_json": '{"type": "record", "name": "Account"}'}
+
+
+class _FakeAsyncOAuthAuth:
+    """Small auth double for CDC auth metadata provider integration."""
+
+    async def _get_token_header(self) -> dict[str, str]:
+        return {"Authorization": "Bearer token-123"}
+
+    async def get_instance_url(self) -> str:
+        return "https://example.my.salesforce.com/"
 
 
 @dataclass
@@ -189,6 +203,33 @@ class TestAsyncSalesforceCDCSubscriber:
             "tenantid": "00Dxx0000000001",
         }
         assert client.unary_calls[0]["request"] == {"schema_id": "schema-123"}
+
+    @pytest.mark.asyncio
+    async def test_subscribe_accepts_auth_metadata_provider_from_auth_middleware(
+        self,
+    ) -> None:
+        """Resolve CDC metadata through the auth middleware adapter."""
+        client = _FakeAsyncGrpcClient()
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            auth_metadata_provider=AsyncSalesforceCDCAuthMetadataProvider(
+                _FakeAsyncOAuthAuth(),
+                tenant_id="00Dxx0000000001",
+            ),
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        await anext(stream)
+
+        assert client.stream_calls[0]["metadata"] == {
+            "accesstoken": "token-123",
+            "instanceurl": "https://example.my.salesforce.com",
+            "tenantid": "00Dxx0000000001",
+        }
 
     @pytest.mark.asyncio
     async def test_subscribe_uses_custom_replay_when_replay_id_is_supplied(
@@ -402,6 +443,155 @@ class TestAsyncSalesforceCDCSubscriber:
             await subscriber.subscribe(
                 SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
             )
+
+    @pytest.mark.asyncio
+    async def test_resumes_from_checkpoint_store_when_request_has_no_replay_id(
+        self,
+    ) -> None:
+        """Use a stored replay cursor when the request does not set one."""
+        store = InMemorySalesforceCDCCheckpointStore({"/data/AccountChangeEvent": 77})
+        client = _FakeAsyncGrpcClient()
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            checkpoint_store=store,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        await anext(stream)
+
+        assert client.stream_calls[0]["requests"] == [
+            {
+                "topic_name": "/data/AccountChangeEvent",
+                "replay_preset": "CUSTOM",
+                "replay_id": 77,
+                "num_requested": 1,
+            }
+        ]
+
+    @pytest.mark.asyncio
+    async def test_checkpoints_only_after_consumer_advances_stream(self) -> None:
+        """Persist the delivered replay cursor only after the next pull."""
+        store = InMemorySalesforceCDCCheckpointStore()
+        client = _FakeAsyncGrpcClient(
+            stream_plans=[
+                _StreamPlan(
+                    responses=[
+                        {
+                            "latest_replay_id": 42,
+                            "events": [
+                                {
+                                    "event": {
+                                        "schema_id": "schema-123",
+                                        "payload": b"payload-1",
+                                        "topic_name": "/data/AccountChangeEvent",
+                                    }
+                                },
+                                {
+                                    "event": {
+                                        "schema_id": "schema-123",
+                                        "payload": b"payload-1",
+                                        "topic_name": "/data/AccountChangeEvent",
+                                        "replay_id": 43,
+                                    }
+                                },
+                            ],
+                        }
+                    ]
+                )
+            ]
+        )
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            checkpoint_store=store,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        first = await anext(stream)
+        assert first.replay_id == 42
+        assert store.load("/data/AccountChangeEvent") is None
+
+        second = await anext(stream)
+        assert second.replay_id == 43
+        assert store.load("/data/AccountChangeEvent") == 42
+
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+        assert store.load("/data/AccountChangeEvent") == 43
+
+    @pytest.mark.asyncio
+    async def test_fails_clearly_when_stream_reports_gap_event(self) -> None:
+        """Fail fast when the normalized response reports a replay gap."""
+        client = _FakeAsyncGrpcClient(
+            stream_plans=[
+                _StreamPlan(
+                    responses=[
+                        {
+                            "gap": True,
+                            "latest_replay_id": 42,
+                            "error_message": "checkpoint is too old",
+                        }
+                    ]
+                )
+            ]
+        )
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        with pytest.raises(
+            SalesforceCDCGapError,
+            match=r"replay gap.*latest_replay_id=42.*checkpoint is too old",
+        ):
+            await anext(stream)
+        assert not client.unary_calls
+
+    @pytest.mark.asyncio
+    async def test_fails_clearly_when_stream_reports_overflow_event(self) -> None:
+        """Fail fast when the normalized response reports an overflow event."""
+        client = _FakeAsyncGrpcClient(
+            stream_plans=[
+                _StreamPlan(
+                    responses=[
+                        {
+                            "overflow": True,
+                            "latest_replay_id": 99,
+                        }
+                    ]
+                )
+            ]
+        )
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        with pytest.raises(
+            SalesforceCDCOverflowError,
+            match=r"overflow event.*latest_replay_id=99",
+        ):
+            await anext(stream)
+        assert not client.unary_calls
 
     @pytest.mark.asyncio
     async def test_caches_schema_by_schema_id(self) -> None:
@@ -637,3 +827,23 @@ class TestAsyncSalesforceCDCSubscriber:
         assert subscriber._coerce_string("", fallback="UNKNOWN") == "UNKNOWN"  # pylint: disable=protected-access
         assert subscriber._coerce_optional_string(123) is None  # pylint: disable=protected-access
         assert subscriber._coerce_string_list("bad") == []  # pylint: disable=protected-access
+
+    def test_stream_error_suffix_formats_optional_context(self) -> None:
+        """Render stable diagnostics for normalized gap or overflow signals."""
+        subscriber = AsyncSalesforceCDCSubscriber()
+
+        assert subscriber._format_stream_error_suffix(42, "detail") == (  # pylint: disable=protected-access
+            " (latest_replay_id=42; detail)"
+        )
+        assert subscriber._format_stream_error_suffix(None, None) == ""  # pylint: disable=protected-access
+
+    def test_default_checkpoint_key_uses_channel(self) -> None:
+        """Default checkpoint keys align to one CDC channel path."""
+        subscriber = AsyncSalesforceCDCSubscriber()
+
+        assert (
+            subscriber._default_checkpoint_key(  # pylint: disable=protected-access
+                SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+            )
+            == "/data/AccountChangeEvent"
+        )

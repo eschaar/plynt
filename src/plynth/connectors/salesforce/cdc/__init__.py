@@ -2,6 +2,16 @@
 
 from __future__ import annotations
 
+from plynth.connectors.salesforce.cdc.auth import AsyncSalesforceCDCAuthMetadataProvider
+from plynth.connectors.salesforce.cdc.avro import (
+    AvroPayloadDecoder,
+    ensure_fastavro_runtime,
+)
+from plynth.connectors.salesforce.cdc.checkpoint import (
+    CacheBackendSalesforceCDCCheckpointStore,
+    InMemorySalesforceCDCCheckpointStore,
+    SalesforceCDCCheckpointStore,
+)
 from plynth.connectors.salesforce.cdc.models import (
     SalesforceCDCAuthMetadata,
     SalesforceCDCEnvelope,
@@ -15,15 +25,25 @@ from plynth.connectors.salesforce.cdc.pubsub import (
 )
 from plynth.connectors.salesforce.cdc.service import (
     AsyncSalesforceCDCSubscriber,
+    SalesforceCDCGapError,
+    SalesforceCDCOverflowError,
 )
 
 __all__ = [
+    "AsyncSalesforceCDCAuthMetadataProvider",
     "AsyncSalesforceCDCSubscriber",
+    "AvroPayloadDecoder",
+    "CacheBackendSalesforceCDCCheckpointStore",
     "GrpcMethodPubSubAdapter",
     "GrpcStubPubSubAdapter",
+    "InMemorySalesforceCDCCheckpointStore",
     "SalesforceCDCAuthMetadata",
+    "SalesforceCDCCheckpointStore",
     "SalesforceCDCEnvelope",
     "SalesforceCDCEvent",
+    "SalesforceCDCGapError",
+    "SalesforceCDCOverflowError",
     "SalesforceCDCSubscribeRequest",
     "SalesforcePubSubAdapter",
+    "ensure_fastavro_runtime",
 ]
