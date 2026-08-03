@@ -7,6 +7,8 @@ from typing import Any
 import pytest
 
 from plynth.grpc.client import AsyncGrpcClient, AsyncGrpcTransport
+from plynth.grpc.handler import GrpcCall, NextGrpcHandler
+from plynth.grpc.interceptor import AsyncGrpcInterceptor
 from plynth.grpc.settings import GrpcSettings
 
 
@@ -109,6 +111,62 @@ class _RecordingTransport(AsyncGrpcTransport):
             metadata=metadata,
             timeout=timeout,
         )
+
+
+class _ClosableRecordingTransport(_RecordingTransport):
+    """Recording transport that also supports async close semantics."""
+
+    def __init__(self) -> None:
+        """Initialize close tracking state."""
+        super().__init__()
+        self.closed = False
+
+    async def close(self) -> None:
+        """Record that close was called."""
+        self.closed = True
+
+
+class _SyncClosableRecordingTransport(_RecordingTransport):
+    """Recording transport with a synchronous close method."""
+
+    def __init__(self) -> None:
+        """Initialize close tracking state."""
+        super().__init__()
+        self.closed = False
+
+    def close(self) -> None:
+        """Record that sync close was called."""
+        self.closed = True
+
+
+class _MetadataInterceptor(AsyncGrpcInterceptor):
+    """Interceptor that enriches call metadata before forwarding."""
+
+    def __init__(self, key: str, value: str) -> None:
+        """Store metadata mutation values used during interception."""
+        self._key = key
+        self._value = value
+
+    async def handle(self, call: GrpcCall, next_handler: NextGrpcHandler) -> Any:
+        """Forward the call with one additional metadata entry."""
+        call.metadata[self._key] = self._value
+        return await next_handler(call)
+
+
+class _OrderInterceptor(AsyncGrpcInterceptor):
+    """Interceptor that records before/after ordering around the call."""
+
+    def __init__(self, label: str, events: list[str]) -> None:
+        """Persist mutable sink used for ordering assertions."""
+        self._label = label
+        self._events = events
+
+    async def handle(self, call: GrpcCall, next_handler: NextGrpcHandler) -> Any:
+        """Record around the downstream handler execution."""
+        self._events.append(f"before:{self._label}")
+        response = await next_handler(call)
+        self._events.append(f"after:{self._label}")
+        return response
 
 
 class TestAsyncGrpcTransportContract:
@@ -277,3 +335,72 @@ class TestAsyncGrpcClientContract:
             await client.unary_unary("   ", {})
 
         assert not transport.calls
+
+    async def test_interceptors_mutate_metadata_before_transport_call(self) -> None:
+        """Validate interceptor chain can enrich outbound metadata."""
+        transport = _RecordingTransport()
+        client = AsyncGrpcClient(
+            target="dns:///grpc.local:443",
+            transport=transport,
+            metadata={"x-default": "base"},
+            interceptors=(_MetadataInterceptor("x-interceptor", "yes"),),
+        )
+
+        await client.unary_unary("svc.v1.Health/Check", {"ready": True})
+
+        assert transport.calls[0]["metadata"] == {
+            "x-default": "base",
+            "x-interceptor": "yes",
+        }
+
+    async def test_interceptors_wrap_in_declaration_order(self) -> None:
+        """Validate declaration order controls wrapper execution order."""
+        transport = _RecordingTransport()
+        events: list[str] = []
+        client = AsyncGrpcClient(
+            target="dns:///grpc.local:443",
+            transport=transport,
+            interceptors=(
+                _OrderInterceptor("first", events),
+                _OrderInterceptor("second", events),
+            ),
+        )
+
+        await client.unary_unary("svc.v1.Health/Check", {"ready": True})
+
+        assert events == [
+            "before:first",
+            "before:second",
+            "after:second",
+            "after:first",
+        ]
+
+    async def test_close_calls_transport_close_when_available(self) -> None:
+        """Validate lifecycle close delegates to the transport when supported."""
+        transport = _ClosableRecordingTransport()
+        client = AsyncGrpcClient(target="dns:///grpc.local:443", transport=transport)
+
+        await client.close()
+
+        assert transport.closed is True
+
+    async def test_async_context_manager_closes_transport(self) -> None:
+        """Validate context manager usage closes the underlying transport."""
+        transport = _ClosableRecordingTransport()
+
+        async with AsyncGrpcClient(
+            target="dns:///grpc.local:443",
+            transport=transport,
+        ) as client:
+            assert client.target == "dns:///grpc.local:443"
+
+        assert transport.closed is True
+
+    async def test_close_supports_synchronous_transport_close(self) -> None:
+        """Validate close handles non-awaitable transport close methods."""
+        transport = _SyncClosableRecordingTransport()
+        client = AsyncGrpcClient(target="dns:///grpc.local:443", transport=transport)
+
+        await client.close()
+
+        assert transport.closed is True

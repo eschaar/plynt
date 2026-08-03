@@ -2,7 +2,8 @@
 
 from plynth.grpc.client import AsyncGrpcClient, AsyncGrpcTransport
 from plynth.grpc.errors import GrpcStatusError, GrpcTransportError
-from plynth.grpc.interceptor import AsyncGrpcInterceptor, GrpcCall, NextGrpcHandler
+from plynth.grpc.handler import GrpcCall, NextGrpcHandler
+from plynth.grpc.interceptor import AsyncGrpcInterceptor
 from plynth.grpc.protobuf import (
     ProtobufParseTarget,
     ProtobufSerializable,

@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from inspect import isawaitable
 from typing import Any
 
+from plynth.grpc.handler import GrpcCall, NextGrpcHandler
+from plynth.grpc.interceptor import AsyncGrpcInterceptor
 from plynth.grpc.settings import GrpcSettings
 
 __all__ = ["AsyncGrpcClient", "AsyncGrpcTransport"]
@@ -68,12 +71,14 @@ class AsyncGrpcClient:
         transport: AsyncGrpcTransport,
         metadata: dict[str, str] | None = None,
         timeout: float | None = None,
+        interceptors: tuple[AsyncGrpcInterceptor, ...] = (),
     ) -> None:
         """Initialize AsyncGrpcClient."""
         self._target = target
         self._transport = transport
         self._metadata = metadata or {}
         self._timeout = timeout
+        self._interceptors = interceptors
 
     @classmethod
     def from_settings(
@@ -81,6 +86,7 @@ class AsyncGrpcClient:
         settings: GrpcSettings,
         *,
         transport: AsyncGrpcTransport,
+        interceptors: tuple[AsyncGrpcInterceptor, ...] = (),
     ) -> AsyncGrpcClient:
         """Build a client from a ``GrpcSettings`` instance."""
         return cls(
@@ -88,7 +94,26 @@ class AsyncGrpcClient:
             transport=transport,
             metadata=settings.metadata,
             timeout=settings.timeout,
+            interceptors=interceptors,
         )
+
+    async def __aenter__(self) -> AsyncGrpcClient:
+        """Return this client as an async context manager."""
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        """Close the underlying transport on context manager exit."""
+        await self.close()
+
+    async def close(self) -> None:
+        """Close the transport when it exposes a ``close`` method."""
+        close_method = getattr(self._transport, "close", None)
+        if not callable(close_method):
+            return
+
+        maybe_result = close_method()
+        if isawaitable(maybe_result):
+            await maybe_result
 
     @property
     def target(self) -> str:
@@ -109,11 +134,20 @@ class AsyncGrpcClient:
             metadata=metadata,
             timeout=timeout,
         )
-        return await self._transport.unary_unary(
-            normalized_method,
-            request,
+        call = GrpcCall(
+            method=normalized_method,
+            request=request,
             metadata=merged_metadata,
             timeout=resolved_timeout,
+        )
+        return await self._invoke(
+            call,
+            lambda next_call: self._transport.unary_unary(
+                next_call.method,
+                next_call.request,
+                metadata=next_call.metadata,
+                timeout=next_call.timeout,
+            ),
         )
 
     async def call(
@@ -146,11 +180,20 @@ class AsyncGrpcClient:
             metadata=metadata,
             timeout=timeout,
         )
-        return await self._transport.unary_stream(
-            normalized_method,
-            request,
+        call = GrpcCall(
+            method=normalized_method,
+            request=request,
             metadata=merged_metadata,
             timeout=resolved_timeout,
+        )
+        return await self._invoke(
+            call,
+            lambda next_call: self._transport.unary_stream(
+                next_call.method,
+                next_call.request,
+                metadata=next_call.metadata,
+                timeout=next_call.timeout,
+            ),
         )
 
     async def stream_unary(
@@ -167,11 +210,20 @@ class AsyncGrpcClient:
             metadata=metadata,
             timeout=timeout,
         )
-        return await self._transport.stream_unary(
-            normalized_method,
-            requests,
+        call = GrpcCall(
+            method=normalized_method,
+            request=requests,
             metadata=merged_metadata,
             timeout=resolved_timeout,
+        )
+        return await self._invoke(
+            call,
+            lambda next_call: self._transport.stream_unary(
+                next_call.method,
+                next_call.request,
+                metadata=next_call.metadata,
+                timeout=next_call.timeout,
+            ),
         )
 
     async def stream_stream(
@@ -188,12 +240,43 @@ class AsyncGrpcClient:
             metadata=metadata,
             timeout=timeout,
         )
-        return await self._transport.stream_stream(
-            normalized_method,
-            requests,
+        call = GrpcCall(
+            method=normalized_method,
+            request=requests,
             metadata=merged_metadata,
             timeout=resolved_timeout,
         )
+        return await self._invoke(
+            call,
+            lambda next_call: self._transport.stream_stream(
+                next_call.method,
+                next_call.request,
+                metadata=next_call.metadata,
+                timeout=next_call.timeout,
+            ),
+        )
+
+    async def _invoke(self, call: GrpcCall, terminal: NextGrpcHandler) -> Any:
+        """Execute one call through the interceptor chain.
+
+        Interceptors are applied in declaration order so they compose like
+        transport middleware: the first interceptor wraps all remaining work.
+        """
+        handler = terminal
+        for interceptor in reversed(self._interceptors):
+            next_handler = handler
+
+            async def _wrapped(
+                next_call: GrpcCall,
+                *,
+                _interceptor: AsyncGrpcInterceptor = interceptor,
+                _next: NextGrpcHandler = next_handler,
+            ) -> Any:
+                return await _interceptor.handle(next_call, _next)
+
+            handler = _wrapped
+
+        return await handler(call)
 
     def _prepare_call(
         self,
