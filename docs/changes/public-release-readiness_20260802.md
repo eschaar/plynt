@@ -603,23 +603,63 @@ Status
 
 ## Next Steps (Saved 2026-08-03)
 
-1. Implement concrete async gRPC transport wiring for current gRPC contracts.
-1. Replace CDC subscriber placeholder with real subscribe flow in
-   salesforce/cdc.
-1. Add bounded reconnect and replay-resume behavior; keep ack internal.
-1. Expand CDC tests for reconnect, replay, ordering guarantees, and failure
-   paths.
-1. Keep protobuf envelope and Avro payload handling explicit in the CDC
+Completed in this branch
+
+1. Implemented concrete async gRPC transport wiring for current gRPC
+   contracts.
+1. Replaced the CDC subscriber placeholder with a real subscribe flow in
+   `salesforce/cdc`.
+1. Added bounded reconnect and replay-resume behavior while keeping ack
+   internal.
+1. Expanded CDC tests for reconnect, replay, ordering-adjacent behavior,
+   malformed events, and failure paths.
+1. Kept protobuf envelope and Avro payload handling explicit in the CDC
    implementation and tests.
-1. Add schema-resolution handling with schema ID support and define cache
-   behavior for schema refresh.
-1. Add contract coverage for merged events (`record_ids`) and for gap or
-   overflow event handling behavior.
-1. Document channel naming assumptions and treat channel names as case-
-   sensitive in request validation and examples.
-1. Keep shadow-store consumer and materialization out of plynth and out of
+1. Added schema ID handling and per-subscriber schema caching.
+1. Added contract coverage for merged events (`record_ids`) and documented
+   channel name assumptions as case-sensitive.
+1. Kept shadow-store consumer and materialization out of plynth and out of
    the connector.
-1. Update docs for runtime-wired status and rerun lint, type, and test gates.
+1. Reran lint, type, test, and strict coverage gates for the active gRPC and
+   CDC slices.
+
+Remaining to reach a production-ready CDC client
+
+1. Replace dict-based Pub/Sub request or response placeholders with generated
+   Salesforce Pub/Sub stub and message adapters.
+1. Promote Avro decoding from an injected test seam to a real connector
+   component with explicit schema-cache policy and decode failure handling.
+1. Add gap and overflow event handling contracts, including explicit recovery
+   behavior and tests.
+1. Add a pluggable durable checkpoint store for the latest processed replay
+   cursor so restarts and pod reschedules can resume safely.
+1. Integrate auth metadata resolution cleanly with existing Salesforce auth
+   middleware and provide a stable way to resolve tenant ID alongside access
+   token and instance URL.
+1. Add graceful shutdown handling so SIGTERM in containers can stop the stream
+   and flush the latest checkpoint before exit.
+1. Add observability for stream lifecycle, reconnect attempts, lag, schema
+   refreshes, and decode failures.
+1. Document deployment expectations for Kubernetes, including at-least-once
+   delivery, idempotent consumers, and avoiding multiple active consumers for
+   the same checkpointed stream unless explicitly coordinated.
+
+Checkpoint and cache backend policy
+
+1. Reuse the existing cache backend pattern from `plynth.cache` instead of
+   introducing a separate gRPC-only cache abstraction.
+1. Keep in-memory cache support for local development and tests.
+1. Require durable external checkpoint storage for production CDC workloads;
+   in-memory checkpointing is not production-safe.
+1. Treat backend technology as pluggable: Redis and other external key-value
+   stores are valid, as long as they satisfy the checkpoint contract.
+1. Keep auth-token cache and schema cache optional performance layers;
+   checkpoint durability is a correctness requirement.
+1. Add startup validation for production profiles: fail closed when no
+   durable checkpoint backend is configured.
+1. Provide at least these baseline options for checkpoint storage:
+   in-memory (dev/test), Redis (recommended default), and a generic external
+   key-value adapter.
 
 ## Archive/Remove Note
 
