@@ -235,7 +235,7 @@ class TestAsyncSalesforceCDCSubscriber:
             SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
         )
 
-        assert stream.__aiter__() is stream
+        assert aiter(stream) is stream
 
         with pytest.raises(
             NotImplementedError,
@@ -481,7 +481,7 @@ class TestAsyncSalesforceCDCSubscriber:
 
         with pytest.raises(StopAsyncIteration):
             await anext(stream)
-        assert client.unary_calls == []
+        assert not client.unary_calls
 
     @pytest.mark.asyncio
     async def test_skips_events_when_decoder_is_missing_during_mapping(self) -> None:
@@ -525,7 +525,10 @@ class TestAsyncSalesforceCDCSubscriber:
     async def test_non_dict_header_falls_back_to_unknown_metadata(self) -> None:
         """Handle decoded payloads whose ChangeEventHeader is not a mapping."""
 
-        def _bad_header_decoder(schema_json: str, payload: bytes) -> dict[str, Any]:
+        def _bad_header_decoder(
+            _schema_json: str,
+            _payload: bytes,
+        ) -> dict[str, Any]:
             return {
                 "ChangeEventHeader": "bad-header",
                 "Id": "001xx000003GYWJAA4",
@@ -626,7 +629,7 @@ class TestAsyncSalesforceCDCSubscriber:
         assert subscriber._extract_latest_replay_id([]) is None  # pylint: disable=protected-access
         assert subscriber._extract_events({"events": "bad"}) == []  # pylint: disable=protected-access
         assert subscriber._extract_event_payload({"event": "bad"}) == {"event": "bad"}  # pylint: disable=protected-access
-        assert subscriber._extract_event_payload("bad") == {}  # pylint: disable=protected-access
+        assert not subscriber._extract_event_payload("bad")  # pylint: disable=protected-access
         assert subscriber._derive_object_name(None) == "Unknown"  # pylint: disable=protected-access
         assert subscriber._coerce_int("bad", fallback=5) == 5  # pylint: disable=protected-access
         assert subscriber._coerce_int("bad") == 0  # pylint: disable=protected-access
