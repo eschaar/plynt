@@ -40,7 +40,7 @@ jobs:
 
       - name: Validate commits with commit-check
         if: github.event_name == 'push'
-        uses: commit-check/commit-check-action@v2
+        uses: commit-check/commit-check-action@v2.11.1
         with:
           # Commit message and branch policy is read from cchk.toml in the repo root.
           message: true
