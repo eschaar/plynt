@@ -32,7 +32,7 @@ Usage::
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlsplit
 
 from plynth.http.middleware.auth import (
@@ -45,6 +45,13 @@ from plynth.http.middleware.auth import (
     OAuth2JWTBearerMiddleware,
     OAuth2PasswordMiddleware,
 )
+
+pyjwt: Any | None
+
+try:
+    import jwt as pyjwt
+except ImportError:
+    pyjwt = None
 
 __all__ = [
     "AsyncSalesforceClientCredentialsAuthMiddleware",
@@ -92,6 +99,7 @@ class AsyncSalesforceSessionAuthMiddleware(AsyncBearerTokenAuthMiddleware):
         return self._instance_url
 
 
+# pylint: disable=too-few-public-methods
 class _SalesforceInstanceUrlSyncMixin:
     """Shared Salesforce ``instance_url`` behavior for sync OAuth2 middlewares."""
 
@@ -143,6 +151,7 @@ class _SalesforceInstanceUrlSyncMixin:
         return instance_url
 
 
+# pylint: disable=too-few-public-methods
 class _SalesforceInstanceUrlAsyncMixin:
     """Shared Salesforce ``instance_url`` behavior for async OAuth2 middlewares."""
 
@@ -327,14 +336,12 @@ def _build_jwt_assertion(
     exp_seconds: int,
 ) -> str:
     """Return a signed RS256 JWT assertion for the Salesforce JWT Bearer flow."""
-    try:
-        import jwt as pyjwt
-    except ImportError as exc:  # pragma: no cover
+    if pyjwt is None:  # pragma: no cover
         raise ImportError(
             "The Salesforce JWT Bearer flow requires PyJWT and cryptography. "
             "Install them with: pip install 'PyJWT>=2.8' 'cryptography>=42' "
             "or use: pip install 'plynth[salesforce]'."
-        ) from exc
+        )
 
     payload = {
         "iss": client_id,
@@ -342,7 +349,7 @@ def _build_jwt_assertion(
         "aud": audience,
         "exp": int(time.time()) + exp_seconds,
     }
-    token: object = pyjwt.encode(payload, private_key, algorithm="RS256")
+    token = cast(Any, pyjwt.encode(payload, private_key, algorithm="RS256"))
     if isinstance(token, str):
         return token
     if isinstance(token, bytes):
