@@ -8,14 +8,22 @@ from plynth.connectors.salesforce.cdc.models import (
     SalesforceCDCEvent,
     SalesforceCDCSubscribeRequest,
 )
+from plynth.connectors.salesforce.cdc.pubsub import (
+    GrpcMethodPubSubAdapter,
+    GrpcStubPubSubAdapter,
+    SalesforcePubSubAdapter,
+)
 from plynth.connectors.salesforce.cdc.service import (
     AsyncSalesforceCDCSubscriber,
 )
 
 __all__ = [
     "AsyncSalesforceCDCSubscriber",
+    "GrpcMethodPubSubAdapter",
+    "GrpcStubPubSubAdapter",
     "SalesforceCDCAuthMetadata",
     "SalesforceCDCEnvelope",
     "SalesforceCDCEvent",
     "SalesforceCDCSubscribeRequest",
+    "SalesforcePubSubAdapter",
 ]

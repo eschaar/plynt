@@ -32,6 +32,10 @@ from plynth.connectors.salesforce.cdc.models import (
     SalesforceCDCEvent,
     SalesforceCDCSubscribeRequest,
 )
+from plynth.connectors.salesforce.cdc.pubsub import (
+    GrpcMethodPubSubAdapter,
+    SalesforcePubSubAdapter,
+)
 from plynth.grpc.errors import GrpcStatusError, GrpcTransportError
 
 __all__ = ["AsyncSalesforceCDCSubscriber"]
@@ -97,6 +101,7 @@ class AsyncSalesforceCDCSubscriber:
         self,
         client: _GrpcClientProtocol | None = None,
         *,
+        pubsub: SalesforcePubSubAdapter | None = None,
         auth_metadata: SalesforceCDCAuthMetadata | None = None,
         auth_metadata_provider: (
             Callable[[], Awaitable[SalesforceCDCAuthMetadata]] | None
@@ -110,7 +115,10 @@ class AsyncSalesforceCDCSubscriber:
         """Initialize the CDC subscriber orchestration.
 
         Args:
-            client: Generic async gRPC client used for Subscribe and GetSchema.
+            client: Generic async gRPC client used for Subscribe and GetSchema
+                when ``pubsub`` is not supplied.
+            pubsub: Optional Salesforce Pub/Sub adapter. When supplied, this
+                becomes the canonical Subscribe/GetSchema integration surface.
             auth_metadata: Static Salesforce Pub/Sub auth metadata.
             auth_metadata_provider: Async provider for auth metadata when the
                 values are fetched lazily.
@@ -125,6 +133,7 @@ class AsyncSalesforceCDCSubscriber:
 
         """
         self._client = client
+        self._pubsub = pubsub
         self._auth_metadata = auth_metadata
         self._auth_metadata_provider = auth_metadata_provider
         self._payload_decoder = payload_decoder
@@ -132,6 +141,12 @@ class AsyncSalesforceCDCSubscriber:
         self._schema_method = schema_method
         self._reconnect_max_attempts = reconnect_max_attempts
         self._schema_cache: dict[str, str] = {}
+        if self._pubsub is None and client is not None:
+            self._pubsub = GrpcMethodPubSubAdapter(
+                client,
+                subscribe_method=subscribe_method,
+                schema_method=schema_method,
+            )
         self._schema_loader = schema_loader or self._load_schema
 
     async def subscribe(
@@ -144,7 +159,7 @@ class AsyncSalesforceCDCSubscriber:
         placeholder stream so the public contract remains importable and
         testable during phased implementation.
         """
-        if self._client is None or self._payload_decoder is None:
+        if self._pubsub is None or self._payload_decoder is None:
             return _UnimplementedCDCStream()
 
         metadata = await self._resolve_metadata()
@@ -162,8 +177,8 @@ class AsyncSalesforceCDCSubscriber:
         cursor is known, the subscriber fails clearly because a safe resume
         point does not exist yet.
         """
-        client = self._client
-        if client is None:
+        pubsub = self._pubsub
+        if pubsub is None:
             return
 
         replay_id = request.replay_id
@@ -172,8 +187,7 @@ class AsyncSalesforceCDCSubscriber:
         while True:
             resumed_request = request.model_copy(update={"replay_id": replay_id})
             try:
-                stream = await client.stream_stream(
-                    self._subscribe_method,
+                stream = await pubsub.subscribe(
                     self._fetch_request_stream(resumed_request),
                     metadata=metadata,
                 )
@@ -319,18 +333,13 @@ class AsyncSalesforceCDCSubscriber:
 
     async def _load_schema(self, schema_id: str, metadata: dict[str, str]) -> str:
         """Load schema JSON through the generic gRPC client contract."""
-        if self._client is None:
-            raise RuntimeError("Salesforce CDC subscriber requires a gRPC client")
-        response = await self._client.unary_unary(
-            self._schema_method,
-            {"schema_id": schema_id},
+        pubsub = self._pubsub
+        if pubsub is None:
+            raise RuntimeError("Salesforce CDC subscriber requires a Pub/Sub adapter")
+        return await pubsub.get_schema_json(
+            schema_id,
             metadata=metadata,
         )
-        if isinstance(response, dict):
-            schema_json = response.get("schema_json")
-            if isinstance(schema_json, str) and schema_json:
-                return schema_json
-        raise RuntimeError("Salesforce GetSchema response did not include schema_json")
 
     async def _fetch_request_stream(
         self,

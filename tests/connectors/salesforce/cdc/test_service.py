@@ -578,7 +578,7 @@ class TestAsyncSalesforceCDCSubscriber:
         """Fail clearly when GetSchema is attempted without a gRPC client."""
         subscriber = AsyncSalesforceCDCSubscriber()
 
-        with pytest.raises(RuntimeError, match="requires a gRPC client"):
+        with pytest.raises(RuntimeError, match="requires a Pub/Sub adapter"):
             await subscriber._load_schema(  # pylint: disable=protected-access
                 "schema-123",
                 {"accesstoken": "x"},
