@@ -24,7 +24,8 @@ Responsibilities kept out of this module:
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Any, Protocol
+from inspect import isawaitable
+from typing import Any, Protocol, cast
 
 from plynth.connectors.salesforce.cdc.checkpoint import SalesforceCDCCheckpointStore
 from plynth.connectors.salesforce.cdc.models import (
@@ -49,6 +50,8 @@ __all__ = [
 SchemaLoader = Callable[[str, dict[str, str]], Awaitable[str]]
 PayloadDecoder = Callable[[str, bytes], dict[str, Any]]
 CheckpointKeyBuilder = Callable[[SalesforceCDCSubscribeRequest], str]
+ObservationCallback = Callable[[str, dict[str, Any]], object]
+CloseCallback = Callable[[], object]
 
 
 class SalesforceCDCGapError(RuntimeError):
@@ -57,6 +60,14 @@ class SalesforceCDCGapError(RuntimeError):
 
 class SalesforceCDCOverflowError(RuntimeError):
     """Raised when Salesforce reports an overflow event in the CDC stream."""
+
+
+def _resolve_close_method(value: Any) -> CloseCallback | None:
+    """Return a typed ``aclose`` callback when one exists on *value*."""
+    close_method = getattr(value, "aclose", None)
+    if callable(close_method):
+        return cast(CloseCallback, close_method)
+    return None
 
 
 class _GrpcClientProtocol(Protocol):
@@ -112,12 +123,14 @@ class _CheckpointingCDCStream(AsyncIterator[SalesforceCDCEvent]):
         *,
         checkpoint_store: SalesforceCDCCheckpointStore,
         stream_key: str,
+        on_checkpoint_saved: Callable[[int], object] | None = None,
     ) -> None:
         """Initialize checkpointing wrapper state."""
         self._stream = stream
         self._checkpoint_store = checkpoint_store
         self._stream_key = stream_key
         self._pending_replay_id: int | None = None
+        self._on_checkpoint_saved = on_checkpoint_saved
 
     def __aiter__(self) -> _CheckpointingCDCStream:
         return self
@@ -137,7 +150,19 @@ class _CheckpointingCDCStream(AsyncIterator[SalesforceCDCEvent]):
         if self._pending_replay_id is None:
             return
         self._checkpoint_store.save(self._stream_key, self._pending_replay_id)
+        on_checkpoint_saved = self._on_checkpoint_saved
+        if on_checkpoint_saved is not None:
+            on_checkpoint_saved(self._pending_replay_id)
         self._pending_replay_id = None
+
+    async def aclose(self) -> None:
+        """Flush pending state and close the wrapped stream when possible."""
+        self._flush_pending()
+        close_method = _resolve_close_method(self._stream)
+        if close_method is not None:
+            result = close_method()
+            if isawaitable(result):
+                await result
 
 
 # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -167,6 +192,7 @@ class AsyncSalesforceCDCSubscriber:
         auth_metadata_provider: (
             Callable[[], Awaitable[SalesforceCDCAuthMetadata]] | None
         ) = None,
+        observer: ObservationCallback | None = None,
         schema_loader: SchemaLoader | None = None,
         payload_decoder: PayloadDecoder | None = None,
         subscribe_method: str = "/eventbus.v1.PubSub/Subscribe",
@@ -185,6 +211,8 @@ class AsyncSalesforceCDCSubscriber:
             auth_metadata: Static Salesforce Pub/Sub auth metadata.
             auth_metadata_provider: Async provider for auth metadata when the
                 values are fetched lazily.
+            observer: Optional callback receiving lightweight lifecycle and
+                observability events.
             schema_loader: Optional injected schema loader for tests or custom
                 schema retrieval behavior.
             payload_decoder: Decoder that turns Avro payload bytes plus schema
@@ -203,11 +231,14 @@ class AsyncSalesforceCDCSubscriber:
         )
         self._auth_metadata = auth_metadata
         self._auth_metadata_provider = auth_metadata_provider
+        self._observer = observer
         self._payload_decoder = payload_decoder
         self._subscribe_method = subscribe_method
         self._schema_method = schema_method
         self._reconnect_max_attempts = reconnect_max_attempts
         self._schema_cache: dict[str, str] = {}
+        self._stop_requested = False
+        self._active_stream: Any | None = None
         if self._pubsub is None and client is not None:
             self._pubsub = GrpcMethodPubSubAdapter(
                 client,
@@ -215,6 +246,24 @@ class AsyncSalesforceCDCSubscriber:
                 schema_method=schema_method,
             )
         self._schema_loader = schema_loader or self._load_schema
+
+    async def shutdown(self) -> None:
+        """Request cooperative stream shutdown and close the active stream."""
+        self._stop_requested = True
+        await self._emit_observation("shutdown_requested")
+
+        active_stream = self._active_stream
+        if active_stream is None:
+            await self._emit_observation("shutdown_completed")
+            return
+
+        close_method = _resolve_close_method(active_stream)
+        if close_method is not None:
+            result = close_method()
+            if isawaitable(result):
+                await result
+        self._active_stream = None
+        await self._emit_observation("shutdown_completed")
 
     async def subscribe(
         self,
@@ -229,6 +278,7 @@ class AsyncSalesforceCDCSubscriber:
         if self._pubsub is None or self._payload_decoder is None:
             return _UnimplementedCDCStream()
 
+        self._stop_requested = False
         checkpoint_store = self._checkpoint_store
         stream_key = self._checkpoint_key_builder(request)
         if checkpoint_store is not None and request.replay_id is None:
@@ -237,14 +287,23 @@ class AsyncSalesforceCDCSubscriber:
                 request = request.model_copy(update={"replay_id": stored_replay_id})
 
         metadata = await self._resolve_metadata()
+        await self._emit_observation(
+            "subscribe_started",
+            channel=request.channel,
+            replay_id=request.replay_id,
+        )
         stream = self._subscribe_with_reconnect(request, metadata)
         if checkpoint_store is None:
+            self._active_stream = stream
             return stream
-        return _CheckpointingCDCStream(
+        wrapped_stream = _CheckpointingCDCStream(
             stream,
             checkpoint_store=checkpoint_store,
             stream_key=stream_key,
+            on_checkpoint_saved=self._observe_checkpoint_saved,
         )
+        self._active_stream = wrapped_stream
+        return wrapped_stream
 
     async def _subscribe_with_reconnect(
         self,
@@ -266,12 +325,17 @@ class AsyncSalesforceCDCSubscriber:
         attempts = 0
 
         while True:
+            if self._stop_requested:
+                await self._emit_observation("stream_stopped", reason="shutdown")
+                self._active_stream = None
+                return
             resumed_request = request.model_copy(update={"replay_id": replay_id})
             try:
                 stream = await pubsub.subscribe(
                     self._fetch_request_stream(resumed_request),
                     metadata=metadata,
                 )
+                self._active_stream = stream
                 # Each reconnect replays the same orchestration path: subscribe,
                 # decode envelopes, update the latest replay cursor, and yield
                 # typed CDC events downstream.
@@ -283,6 +347,7 @@ class AsyncSalesforceCDCSubscriber:
                         replay_id = latest_replay_id
                     attempts = 0
                     yield event
+                self._active_stream = None
                 return
             except (GrpcStatusError, GrpcTransportError) as exc:
                 if replay_id is None:
@@ -291,10 +356,20 @@ class AsyncSalesforceCDCSubscriber:
                         "cursor was established"
                     ) from exc
                 if attempts >= self._reconnect_max_attempts:
+                    await self._emit_observation(
+                        "reconnect_exhausted",
+                        attempts=attempts,
+                        replay_id=replay_id,
+                    )
                     raise RuntimeError(
                         "Salesforce CDC reconnect attempts exhausted"
                     ) from exc
                 attempts += 1
+                await self._emit_observation(
+                    "reconnect_attempt",
+                    attempt=attempts,
+                    replay_id=replay_id,
+                )
 
     async def _event_stream(
         self,
@@ -307,7 +382,10 @@ class AsyncSalesforceCDCSubscriber:
         service without leaking reconnect state into the public event model.
         """
         async for response in stream:
-            self._raise_for_gap_or_overflow(response)
+            if self._stop_requested:
+                await self._emit_observation("stream_stopped", reason="shutdown")
+                return
+            await self._raise_for_gap_or_overflow(response)
             latest_replay_id = self._extract_latest_replay_id(response)
             for raw_event in self._extract_events(response):
                 event = await self._to_cdc_event(
@@ -334,10 +412,12 @@ class AsyncSalesforceCDCSubscriber:
         schema_id = event_data.get("schema_id")
         payload_bytes = event_data.get("payload")
         if not isinstance(schema_id, str) or not isinstance(payload_bytes, bytes):
+            await self._emit_observation("decode_skipped", reason="missing_payload")
             return None
 
         decoder = self._payload_decoder
         if decoder is None:
+            await self._emit_observation("decode_skipped", reason="missing_decoder")
             return None
 
         schema_json = await self._get_schema(schema_id, metadata)
@@ -407,10 +487,13 @@ class AsyncSalesforceCDCSubscriber:
     ) -> str:
         """Return schema JSON for an event schema ID with per-instance caching."""
         if schema_id not in self._schema_cache:
+            await self._emit_observation("schema_cache_miss", schema_id=schema_id)
             self._schema_cache[schema_id] = await self._schema_loader(
                 schema_id,
                 metadata,
             )
+        else:
+            await self._emit_observation("schema_cache_hit", schema_id=schema_id)
         return self._schema_cache[schema_id]
 
     async def _load_schema(self, schema_id: str, metadata: dict[str, str]) -> str:
@@ -439,8 +522,7 @@ class AsyncSalesforceCDCSubscriber:
             "num_requested": request.num_requested,
         }
 
-    @staticmethod
-    def _raise_for_gap_or_overflow(response: Any) -> None:
+    async def _raise_for_gap_or_overflow(self, response: Any) -> None:
         """Raise clear stream errors for normalized gap or overflow signals."""
         if not isinstance(response, dict):
             return
@@ -455,10 +537,20 @@ class AsyncSalesforceCDCSubscriber:
         )
 
         if response.get("gap") is True:
+            await self._emit_observation(
+                "gap_detected",
+                latest_replay_id=latest_replay_id,
+                error_message=detail,
+            )
             raise SalesforceCDCGapError(
                 f"Salesforce CDC stream reported a replay gap{suffix}"
             )
         if response.get("overflow") is True:
+            await self._emit_observation(
+                "overflow_detected",
+                latest_replay_id=latest_replay_id,
+                error_message=detail,
+            )
             raise SalesforceCDCOverflowError(
                 f"Salesforce CDC stream reported an overflow event{suffix}"
             )
@@ -560,3 +652,19 @@ class AsyncSalesforceCDCSubscriber:
     def _default_checkpoint_key(request: SalesforceCDCSubscribeRequest) -> str:
         """Build the default checkpoint key for one CDC subscription."""
         return request.channel
+
+    async def _emit_observation(self, name: str, **details: Any) -> None:
+        """Send one lightweight lifecycle observation to the optional hook."""
+        observer = self._observer
+        if observer is None:
+            return
+        result = observer(name, details)
+        if isawaitable(result):
+            await result
+
+    def _observe_checkpoint_saved(self, replay_id: int) -> None:
+        """Emit a synchronous checkpoint-saved observation."""
+        observer = self._observer
+        if observer is None:
+            return
+        observer("checkpoint_saved", {"replay_id": replay_id})

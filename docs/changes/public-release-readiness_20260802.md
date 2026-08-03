@@ -618,6 +618,16 @@ Completed in this branch
 1. Added schema ID handling and per-subscriber schema caching.
 1. Added contract coverage for merged events (`record_ids`) and documented
    channel name assumptions as case-sensitive.
+1. Added a concrete Avro decoder component with runtime guard and schema-parse
+   caching.
+1. Added explicit gap and overflow failure handling with focused tests.
+1. Added durable replay checkpoint storage with in-memory and cache-backed
+   implementations plus deferred flush semantics.
+1. Integrated auth metadata resolution through existing async Salesforce auth
+   middleware.
+1. Added cooperative shutdown handling and lightweight observability hooks for
+   stream lifecycle, reconnects, schema cache usage, decode skips, gap and
+   overflow signals, and checkpoint flushes.
 1. Kept shadow-store consumer and materialization out of plynth and out of
    the connector.
 1. Reran lint, type, test, and strict coverage gates for the active gRPC and
@@ -627,19 +637,6 @@ Remaining to reach a production-ready CDC client
 
 1. Replace dict-based Pub/Sub request or response placeholders with generated
    Salesforce Pub/Sub stub and message adapters.
-1. Promote Avro decoding from an injected test seam to a real connector
-   component with explicit schema-cache policy and decode failure handling.
-1. Add gap and overflow event handling contracts, including explicit recovery
-   behavior and tests.
-1. Add a pluggable durable checkpoint store for the latest processed replay
-   cursor so restarts and pod reschedules can resume safely.
-1. Integrate auth metadata resolution cleanly with existing Salesforce auth
-   middleware and provide a stable way to resolve tenant ID alongside access
-   token and instance URL.
-1. Add graceful shutdown handling so SIGTERM in containers can stop the stream
-   and flush the latest checkpoint before exit.
-1. Add observability for stream lifecycle, reconnect attempts, lag, schema
-   refreshes, and decode failures.
 1. Document deployment expectations for Kubernetes, including at-least-once
    delivery, idempotent consumers, and avoiding multiple active consumers for
    the same checkpointed stream unless explicitly coordinated.
@@ -660,6 +657,25 @@ Checkpoint and cache backend policy
 1. Provide at least these baseline options for checkpoint storage:
    in-memory (dev/test), Redis (recommended default), and a generic external
    key-value adapter.
+
+Kubernetes deployment expectations
+
+1. Treat the CDC consumer as at-least-once delivery only.
+1. Make downstream consumers idempotent by replay ID or equivalent business
+   key before using this in production.
+1. Use a durable external checkpoint backend in Kubernetes. In-memory
+   checkpointing is for local development and tests only.
+1. Expect pod restart, eviction, and rollout interruption. The consumer must
+   resume from the last durable checkpoint rather than rely on process memory.
+1. Configure graceful termination so SIGTERM gives the consumer time to stop
+   intake and flush the last acknowledged checkpoint.
+1. Do not run multiple active consumers against the same checkpointed stream
+   unless you add external coordination or explicitly accept duplicate work.
+1. Monitor reconnect attempts, gap signals, overflow signals, schema cache
+   misses, decode skips, and checkpoint progress as baseline production
+   indicators.
+1. Treat replay gaps and overflow events as operator-visible incidents that
+   require intervention or a controlled reseed strategy.
 
 ## Archive/Remove Note
 

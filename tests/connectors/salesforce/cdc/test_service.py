@@ -95,6 +95,16 @@ class _FakeAsyncOAuthAuth:
         return "https://example.my.salesforce.com/"
 
 
+class _EventRecorder:
+    """Collect subscriber observability events for assertions."""
+
+    def __init__(self) -> None:
+        self.events: list[tuple[str, dict[str, Any]]] = []
+
+    def __call__(self, name: str, details: dict[str, Any]) -> None:
+        self.events.append((name, details))
+
+
 @dataclass
 class _StreamPlan:
     """Describe one fake Subscribe attempt and its terminal behavior."""
@@ -305,6 +315,31 @@ class TestAsyncSalesforceCDCSubscriber:
             await anext(stream)
 
     @pytest.mark.asyncio
+    async def test_shutdown_stops_active_stream_cleanly(self) -> None:
+        """Close the active stream cooperatively when shutdown is requested."""
+        observer = _EventRecorder()
+        client = _FakeAsyncGrpcClient()
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            observer=observer,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        await subscriber.shutdown()
+
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+        assert observer.events[-2:] == [
+            ("shutdown_requested", {}),
+            ("shutdown_completed", {}),
+        ]
+
+    @pytest.mark.asyncio
     async def test_reconnects_with_latest_replay_id_after_stream_failure(self) -> None:
         """Resume with the last replay cursor when a stream fails mid-flight."""
         client = _FakeAsyncGrpcClient(
@@ -476,6 +511,7 @@ class TestAsyncSalesforceCDCSubscriber:
     @pytest.mark.asyncio
     async def test_checkpoints_only_after_consumer_advances_stream(self) -> None:
         """Persist the delivered replay cursor only after the next pull."""
+        observer = _EventRecorder()
         store = InMemorySalesforceCDCCheckpointStore()
         client = _FakeAsyncGrpcClient(
             stream_plans=[
@@ -508,6 +544,7 @@ class TestAsyncSalesforceCDCSubscriber:
         subscriber = AsyncSalesforceCDCSubscriber(
             client,
             checkpoint_store=store,
+            observer=observer,
             auth_metadata_provider=_auth_metadata_provider,
             payload_decoder=_payload_decoder,
         )
@@ -527,6 +564,22 @@ class TestAsyncSalesforceCDCSubscriber:
         with pytest.raises(StopAsyncIteration):
             await anext(stream)
         assert store.load("/data/AccountChangeEvent") == 43
+        assert (
+            "schema_cache_miss",
+            {"schema_id": "schema-123"},
+        ) in observer.events
+        assert (
+            "schema_cache_hit",
+            {"schema_id": "schema-123"},
+        ) in observer.events
+        assert (
+            "checkpoint_saved",
+            {"replay_id": 42},
+        ) in observer.events
+        assert (
+            "checkpoint_saved",
+            {"replay_id": 43},
+        ) in observer.events
 
     @pytest.mark.asyncio
     async def test_fails_clearly_when_stream_reports_gap_event(self) -> None:
@@ -560,6 +613,45 @@ class TestAsyncSalesforceCDCSubscriber:
         ):
             await anext(stream)
         assert not client.unary_calls
+
+    @pytest.mark.asyncio
+    async def test_emits_gap_observation_before_raising(self) -> None:
+        """Emit a gap observation before surfacing the gap exception."""
+        observer = _EventRecorder()
+        client = _FakeAsyncGrpcClient(
+            stream_plans=[
+                _StreamPlan(
+                    responses=[
+                        {
+                            "gap": True,
+                            "latest_replay_id": 42,
+                            "error_message": "checkpoint is too old",
+                        }
+                    ]
+                )
+            ]
+        )
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            observer=observer,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        with pytest.raises(SalesforceCDCGapError):
+            await anext(stream)
+
+        assert (
+            "gap_detected",
+            {
+                "latest_replay_id": 42,
+                "error_message": "checkpoint is too old",
+            },
+        ) in observer.events
 
     @pytest.mark.asyncio
     async def test_fails_clearly_when_stream_reports_overflow_event(self) -> None:

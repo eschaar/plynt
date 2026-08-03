@@ -143,7 +143,7 @@ class CacheBackend(Protocol):
 
     def get(self, key: str, default: Any = None) -> Any:
         """Return the cached value for *key*, or *default* if absent."""
-        ...  # pragma: no cover
+        raise NotImplementedError
 
     def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         """Store *value* under *key*.
@@ -155,15 +155,15 @@ class CacheBackend(Protocol):
                 per-key TTL may ignore this parameter.
 
         """
-        ...  # pragma: no cover
+        raise NotImplementedError
 
     def delete(self, key: str) -> None:
         """Remove the entry for *key*.  No-op if the key is absent."""
-        ...  # pragma: no cover
+        raise NotImplementedError
 
     def clear(self) -> None:
         """Remove all entries from the cache."""
-        ...  # pragma: no cover
+        raise NotImplementedError
 
     @staticmethod
     def cache_key(request: Request) -> str:
@@ -203,6 +203,7 @@ class CacheBackend(Protocol):
 
 
 @runtime_checkable
+# pylint: disable=too-few-public-methods
 class SupportsTTL(Protocol):
     """Optional capability: per-key TTL inspection.
 
@@ -218,10 +219,11 @@ class SupportsTTL(Protocol):
             evicted, or ``None`` if the key has no expiry (permanent).
 
         """
-        ...  # pragma: no cover
+        raise NotImplementedError
 
 
 @runtime_checkable
+# pylint: disable=too-few-public-methods
 class SupportsStats(Protocol):
     """Optional capability: backend statistics.
 
@@ -237,7 +239,7 @@ class SupportsStats(Protocol):
         ``used_memory_human``.
 
         """
-        ...  # pragma: no cover
+        raise NotImplementedError
 
 
 @runtime_checkable
@@ -254,9 +256,9 @@ class SupportsSizeInfo(Protocol):
     @property
     def maxsize(self) -> int | None:
         """Maximum number of entries, or ``None`` if unbounded."""
-        ...  # pragma: no cover
+        raise NotImplementedError
 
     @property
     def currsize(self) -> int:
         """Current number of stored entries."""
-        ...  # pragma: no cover
+        raise NotImplementedError
