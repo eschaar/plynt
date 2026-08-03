@@ -39,12 +39,16 @@ TO-BE
 Phase-1 implementation slice added here
 
 1. Generic Salesforce CDC models now live in `src/plynth/connectors/salesforce/cdc/models.py`.
-1. The async CDC subscriber contract now lives in `src/plynth/connectors/salesforce/cdc/service.py`.
+1. The async CDC subscriber contract and subscribe orchestration now live in
+   `src/plynth/connectors/salesforce/cdc/service.py`.
 1. The Salesforce connector package exports the CDC surface from `src/plynth/connectors/salesforce/__init__.py`.
 1. Shadow-store consumers remain out of package and out of connector scope.
 1. No tenant-, customer-, or instance-specific CDC logic is introduced in the generic CDC package boundary.
 1. The phase-1 envelope is aligned to the generic Salesforce CDC/Pub/Sub
    message shape, including replay metadata and commit context.
+1. The CDC slice now models Salesforce Pub/Sub auth metadata and a
+   Quick-Start-aligned subscribe flow with schema fetch and injected payload
+   decoding.
 1. Shadow-store materialization remains external and is not implemented in
    plynth or the Salesforce connector.
 
@@ -605,6 +609,14 @@ Status
 1. Add bounded reconnect and replay-resume behavior; keep ack internal.
 1. Expand CDC tests for reconnect, replay, ordering guarantees, and failure
    paths.
+1. Keep protobuf envelope and Avro payload handling explicit in the CDC
+   implementation and tests.
+1. Add schema-resolution handling with schema ID support and define cache
+   behavior for schema refresh.
+1. Add contract coverage for merged events (`record_ids`) and for gap or
+   overflow event handling behavior.
+1. Document channel naming assumptions and treat channel names as case-
+   sensitive in request validation and examples.
 1. Keep shadow-store consumer and materialization out of plynth and out of
    the connector.
 1. Update docs for runtime-wired status and rerun lint, type, and test gates.
