@@ -22,6 +22,7 @@ from plynth.connectors.salesforce.bulk import (
 )
 from plynth.connectors.salesforce.cdc import (
     AsyncSalesforceCDCSubscriber,
+    SalesforceCDCAuthMetadata,
     SalesforceCDCEvent,
     SalesforceCDCSubscribeRequest,
 )
@@ -172,6 +173,7 @@ __all__ = [
     "SalesforceApexRestService",
     "SalesforceBulkJobError",
     "SalesforceBulkService",
+    "SalesforceCDCAuthMetadata",
     "SalesforceCDCEvent",
     "SalesforceCDCSubscribeRequest",
     "SalesforceCompositeService",
