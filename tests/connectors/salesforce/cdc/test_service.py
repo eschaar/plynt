@@ -235,10 +235,32 @@ class TestAsyncSalesforceCDCSubscriber:
             SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
         )
 
+        assert stream.__aiter__() is stream
+
         with pytest.raises(
             NotImplementedError,
             match="Salesforce CDC subscription transport is not implemented yet",
         ):
+            await anext(stream)
+
+    @pytest.mark.asyncio
+    async def test_subscribe_stops_cleanly_when_stream_is_exhausted(self) -> None:
+        """Finish iteration cleanly when the upstream stream ends normally."""
+        client = _FakeAsyncGrpcClient()
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        first = await anext(stream)
+
+        assert first.replay_id == 42
+        with pytest.raises(StopAsyncIteration):
             await anext(stream)
 
     @pytest.mark.asyncio
@@ -364,3 +386,251 @@ class TestAsyncSalesforceCDCSubscriber:
             match="reconnect attempts exhausted",
         ):
             await anext(stream)
+
+    @pytest.mark.asyncio
+    async def test_subscribe_requires_auth_metadata_when_wired(self) -> None:
+        """Raise clearly when the subscriber is wired but auth metadata is missing."""
+        subscriber = AsyncSalesforceCDCSubscriber(
+            _FakeAsyncGrpcClient(),
+            payload_decoder=_payload_decoder,
+        )
+
+        with pytest.raises(
+            RuntimeError,
+            match="requires auth metadata or a provider",
+        ):
+            await subscriber.subscribe(
+                SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+            )
+
+    @pytest.mark.asyncio
+    async def test_caches_schema_by_schema_id(self) -> None:
+        """Load one schema once even when multiple events reuse the same ID."""
+        client = _FakeAsyncGrpcClient(
+            stream_plans=[
+                _StreamPlan(
+                    responses=[
+                        {
+                            "latest_replay_id": 42,
+                            "events": [
+                                {
+                                    "event": {
+                                        "schema_id": "schema-123",
+                                        "payload": b"payload-1",
+                                        "topic_name": "/data/AccountChangeEvent",
+                                    }
+                                },
+                                {
+                                    "event": {
+                                        "schema_id": "schema-123",
+                                        "payload": b"payload-1",
+                                        "topic_name": "/data/AccountChangeEvent",
+                                    }
+                                },
+                            ],
+                        }
+                    ]
+                )
+            ]
+        )
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        await anext(stream)
+        await anext(stream)
+
+        assert len(client.unary_calls) == 1
+
+    @pytest.mark.asyncio
+    async def test_skips_events_without_schema_or_payload(self) -> None:
+        """Skip malformed consumer events that cannot be decoded safely."""
+        client = _FakeAsyncGrpcClient(
+            stream_plans=[
+                _StreamPlan(
+                    responses=[
+                        {
+                            "latest_replay_id": 42,
+                            "events": [
+                                {"event": {"topic_name": "/data/AccountChangeEvent"}},
+                                {
+                                    "schema_id": "schema-123",
+                                    "topic_name": "/data/AccountChangeEvent",
+                                },
+                            ],
+                        }
+                    ]
+                )
+            ]
+        )
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+        assert client.unary_calls == []
+
+    @pytest.mark.asyncio
+    async def test_skips_events_when_decoder_is_missing_during_mapping(self) -> None:
+        """Return no mapped event when decode support disappears unexpectedly."""
+        subscriber = AsyncSalesforceCDCSubscriber(
+            _FakeAsyncGrpcClient(),
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+        subscriber._payload_decoder = None  # pylint: disable=protected-access
+
+        event = await subscriber._to_cdc_event(  # pylint: disable=protected-access
+            {
+                "event": {
+                    "schema_id": "schema-123",
+                    "payload": b"payload-1",
+                    "topic_name": "/data/AccountChangeEvent",
+                }
+            },
+            metadata={"accesstoken": "x"},
+            latest_replay_id=42,
+        )
+
+        assert event is None
+
+    @pytest.mark.asyncio
+    async def test_subscribe_with_reconnect_stops_immediately_without_client(
+        self,
+    ) -> None:
+        """Return an empty stream when reconnect logic is called without a client."""
+        subscriber = AsyncSalesforceCDCSubscriber()
+        stream = subscriber._subscribe_with_reconnect(  # pylint: disable=protected-access
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent"),
+            {"accesstoken": "x"},
+        )
+
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+
+    @pytest.mark.asyncio
+    async def test_non_dict_header_falls_back_to_unknown_metadata(self) -> None:
+        """Handle decoded payloads whose ChangeEventHeader is not a mapping."""
+
+        def _bad_header_decoder(schema_json: str, payload: bytes) -> dict[str, Any]:
+            return {
+                "ChangeEventHeader": "bad-header",
+                "Id": "001xx000003GYWJAA4",
+            }
+
+        subscriber = AsyncSalesforceCDCSubscriber(
+            _FakeAsyncGrpcClient(),
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_bad_header_decoder,
+        )
+
+        event = await subscriber._to_cdc_event(  # pylint: disable=protected-access
+            {
+                "event": {
+                    "schema_id": "schema-123",
+                    "payload": b"payload-1",
+                    "topic_name": "/data/ChangeEvents",
+                },
+                "replay_id": 7,
+            },
+            metadata={"accesstoken": "x"},
+            latest_replay_id=42,
+        )
+
+        assert event is not None
+        assert event.envelope.object_name == "ChangeEvents"
+        assert event.envelope.event_type == "UNKNOWN"
+        assert event.replay_id == 7
+
+    def test_helper_branches_cover_direct_values_and_topic_derivation(self) -> None:
+        """Exercise direct helper branches not hit by end-to-end stream tests."""
+        subscriber = AsyncSalesforceCDCSubscriber()
+
+        assert subscriber._extract_event_payload(  # pylint: disable=protected-access
+            {"event": {"schema_id": "schema-123"}, "replay_id": 55}
+        ) == {"schema_id": "schema-123", "replay_id": 55}
+        assert (
+            subscriber._derive_object_name(  # pylint: disable=protected-access
+                "/data/AccountChangeEvent"
+            )
+            == "Account"
+        )
+        assert subscriber._coerce_int(9) == 9  # pylint: disable=protected-access
+
+    @pytest.mark.asyncio
+    async def test_load_schema_requires_client(self) -> None:
+        """Fail clearly when GetSchema is attempted without a gRPC client."""
+        subscriber = AsyncSalesforceCDCSubscriber()
+
+        with pytest.raises(RuntimeError, match="requires a gRPC client"):
+            await subscriber._load_schema(  # pylint: disable=protected-access
+                "schema-123",
+                {"accesstoken": "x"},
+            )
+
+    @pytest.mark.asyncio
+    async def test_load_schema_requires_schema_json_in_response(self) -> None:
+        """Fail clearly when GetSchema returns a payload without schema_json."""
+
+        class _BadSchemaClient(_FakeAsyncGrpcClient):
+            async def unary_unary(
+                self,
+                method: str,
+                request: dict[str, Any],
+                *,
+                metadata: dict[str, str] | None = None,
+                timeout: float | None = None,
+            ) -> dict[str, str]:
+                self.unary_calls.append(
+                    {
+                        "method": method,
+                        "request": request,
+                        "metadata": metadata,
+                        "timeout": timeout,
+                    }
+                )
+                return {"unexpected": "value"}
+
+        subscriber = AsyncSalesforceCDCSubscriber(
+            _BadSchemaClient(),
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+
+        with pytest.raises(
+            RuntimeError,
+            match="did not include schema_json",
+        ):
+            await subscriber._load_schema(  # pylint: disable=protected-access
+                "schema-123",
+                {"accesstoken": "x"},
+            )
+
+    def test_helper_coercions_cover_fallback_paths(self) -> None:
+        """Exercise fallback behavior for the small coercion helpers."""
+        subscriber = AsyncSalesforceCDCSubscriber()
+
+        assert subscriber._extract_latest_replay_id([]) is None  # pylint: disable=protected-access
+        assert subscriber._extract_events({"events": "bad"}) == []  # pylint: disable=protected-access
+        assert subscriber._extract_event_payload({"event": "bad"}) == {"event": "bad"}  # pylint: disable=protected-access
+        assert subscriber._extract_event_payload("bad") == {}  # pylint: disable=protected-access
+        assert subscriber._derive_object_name(None) == "Unknown"  # pylint: disable=protected-access
+        assert subscriber._coerce_int("bad", fallback=5) == 5  # pylint: disable=protected-access
+        assert subscriber._coerce_int("bad") == 0  # pylint: disable=protected-access
+        assert subscriber._coerce_optional_int("bad") is None  # pylint: disable=protected-access
+        assert subscriber._coerce_string("", fallback="UNKNOWN") == "UNKNOWN"  # pylint: disable=protected-access
+        assert subscriber._coerce_optional_string(123) is None  # pylint: disable=protected-access
+        assert subscriber._coerce_string_list("bad") == []  # pylint: disable=protected-access
