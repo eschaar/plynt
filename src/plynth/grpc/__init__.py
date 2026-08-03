@@ -11,11 +11,13 @@ from plynth.grpc.protobuf import (
     serialize_message,
 )
 from plynth.grpc.settings import GrpcSettings
+from plynth.grpc.transport import GrpcAioTransport, ensure_grpc_runtime
 
 __all__ = [
     "AsyncGrpcClient",
     "AsyncGrpcInterceptor",
     "AsyncGrpcTransport",
+    "GrpcAioTransport",
     "GrpcCall",
     "GrpcSettings",
     "GrpcStatusError",
@@ -24,6 +26,7 @@ __all__ = [
     "ProtobufParseTarget",
     "ProtobufSerializable",
     "deserialize_message",
+    "ensure_grpc_runtime",
     "ensure_protobuf_runtime",
     "serialize_message",
 ]
