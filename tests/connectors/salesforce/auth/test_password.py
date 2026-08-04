@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs
 
-from tests.connectors.salesforce.auth.support import make_auth
+from tests.connectors.salesforce.auth.helpers import make_oauth_auth
 from tests.connectors.salesforce.conftest import (
     DUMMY_CLIENT_ID,
     DUMMY_CLIENT_SECRET,
@@ -20,12 +20,12 @@ class TestSalesforcePasswordAuthMiddleware:
     """Exercise sync password auth payload construction and token variants."""
 
     def test_instance_url_is_extracted_from_token_response(self) -> None:
-        auth = make_auth(flow="password")
+        auth = make_oauth_auth(flow="password")
         assert auth.instance_url == DUMMY_INSTANCE_URL
 
     def test_password_flow_sends_expected_form_fields(self) -> None:
         transport = FakeSalesforceTokenTransport()
-        auth = make_auth(transport, flow="password")
+        auth = make_oauth_auth(transport, flow="password")
         _ = auth.instance_url
         assert transport.last_request is not None
         assert transport.last_request.content is not None
@@ -38,7 +38,11 @@ class TestSalesforcePasswordAuthMiddleware:
 
     def test_password_flow_appends_security_token_to_password(self) -> None:
         transport = FakeSalesforceTokenTransport()
-        auth = make_auth(transport, flow="password", security_token="MYTOKEN")
+        auth = make_oauth_auth(
+            transport,
+            flow="password",
+            security_token="MYTOKEN",
+        )
         _ = auth.instance_url
         assert transport.last_request is not None
         assert transport.last_request.content is not None
@@ -47,7 +51,7 @@ class TestSalesforcePasswordAuthMiddleware:
 
     def test_password_flow_keeps_password_when_security_token_is_empty(self) -> None:
         transport = FakeSalesforceTokenTransport()
-        auth = make_auth(transport, flow="password", security_token="")
+        auth = make_oauth_auth(transport, flow="password", security_token="")
         _ = auth.instance_url
         assert transport.last_request is not None
         assert transport.last_request.content is not None
@@ -59,12 +63,12 @@ class TestAsyncSalesforcePasswordAuthMiddleware:
     """Exercise async password auth payload construction and token variants."""
 
     async def test_get_instance_url_returns_instance_url(self) -> None:
-        auth = make_auth(flow="password", async_mode=True)
+        auth = make_oauth_auth(flow="password", async_mode=True)
         assert await auth.get_instance_url() == DUMMY_INSTANCE_URL
 
     async def test_password_flow_sends_expected_form_fields(self) -> None:
         transport = FakeAsyncSalesforceTokenTransport()
-        auth = make_auth(transport, flow="password", async_mode=True)
+        auth = make_oauth_auth(transport, flow="password", async_mode=True)
         await auth.get_instance_url()
         assert transport.last_request is not None
         assert transport.last_request.content is not None
@@ -77,7 +81,7 @@ class TestAsyncSalesforcePasswordAuthMiddleware:
 
     async def test_password_flow_appends_security_token_to_password(self) -> None:
         transport = FakeAsyncSalesforceTokenTransport()
-        auth = make_auth(
+        auth = make_oauth_auth(
             transport, flow="password", async_mode=True, security_token="MYTOKEN"
         )
         await auth.get_instance_url()
@@ -90,7 +94,12 @@ class TestAsyncSalesforcePasswordAuthMiddleware:
         self,
     ) -> None:
         transport = FakeAsyncSalesforceTokenTransport()
-        auth = make_auth(transport, flow="password", async_mode=True, security_token="")
+        auth = make_oauth_auth(
+            transport,
+            flow="password",
+            async_mode=True,
+            security_token="",
+        )
         await auth.get_instance_url()
         assert transport.last_request is not None
         assert transport.last_request.content is not None

@@ -19,10 +19,10 @@ from plynth.connectors.salesforce.auth import (
     SalesforceJWTBearerAuthMiddleware,
 )
 from plynth.connectors.salesforce.auth.bearer import _build_jwt_assertion
-from tests.connectors.salesforce.auth.support import (
+from tests.connectors.salesforce.auth.helpers import (
     DUMMY_JWT_USERNAME,
     DUMMY_PRIVATE_KEY,
-    make_jwt_auth,
+    make_bearer_auth,
 )
 from tests.connectors.salesforce.conftest import (
     DUMMY_CLIENT_ID,
@@ -37,19 +37,19 @@ class TestSalesforceJWTBearerAuthMiddleware:
     """Exercise sync JWT bearer assertion, audience, expiry, and retry behavior."""
 
     def test_instance_url_extracted_from_token_response(self) -> None:
-        auth = make_jwt_auth()
+        auth = make_bearer_auth()
         assert auth.instance_url == DUMMY_INSTANCE_URL
 
     def test_token_fetched_once_for_multiple_instance_url_calls(self) -> None:
         transport = FakeSalesforceTokenTransport()
-        auth = make_jwt_auth(transport)
+        auth = make_bearer_auth(transport)
         _ = auth.instance_url
         _ = auth.instance_url
         assert transport.calls == 1
 
     def test_jwt_bearer_flow_sends_rfc7523_grant_type(self) -> None:
         transport = FakeSalesforceTokenTransport()
-        auth = make_jwt_auth(transport)
+        auth = make_bearer_auth(transport)
         _ = auth.instance_url
         assert transport.last_request is not None
         assert transport.last_request.content is not None
@@ -58,7 +58,7 @@ class TestSalesforceJWTBearerAuthMiddleware:
 
     def test_jwt_bearer_flow_builds_rs256_assertion_with_expected_claims(self) -> None:
         transport = FakeSalesforceTokenTransport()
-        auth = make_jwt_auth(transport)
+        auth = make_bearer_auth(transport)
         _ = auth.instance_url
         assert transport.last_request is not None
         assert transport.last_request.content is not None
@@ -74,7 +74,7 @@ class TestSalesforceJWTBearerAuthMiddleware:
 
     def test_jwt_audience_uses_scheme_and_host_from_token_url(self) -> None:
         transport = FakeSalesforceTokenTransport()
-        auth = make_jwt_auth(
+        auth = make_bearer_auth(
             transport,
             token_url="https://test.salesforce.com/services/oauth2/token",
         )
@@ -90,7 +90,7 @@ class TestSalesforceJWTBearerAuthMiddleware:
     def test_jwt_exp_claim_respects_configured_expiry_window(self) -> None:
         exp_seconds = 120
         transport = FakeSalesforceTokenTransport()
-        auth = make_jwt_auth(transport, jwt_exp_seconds=exp_seconds)
+        auth = make_bearer_auth(transport, jwt_exp_seconds=exp_seconds)
         before = int(time.time())
         _ = auth.instance_url
         after = int(time.time())
@@ -104,7 +104,7 @@ class TestSalesforceJWTBearerAuthMiddleware:
 
     def test_jwt_bearer_flow_includes_optional_scope_when_configured(self) -> None:
         transport = FakeSalesforceTokenTransport()
-        auth = make_jwt_auth(transport, scope="api refresh_token")
+        auth = make_bearer_auth(transport, scope="api refresh_token")
         _ = auth.instance_url
         assert transport.last_request is not None
         assert transport.last_request.content is not None
@@ -139,7 +139,7 @@ class TestSalesforceJWTBearerAuthMiddleware:
         monkeypatch.setattr(jwt_module, "encode", lambda *args, **kwargs: 123)
 
         with pytest.raises(TypeError, match="unexpected token type"):
-            auth = make_jwt_auth()
+            auth = make_bearer_auth()
             auth._get_token_header()
 
     def test_jwt_assertion_bytes_are_decoded_to_text(
@@ -163,7 +163,11 @@ class TestSalesforceJWTBearerAuthMiddleware:
         self,
     ) -> None:
         transport = FakeAsyncSalesforceTokenTransport()
-        auth = make_jwt_auth(transport, async_mode=True, scope="api refresh_token")
+        auth = make_bearer_auth(
+            transport,
+            async_mode=True,
+            scope="api refresh_token",
+        )
         await auth.get_instance_url()
         assert transport.last_request is not None
         assert transport.last_request.content is not None
@@ -172,7 +176,7 @@ class TestSalesforceJWTBearerAuthMiddleware:
 
     def test_downstream_401_invalidates_token_and_retries_once(self) -> None:
         token_transport = FakeSalesforceTokenTransport()
-        auth = make_jwt_auth(token_transport)
+        auth = make_bearer_auth(token_transport)
 
         call_count = 0
 
@@ -189,19 +193,19 @@ class TestAsyncSalesforceJWTBearerAuthMiddleware:
     """Exercise async JWT bearer assertion and boundary validation behavior."""
 
     async def test_instance_url_extracted_from_token_response(self) -> None:
-        auth = make_jwt_auth(async_mode=True)
+        auth = make_bearer_auth(async_mode=True)
         assert await auth.get_instance_url() == DUMMY_INSTANCE_URL
 
     async def test_token_fetched_once_for_multiple_instance_url_calls(self) -> None:
         transport = FakeAsyncSalesforceTokenTransport()
-        auth = make_jwt_auth(transport, async_mode=True)
+        auth = make_bearer_auth(transport, async_mode=True)
         await auth.get_instance_url()
         await auth.get_instance_url()
         assert transport.calls == 1
 
     async def test_jwt_bearer_flow_sends_rfc7523_grant_type(self) -> None:
         transport = FakeAsyncSalesforceTokenTransport()
-        auth = make_jwt_auth(transport, async_mode=True)
+        auth = make_bearer_auth(transport, async_mode=True)
         await auth.get_instance_url()
         assert transport.last_request is not None
         assert transport.last_request.content is not None
@@ -212,7 +216,7 @@ class TestAsyncSalesforceJWTBearerAuthMiddleware:
         self,
     ) -> None:
         transport = FakeAsyncSalesforceTokenTransport()
-        auth = make_jwt_auth(transport, async_mode=True)
+        auth = make_bearer_auth(transport, async_mode=True)
         await auth.get_instance_url()
         assert transport.last_request is not None
         assert transport.last_request.content is not None

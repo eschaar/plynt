@@ -1,4 +1,4 @@
-"""Shared test support for Salesforce auth middleware tests."""
+"""Shared helpers for Salesforce auth middleware tests."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def inject_token_transport(
 
 
 @overload
-def make_auth(
+def make_oauth_auth(
     transport: SyncTransport | None = ...,
     *,
     flow: Literal["client_credentials"] = ...,
@@ -47,7 +47,7 @@ def make_auth(
 
 
 @overload
-def make_auth(
+def make_oauth_auth(
     transport: SyncTransport | None = ...,
     *,
     flow: Literal["password"],
@@ -57,7 +57,7 @@ def make_auth(
 
 
 @overload
-def make_auth(
+def make_oauth_auth(
     transport: AsyncTransport | None = ...,
     *,
     flow: Literal["client_credentials"] = ...,
@@ -67,7 +67,7 @@ def make_auth(
 
 
 @overload
-def make_auth(
+def make_oauth_auth(
     transport: AsyncTransport | None = ...,
     *,
     flow: Literal["password"],
@@ -76,7 +76,7 @@ def make_auth(
 ) -> AsyncSalesforcePasswordAuthMiddleware: ...
 
 
-def make_auth(
+def make_oauth_auth(
     transport: SyncTransport | AsyncTransport | None = None,
     *,
     flow: str = "client_credentials",
@@ -89,16 +89,14 @@ def make_auth(
     | AsyncSalesforcePasswordAuthMiddleware
 ):
     """Build Salesforce auth middleware wired to a deterministic test transport."""
-    base: dict[str, object] = {
-        "client_id": DUMMY_CLIENT_ID,
-        "client_secret": DUMMY_CLIENT_SECRET,
-        "token_url": DUMMY_TOKEN_URL,
-    }
-    if flow == "password":
-        base.setdefault("username", DUMMY_USERNAME)
-        base.setdefault("password", DUMMY_PASSWORD)
+    extra_kwargs = cast(dict[str, Any], dict(kwargs))
+    client_id = cast(str, extra_kwargs.pop("client_id", DUMMY_CLIENT_ID))
+    client_secret = cast(
+        str,
+        extra_kwargs.pop("client_secret", DUMMY_CLIENT_SECRET),
+    )
+    token_url = cast(str, extra_kwargs.pop("token_url", DUMMY_TOKEN_URL))
 
-    constructor_kwargs = cast(dict[str, Any], {**base, **kwargs})
     auth: (
         SalesforceClientCredentialsAuthMiddleware
         | SalesforcePasswordAuthMiddleware
@@ -107,14 +105,42 @@ def make_auth(
     )
     if async_mode:
         if flow == "password":
-            auth = AsyncSalesforcePasswordAuthMiddleware(**constructor_kwargs)
+            username = cast(str, extra_kwargs.pop("username", DUMMY_USERNAME))
+            password = cast(str, extra_kwargs.pop("password", DUMMY_PASSWORD))
+            auth = AsyncSalesforcePasswordAuthMiddleware(
+                client_id=client_id,
+                client_secret=client_secret,
+                token_url=token_url,
+                username=username,
+                password=password,
+                **extra_kwargs,
+            )
         else:
-            auth = AsyncSalesforceClientCredentialsAuthMiddleware(**constructor_kwargs)
+            auth = AsyncSalesforceClientCredentialsAuthMiddleware(
+                client_id=client_id,
+                client_secret=client_secret,
+                token_url=token_url,
+                **extra_kwargs,
+            )
     else:
         if flow == "password":
-            auth = SalesforcePasswordAuthMiddleware(**constructor_kwargs)
+            username = cast(str, extra_kwargs.pop("username", DUMMY_USERNAME))
+            password = cast(str, extra_kwargs.pop("password", DUMMY_PASSWORD))
+            auth = SalesforcePasswordAuthMiddleware(
+                client_id=client_id,
+                client_secret=client_secret,
+                token_url=token_url,
+                username=username,
+                password=password,
+                **extra_kwargs,
+            )
         else:
-            auth = SalesforceClientCredentialsAuthMiddleware(**constructor_kwargs)
+            auth = SalesforceClientCredentialsAuthMiddleware(
+                client_id=client_id,
+                client_secret=client_secret,
+                token_url=token_url,
+                **extra_kwargs,
+            )
 
     injected_transport = transport or (
         FakeAsyncSalesforceTokenTransport()
@@ -144,7 +170,7 @@ DUMMY_JWT_USERNAME = "integration@myorg.com"
 
 
 @overload
-def make_jwt_auth(
+def make_bearer_auth(
     transport: SyncTransport | None = ...,
     *,
     async_mode: Literal[False] = ...,
@@ -153,7 +179,7 @@ def make_jwt_auth(
 
 
 @overload
-def make_jwt_auth(
+def make_bearer_auth(
     transport: AsyncTransport | None = ...,
     *,
     async_mode: Literal[True],
@@ -161,7 +187,7 @@ def make_jwt_auth(
 ) -> AsyncSalesforceJWTBearerAuthMiddleware: ...
 
 
-def make_jwt_auth(
+def make_bearer_auth(
     transport: SyncTransport | AsyncTransport | None = None,
     *,
     async_mode: bool = False,
