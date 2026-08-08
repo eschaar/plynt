@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.2](https://github.com/eschaar/plynth/compare/0.9.1...0.9.2) (2026-08-08)
+
+
+### Maintenance
+
+* **deps:** update cryptography requirement from &gt;=49.0.0 to &gt;=50.0.0 ([25ce6a9](https://github.com/eschaar/plynth/commit/25ce6a9cb00cfbb3f3b5e0f553526fceca05b9fc))
+* **deps:** update fastapi requirement ([cc5c63c](https://github.com/eschaar/plynth/commit/cc5c63cc83859772686b42f95d327a29b2e47960))
+
 ## [0.9.1](https://github.com/eschaar/plynth/compare/0.9.0...0.9.1) (2026-07-31)
 
 
