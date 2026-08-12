@@ -39,7 +39,7 @@ keywords = [
   "http-client",
 ]
 license-files = ["LICENSE"]
-dependencies = ["pydantic-settings>=2.14.2"]
+dependencies = ["pydantic-settings>=2.15.0"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Web Environment",
