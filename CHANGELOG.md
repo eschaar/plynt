@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.3](https://github.com/eschaar/plynth/compare/0.9.2...0.9.3) (2026-08-16)
+
+
+### Maintenance
+
+* **deps:** update django requirement from &lt;6,&gt;=5.2.16 to &gt;=5.2.17,&lt;6 ([3ee4a9d](https://github.com/eschaar/plynth/commit/3ee4a9d0987af458548e0ead1b2bfac109fdf375))
+* **deps:** update djangorestframework requirement ([4aa17ab](https://github.com/eschaar/plynth/commit/4aa17ab9f01cf03f96db320d2b15f7447312e8b3))
+* **deps:** update pydantic-settings requirement ([075dcea](https://github.com/eschaar/plynth/commit/075dcea1f6fd210e1f73c9ceb3772148c5be2fbb))
+* **deps:** update setuptools requirement from &gt;=83.0.0 to &gt;=84.0.0 ([22bd8c5](https://github.com/eschaar/plynth/commit/22bd8c55583451624d53ee0f0d5cbf422e7837c2))
+
 ## [0.9.2](https://github.com/eschaar/plynth/compare/0.9.1...0.9.2) (2026-08-08)
 
 
