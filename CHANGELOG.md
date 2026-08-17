@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.4](https://github.com/eschaar/plynth/compare/0.9.3...0.9.4) (2026-08-17)
+
+
+### Maintenance
+
+* **ci:** bump trufflesecurity/trufflehog in the gha-patch-minor group ([81831ba](https://github.com/eschaar/plynth/commit/81831ba0305ecc69b6f9000c5f1f37a08c3143ad))
+
 ## [0.9.3](https://github.com/eschaar/plynth/compare/0.9.2...0.9.3) (2026-08-16)
 
 
