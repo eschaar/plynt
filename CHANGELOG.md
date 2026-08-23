@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.5](https://github.com/eschaar/plynth/compare/0.9.4...0.9.5) (2026-08-23)
+
+
+### Maintenance
+
+* **deps:** update httpx2 requirement from &gt;=2.9.1 to &gt;=2.10.0 ([63fec29](https://github.com/eschaar/plynth/commit/63fec29e9d059deabe719418785835862c94ef45))
+
 ## [0.9.4](https://github.com/eschaar/plynth/compare/0.9.3...0.9.4) (2026-08-17)
 
 
