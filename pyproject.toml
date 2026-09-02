@@ -68,7 +68,7 @@ drf = ["django>=5.2.17,<6", "djangorestframework>=3.18.0,<4", "httpx2>=2.10.0"]
 fastapi = ["fastapi>=0.141.1,<1", "httpx2>=2.10.0"]
 salesforce = [
   "httpx2>=2.10.0",
-  "pydantic>=2.13.4",
+  "pydantic>=2.13.5",
   "PyJWT>=2.13.0",
   "cryptography>=50.0.0",
 ]
