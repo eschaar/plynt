@@ -71,7 +71,7 @@ salesforce = [
   "httpx2>=2.12.0",
   "pydantic>=2.13.5",
   "PyJWT>=2.13.0",
-  "cryptography>=49.0.0",
+  "cryptography>=50.0.1",
 ]
 test = [
   "pytest",
