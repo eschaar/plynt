@@ -12,6 +12,11 @@ from plynth.connectors.salesforce.cdc.checkpoint import (
     InMemorySalesforceCDCCheckpointStore,
     SalesforceCDCCheckpointStore,
 )
+from plynth.connectors.salesforce.cdc.errors import (
+    SalesforceCDCGapError,
+    SalesforceCDCOverflowError,
+    SalesforceCDCReplayInvalidError,
+)
 from plynth.connectors.salesforce.cdc.models import (
     SalesforceCDCAuthMetadata,
     SalesforceCDCEnvelope,
@@ -24,12 +29,7 @@ from plynth.connectors.salesforce.cdc.pubsub import (
     SalesforcePubSubAdapter,
     create_vendored_pubsub_adapter,
 )
-from plynth.connectors.salesforce.cdc.service import (
-    AsyncSalesforceCDCSubscriber,
-    SalesforceCDCGapError,
-    SalesforceCDCOverflowError,
-    SalesforceCDCReplayInvalidError,
-)
+from plynth.connectors.salesforce.cdc.service import AsyncSalesforceCDCSubscriber
 
 __all__ = [
     "AsyncSalesforceCDCAuthMetadataProvider",

@@ -28,6 +28,11 @@ from inspect import isawaitable
 from typing import Any, Protocol, cast
 
 from plynth.connectors.salesforce.cdc.checkpoint import SalesforceCDCCheckpointStore
+from plynth.connectors.salesforce.cdc.errors import (
+    SalesforceCDCGapError,
+    SalesforceCDCOverflowError,
+    SalesforceCDCReplayInvalidError,
+)
 from plynth.connectors.salesforce.cdc.models import (
     SalesforceCDCAuthMetadata,
     SalesforceCDCEnvelope,
@@ -43,9 +48,6 @@ from plynth.grpc.transport import GrpcAioTransport
 
 __all__ = [
     "AsyncSalesforceCDCSubscriber",
-    "SalesforceCDCGapError",
-    "SalesforceCDCOverflowError",
-    "SalesforceCDCReplayInvalidError",
 ]
 
 
@@ -54,30 +56,6 @@ PayloadDecoder = Callable[[str, bytes], dict[str, Any]]
 CheckpointKeyBuilder = Callable[[SalesforceCDCSubscribeRequest], str]
 ObservationCallback = Callable[[str, dict[str, Any]], object]
 CloseCallback = Callable[[], object]
-
-
-class SalesforceCDCGapError(RuntimeError):
-    """Raised when Salesforce reports a replay gap in the CDC stream."""
-
-
-class SalesforceCDCOverflowError(RuntimeError):
-    """Raised when Salesforce reports an overflow event in the CDC stream."""
-
-
-class SalesforceCDCReplayInvalidError(RuntimeError):
-    """Raised when Salesforce rejects a replay cursor as no longer valid.
-
-    Salesforce retains CDC/platform events for 72 hours. Resuming from a
-    replay ID outside that window (or otherwise invalid) fails the Subscribe
-    RPC with an INVALID_ARGUMENT status rather than delivering a partial or
-    flagged response. Retrying immediately with the same cursor will fail
-    again identically, so this is not treated as a transient, reconnectable
-    error. Callers must decide how to resync: resubscribe with
-    ``replay_preset=EARLIEST`` (only recovers events still in the 72h
-    window) or trigger a full reconciliation of the affected object(s)
-    against Salesforce, since data older than the retention window is gone
-    from the event bus itself and cannot be recovered from CDC alone.
-    """
 
 
 def _resolve_close_method(value: Any) -> CloseCallback | None:

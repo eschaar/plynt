@@ -31,6 +31,53 @@ subscriber = AsyncSalesforceCDCSubscriber(
 If you need a custom-generated stub instead (for example a different
 Pub/Sub API version), construct `GrpcStubPubSubAdapter(your_stub)` directly.
 
+## Initial load and gap recovery
+
+CDC only delivers **changes from the moment you subscribe**. Building a
+shadow database also requires a strategy for the initial snapshot and for
+recovering from gaps larger than Salesforce's retention window. This is
+inherently application-specific — plynth only guarantees clear, typed
+signals; the recovery strategy itself is your application's responsibility.
+
+### Initial load
+
+1. Start the CDC subscription first (or at least note the `latest_replay_id`
+   from the first keepalive `FetchResponse`) before running any bulk load.
+   This fixes your resume point before the snapshot begins.
+1. Perform the initial snapshot with the Salesforce Bulk API or SOQL
+   (`plynth.connectors.salesforce`, not the CDC module — CDC has no
+   "give me everything" mode).
+1. Write the snapshot to your shadow database, then replay CDC events from
+   the replay position captured in step 1, using **upsert by record ID**.
+   Because delivery is at-least-once, some records may already be current
+   from the snapshot; upsert makes that safe and idempotent.
+
+### Gap recovery
+
+Salesforce retains platform and CDC events for **72 hours**. There is no
+"gap" flag in a normal `FetchResponse` — instead, resuming from a `replay_id`
+outside the retention window (or otherwise invalid) fails the `Subscribe`
+call itself with a gRPC `INVALID_ARGUMENT` status
+(`sfdc.platform.eventbus.grpc.subscription.fetch.replayid.corrupted`).
+`AsyncSalesforceCDCSubscriber` raises this as
+`plynth.connectors.salesforce.cdc.SalesforceCDCReplayInvalidError` — a
+non-retryable error, since resuming from the same cursor will fail
+identically every time.
+
+When you catch `SalesforceCDCReplayInvalidError`, choose one of:
+
+- **Resubscribe with `replay_preset=EARLIEST`.** Only recovers events still
+  inside the 72-hour window; anything older is already gone from the event
+  bus itself and cannot be recovered from CDC at all.
+- **Trigger a full reconciliation** of the affected object(s): re-run a
+  SOQL/Bulk snapshot for those objects and upsert into the shadow database,
+  the same way as the initial load. This is the only option once you are
+  certain the gap exceeds 72 hours.
+
+Do not treat `SalesforceCDCOverflowError` as a data-gap signal — Salesforce's
+"overflow" error is a flow-control condition (too many events requested
+before the previous batch was processed), unrelated to missed changes.
+
 ## Delivery and consumer expectations
 
 - Treat the stream as **at-least-once delivery only**. Duplicate events are
