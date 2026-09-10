@@ -8,7 +8,7 @@ from plynth.connectors.salesforce.cdc.avro import (
     ensure_fastavro_runtime,
 )
 from plynth.connectors.salesforce.cdc.checkpoint import (
-    CacheBackendSalesforceCDCCheckpointStore,
+    CacheSalesforceCDCCheckpointStore,
     InMemorySalesforceCDCCheckpointStore,
     SalesforceCDCCheckpointStore,
 )
@@ -33,7 +33,7 @@ __all__ = [
     "AsyncSalesforceCDCAuthMetadataProvider",
     "AsyncSalesforceCDCSubscriber",
     "AvroPayloadDecoder",
-    "CacheBackendSalesforceCDCCheckpointStore",
+    "CacheSalesforceCDCCheckpointStore",
     "GrpcMethodPubSubAdapter",
     "GrpcStubPubSubAdapter",
     "InMemorySalesforceCDCCheckpointStore",

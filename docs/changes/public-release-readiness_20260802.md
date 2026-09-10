@@ -639,7 +639,17 @@ Remaining to reach a production-ready CDC client
    Salesforce Pub/Sub stub and message adapters.
 1. Document deployment expectations for Kubernetes, including at-least-once
    delivery, idempotent consumers, and avoiding multiple active consumers for
-   the same checkpointed stream unless explicitly coordinated.
+   the same checkpointed stream unless explicitly coordinated. Done — see
+   `docs/connectors/salesforce/user/how-to/deploy-cdc.md`.
+
+Deferred: sandbox validation
+
+1. End-to-end validation against a real Salesforce sandbox org (auth
+   round-trip, real schema payloads, real replay IDs) is out of scope for
+   this branch. It requires a live org and is not achievable from local
+   fake/mock gRPC tests alone.
+1. Track this as a follow-up task for release acceptance, not as a blocker
+   for closing the current implementation slice.
 
 Checkpoint and cache backend policy
 

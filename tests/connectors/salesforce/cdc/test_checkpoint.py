@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from plynth.cache import LocMemCache
 from plynth.connectors.salesforce.cdc.checkpoint import (
-    CacheBackendSalesforceCDCCheckpointStore,
+    CacheSalesforceCDCCheckpointStore,
     InMemorySalesforceCDCCheckpointStore,
 )
 
@@ -27,12 +27,12 @@ class TestInMemorySalesforceCDCCheckpointStore:
         assert store.load("/data/AccountChangeEvent") is None
 
 
-class TestCacheBackendSalesforceCDCCheckpointStore:
+class TestCacheSalesforceCDCCheckpointStore:
     """Verify checkpoint persistence through the generic cache backend."""
 
     def test_load_save_and_delete(self) -> None:
         """Round-trip a replay cursor through ``LocMemCache``."""
-        store = CacheBackendSalesforceCDCCheckpointStore(LocMemCache())
+        store = CacheSalesforceCDCCheckpointStore(LocMemCache())
 
         assert store.load("/data/AccountChangeEvent") is None
 

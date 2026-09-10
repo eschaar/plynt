@@ -8,7 +8,7 @@ from typing import Protocol, runtime_checkable
 from plynth.base.cache import CacheBackend
 
 __all__ = [
-    "CacheBackendSalesforceCDCCheckpointStore",
+    "CacheSalesforceCDCCheckpointStore",
     "InMemorySalesforceCDCCheckpointStore",
     "SalesforceCDCCheckpointStore",
 ]
@@ -51,7 +51,7 @@ class InMemorySalesforceCDCCheckpointStore:
 
 
 @dataclass(slots=True)
-class CacheBackendSalesforceCDCCheckpointStore:
+class CacheSalesforceCDCCheckpointStore:
     """Persist CDC checkpoints through the generic ``CacheBackend`` API."""
 
     backend: CacheBackend
