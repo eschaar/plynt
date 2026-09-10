@@ -4,7 +4,11 @@ The CDC subscriber consumes a small, dict-shaped contract for fetch responses
 and schema lookup. This module bridges that contract to either:
 
 1. method-based generic gRPC clients, or
-2. generated Salesforce Pub/Sub stubs.
+2. generated Salesforce Pub/Sub stubs — either your own, or plynth's vendored
+   `eventbus.v1` stub via `create_vendored_pubsub_adapter`.
+
+For most callers, `create_vendored_pubsub_adapter` is the simplest starting
+point: it needs only a `grpc.aio.Channel`, with no protoc step required.
 """
 
 from __future__ import annotations
@@ -332,6 +336,26 @@ def create_vendored_pubsub_adapter(channel: Any) -> GrpcStubPubSubAdapter:
     Args:
         channel: A `grpc.aio.Channel` (or compatible) connected to the
             Salesforce Pub/Sub endpoint.
+
+    Example::
+
+        import grpc
+        from plynth.connectors.salesforce.cdc import (
+            AsyncSalesforceCDCSubscriber,
+            create_vendored_pubsub_adapter,
+        )
+
+        channel = grpc.aio.secure_channel(
+            "api.pubsub.salesforce.com:7443", grpc.ssl_channel_credentials()
+        )
+        subscriber = AsyncSalesforceCDCSubscriber(
+            pubsub=create_vendored_pubsub_adapter(channel),
+            auth_metadata_provider=auth_metadata_provider,
+            payload_decoder=payload_decoder,
+        )
+
+    See `docs/connectors/salesforce/user/how-to/deploy-cdc.md` for a full
+    deployment walkthrough, including auth and checkpoint wiring.
 
     """
     # Imported lazily: grpc/protobuf are optional deps (the `grpc` extra),
