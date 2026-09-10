@@ -39,11 +39,13 @@ from plynth.connectors.salesforce.cdc.pubsub import (
     SalesforcePubSubAdapter,
 )
 from plynth.grpc.errors import GrpcStatusError, GrpcTransportError
+from plynth.grpc.transport import GrpcAioTransport
 
 __all__ = [
     "AsyncSalesforceCDCSubscriber",
     "SalesforceCDCGapError",
     "SalesforceCDCOverflowError",
+    "SalesforceCDCReplayInvalidError",
 ]
 
 
@@ -60,6 +62,22 @@ class SalesforceCDCGapError(RuntimeError):
 
 class SalesforceCDCOverflowError(RuntimeError):
     """Raised when Salesforce reports an overflow event in the CDC stream."""
+
+
+class SalesforceCDCReplayInvalidError(RuntimeError):
+    """Raised when Salesforce rejects a replay cursor as no longer valid.
+
+    Salesforce retains CDC/platform events for 72 hours. Resuming from a
+    replay ID outside that window (or otherwise invalid) fails the Subscribe
+    RPC with an INVALID_ARGUMENT status rather than delivering a partial or
+    flagged response. Retrying immediately with the same cursor will fail
+    again identically, so this is not treated as a transient, reconnectable
+    error. Callers must decide how to resync: resubscribe with
+    ``replay_preset=EARLIEST`` (only recovers events still in the 72h
+    window) or trigger a full reconciliation of the affected object(s)
+    against Salesforce, since data older than the retention window is gone
+    from the event bus itself and cannot be recovered from CDC alone.
+    """
 
 
 def _resolve_close_method(value: Any) -> CloseCallback | None:
@@ -350,26 +368,74 @@ class AsyncSalesforceCDCSubscriber:
                 self._active_stream = None
                 return
             except (GrpcStatusError, GrpcTransportError) as exc:
-                if replay_id is None:
-                    raise RuntimeError(
-                        "Salesforce CDC stream interrupted before a replay "
-                        "cursor was established"
-                    ) from exc
-                if attempts >= self._reconnect_max_attempts:
-                    await self._emit_observation(
-                        "reconnect_exhausted",
-                        attempts=attempts,
-                        replay_id=replay_id,
-                    )
-                    raise RuntimeError(
-                        "Salesforce CDC reconnect attempts exhausted"
-                    ) from exc
-                attempts += 1
-                await self._emit_observation(
-                    "reconnect_attempt",
-                    attempt=attempts,
-                    replay_id=replay_id,
+                attempts = await self._handle_reconnectable_error(
+                    exc, replay_id=replay_id, attempts=attempts
                 )
+            except Exception as exc:
+                # The vendored/real gRPC stub (create_vendored_pubsub_adapter)
+                # raises native grpc.RpcError, not plynth's GrpcStatusError/
+                # GrpcTransportError. Only reconnect-eligible native gRPC
+                # errors are handled here; anything else (e.g. a bug in event
+                # decoding) is re-raised unchanged.
+                mapped = self._map_native_grpc_error(exc)
+                if mapped is None:
+                    raise
+                if isinstance(mapped, GrpcStatusError) and mapped.status_code == 3:
+                    raise SalesforceCDCReplayInvalidError(
+                        "Salesforce rejected the replay cursor as invalid or "
+                        "outside the 72-hour retention window; resubscribe "
+                        "with EARLIEST or trigger a full reconciliation "
+                        f"(replay_id={replay_id!r})"
+                    ) from mapped
+                attempts = await self._handle_reconnectable_error(
+                    mapped, replay_id=replay_id, attempts=attempts
+                )
+
+    async def _handle_reconnectable_error(
+        self,
+        exc: Exception,
+        *,
+        replay_id: int | None,
+        attempts: int,
+    ) -> int:
+        """Apply the bounded-reconnect policy and return the updated attempt count."""
+        if replay_id is None:
+            raise RuntimeError(
+                "Salesforce CDC stream interrupted before a replay "
+                "cursor was established"
+            ) from exc
+        if attempts >= self._reconnect_max_attempts:
+            await self._emit_observation(
+                "reconnect_exhausted",
+                attempts=attempts,
+                replay_id=replay_id,
+            )
+            raise RuntimeError("Salesforce CDC reconnect attempts exhausted") from exc
+        attempts += 1
+        await self._emit_observation(
+            "reconnect_attempt",
+            attempt=attempts,
+            replay_id=replay_id,
+        )
+        return attempts
+
+    @staticmethod
+    def _map_native_grpc_error(
+        exc: Exception,
+    ) -> GrpcStatusError | GrpcTransportError | None:
+        """Map a native grpc error to a plynth error, or None if not a grpc error.
+
+        The generic ``plynth.grpc`` client already maps native errors for its
+        own call paths. The vendored Pub/Sub stub bypasses that client and
+        raises native ``grpc.RpcError`` directly, so this duck-types on the
+        ``code``/``details`` shape grpc errors expose rather than importing
+        ``grpc`` unconditionally (it remains an optional extra).
+        """
+        code_attr = getattr(exc, "code", None)
+        if not callable(code_attr):
+            return None
+        mapped = GrpcAioTransport._map_error("Subscribe", exc)
+        return cast("GrpcStatusError | GrpcTransportError", mapped)
 
     async def _event_stream(
         self,

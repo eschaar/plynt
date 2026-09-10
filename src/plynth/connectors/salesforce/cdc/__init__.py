@@ -28,6 +28,7 @@ from plynth.connectors.salesforce.cdc.service import (
     AsyncSalesforceCDCSubscriber,
     SalesforceCDCGapError,
     SalesforceCDCOverflowError,
+    SalesforceCDCReplayInvalidError,
 )
 
 __all__ = [
@@ -44,6 +45,7 @@ __all__ = [
     "SalesforceCDCEvent",
     "SalesforceCDCGapError",
     "SalesforceCDCOverflowError",
+    "SalesforceCDCReplayInvalidError",
     "SalesforceCDCSubscribeRequest",
     "SalesforcePubSubAdapter",
     "create_vendored_pubsub_adapter",

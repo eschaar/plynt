@@ -25,6 +25,7 @@ import pytest
 from plynth.connectors.salesforce.cdc import (
     AsyncSalesforceCDCAuthMetadataProvider,
     AsyncSalesforceCDCSubscriber,
+    SalesforceCDCReplayInvalidError,
     SalesforceCDCSubscribeRequest,
     create_vendored_pubsub_adapter,
 )
@@ -36,7 +37,7 @@ from plynth.connectors.salesforce.cdc._proto import (
 _SCHEMA_JSON = '{"type": "record", "name": "Account", "fields": []}'
 
 
-class _FakePubSubServicer(pubsub_api_pb2_grpc.PubSubServicer):
+class _FakePubSubServicer(pubsub_api_pb2_grpc.PubSubServicer):  # type: ignore[misc]
     """In-process fake Salesforce Pub/Sub server for wire-level testing."""
 
     def __init__(self) -> None:
@@ -142,3 +143,64 @@ class TestVendoredPubSubGrpcIntegration:
         assert servicer.received_metadata["accesstoken"]
         assert servicer.received_metadata["instanceurl"]
         assert servicer.received_metadata["tenantid"] == "00Dxx0000000001"
+
+
+class _ReplayInvalidPubSubServicer(pubsub_api_pb2_grpc.PubSubServicer):  # type: ignore[misc]
+    """Fake server that rejects Subscribe like an expired/invalid replay ID."""
+
+    async def Subscribe(  # noqa: N802 - generated RPC method name
+        self,
+        request_iterator: AsyncIterator[pubsub_api_pb2.FetchRequest],
+        context: grpc.aio.ServicerContext,
+    ) -> AsyncIterator[pubsub_api_pb2.FetchResponse]:
+        """Abort exactly like Salesforce's replayid.corrupted error."""
+        async for _request in request_iterator:
+            await context.abort(
+                grpc.StatusCode.INVALID_ARGUMENT,
+                "The Replay ID validation failed.",
+            )
+            return
+        return
+        yield  # pragma: no cover - makes this an async generator
+
+
+class TestVendoredPubSubReplayInvalid:
+    """Verify real INVALID_ARGUMENT errors map to a clear, non-retryable error."""
+
+    @pytest.mark.asyncio
+    async def test_invalid_replay_id_raises_replay_invalid_error(
+        self,
+        make_async_salesforce_auth: Any,
+    ) -> None:
+        """A real INVALID_ARGUMENT Subscribe error surfaces as a clear error."""
+        server = grpc.aio.server()
+        pubsub_api_pb2_grpc.add_PubSubServicer_to_server(
+            _ReplayInvalidPubSubServicer(), server
+        )
+        port = server.add_insecure_port("127.0.0.1:0")
+        await server.start()
+
+        auth = make_async_salesforce_auth()
+        channel = grpc.aio.insecure_channel(f"127.0.0.1:{port}")
+        subscriber = AsyncSalesforceCDCSubscriber(
+            pubsub=create_vendored_pubsub_adapter(channel),
+            auth_metadata_provider=AsyncSalesforceCDCAuthMetadataProvider(
+                auth, tenant_id="00Dxx0000000001"
+            ),
+            payload_decoder=_payload_decoder,
+        )
+
+        try:
+            stream = await subscriber.subscribe(
+                SalesforceCDCSubscribeRequest(
+                    channel="/data/AccountChangeEvent",
+                    replay_id=123,
+                    num_requested=1,
+                )
+            )
+            with pytest.raises(SalesforceCDCReplayInvalidError):
+                await anext(stream)
+        finally:
+            await subscriber.shutdown()
+            await channel.close()
+            await server.stop(None)

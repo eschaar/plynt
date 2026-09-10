@@ -197,6 +197,10 @@ warn_return_any = true
 no_implicit_optional = true
 ignore_missing_imports = true
 allow_untyped_globals = true
+exclude = [
+  "^src/plynth/connectors/salesforce/cdc/_proto/pubsub_api_pb2\\.py$",
+  "^src/plynth/connectors/salesforce/cdc/_proto/pubsub_api_pb2_grpc\\.py$",
+]
 
 [[tool.mypy.overrides]]
 # Vendored/generated Salesforce Pub/Sub stub: not hand-maintained, do not
