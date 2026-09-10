@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from plynth.base.errors import OperationFailedError
+
 __all__ = [
     "SalesforceCDCGapError",
     "SalesforceCDCOverflowError",
@@ -9,15 +11,21 @@ __all__ = [
 ]
 
 
-class SalesforceCDCGapError(RuntimeError):
+class SalesforceCDCGapError(OperationFailedError):
     """Raised when Salesforce reports a replay gap in the CDC stream."""
 
+    code = "SALESFORCE_CDC_GAP"
+    message = "Salesforce CDC stream reported a replay gap"
 
-class SalesforceCDCOverflowError(RuntimeError):
+
+class SalesforceCDCOverflowError(OperationFailedError):
     """Raised when Salesforce reports an overflow event in the CDC stream."""
 
+    code = "SALESFORCE_CDC_OVERFLOW"
+    message = "Salesforce CDC stream reported an overflow event"
 
-class SalesforceCDCReplayInvalidError(RuntimeError):
+
+class SalesforceCDCReplayInvalidError(OperationFailedError):
     """Raised when Salesforce rejects a replay cursor as no longer valid.
 
     Salesforce retains CDC/platform events for 72 hours. Resuming from a
@@ -31,3 +39,6 @@ class SalesforceCDCReplayInvalidError(RuntimeError):
     against Salesforce, since data older than the retention window is gone
     from the event bus itself and cannot be recovered from CDC alone.
     """
+
+    code = "SALESFORCE_CDC_REPLAY_INVALID"
+    message = "Salesforce CDC replay cursor is no longer valid"
