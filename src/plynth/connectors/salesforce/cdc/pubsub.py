@@ -17,6 +17,7 @@ __all__ = [
     "GrpcMethodPubSubAdapter",
     "GrpcStubPubSubAdapter",
     "SalesforcePubSubAdapter",
+    "create_vendored_pubsub_adapter",
 ]
 
 
@@ -317,3 +318,26 @@ class GrpcStubPubSubAdapter:
                 return 0
             return int.from_bytes(value, byteorder="big", signed=False)
         return None
+
+
+def create_vendored_pubsub_adapter(channel: Any) -> GrpcStubPubSubAdapter:
+    """Build a `GrpcStubPubSubAdapter` from plynth's vendored Pub/Sub stub.
+
+    This wires the generated `eventbus.v1` stub vendored in
+    `plynth.connectors.salesforce.cdc._proto` onto *channel*, so callers do
+    not need to generate or import the Salesforce Pub/Sub protobuf stub
+    themselves. Callers who need a custom-generated stub can still construct
+    `GrpcStubPubSubAdapter` directly instead of using this factory.
+
+    Args:
+        channel: A `grpc.aio.Channel` (or compatible) connected to the
+            Salesforce Pub/Sub endpoint.
+
+    """
+    # Imported lazily: grpc/protobuf are optional deps (the `grpc` extra),
+    # and callers using GrpcMethodPubSubAdapter should not need them.
+    from plynth.connectors.salesforce.cdc._proto import (
+        pubsub_api_pb2_grpc,
+    )
+
+    return GrpcStubPubSubAdapter(pubsub_api_pb2_grpc.PubSubStub(channel))

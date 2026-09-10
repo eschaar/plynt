@@ -96,6 +96,7 @@ dev = [
   "pip-audit",
   "pre-commit",
   "tox",
+  "grpcio-tools>=1.74.0",
 ]
 
 [tool.pytest.ini_options]
@@ -111,7 +112,12 @@ package-dir = { "" = "src" }
 include-package-data = true
 
 [tool.coverage.run]
-omit = ["*/__init__.py", "*/tests/*"]
+omit = [
+  "*/__init__.py",
+  "*/tests/*",
+  "*/connectors/salesforce/cdc/_proto/pubsub_api_pb2.py",
+  "*/connectors/salesforce/cdc/_proto/pubsub_api_pb2_grpc.py",
+]
 
 [tool.coverage.report]
 exclude_lines = ["pragma: no cover", "if __name__ == '__main__':"]
@@ -131,6 +137,8 @@ exclude = [
   ".venv",
   "venv",
   "migrations",
+  "src/plynth/connectors/salesforce/cdc/_proto/pubsub_api_pb2.py",
+  "src/plynth/connectors/salesforce/cdc/_proto/pubsub_api_pb2_grpc.py",
 ]
 
 [tool.ruff.lint]
@@ -191,6 +199,18 @@ ignore_missing_imports = true
 allow_untyped_globals = true
 
 [[tool.mypy.overrides]]
+# Vendored/generated Salesforce Pub/Sub stub: not hand-maintained, do not
+# type-check as project code. See _proto/README.md. follow_imports=skip
+# treats these modules as untyped (Any), which also avoids no-untyped-call
+# errors in callers that construct the generated stub classes.
+module = [
+  "plynth.connectors.salesforce.cdc._proto.pubsub_api_pb2",
+  "plynth.connectors.salesforce.cdc._proto.pubsub_api_pb2_grpc",
+]
+ignore_errors = true
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
 # _ReadableDumper(Dumper) requires type: ignore[misc] for Pylance/pyright
 # because the base class resolves to CDumper (a C extension) at runtime.
 # mypy does not flag the inheritance itself, so the ignore appears unused to it.
@@ -219,7 +239,7 @@ pythonVersion = "3.11"
 typeCheckingMode = "basic"
 
 [tool.pylint.main]
-ignore-paths = ["^tests/.*$"]
+ignore-paths = ["^tests/.*$", "^src/plynth/connectors/salesforce/cdc/_proto/.*$"]
 
 [tool.pylint.messages_control]
 disable = ["missing-function-docstring"]

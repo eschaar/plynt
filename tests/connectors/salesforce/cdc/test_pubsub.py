@@ -6,11 +6,14 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
 
+import grpc
 import pytest
 
+from plynth.connectors.salesforce.cdc._proto import pubsub_api_pb2
 from plynth.connectors.salesforce.cdc.pubsub import (
     GrpcMethodPubSubAdapter,
     GrpcStubPubSubAdapter,
+    create_vendored_pubsub_adapter,
 )
 
 
@@ -305,3 +308,72 @@ class TestGrpcStubPubSubAdapter:
 
         with pytest.raises(RuntimeError, match="did not include schema_json"):
             await adapter.get_schema_json("schema-1", metadata={})
+
+
+class TestVendoredStub:
+    """Verify the adapter against plynth's real vendored generated stub.
+
+    Unlike ``_FakeStub`` and friends above, these use the actual generated
+    ``pubsub_api_pb2``/``pubsub_api_pb2_grpc`` classes, proving field names
+    and types match Salesforce's real generated code rather than a
+    hand-written approximation of its shape.
+    """
+
+    @pytest.mark.asyncio
+    async def test_create_vendored_pubsub_adapter_builds_stub_from_channel(
+        self,
+    ) -> None:
+        """Wire the vendored PubSubStub onto a channel via the factory."""
+        channel = grpc.aio.insecure_channel("localhost:7443")
+        try:
+            adapter = create_vendored_pubsub_adapter(channel)
+        finally:
+            await channel.close()
+
+        assert isinstance(adapter, GrpcStubPubSubAdapter)
+
+    @pytest.mark.asyncio
+    async def test_parses_real_generated_fetch_response(self) -> None:
+        """Normalize a real ``pubsub_api_pb2.FetchResponse`` message."""
+        real_response = pubsub_api_pb2.FetchResponse(
+            latest_replay_id=(42).to_bytes(2, byteorder="big"),
+            events=[
+                pubsub_api_pb2.ConsumerEvent(
+                    event=pubsub_api_pb2.ProducerEvent(
+                        id="evt-1",
+                        schema_id="schema-1",
+                        payload=b"abc",
+                    ),
+                    replay_id=(41).to_bytes(2, byteorder="big"),
+                )
+            ],
+        )
+
+        parsed = GrpcStubPubSubAdapter._parse_fetch_response(real_response)
+
+        assert parsed["latest_replay_id"] == 42
+        assert parsed["events"][0]["event"]["schema_id"] == "schema-1"
+        assert parsed["events"][0]["event"]["payload"] == b"abc"
+        assert parsed["events"][0]["replay_id"] == 41
+
+    def test_extracts_schema_json_from_real_schema_info(self) -> None:
+        """Normalize a real ``pubsub_api_pb2.SchemaInfo`` response."""
+        real_schema_info = pubsub_api_pb2.SchemaInfo(
+            schema_json='{"type": "record"}',
+            schema_id="schema-1",
+        )
+
+        schema_json = GrpcStubPubSubAdapter._extract_schema_json(real_schema_info)
+
+        assert schema_json == '{"type": "record"}'
+
+    def test_builds_real_fetch_request(self) -> None:
+        """Confirm a real ``FetchRequest`` accepts the fields we populate."""
+        request = pubsub_api_pb2.FetchRequest(
+            topic_name="/data/AccountChangeEvent",
+            replay_preset=pubsub_api_pb2.ReplayPreset.LATEST,
+            num_requested=1,
+        )
+
+        assert request.topic_name == "/data/AccountChangeEvent"
+        assert request.num_requested == 1

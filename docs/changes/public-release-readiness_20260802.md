@@ -636,7 +636,15 @@ Completed in this branch
 Remaining to reach a production-ready CDC client
 
 1. Replace dict-based Pub/Sub request or response placeholders with generated
-   Salesforce Pub/Sub stub and message adapters.
+   Salesforce Pub/Sub stub and message adapters. Done — `GrpcStubPubSubAdapter`
+   in `src/plynth/connectors/salesforce/cdc/pubsub.py` (added in
+   `e9a86058d729`) already normalizes generated-stub Subscribe/GetSchema
+   responses into the CDC dict contract, with test coverage in
+   `tests/connectors/salesforce/cdc/test_pubsub.py`. Extended 2026-09-10:
+   the generated `eventbus.v1` stub is now vendored directly in
+   `src/plynth/connectors/salesforce/cdc/_proto/` (see SF-0013 addendum),
+   with a `create_vendored_pubsub_adapter(channel)` factory so callers no
+   longer need to run `protoc` themselves for the standard case.
 1. Document deployment expectations for Kubernetes, including at-least-once
    delivery, idempotent consumers, and avoiding multiple active consumers for
    the same checkpointed stream unless explicitly coordinated. Done — see

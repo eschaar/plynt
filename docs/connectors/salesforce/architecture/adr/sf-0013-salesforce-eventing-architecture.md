@@ -130,3 +130,33 @@ Negative:
   Extraction
 - [ADR-0013](../../../../architecture/adr/0013-transport-base-class.md) —
   Transport Base Class
+
+## Addendum (2026-09-10): Vendored Pub/Sub stub
+
+Decision: vendor Salesforce's `eventbus.v1` (`pubsub_api.proto`) generated
+stub inside `plynth.connectors.salesforce.cdc._proto`, rather than requiring
+every caller to generate their own stub.
+
+Rationale:
+
+1. `pubsub_api.proto` is identical across all Salesforce orgs — it is not
+   tenant- or instance-specific, so it fits the existing "generic across
+   orgs" CDC boundary rather than something that must stay caller-supplied.
+1. No new runtime dependency: `grpcio` and `protobuf` are already accepted
+   under the `grpc` extra. Vendoring only adds a dev-time codegen dependency
+   (`grpcio-tools`) and committed generated output.
+1. The upstream proto is stable (single-digit changes over several years) and
+   CC0-1.0 licensed, so redistribution and low-frequency drift-checking are
+   both low-risk and low-maintenance.
+1. `GrpcStubPubSubAdapter` (caller-supplied stub) remains available and
+   unchanged for callers who need a custom-generated stub; the vendored path
+   is additive via `create_vendored_pubsub_adapter(channel)`, not a breaking
+   change to existing constructors.
+
+This stays scoped to `plynth.connectors.salesforce.cdc` per SF-0013's
+existing boundary — it is not promoted to a sibling package or to
+`plynth.grpc`, since CDC subscribe/GetSchema remains the only consumer.
+Regeneration is a deliberate, reviewed action
+(`make salesforce-cdc-proto-generate`), never an automatic build or CI step.
+See `src/plynth/connectors/salesforce/cdc/_proto/README.md` and `SOURCE.md`
+for provenance and regeneration instructions.

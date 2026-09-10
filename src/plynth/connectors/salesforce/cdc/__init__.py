@@ -22,6 +22,7 @@ from plynth.connectors.salesforce.cdc.pubsub import (
     GrpcMethodPubSubAdapter,
     GrpcStubPubSubAdapter,
     SalesforcePubSubAdapter,
+    create_vendored_pubsub_adapter,
 )
 from plynth.connectors.salesforce.cdc.service import (
     AsyncSalesforceCDCSubscriber,
@@ -45,5 +46,6 @@ __all__ = [
     "SalesforceCDCOverflowError",
     "SalesforceCDCSubscribeRequest",
     "SalesforcePubSubAdapter",
+    "create_vendored_pubsub_adapter",
     "ensure_fastavro_runtime",
 ]

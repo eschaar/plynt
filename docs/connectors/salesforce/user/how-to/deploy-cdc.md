@@ -5,6 +5,32 @@ be deployed with a durable checkpoint backend and graceful shutdown handling
 so pod restarts and rollouts do not lose or duplicate progress beyond what
 at-least-once delivery already implies.
 
+## Connecting to Salesforce Pub/Sub
+
+Plynth vendors the generated Salesforce `eventbus.v1` Pub/Sub stub, so you
+do not need to run `protoc` yourself. Build a gRPC channel and pass it to
+`create_vendored_pubsub_adapter`:
+
+```python
+import grpc
+from plynth.connectors.salesforce.cdc import (
+    AsyncSalesforceCDCSubscriber,
+    create_vendored_pubsub_adapter,
+)
+
+channel = grpc.aio.secure_channel(
+    "api.pubsub.salesforce.com:7443", grpc.ssl_channel_credentials()
+)
+subscriber = AsyncSalesforceCDCSubscriber(
+    pubsub=create_vendored_pubsub_adapter(channel),
+    auth_metadata_provider=auth_metadata_provider,
+    payload_decoder=avro_payload_decoder,
+)
+```
+
+If you need a custom-generated stub instead (for example a different
+Pub/Sub API version), construct `GrpcStubPubSubAdapter(your_stub)` directly.
+
 ## Delivery and consumer expectations
 
 - Treat the stream as **at-least-once delivery only**. Duplicate events are
