@@ -361,7 +361,31 @@ def create_vendored_pubsub_adapter(channel: Any) -> GrpcStubPubSubAdapter:
     # Imported lazily: grpc/protobuf are optional deps (the `grpc` extra),
     # and callers using GrpcMethodPubSubAdapter should not need them.
     from plynth.connectors.salesforce.cdc._proto import (
+        pubsub_api_pb2,
         pubsub_api_pb2_grpc,
     )
 
-    return GrpcStubPubSubAdapter(pubsub_api_pb2_grpc.PubSubStub(channel))
+    def _fetch_request_factory(value: dict[str, Any]) -> Any:
+        """Build a real `FetchRequest` message from the subscriber's dict."""
+        replay_id = value.get("replay_id")
+        return pubsub_api_pb2.FetchRequest(
+            topic_name=value.get("topic_name", ""),
+            replay_preset=pubsub_api_pb2.ReplayPreset.Value(
+                value.get("replay_preset") or "LATEST"
+            ),
+            # Salesforce documents replay_id as an opaque byte string; we only
+            # round-trip cursors we ourselves decoded via _coerce_replay_id,
+            # so big-endian uint64 is the matching inverse encoding here.
+            replay_id=(b"" if replay_id is None else int(replay_id).to_bytes(8, "big")),
+            num_requested=value.get("num_requested", 1),
+        )
+
+    def _schema_request_factory(schema_id: str) -> Any:
+        """Build a real `SchemaRequest` message from a schema ID string."""
+        return pubsub_api_pb2.SchemaRequest(schema_id=schema_id)
+
+    return GrpcStubPubSubAdapter(
+        pubsub_api_pb2_grpc.PubSubStub(channel),
+        fetch_request_factory=_fetch_request_factory,
+        schema_request_factory=_schema_request_factory,
+    )
