@@ -115,7 +115,7 @@ Codegen is pinned and compared against committed output.
 
 Full coverage runs enforce 100% statement coverage in the existing measured
 source scope. This is not branch coverage or proof of provider correctness.
-The supported Linux Python 3.11-3.14 matrix and installed-wheel checks remain
+The supported Linux Python 3.11-3.15 matrix and installed-wheel checks remain
 separate acceptance gates.
 
 CDC remains experimental pending validation of authentication, real schemas,
@@ -124,6 +124,8 @@ See [ADR-0031](adr/0031-experimental-release-installation-contract.md) for the
 installation and acceptance contract.
 The generator refresh and gRPC runtime alignment are recorded in
 [ADR-0032](adr/0032-grpc-codegen-version-refresh.md).
+Python 3.15 support and the explicit local pyenv bootstrap are recorded in
+[ADR-0033](adr/0033-python-315-support-and-local-pyenv.md).
 See the [current hardening evidence](../releases/2026-10-13-experimental-rc-hardening-evidence.md)
 for verified revisions and outstanding checks. Versions and tags are owned
 by CI/CD and release-please; passing local gates does not approve publication.

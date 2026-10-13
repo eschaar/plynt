@@ -93,7 +93,7 @@ ______________________________________________________________________
 
 ## Installation
 
-Supports **Python 3.11-3.14 on Linux**. Other environments are outside the
+Supports **Python 3.11-3.15 on Linux**. Other environments are outside the
 current tested support contract.
 
 ```bash

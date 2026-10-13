@@ -3,6 +3,7 @@
 # Targets:
 #   make              - show help
 #   make install      - create .venv and install all dev dependencies
+#   make python-install - install .python-version interpreters using pyenv
 #   make clean        - remove build artifacts
 #   make purge        - remove build artifacts, .venv, and .tox
 #   make lint         - run all linters
@@ -46,6 +47,7 @@ help:
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "  install       Create .venv and install all dev dependencies"
+	@echo "  python-install  Install local Python versions using existing pyenv"
 	@echo "  clean         Remove build artifacts (keeps .venv)"
 	@echo "  purge         Remove build artifacts, .venv, and .tox (full clean)"
 	@echo "  lint          Run all linters (ruff, mypy)"
@@ -57,7 +59,7 @@ help:
 	@echo "  check         Full local quality gate (format-check + lint + test)"
 	@echo "  pre-commit-install  Install git pre-commit hooks"
 	@echo "  test          Run linters + tests"
-	@echo "  test-all      Run tests across Python 3.11, 3.12, 3.13, 3.14 via tox"
+	@echo "  test-all      Run tests across Python 3.11-3.15 via tox"
 	@echo "  unittests     Run pytest only"
 	@echo "  coverage      Run tests with HTML coverage report"
 	@echo "  build         Build sdist and wheel into dist/"
@@ -71,6 +73,17 @@ help:
 # ---------------------------------------------------------------------------
 # Environment
 # ---------------------------------------------------------------------------
+
+.PHONY: python-install
+python-install:
+	@command -v pyenv >/dev/null 2>&1 || { \
+		echo "pyenv is required; follow the Python bootstrap in CONTRIBUTING.md" >&2; \
+		exit 1; \
+	}
+	@set -eu; while IFS= read -r version; do \
+		pyenv install --skip-existing "$$version"; \
+	done < .python-version
+	pyenv rehash
 
 .venv:
 	$(PYTHON) -m venv $(VENV)
