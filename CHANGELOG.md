@@ -2,6 +2,38 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.5](https://github.com/eschaar/plynth/compare/0.9.4...0.9.5) (2026-08-23)
+
+
+### Maintenance
+
+* **deps:** update httpx2 requirement from &gt;=2.9.1 to &gt;=2.10.0 ([63fec29](https://github.com/eschaar/plynth/commit/63fec29e9d059deabe719418785835862c94ef45))
+
+## [0.9.4](https://github.com/eschaar/plynth/compare/0.9.3...0.9.4) (2026-08-17)
+
+
+### Maintenance
+
+* **ci:** bump trufflesecurity/trufflehog in the gha-patch-minor group ([81831ba](https://github.com/eschaar/plynth/commit/81831ba0305ecc69b6f9000c5f1f37a08c3143ad))
+
+## [0.9.3](https://github.com/eschaar/plynth/compare/0.9.2...0.9.3) (2026-08-16)
+
+
+### Maintenance
+
+* **deps:** update django requirement from &lt;6,&gt;=5.2.16 to &gt;=5.2.17,&lt;6 ([3ee4a9d](https://github.com/eschaar/plynth/commit/3ee4a9d0987af458548e0ead1b2bfac109fdf375))
+* **deps:** update djangorestframework requirement ([4aa17ab](https://github.com/eschaar/plynth/commit/4aa17ab9f01cf03f96db320d2b15f7447312e8b3))
+* **deps:** update pydantic-settings requirement ([075dcea](https://github.com/eschaar/plynth/commit/075dcea1f6fd210e1f73c9ceb3772148c5be2fbb))
+* **deps:** update setuptools requirement from &gt;=83.0.0 to &gt;=84.0.0 ([22bd8c5](https://github.com/eschaar/plynth/commit/22bd8c55583451624d53ee0f0d5cbf422e7837c2))
+
+## [0.9.2](https://github.com/eschaar/plynth/compare/0.9.1...0.9.2) (2026-08-08)
+
+
+### Maintenance
+
+* **deps:** update cryptography requirement from &gt;=49.0.0 to &gt;=50.0.0 ([25ce6a9](https://github.com/eschaar/plynth/commit/25ce6a9cb00cfbb3f3b5e0f553526fceca05b9fc))
+* **deps:** update fastapi requirement ([cc5c63c](https://github.com/eschaar/plynth/commit/cc5c63cc83859772686b42f95d327a29b2e47960))
+
 ## [0.9.1](https://github.com/eschaar/plynth/compare/0.9.0...0.9.1) (2026-07-31)
 
 

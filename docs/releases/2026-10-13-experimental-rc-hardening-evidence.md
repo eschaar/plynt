@@ -135,10 +135,24 @@ The hardening changes were committed and pushed on
 - [Commit workflow run 38481491740](https://github.com/eschaar/plynth/actions/runs/38481491740)
   completed successfully for `de00000c0f5bcc5d857c62da173f32edf85297f9`.
 
-This is evidence for those exact revisions, not later documentation commits.
-At this documentation update, no PR exists for the branch. Check, Verify,
-and Distribution still need remote evidence through their configured
-triggers; the successful Commit workflow does not replace those gates.
+This is evidence for those exact revisions, not later commits.
+[PR #61](https://github.com/eschaar/plynth/pull/61) is open against `main`.
+Check, Verify, and Distribution still need remote evidence for the final
+revision; the successful Commit workflow does not replace those gates.
+
+### Main Integration Verification
+
+The PR branch integrates `main` at `f53650085732` through a merge, without
+rewriting branch history. Dependency conflicts preserve the newer httpx2,
+Salesforce, and TruffleHog requirements from hardening while retaining
+upstream Django, DRF, and FastAPI minima. Upstream release-please metadata
+and changelog entries are retained unchanged; no release version is selected.
+
+After conflict resolution, the local full suite passes with 2,141 tests,
+three external tests deselected, and 100% statement coverage across 7,124
+statements. Ruff formatting/lint, mypy, TOML/YAML hooks, and `pip check`
+also pass. The installed framework versions already satisfy the merged
+requirements; no dependency installation was needed for this verification.
 
 ## Dependency and Migration Notes
 
@@ -168,7 +182,7 @@ constitute a security review of Plynth's source.
 
 ## Remaining Acceptance Work
 
-1. Open and review a PR, then obtain successful Check, Verify, and
+1. Review PR #61, then obtain successful Check, Verify, and
    Distribution evidence for the final revision. Local verification and
    the successful Commit workflow do not replace the full remote gates.
 1. Use CI/CD and release-please for all release versions and tags. If a
