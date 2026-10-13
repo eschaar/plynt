@@ -4,7 +4,7 @@ This index lists architecture decision records (ADRs) for plynth.
 
 ## Status Summary
 
-- Accepted: 33
+- Accepted: 34
 - Proposed: 0
 
 ## ADR List
@@ -46,6 +46,7 @@ This index lists architecture decision records (ADRs) for plynth.
 | [ADR-0031](0031-experimental-release-installation-contract.md)      | Experimental Release Installation Contract        | Accepted |
 | [ADR-0032](0032-grpc-codegen-version-refresh.md)                    | gRPC Code Generation Version Refresh              | Accepted |
 | [ADR-0033](0033-python-315-support-and-local-pyenv.md)              | Python 3.15 Support and Local pyenv Bootstrap     | Accepted |
+| [ADR-0034](0034-python-default-and-local-environment.md)            | Python Default and Local Environment              | Accepted |
 
 <!-- markdownlint-enable MD060 -->
 
@@ -59,4 +60,4 @@ Add an ADR for changes that affect:
 - middleware execution semantics,
 - installation extras or optional-framework strategy.
 
-Use the next sequential number (currently: `0034`).
+Use the next sequential number (currently: `0035`).
