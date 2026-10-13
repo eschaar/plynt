@@ -4,7 +4,7 @@ status: BUILD
 type: roadmap
 reference: ROADMAP-PUBLIC-READINESS
 date: 2026-08-02
-last_modified: 2026-10-13
+last_modified: 2026-10-14
 owner: TBD
 
 ## Goal and Context
@@ -20,7 +20,7 @@ readiness rather than the primary scope.
 
 ## AS-IS / TO-BE
 
-AS-IS
+AS-IS (original planning baseline, not current implementation status)
 
 1. Core abstractions and connectors exist, but public support boundaries are
    not fully documented.
@@ -55,6 +55,25 @@ Phase-1 implementation slice added here
    decoding.
 1. Shadow-store materialization remains external and is not implemented in
    plynth or the Salesforce connector.
+
+### Current Hardening Status (2026-10-14)
+
+- ADR-0027 through ADR-0031 define compatibility, environments, release gates,
+  the gRPC boundary, and the experimental installation contract.
+- The async gRPC foundation and connector-local CDC flow control, Avro
+  decoding, bitmap expansion, reconnect, and checkpoints are implemented.
+- Local installed-wheel tests and the Python 3.11-3.14 suites pass with
+  100% measured statement coverage; this is not branch coverage.
+- Remote Commit evidence is available for the hardening revision. Full
+  Check, Verify, and Distribution evidence for the final PR remains pending.
+- Real-org auth, schemas, long-running lifecycle, and opaque replay cursor
+  fidelity remain external acceptance checks. CDC remains experimental.
+- CI/CD and release-please own all release versions and tags. No manual RC
+  tag, version selection, or publication is part of this work.
+
+The spike plans and AS-IS notes below preserve the original planning context.
+Use the [current roadmap](../product/roadmap.md) and October evidence report
+for present implementation status.
 
 ## Scope In / Out
 

@@ -335,7 +335,8 @@ Execution starts only when both conditions are met:
 - multiple connectors are shipped and maintained in-repo
 
 See [SF-0012](../architecture/adr/sf-0012-extraction-strategy.md)
-for the accepted extraction strategy.
+for the proposed extraction strategy and its acceptance triggers.
+SF-0012 remains Proposed; extraction is not approved.
 
 ## Principles
 

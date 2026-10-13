@@ -130,8 +130,12 @@ The hardening changes were committed and pushed on
   the full-coverage gate.
 - [Commit workflow run 38480835588](https://github.com/eschaar/plynth/actions/runs/38480835588)
   completed successfully for `f78247e2918ded6d37f2be0fe42a78e3411985f8`.
+- `de00000c0f5bcc5d857c62da173f32edf85297f9`: documentation alignment for
+  CDC scope, navigation, initial load, replay, and remote evidence.
+- [Commit workflow run 38481491740](https://github.com/eschaar/plynth/actions/runs/38481491740)
+  completed successfully for `de00000c0f5bcc5d857c62da173f32edf85297f9`.
 
-This is evidence for that exact revision, not later documentation commits.
+This is evidence for those exact revisions, not later documentation commits.
 At this documentation update, no PR exists for the branch. Check, Verify,
 and Distribution still need remote evidence through their configured
 triggers; the successful Commit workflow does not replace those gates.

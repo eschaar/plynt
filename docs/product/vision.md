@@ -34,6 +34,18 @@ ______________________________________________________________________
 - Core transport, middleware, settings, retry, auth, and error abstractions.
 - HTTP implementation based on httpx2.
 - Salesforce connector as the primary real-world validation connector.
+- Optional async-first gRPC foundation and experimental Salesforce CDC.
+- Generic LLM connector with OpenAI and Anthropic provider adapters.
+- Optional Django, DRF, and FastAPI framework adapters.
+
+HTTP capabilities preserve sync/async parity. The initial gRPC and CDC
+scope is async-only under ADR-0030 and SF-0013.
+
+The current delivery focus is hardening an experimental candidate, not
+expanding capabilities or claiming production-ready Salesforce eventing.
+See the [roadmap](roadmap.md) and
+[hardening evidence](../releases/2026-10-13-experimental-rc-hardening-evidence.md)
+for implemented scope and remaining acceptance work.
 
 ______________________________________________________________________
 

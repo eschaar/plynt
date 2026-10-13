@@ -23,6 +23,11 @@ Core abstractions live in `plynth.base` and are protocol-agnostic.
 HTTP-specific implementations live in `plynth.http`.
 Business connectors (for example Salesforce) live in `plynth.connectors.*`.
 
+`plynth.grpc` is a sibling protocol namespace with async transport, client,
+settings, errors, interceptors, and protobuf helpers. It does not define
+Salesforce replay, checkpoints, Avro decoding, or subscription flow control.
+See [ADR-0030](adr/0030-grpc-protocol-boundary.md).
+
 ## Connector vs Adapter
 
 Use these terms consistently:
@@ -59,7 +64,7 @@ This matrix summarizes the currently shipped adapter surface.
 
 ## Runtime Flow
 
-A typical request path is:
+A typical HTTP request path is:
 
 1. Service method composes endpoint input and serializes body via renderer.
 1. Client builds a `Request` and delegates to the injected transport.
@@ -81,11 +86,15 @@ Canonical order:
 1. Retry middleware (innermost above I/O)
 
 This keeps cross-cutting behavior reusable and explicit.
+The HTTP middleware chain is not reused by gRPC; that protocol has its own
+interceptor and metadata boundaries.
 
 ## Sync and Async Strategy
 
 Sync and async variants share architecture and naming patterns. I/O mode is a
 transport concern, while service/domain semantics stay execution-model agnostic.
+HTTP capabilities retain sync/async parity. The initial gRPC foundation and
+Salesforce CDC subscriber are async-only; no sync eventing API is promised.
 
 ## Configuration Strategy
 
@@ -104,9 +113,18 @@ tests verify that each documented profile works without development tooling.
 The wheel is built from the source distribution, not from an editable install.
 Codegen is pinned and compared against committed output.
 
-CDC remains experimental pending validation against a real Salesforce org.
+Full coverage runs enforce 100% statement coverage in the existing measured
+source scope. This is not branch coverage or proof of provider correctness.
+The supported Linux Python 3.11-3.14 matrix and installed-wheel checks remain
+separate acceptance gates.
+
+CDC remains experimental pending validation of authentication, real schemas,
+long-running operation, and opaque replay cursor fidelity against Salesforce.
 See [ADR-0031](adr/0031-experimental-release-installation-contract.md) for the
 installation and acceptance contract.
+See the [current hardening evidence](../releases/2026-10-13-experimental-rc-hardening-evidence.md)
+for verified revisions and outstanding checks. Versions and tags are owned
+by CI/CD and release-please; passing local gates does not approve publication.
 
 ## ADRs
 

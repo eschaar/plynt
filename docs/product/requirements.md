@@ -25,8 +25,18 @@ ______________________________________________________________________
 
 1. Keep Salesforce connector inside the repository until extraction criteria are
    met.
-1. Maintain sync and async parity for implemented Salesforce capabilities.
+1. Maintain sync and async parity for implemented Salesforce REST capabilities.
 1. Keep connector logic generic and policy-neutral.
+
+### Experimental Eventing
+
+1. Keep generic gRPC protocol concerns under the optional `grpc` extra.
+1. Keep Salesforce CDC flow control, replay, checkpoints, and Avro semantics
+   inside the Salesforce connector.
+1. Preserve the async-only phase-1 boundary in ADR-0030 and SF-0013.
+1. Install CDC through `plynth[grpc,salesforce]`, including real Avro decoding.
+1. Keep CDC experimental until real-org authentication, schemas, replay
+   fidelity, and long-running operation have acceptance evidence.
 
 ______________________________________________________________________
 
@@ -47,6 +57,15 @@ ______________________________________________________________________
 1. No manual tagging for normal release flow.
 1. Publish workflow must use OIDC (no static PyPI token in workflow).
 1. PyPI publish remains explicitly controlled by CI guard flag.
+1. Require the complete test profile on supported Linux Python 3.11-3.14
+   and isolated installed-wheel checks under ADR-0031.
+1. Enforce 100% statement coverage within the configured source scope;
+   do not equate coverage with branch coverage or external-provider validation.
+1. Verify pinned CDC code generation and declared runtime minima.
+1. Keep local results, revision-specific CI evidence, and external-provider
+   acceptance checks distinct.
+1. Configure any prerelease versions or tags through CI/CD and release-please;
+   do not create experimental RC versions or tags manually.
 
 ______________________________________________________________________
 
@@ -65,3 +84,5 @@ ______________________________________________________________________
 - Vision: [vision.md](vision.md)
 - Roadmap: [roadmap.md](roadmap.md)
 - Architecture decisions: [../architecture/adr](../architecture/adr)
+- Current hardening evidence:
+  [October experimental candidate](../releases/2026-10-13-experimental-rc-hardening-evidence.md)

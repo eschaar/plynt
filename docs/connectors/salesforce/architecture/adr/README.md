@@ -4,7 +4,7 @@ This index tracks Salesforce connector architecture decisions.
 
 ## Status Summary
 
-- Accepted: 13
+- Accepted: 12
 - Proposed: 1
 
 ## ADR List
