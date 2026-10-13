@@ -83,24 +83,43 @@ sent as diffs; applying those diffs remains the consumer's responsibility.
 
 ## Initial load and gap recovery
 
-CDC only delivers **changes from the moment you subscribe**. Building a
-shadow database also requires a strategy for the initial snapshot and for
-recovering from gaps larger than Salesforce's retention window. This is
-inherently application-specific — plynth only guarantees clear, typed
-signals; the recovery strategy itself is your application's responsibility.
+CDC delivers change events, not a full snapshot. The subscriber starts at
+`LATEST` when no replay cursor is supplied or loaded from a checkpoint.
+A supplied or stored `replay_id` selects `CUSTOM` for retained events.
+`SalesforceCDCSubscribeRequest` does not expose a `replay_preset` field.
+Building a shadow database also requires an initial snapshot and recovery
+from gaps larger than Salesforce's retention window. These strategies are
+application-specific; Plynth exposes typed events and errors, not an
+atomic snapshot-and-stream handoff.
 
 ### Initial load
 
-1. Start the CDC subscription first (or at least note the `latest_replay_id`
-   from the first keepalive `FetchResponse`) before running any bulk load.
-   This fixes your resume point before the snapshot begins.
+1. Start consuming before the snapshot and continuously persist events to
+   an application-owned durable buffer. Wait until an event has been
+   delivered and durably buffered before starting the snapshot; calling
+   `subscribe` alone does not establish a provider-side boundary.
+   Do not pause the subscription for a long bulk load: slow consumption
+   can exceed the flow-control timeout.
 1. Perform the initial snapshot with the Salesforce Bulk API or SOQL
    (`plynth.connectors.salesforce`, not the CDC module — CDC has no
    "give me everything" mode).
-1. Write the snapshot to your shadow database, then replay CDC events from
-   the replay position captured in step 1, using **upsert by record ID**.
-   Because delivery is at-least-once, some records may already be current
-   from the snapshot; upsert makes that safe and idempotent.
+1. Reconcile the snapshot and buffered events using application-specific
+   ordering and duplicate handling. Handle deletes as well as updates;
+   blindly upserting older events can overwrite newer snapshot values.
+   Verify the handoff against a real org and finish within the retention
+   window, or perform a full reconciliation.
+
+`await subscriber.subscribe(request)` returns an iterator; the upstream
+subscription starts when that iterator is consumed. The subscriber does
+not expose keepalive `FetchResponse.latest_replay_id` values or a provider
+readiness signal. Do not use the subscribe call alone as proof that a safe
+snapshot boundary exists. With checkpointing enabled, persist each event
+before requesting the next one; the deferred checkpoint then represents
+durable buffering, not completion of downstream reconciliation.
+
+The public API currently uses integer replay IDs, while Salesforce treats
+them as opaque bytes. Real-org cursor fidelity remains unverified; do not
+assume the local gRPC tests prove a lossless initial-load or recovery path.
 
 ### Gap recovery
 
@@ -116,13 +135,19 @@ identically every time.
 
 When you catch `SalesforceCDCReplayInvalidError`, choose one of:
 
-- **Resubscribe with `replay_preset=EARLIEST`.** Only recovers events still
-  inside the 72-hour window; anything older is already gone from the event
-  bus itself and cannot be recovered from CDC at all.
+- **Resume from another known, valid cursor** if your application retains
+  one within the 72-hour window. Ensure a stale checkpoint does not
+  override the chosen recovery position.
 - **Trigger a full reconciliation** of the affected object(s): re-run a
   SOQL/Bulk snapshot for those objects and upsert into the shadow database,
   the same way as the initial load. This is the only option once you are
   certain the gap exceeds 72 hours.
+
+Salesforce's protocol also supports `EARLIEST`, but the current public
+subscriber request cannot select it. Do not pass `replay_preset=EARLIEST`
+to `SalesforceCDCSubscribeRequest`; it rejects unsupported fields.
+An invalid stored checkpoint must be reset through your checkpoint backend
+before starting a new subscription without an explicit replay cursor.
 
 Do not treat `SalesforceCDCOverflowError` as a data-gap signal — Salesforce's
 "overflow" error is a flow-control condition (too many events requested

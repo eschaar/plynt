@@ -8,6 +8,7 @@ standalone package.
 
 The current Salesforce integration covers Salesforce REST capabilities,
 including data APIs, utility APIs, and AI APIs, with sync and async support.
+It also includes an experimental, async-only CDC subscriber over gRPC.
 
 Implemented capabilities include:
 
@@ -29,6 +30,13 @@ Implemented capabilities include:
   deprecated by Salesforce — blocked by default in orgs created Summer '23
   or later; migrate to client credentials or JWT Bearer)
 - Ergonomic facade for object-bound services
+- Experimental CDC event streaming with bounded flow control, replay
+  checkpoints, and schema-based changed/nulled/diff field decoding
+
+Install `plynth[grpc,salesforce]` for CDC. See the
+[CDC deployment guide](user/how-to/deploy-cdc.md) for wiring, processing,
+and recovery guidance. Real-org authentication, schemas, and replay fidelity
+still need validation; local tests do not establish production readiness.
 
 ## Main Components
 
@@ -47,6 +55,10 @@ Implemented capabilities include:
 - Facade layer:
   - SalesforceAPIFacade
   - AsyncSalesforceAPIFacade
+- Eventing layer (experimental, async-only):
+  - AsyncSalesforceCDCSubscriber
+  - AvroPayloadDecoder
+  - create_vendored_pubsub_adapter
 
 ## Package Layout
 
@@ -55,6 +67,7 @@ maintainability:
 
 - `plynth.connectors.salesforce.auth`
 - `plynth.connectors.salesforce.bulk`
+- `plynth.connectors.salesforce.cdc`
 - `plynth.connectors.salesforce.identity`
 - `plynth.connectors.salesforce.lookup`
 - `plynth.connectors.salesforce.models`
@@ -63,7 +76,7 @@ maintainability:
 
 Test structure mirrors this package layout under
 `tests/connectors/salesforce/` (for example `lookup/`, `bulk/`, `query/`,
-`auth/`, `identity/`, `models/`, and `sobject/`).
+`auth/`, `cdc/`, `identity/`, `models/`, and `sobject/`).
 
 ## Sync Quickstart (Facade)
 
@@ -488,6 +501,8 @@ application on top of [SF-0003](architecture/adr/sf-0003-query-service-design.md
 The utility service in this module targets Salesforce Platform REST API
 endpoints only. It does not cover SOAP or Pub/Sub APIs. Bulk API support is
 available through the dedicated bulk services.
+Pub/Sub CDC lives in the separate, experimental `cdc` package; see the
+[CDC deployment guide](user/how-to/deploy-cdc.md).
 
 ## Authentication Modes
 
@@ -524,6 +539,6 @@ Facade naming and architecture decision:
 For feature planning, ideas, and extraction sequencing, see:
 
 - [Salesforce Roadmap](product/roadmap.md)
-- [Salesforce Extraction Plan](product/extraction-plan.md)
+- [Salesforce Extraction Strategy](architecture/adr/sf-0012-extraction-strategy.md)
 - [Project Roadmap](../../product/roadmap.md)
 - [VCR Testsupport Guide](../../../src/plynth/testsupport/vcr/README.md)

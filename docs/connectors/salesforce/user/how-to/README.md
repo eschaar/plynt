@@ -33,8 +33,8 @@
 
 - [Add resilience with circuit breaking](resilience.md) — protect against
   Salesforce downtime and observe quota usage
-- [Deploy the CDC subscriber in Kubernetes](deploy-cdc.md) — checkpoint
-  backend, graceful shutdown, and consumer topology
+- [Connect and deploy the experimental CDC subscriber](deploy-cdc.md) —
+  flow control, field decoding, checkpoints, recovery, and graceful shutdown
 
 ## Errors
 

@@ -117,7 +117,24 @@ The Distribution workflow repeats all eight profiles on Python 3.11 and
 3.14. Verify repeats the full tox matrix and retains evidence even on
 failure. Publish now checks clean core and CDC wheel installations before
 its existing, disabled publication step. Workflow syntax was validated
-locally; no new remote CI run is claimed.
+locally. Remote evidence for the committed hardening revision is recorded
+below; the full remote validation matrix remains outstanding.
+
+## Remote Evidence
+
+The hardening changes were committed and pushed on
+`chore/experimental-rc-hardening`:
+
+- `74bef3bdeeae`: CDC flow control and bitmap decoding.
+- `f78247e2918ded6d37f2be0fe42a78e3411985f8`: installation hardening and
+  the full-coverage gate.
+- [Commit workflow run 38480835588](https://github.com/eschaar/plynth/actions/runs/38480835588)
+  completed successfully for `f78247e2918ded6d37f2be0fe42a78e3411985f8`.
+
+This is evidence for that exact revision, not later documentation commits.
+At this documentation update, no PR exists for the branch. Check, Verify,
+and Distribution still need remote evidence through their configured
+triggers; the successful Commit workflow does not replace those gates.
 
 ## Dependency and Migration Notes
 
@@ -147,8 +164,9 @@ constitute a security review of Plynth's source.
 
 ## Remaining Acceptance Work
 
-1. Commit and review the branch, then obtain remote CI evidence for that
-   exact revision. Local verification is not a claim that CI already ran.
+1. Open and review a PR, then obtain successful Check, Verify, and
+   Distribution evidence for the final revision. Local verification and
+   the successful Commit workflow do not replace the full remote gates.
 1. Use CI/CD and release-please for all release versions and tags. If a
    formal prerelease is needed, configure it through that automation.
    Existing publication accepts stable SemVer tags and skips prereleases;

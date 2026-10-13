@@ -18,6 +18,7 @@ This section covers everything you need to use the Plynth Salesforce connector.
 - [Query records with SOQL](how-to/query-records.md)
 - [Handle Salesforce errors](how-to/handle-errors.md)
 - [Add resilience (circuit breaker, quota observability)](how-to/resilience.md)
+- [Connect and deploy the experimental CDC subscriber](how-to/deploy-cdc.md)
 - [Service reference](reference/services.md)
 - [Error reference](reference/errors.md)
 - [Settings reference](reference/settings.md)
@@ -38,5 +39,11 @@ The Salesforce connector implements the Salesforce Platform REST API:
 - Generative AI — Agent API (session lifecycle, streaming)
 - OAuth2 Client Credentials and Username/Password auth flows
 
-See the [roadmap](../../product/roadmap.md) for the full capability matrix
+It also provides experimental, async-only CDC over Salesforce Pub/Sub gRPC:
+bounded flow control, Avro decoding, changed/nulled/diff field names, and
+replay checkpoints. Install `plynth[grpc,salesforce]` and follow the
+[CDC deployment guide](how-to/deploy-cdc.md). Validate authentication,
+real schemas, and replay behavior against a real org before production use.
+
+See the [roadmap](../product/roadmap.md) for the full capability matrix
 and future direction.
