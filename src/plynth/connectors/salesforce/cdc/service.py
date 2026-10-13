@@ -23,10 +23,12 @@ Responsibilities kept out of this module:
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
 from inspect import isawaitable
 from typing import Any, Protocol, cast
 
+from plynth.connectors.salesforce.cdc._bitmap import _FieldBitmapDecoder
 from plynth.connectors.salesforce.cdc.checkpoint import SalesforceCDCCheckpointStore
 from plynth.connectors.salesforce.cdc.errors import (
     SalesforceCDCGapError,
@@ -106,11 +108,102 @@ class _UnimplementedCDCStream(AsyncIterator[SalesforceCDCEvent]):
         )
 
 
+class _FetchRequestStream(AsyncIterator[dict[str, Any]]):
+    """Coordinate bounded fetch requests with downstream event consumption
+
+    The gRPC request reader and CDC response consumer run independently.
+    ``_ready`` connects them: the first request is immediately available,
+    then the request reader waits until ``processed`` observes a completed
+    batch. Closing wakes that reader so it cannot remain blocked.
+
+    A batch can span several responses. Server-reported pending credits
+    take precedence over counting received events; an empty keepalive with
+    outstanding credits does not refill the batch. Credits are replenished
+    only after the consumer advances past every event in the response,
+    preserving the connector-local backpressure policy from SF-0013.
+
+    Args:
+        request: Subscription parameters. Batch size is capped at Salesforce's
+            100-event limit; replay selection is sent only on the first request.
+
+    """
+
+    def __init__(self, request: SalesforceCDCSubscribeRequest) -> None:
+        self._request = request
+        self._batch_size = min(request.num_requested, 100)
+        self._remaining = self._batch_size
+        self._ready = asyncio.Event()
+        self._ready.set()
+        self._initial = True
+        self._closed = False
+
+    def __aiter__(self) -> _FetchRequestStream:
+        return self
+
+    async def __anext__(self) -> dict[str, Any]:
+        await self._ready.wait()
+        self._ready.clear()
+        if self._closed:
+            raise StopAsyncIteration
+        request: dict[str, Any] = {
+            "topic_name": self._request.channel,
+            "num_requested": self._batch_size,
+        }
+        if self._initial:
+            request.update(
+                replay_preset=(
+                    "CUSTOM" if self._request.replay_id is not None else "LATEST"
+                ),
+                replay_id=self._request.replay_id,
+            )
+            self._initial = False
+        return request
+
+    def processed(self, response: Any, event_count: int) -> None:
+        """Update outstanding credits after a response has been consumed
+
+        Args:
+            response: Normalized FetchResponse. Its ``pending_num_requested``
+                value is authoritative when supplied by the adapter.
+            event_count: Number of raw events received, including events
+                skipped by decoding. Used when the adapter omits pending credits.
+
+        Raises:
+            RuntimeError: If reported pending credits are not an integer
+                between zero and the requested batch size.
+
+        """
+        pending = (
+            response.get("pending_num_requested")
+            if isinstance(response, dict)
+            else None
+        )
+        if pending is not None:
+            if type(pending) is not int or not 0 <= pending <= self._batch_size:
+                raise RuntimeError(
+                    "Salesforce FetchResponse has invalid pending_num_requested"
+                )
+            self._remaining = pending
+        else:
+            self._remaining = max(0, self._remaining - event_count)
+        if self._remaining == 0 and not self._closed:
+            self._remaining = self._batch_size
+            self._ready.set()
+
+    async def aclose(self) -> None:
+        """Wake and finish the request iterator when its subscription ends"""
+        self._closed = True
+        self._ready.set()
+
+
 class _CheckpointingCDCStream(AsyncIterator[SalesforceCDCEvent]):
     """Checkpoint replay cursors only after the caller advanced the stream.
 
     This preserves at-least-once delivery semantics: a replay cursor is stored
     only when the consumer asks for the next item or when the stream ends.
+    Explicit close also flushes the last delivered cursor. A pending read
+    must finish through upstream cancellation rather than ``aclose`` on an
+    executing async generator.
     """
 
     def __init__(
@@ -127,17 +220,21 @@ class _CheckpointingCDCStream(AsyncIterator[SalesforceCDCEvent]):
         self._stream_key = stream_key
         self._pending_replay_id: int | None = None
         self._on_checkpoint_saved = on_checkpoint_saved
+        self._reading = False
 
     def __aiter__(self) -> _CheckpointingCDCStream:
         return self
 
     async def __anext__(self) -> SalesforceCDCEvent:
         self._flush_pending()
+        self._reading = True
         try:
             event = await anext(self._stream)
         except StopAsyncIteration:
             self._flush_pending()
             raise
+        finally:
+            self._reading = False
         self._pending_replay_id = event.replay_id
         return event
 
@@ -154,6 +251,8 @@ class _CheckpointingCDCStream(AsyncIterator[SalesforceCDCEvent]):
     async def aclose(self) -> None:
         """Flush pending state and close the wrapped stream when possible."""
         self._flush_pending()
+        if self._reading:
+            return
         close_method = _resolve_close_method(self._stream)
         if close_method is not None:
             result = close_method()
@@ -171,6 +270,11 @@ class AsyncSalesforceCDCSubscriber:
     - generic gRPC transport in ``plynth.grpc``
     - Salesforce-specific metadata, schema fetch, and CDC mapping here
     - downstream replication logic outside the connector
+
+    Advance the returned iterator only after processing the previous event.
+    Advancing acknowledges that event for checkpointing and permits a new
+    fetch batch once all events in the current batch have been consumed.
+    Header bitmaps are expanded with the event's Avro schema before delivery.
     """
 
     # The subscriber intentionally centralizes all CDC orchestration concerns
@@ -233,8 +337,12 @@ class AsyncSalesforceCDCSubscriber:
         self._schema_method = schema_method
         self._reconnect_max_attempts = reconnect_max_attempts
         self._schema_cache: dict[str, str] = {}
+        self._field_bitmap_decoder = _FieldBitmapDecoder()
         self._stop_requested = False
         self._active_stream: Any | None = None
+        self._active_response_stream: Any | None = None
+        self._active_requests: _FetchRequestStream | None = None
+        self._reading = False
         if self._pubsub is None and client is not None:
             self._pubsub = GrpcMethodPubSubAdapter(
                 client,
@@ -248,13 +356,19 @@ class AsyncSalesforceCDCSubscriber:
         self._stop_requested = True
         await self._emit_observation("shutdown_requested")
 
+        if self._active_requests is not None:
+            await self._active_requests.aclose()
+        await self._close_stream(self._active_response_stream)
+
         active_stream = self._active_stream
         if active_stream is None:
             await self._emit_observation("shutdown_completed")
             return
 
         close_method = _resolve_close_method(active_stream)
-        if close_method is not None:
+        if close_method is not None and (
+            not self._reading or isinstance(active_stream, _CheckpointingCDCStream)
+        ):
             result = close_method()
             if isawaitable(result):
                 await result
@@ -308,10 +422,10 @@ class AsyncSalesforceCDCSubscriber:
     ) -> AsyncIterator[SalesforceCDCEvent]:
         """Subscribe with bounded reconnect using the latest replay cursor.
 
-        A reconnect attempt resumes from the latest replay cursor that was
-        observed in a successful response. If the stream breaks before any
-        cursor is known, the subscriber fails clearly because a safe resume
-        point does not exist yet.
+        A reconnect attempt resumes from the last delivered event, never past
+        unprocessed events in a partially consumed response. If the stream
+        breaks before any cursor is known, the subscriber fails clearly
+        because a safe resume point does not exist yet.
         """
         pubsub = self._pubsub
         if pubsub is None:
@@ -326,48 +440,75 @@ class AsyncSalesforceCDCSubscriber:
                 self._active_stream = None
                 return
             resumed_request = request.model_copy(update={"replay_id": replay_id})
+            requests = _FetchRequestStream(resumed_request)
+            self._active_requests = requests
+            stream = None
+            self._reading = True
             try:
                 stream = await pubsub.subscribe(
-                    self._fetch_request_stream(resumed_request),
+                    requests,
                     metadata=metadata,
                 )
-                self._active_stream = stream
+                self._active_response_stream = stream
                 # Each reconnect replays the same orchestration path: subscribe,
                 # decode envelopes, update the latest replay cursor, and yield
                 # typed CDC events downstream.
-                async for event, latest_replay_id in self._event_stream(
+                async for event in self._event_stream(
                     stream,
                     metadata,
+                    requests,
                 ):
-                    if latest_replay_id is not None:
-                        replay_id = latest_replay_id
+                    replay_id = event.replay_id
                     attempts = 0
+                    self._reading = False
                     yield event
-                self._active_stream = None
+                    self._reading = True
+                return
+            except asyncio.CancelledError:
+                if not self._stop_requested:
+                    raise
                 return
             except (GrpcStatusError, GrpcTransportError) as exc:
                 attempts = await self._handle_reconnectable_error(
                     exc, replay_id=replay_id, attempts=attempts
                 )
             except Exception as exc:
-                # The vendored/real gRPC stub (create_vendored_pubsub_adapter)
-                # raises native grpc.RpcError, not plynth's GrpcStatusError/
-                # GrpcTransportError. Only reconnect-eligible native gRPC
-                # errors are handled here; anything else (e.g. a bug in event
-                # decoding) is re-raised unchanged.
-                mapped = self._map_native_grpc_error(exc)
-                if mapped is None:
-                    raise
-                if isinstance(mapped, GrpcStatusError) and mapped.status_code == 3:
-                    raise SalesforceCDCReplayInvalidError(
-                        "Salesforce rejected the replay cursor as invalid or "
-                        "outside the 72-hour retention window; resubscribe "
-                        "with EARLIEST or trigger a full reconciliation "
-                        f"(replay_id={replay_id!r})"
-                    ) from mapped
-                attempts = await self._handle_reconnectable_error(
-                    mapped, replay_id=replay_id, attempts=attempts
+                attempts = await self._handle_native_grpc_error(
+                    exc, replay_id=replay_id, attempts=attempts
                 )
+            finally:
+                await requests.aclose()
+                await self._close_stream(stream)
+                self._active_requests = None
+                self._active_response_stream = None
+                self._reading = False
+
+    @staticmethod
+    async def _close_stream(value: Any) -> None:
+        """Close a subscriber-owned stream with synchronous or async cleanup"""
+        close = _resolve_close_method(value)
+        if close is not None:
+            result = close()
+            if isawaitable(result):
+                await result
+
+    async def _handle_native_grpc_error(
+        self, exc: Exception, *, replay_id: int | None, attempts: int
+    ) -> int:
+        """Classify native RPC errors without retrying unrelated failures"""
+        mapped = self._map_native_grpc_error(exc)
+        if mapped is None:
+            raise exc
+        if isinstance(mapped, GrpcStatusError) and mapped.status_code == 3:
+            raise SalesforceCDCReplayInvalidError(
+                "Salesforce rejected the replay cursor as invalid or "
+                "outside the 72-hour retention window; resubscribe "
+                "with EARLIEST or trigger a full reconciliation "
+                f"(replay_id={replay_id!r})"
+            ) from mapped
+        return await self._handle_reconnectable_error(
+            mapped, replay_id=replay_id, attempts=attempts
+        )
 
     async def _handle_reconnectable_error(
         self,
@@ -419,26 +560,27 @@ class AsyncSalesforceCDCSubscriber:
         self,
         stream: AsyncIterator[Any],
         metadata: dict[str, str],
-    ) -> AsyncIterator[tuple[SalesforceCDCEvent, int | None]]:
-        """Yield typed CDC events from a raw Subscribe response stream.
-
-        The extra replay-id return value keeps reconnect concerns local to this
-        service without leaking reconnect state into the public event model.
-        """
+        requests: _FetchRequestStream,
+    ) -> AsyncIterator[SalesforceCDCEvent]:
+        """Yield typed CDC events from a raw Subscribe response stream"""
         async for response in stream:
             if self._stop_requested:
                 await self._emit_observation("stream_stopped", reason="shutdown")
                 return
             await self._raise_for_gap_or_overflow(response)
             latest_replay_id = self._extract_latest_replay_id(response)
-            for raw_event in self._extract_events(response):
+            raw_events = self._extract_events(response)
+            for raw_event in raw_events:
+                if self._stop_requested:
+                    return
                 event = await self._to_cdc_event(
                     raw_event,
                     metadata=metadata,
                     latest_replay_id=latest_replay_id,
                 )
                 if event is not None:
-                    yield event, latest_replay_id
+                    yield event
+            requests.processed(response, len(raw_events))
 
     async def _to_cdc_event(
         self,
@@ -503,9 +645,15 @@ class AsyncSalesforceCDCSubscriber:
             commit_user=self._coerce_optional_string(header.get("commitUser")),
             transaction_key=self._coerce_optional_string(header.get("transactionKey")),
             sequence_number=self._coerce_optional_int(header.get("sequenceNumber")),
-            changed_fields=self._coerce_string_list(header.get("changedFields")),
-            nulled_fields=self._coerce_string_list(header.get("nulledFields")),
-            diff_fields=self._coerce_string_list(header.get("diffFields")),
+            changed_fields=self._field_bitmap_decoder.decode(
+                schema_json, header.get("changedFields")
+            ),
+            nulled_fields=self._field_bitmap_decoder.decode(
+                schema_json, header.get("nulledFields")
+            ),
+            diff_fields=self._field_bitmap_decoder.decode(
+                schema_json, header.get("diffFields")
+            ),
         )
         payload = {
             key: value
@@ -549,22 +697,6 @@ class AsyncSalesforceCDCSubscriber:
             schema_id,
             metadata=metadata,
         )
-
-    async def _fetch_request_stream(
-        self,
-        request: SalesforceCDCSubscribeRequest,
-    ) -> AsyncIterator[dict[str, Any]]:
-        """Yield FetchRequest-like dictionaries for the subscribe stream.
-
-        The request shape mirrors the Salesforce quick start at a logical level:
-        topic name, replay strategy, replay cursor, and fetch size.
-        """
-        yield {
-            "topic_name": request.channel,
-            "replay_preset": "CUSTOM" if request.replay_id is not None else "LATEST",
-            "replay_id": request.replay_id,
-            "num_requested": request.num_requested,
-        }
 
     async def _raise_for_gap_or_overflow(self, response: Any) -> None:
         """Raise clear stream errors for normalized gap or overflow signals."""

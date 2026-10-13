@@ -4,10 +4,14 @@ status: BUILD
 type: roadmap
 reference: ROADMAP-PUBLIC-READINESS
 date: 2026-08-02
-last_modified: 2026-08-02
+last_modified: 2026-10-13
 owner: TBD
 
 ## Goal and Context
+
+Current experimental candidate evidence is recorded in
+[the October hardening report](../releases/2026-10-13-experimental-rc-hardening-evidence.md).
+The August evidence is historical, not acceptance evidence for current code.
 
 Prepare plynth as a public package with clear API contracts, predictable
 versioning, release gates, and operational expectations. Salesforce eventing is
@@ -649,6 +653,15 @@ Remaining to reach a production-ready CDC client
    delivery, idempotent consumers, and avoiding multiple active consumers for
    the same checkpointed stream unless explicitly coordinated. Done — see
    `docs/connectors/salesforce/user/how-to/deploy-cdc.md`.
+1. Replenish event requests over a long-lived bidirectional stream. Done
+   (2026-10-13) — bounded batches use `pending_num_requested`, preserve
+   consumer backpressure across split responses, and close the RPC on
+   shutdown or cancellation. Local real-gRPC tests cover multiple batches,
+   keepalives, reconnect, and shutdown.
+1. Decode `changedFields`, `nulledFields`, and `diffFields` using the
+   corresponding Avro schema. Done (2026-10-13) — root and compound bitmaps
+   resolve to field names without an additional runtime dependency.
+   Malformed bitmaps fail explicitly; pre-decoded field lists stay supported.
 
 Deferred: sandbox validation
 
@@ -656,6 +669,10 @@ Deferred: sandbox validation
    round-trip, real schema payloads, real replay IDs) is out of scope for
    this branch. It requires a live org and is not achievable from local
    fake/mock gRPC tests alone.
+1. Verify the current integer-to-eight-byte replay cursor conversion against
+   real replay IDs before claiming production readiness. Salesforce treats
+   replay IDs as opaque bytes; local round-trip tests do not validate that
+   encoding assumption.
 1. Track this as a follow-up task for release acceptance, not as a blocker
    for closing the current implementation slice.
 

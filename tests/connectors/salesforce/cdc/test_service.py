@@ -23,6 +23,7 @@ from plynth.connectors.salesforce.cdc import (
     SalesforceCDCOverflowError,
     SalesforceCDCSubscribeRequest,
 )
+from plynth.connectors.salesforce.cdc.service import _CheckpointingCDCStream
 from plynth.grpc.errors import GrpcTransportError
 
 
@@ -44,7 +45,7 @@ class _FakeAsyncGrpcClient:
         timeout: float | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """Record Subscribe calls and replay a planned response stream."""
-        captured_requests = [request async for request in requests]
+        captured_requests = [await anext(requests)]
         self.stream_calls.append(
             {
                 "method": method,
@@ -169,6 +170,151 @@ def _payload_decoder(schema_json: str, payload: bytes) -> dict[str, Any]:
 class TestAsyncSalesforceCDCSubscriber:
     """Test suite for the async CDC subscriber skeleton."""
 
+    async def test_explicit_close_flushes_checkpoint_and_closes_stream(self) -> None:
+        store = InMemorySalesforceCDCCheckpointStore()
+        subscriber = AsyncSalesforceCDCSubscriber(
+            _FakeAsyncGrpcClient(),
+            checkpoint_store=store,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        assert aiter(stream) is stream
+        event = await anext(stream)
+        assert store.load(event.channel) is None
+
+        assert isinstance(stream, _CheckpointingCDCStream)
+        await stream.aclose()
+
+        assert store.load(event.channel) == event.replay_id
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+        await subscriber.shutdown()
+
+    async def test_shutdown_from_subscribe_observer_prevents_rpc_start(self) -> None:
+        client = _FakeAsyncGrpcClient()
+        observations: list[str] = []
+
+        async def observer(name: str, details: dict[str, Any]) -> None:
+            observations.append(name)
+            if name == "subscribe_started":
+                await subscriber.shutdown()
+
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            observer=observer,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        assert [event async for event in stream] == []
+        assert not client.stream_calls
+        assert "stream_stopped" in observations
+
+    async def test_shutdown_from_reconnect_observer_prevents_retry(self) -> None:
+        client = _FakeAsyncGrpcClient(
+            [_StreamPlan(responses=[], error=GrpcTransportError("connection lost"))]
+        )
+        observations: list[str] = []
+
+        async def observer(name: str, details: dict[str, Any]) -> None:
+            observations.append(name)
+            if name == "reconnect_attempt":
+                await subscriber.shutdown()
+
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            observer=observer,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(
+                channel="/data/AccountChangeEvent", replay_id=42
+            )
+        )
+
+        assert [event async for event in stream] == []
+        assert len(client.stream_calls) == 1
+        assert "reconnect_attempt" in observations
+        assert observations[-1] == "stream_stopped"
+
+    async def test_shutdown_while_receiving_response_discards_late_events(self) -> None:
+        observations = _EventRecorder()
+        response = _default_stream_plan().responses[0]
+
+        class LateResponseStream:
+            def __aiter__(self) -> LateResponseStream:
+                return self
+
+            async def __anext__(self) -> dict[str, Any]:
+                await subscriber.shutdown()
+                return response
+
+        class LateResponseClient(_FakeAsyncGrpcClient):
+            async def stream_stream(
+                self,
+                method: str,
+                requests: AsyncIterator[dict[str, Any]],
+                *,
+                metadata: dict[str, str] | None = None,
+                timeout: float | None = None,
+            ) -> AsyncIterator[dict[str, Any]]:
+                await anext(requests)
+                return LateResponseStream()
+
+        client = LateResponseClient()
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            observer=observations,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        assert [event async for event in stream] == []
+        assert not client.unary_calls
+        assert observations.events[-1] == ("stream_stopped", {"reason": "shutdown"})
+
+    async def test_shutdown_after_skipped_event_stops_remaining_batch(self) -> None:
+        response = _default_stream_plan().responses[0]
+        response["events"].insert(0, {})
+        client = _FakeAsyncGrpcClient([_StreamPlan(responses=[response])])
+
+        async def observer(name: str, details: dict[str, Any]) -> None:
+            if name == "decode_skipped":
+                assert details == {"reason": "missing_payload"}
+                await subscriber.shutdown()
+
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            observer=observer,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+
+        assert [event async for event in stream] == []
+        assert not client.unary_calls
+
+    async def test_non_mapping_response_does_not_report_gap_or_overflow(self) -> None:
+        observations = _EventRecorder()
+        subscriber = AsyncSalesforceCDCSubscriber(observer=observations)
+
+        await subscriber._raise_for_gap_or_overflow(None)
+
+        assert not observations.events
+
     def test_subscribe_contract_accepts_only_generic_request(self) -> None:
         """Keep the async contract focused on a generic subscription request."""
         signature = inspect.signature(AsyncSalesforceCDCSubscriber.subscribe)
@@ -198,6 +344,9 @@ class TestAsyncSalesforceCDCSubscriber:
         assert event.replay_id == 42
         assert event.envelope.object_name == "Account"
         assert event.envelope.record_ids == ["001xx000003GYWJAA4"]
+        assert event.envelope.changed_fields == ["Amount"]
+        assert event.envelope.nulled_fields == ["Type"]
+        assert event.envelope.diff_fields == []
         assert event.payload["Amount"] == 110000
         assert client.stream_calls[0]["requests"] == [
             {
@@ -939,3 +1088,198 @@ class TestAsyncSalesforceCDCSubscriber:
             )
             == "/data/AccountChangeEvent"
         )
+
+    @pytest.mark.asyncio
+    async def test_decodes_header_bitmaps_using_the_event_schema(self) -> None:
+        """Expose actual field names rather than Salesforce bitmap strings."""
+        schema_json = (
+            '{"type":"record","name":"Account","fields":['
+            '{"name":"ChangeEventHeader","type":"string"},'
+            '{"name":"Name","type":"string"},'
+            '{"name":"Description","type":["null","string"]},'
+            '{"name":"Address","type":["null",{"type":"record","name":"Address",'
+            '"fields":[{"name":"City","type":"string"},'
+            '{"name":"Street","type":"string"}]}]}]}'
+        )
+
+        async def _schema_loader(_schema_id: str, _metadata: dict[str, str]) -> str:
+            return schema_json
+
+        def _decoder(_schema: str, _payload: bytes) -> dict[str, Any]:
+            return {
+                "ChangeEventHeader": {
+                    "entityName": "Account",
+                    "changeType": "UPDATE",
+                    "changedFields": ["0x06", "3-0x01"],
+                    "nulledFields": ["3-0x02"],
+                    "diffFields": ["0x04"],
+                },
+                "Name": "New name",
+                "Description": "A diff",
+                "Address": {"City": "Utrecht", "Street": None},
+            }
+
+        subscriber = AsyncSalesforceCDCSubscriber(
+            _FakeAsyncGrpcClient(),
+            auth_metadata_provider=_auth_metadata_provider,
+            schema_loader=_schema_loader,
+            payload_decoder=_decoder,
+        )
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+        try:
+            event = await anext(stream)
+            assert event.envelope.changed_fields == [
+                "Name",
+                "Description",
+                "Address.City",
+            ]
+            assert event.envelope.nulled_fields == ["Address.Street"]
+            assert event.envelope.diff_fields == ["Description"]
+        finally:
+            await subscriber.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_replenishes_custom_adapter_without_pending_count(
+        self,
+    ) -> None:
+        """Count delivered events for adapters without Salesforce credit metadata"""
+
+        class _RequestDrivenClient(_FakeAsyncGrpcClient):
+            async def stream_stream(
+                self,
+                method: str,
+                requests: AsyncIterator[dict[str, Any]],
+                *,
+                metadata: dict[str, str] | None = None,
+                timeout: float | None = None,
+            ) -> AsyncIterator[dict[str, Any]]:
+                async def _stream() -> AsyncIterator[dict[str, Any]]:
+                    self.stream_calls.append(await anext(requests))
+                    yield {
+                        "events": [
+                            {"event": {}},
+                            {"event": {}},
+                        ]
+                    }
+                    self.stream_calls.append(await anext(requests))
+                    yield _default_stream_plan().responses[0]
+
+                return _stream()
+
+        client = _RequestDrivenClient()
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(
+                channel="/data/AccountChangeEvent", num_requested=2
+            )
+        )
+        try:
+            event = await anext(stream)
+            assert event.replay_id == 42
+            assert client.stream_calls == [
+                {
+                    "topic_name": "/data/AccountChangeEvent",
+                    "replay_preset": "LATEST",
+                    "replay_id": None,
+                    "num_requested": 2,
+                },
+                {"topic_name": "/data/AccountChangeEvent", "num_requested": 2},
+            ]
+        finally:
+            await subscriber.shutdown()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("pending", [-1, 101, "0", True])
+    async def test_rejects_invalid_pending_count_without_reconnecting(
+        self, pending: Any
+    ) -> None:
+        """Surface malformed flow-control metadata instead of refilling blindly"""
+        client = _FakeAsyncGrpcClient(
+            [_StreamPlan(responses=[{"events": [], "pending_num_requested": pending}])]
+        )
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(channel="/data/AccountChangeEvent")
+        )
+        try:
+            with pytest.raises(RuntimeError, match="invalid pending_num_requested"):
+                await anext(stream)
+            assert len(client.stream_calls) == 1
+        finally:
+            await subscriber.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_reconnect_does_not_skip_unprocessed_events_in_a_batch(self) -> None:
+        """Resume from the last consumed event if schema loading fails mid-batch"""
+
+        class _TransientSchemaClient(_FakeAsyncGrpcClient):
+            async def unary_unary(
+                self,
+                method: str,
+                request: dict[str, Any],
+                *,
+                metadata: dict[str, str] | None = None,
+                timeout: float | None = None,
+            ) -> dict[str, str]:
+                if request["schema_id"] == "schema-new" and len(self.stream_calls) == 1:
+                    raise GrpcTransportError("schema RPC interrupted")
+                return await super().unary_unary(
+                    method, request, metadata=metadata, timeout=timeout
+                )
+
+        client = _TransientSchemaClient(
+            [
+                _StreamPlan(
+                    responses=[
+                        {
+                            "latest_replay_id": 50,
+                            "pending_num_requested": 0,
+                            "events": [
+                                {
+                                    "replay_id": 41,
+                                    "event": {
+                                        "schema_id": "schema-123",
+                                        "payload": b"payload-1",
+                                    },
+                                },
+                                {
+                                    "replay_id": 42,
+                                    "event": {
+                                        "schema_id": "schema-new",
+                                        "payload": b"payload-1",
+                                    },
+                                },
+                            ],
+                        }
+                    ]
+                ),
+                _default_stream_plan(),
+            ]
+        )
+        subscriber = AsyncSalesforceCDCSubscriber(
+            client,
+            auth_metadata_provider=_auth_metadata_provider,
+            payload_decoder=_payload_decoder,
+        )
+        stream = await subscriber.subscribe(
+            SalesforceCDCSubscribeRequest(
+                channel="/data/AccountChangeEvent", num_requested=2
+            )
+        )
+        try:
+            first = await anext(stream)
+            second = await anext(stream)
+            assert [first.replay_id, second.replay_id] == [41, 42]
+            assert client.stream_calls[1]["requests"][0]["replay_id"] == 41
+        finally:
+            await subscriber.shutdown()

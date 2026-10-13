@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any
 
 import grpc
@@ -209,6 +210,61 @@ class TestGrpcMethodPubSubAdapter:
 class TestGrpcStubPubSubAdapter:
     """Verify generated-stub Pub/Sub adapter contracts."""
 
+    @pytest.mark.parametrize(
+        ("response", "expected"),
+        [
+            (
+                {"latest_replay_id": 7, "events": []},
+                {"latest_replay_id": 7, "events": []},
+            ),
+            (
+                SimpleNamespace(
+                    latest_replay_id=7,
+                    events=[
+                        {"replay_id": 6, "event": {"schema_id": "schema-1"}},
+                        SimpleNamespace(event=None, replay_id=None),
+                    ],
+                ),
+                {
+                    "latest_replay_id": 7,
+                    "events": [{"replay_id": 6, "event": {"schema_id": "schema-1"}}],
+                },
+            ),
+            (
+                SimpleNamespace(
+                    latest_replay_id=b"",
+                    events=[SimpleNamespace(event=None, replay_id=7)],
+                ),
+                {"latest_replay_id": 0, "events": [{"replay_id": 7}]},
+            ),
+        ],
+    )
+    async def test_normalizes_custom_stub_responses(
+        self, response: Any, expected: dict[str, Any]
+    ) -> None:
+        async def responses(
+            requests: AsyncIterator[dict[str, Any]], **kwargs: Any
+        ) -> AsyncIterator[Any]:
+            assert (await anext(requests))["topic_name"] == "/data/AccountChangeEvent"
+            yield response
+
+        adapter = GrpcStubPubSubAdapter(SimpleNamespace(Subscribe=responses))
+
+        async def requests() -> AsyncIterator[dict[str, Any]]:
+            yield {"topic_name": "/data/AccountChangeEvent"}
+
+        stream = await adapter.subscribe(requests(), metadata={})
+
+        assert [item async for item in stream] == [expected]
+
+    async def test_accepts_synchronous_schema_method_returning_mapping(self) -> None:
+        schema = '{"type":"record","name":"Account","fields":[]}'
+        adapter = GrpcStubPubSubAdapter(
+            SimpleNamespace(GetSchema=lambda request, **kwargs: {"schema_json": schema})
+        )
+
+        assert await adapter.get_schema_json("schema-1", metadata={}) == schema
+
     @pytest.mark.asyncio
     async def test_parses_generated_stream_and_schema_shapes(self) -> None:
         """Normalize generated response objects into CDC dict-shaped contracts."""
@@ -337,6 +393,7 @@ class TestVendoredStub:
         """Normalize a real ``pubsub_api_pb2.FetchResponse`` message."""
         real_response = pubsub_api_pb2.FetchResponse(
             latest_replay_id=(42).to_bytes(2, byteorder="big"),
+            pending_num_requested=4,
             events=[
                 pubsub_api_pb2.ConsumerEvent(
                     event=pubsub_api_pb2.ProducerEvent(
@@ -352,6 +409,7 @@ class TestVendoredStub:
         parsed = GrpcStubPubSubAdapter._parse_fetch_response(real_response)
 
         assert parsed["latest_replay_id"] == 42
+        assert parsed["pending_num_requested"] == 4
         assert parsed["events"][0]["event"]["schema_id"] == "schema-1"
         assert parsed["events"][0]["event"]["payload"] == b"abc"
         assert parsed["events"][0]["replay_id"] == 41

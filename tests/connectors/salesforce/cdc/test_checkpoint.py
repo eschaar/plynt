@@ -2,11 +2,40 @@
 
 from __future__ import annotations
 
+from typing import Any
+
+import pytest
+
 from plynth.cache import LocMemCache
 from plynth.connectors.salesforce.cdc.checkpoint import (
     CacheSalesforceCDCCheckpointStore,
     InMemorySalesforceCDCCheckpointStore,
+    SalesforceCDCCheckpointStore,
 )
+
+
+class TestSalesforceCDCCheckpointStore:
+    """Verify incomplete explicitly inherited stores fail on persistence calls"""
+
+    @pytest.mark.parametrize(
+        ("method", "arguments"),
+        [
+            ("load", ("/data/AccountChangeEvent",)),
+            ("save", ("/data/AccountChangeEvent", 42)),
+            ("delete", ("/data/AccountChangeEvent",)),
+        ],
+    )
+    def test_unimplemented_operation_raises(
+        self, method: str, arguments: tuple[str | int, ...]
+    ) -> None:
+        class IncompleteStore(SalesforceCDCCheckpointStore):
+            pass
+
+        store_type: type[Any] = IncompleteStore
+        store = store_type()
+
+        with pytest.raises(NotImplementedError):
+            getattr(store, method)(*arguments)
 
 
 class TestInMemorySalesforceCDCCheckpointStore:

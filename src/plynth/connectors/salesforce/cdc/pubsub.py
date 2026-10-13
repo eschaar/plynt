@@ -101,12 +101,9 @@ class GrpcMethodPubSubAdapter:
             timeout=timeout,
         )
 
-        async def _stream() -> AsyncIterator[dict[str, Any]]:
-            async for response in upstream:
-                if isinstance(response, dict):
-                    yield response
-
-        return _stream()
+        return _PubSubResponseStream(
+            upstream, lambda response: response if isinstance(response, dict) else None
+        )
 
     async def get_schema_json(
         self,
@@ -133,6 +130,54 @@ FetchRequestFactory = Callable[[dict[str, Any]], Any]
 FetchResponseParser = Callable[[Any], dict[str, Any]]
 SchemaRequestFactory = Callable[[str], Any]
 SchemaResponseExtractor = Callable[[Any], str]
+
+
+class _PubSubResponseStream(AsyncIterator[dict[str, Any]]):
+    """Normalize Pub/Sub responses without losing the RPC's cancellation handle
+
+    A gRPC call and its async iterator can be different objects. Keep the
+    original call for cancellation and its iterator for reading; retaining
+    only the iterator would leave the request reader running after shutdown.
+
+    Args:
+        upstream: Original RPC call or caller-supplied response stream.
+        parser: Response normalizer. Returning ``None`` skips that response,
+            preserving the method adapter's filtering behavior.
+
+    """
+
+    def __init__(
+        self,
+        upstream: AsyncIterator[Any],
+        parser: Callable[[Any], dict[str, Any] | None],
+    ) -> None:
+        self._upstream = upstream
+        self._iterator = aiter(upstream)
+        self._parser = parser
+
+    def __aiter__(self) -> _PubSubResponseStream:
+        return self
+
+    async def __anext__(self) -> dict[str, Any]:
+        while True:
+            response = self._parser(await anext(self._iterator))
+            if response is not None:
+                return response
+
+    async def aclose(self) -> None:
+        """Cancel the RPC, or await cleanup of a caller-supplied stream
+
+        Cancellation takes precedence over iterator cleanup because it stops
+        both sides of a bidirectional gRPC call, including a request reader
+        waiting for the next batch.
+        """
+        cancel = getattr(self._upstream, "cancel", None)
+        if callable(cancel):
+            cancel()
+            return
+        close = getattr(self._upstream, "aclose", None)
+        if callable(close):
+            await close()
 
 
 class GrpcStubPubSubAdapter:
@@ -179,11 +224,7 @@ class GrpcStubPubSubAdapter:
         )
         upstream = await self._await_if_needed(stream_or_awaitable)
 
-        async def _stream() -> AsyncIterator[dict[str, Any]]:
-            async for raw_response in upstream:
-                yield self._fetch_response_parser(raw_response)
-
-        return _stream()
+        return _PubSubResponseStream(upstream, self._fetch_response_parser)
 
     async def get_schema_json(
         self,
@@ -258,10 +299,14 @@ class GrpcStubPubSubAdapter:
             if parsed is not None
         ]
 
-        return {
+        normalized = {
             "latest_replay_id": latest_replay_id,
             "events": events,
         }
+        pending = getattr(response, "pending_num_requested", None)
+        if pending is not None:
+            normalized["pending_num_requested"] = pending
+        return normalized
 
     @staticmethod
     def _parse_consumer_event(raw_event: Any) -> dict[str, Any] | None:

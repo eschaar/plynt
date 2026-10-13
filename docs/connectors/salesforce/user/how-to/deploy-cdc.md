@@ -7,6 +7,16 @@ at-least-once delivery already implies.
 
 ## Connecting to Salesforce Pub/Sub
 
+Install the protocol and connector extras together:
+
+```bash
+pip install "plynth[grpc,salesforce]"
+```
+
+This includes the real Avro decoder. CDC is experimental: authenticate,
+decode real schemas, and verify replay behavior against a Salesforce org
+before using this deployment guidance in production.
+
 Plynth vendors the generated Salesforce `eventbus.v1` Pub/Sub stub, so you
 do not need to run `protoc` yourself. Build a gRPC channel and pass it to
 `create_vendored_pubsub_adapter`:
@@ -15,6 +25,7 @@ do not need to run `protoc` yourself. Build a gRPC channel and pass it to
 import grpc
 from plynth.connectors.salesforce.cdc import (
     AsyncSalesforceCDCSubscriber,
+    AvroPayloadDecoder,
     create_vendored_pubsub_adapter,
 )
 
@@ -24,12 +35,51 @@ channel = grpc.aio.secure_channel(
 subscriber = AsyncSalesforceCDCSubscriber(
     pubsub=create_vendored_pubsub_adapter(channel),
     auth_metadata_provider=auth_metadata_provider,
-    payload_decoder=avro_payload_decoder,
+    payload_decoder=AvroPayloadDecoder(),
 )
 ```
 
 If you need a custom-generated stub instead (for example a different
 Pub/Sub API version), construct `GrpcStubPubSubAdapter(your_stub)` directly.
+
+## Flow control
+
+`SalesforceCDCSubscribeRequest.num_requested` sets the batch size. The
+subscriber keeps the bidirectional request stream open and requests another
+batch only after the previous batch has been consumed. Asking for the next
+event signals that the previous event has been processed; this also preserves
+the existing deferred checkpoint behavior.
+
+- Each request is capped at Salesforce's limit of 100 events.
+- A batch can span multiple responses. `pending_num_requested` determines
+  when the batch is complete; empty keepalives do not trigger additional
+  requests while events are still pending.
+- Custom adapters without `pending_num_requested` use delivered event
+  counts instead. Skipped events still count against the requested batch.
+- Reconnect starts a fresh request stream from the last delivered event,
+  without skipping unprocessed events in a partially consumed response.
+  Shutdown or consumer cancellation closes the request stream and cancels
+  the upstream RPC.
+
+Salesforce can close a stream if no new request arrives within 60 seconds
+after the final response in a batch. Keep processing of that response below
+this timeout; use a smaller batch when downstream processing is slow.
+
+## Changed and nulled fields
+
+`event.envelope.changed_fields`, `nulled_fields`, and `diff_fields` contain
+decoded field names, not Salesforce's hexadecimal bitmap strings. The
+subscriber resolves positions using the event's own cached Avro schema.
+Compound fields use dotted names such as `BillingAddress.City`. Custom
+payload decoders that already provide field names remain supported.
+
+Malformed bitmaps or positions outside the schema raise an explicit error
+instead of silently returning incorrect field names.
+
+Pub/Sub payloads include unchanged fields with empty values. Do not overwrite
+stored values merely because a payload field is `None`: use `changed_fields`
+and `nulled_fields` to determine what changed. `diff_fields` identifies values
+sent as diffs; applying those diffs remains the consumer's responsibility.
 
 ## Initial load and gap recovery
 
@@ -93,15 +143,20 @@ before the previous batch was processed), unrelated to missed changes.
   `CacheSalesforceCDCCheckpointStore` wrapping a `CacheBackend`
   implementation (Redis, memcached, or another external key-value store) that
   satisfies `plynth.base.cache.CacheBackend`. `InMemorySalesforceCDCCheckpointStore`
-  is for local development and tests only — plynth does not ship a
-  production `CacheBackend` implementation, so provide one for your backend
-  of choice.
+  is for local development and tests only. Plynth's `RedisCache` can wrap
+  an externally configured Redis client; install `redis` separately and
+  configure persistence, authentication, and network isolation. The backend
+  adapter alone does not guarantee checkpoint durability.
 - Add a startup check for production profiles that fails closed when no
   durable `CacheBackend` is configured, rather than silently falling back to
   `InMemorySalesforceCDCCheckpointStore`.
 
 ```python
-from plynth.connectors.salesforce.cdc import AsyncSalesforceCDCSubscriber
+from plynth.connectors.salesforce.cdc import (
+    AsyncSalesforceCDCSubscriber,
+    AvroPayloadDecoder,
+    create_vendored_pubsub_adapter,
+)
 from plynth.connectors.salesforce.cdc.checkpoint import (
     CacheSalesforceCDCCheckpointStore,
 )
@@ -116,7 +171,9 @@ checkpoint_store = CacheSalesforceCDCCheckpointStore(
     backend=settings.cache_backend,  # e.g. a Redis-backed CacheBackend
 )
 subscriber = AsyncSalesforceCDCSubscriber(
-    client=grpc_client,
+    pubsub=create_vendored_pubsub_adapter(channel),
+    auth_metadata_provider=auth_metadata_provider,
+    payload_decoder=AvroPayloadDecoder(),
     checkpoint_store=checkpoint_store,
 )
 ```
