@@ -71,4 +71,4 @@ jobs:
           pip install -e '.[dev]'
 
       - name: Verify vendored stub matches proto
-        run: make salesforce-cdc-proto-verify
+        run: make salesforce-cdc-proto-verify VENV_BIN="$(dirname "$(command -v python)")"

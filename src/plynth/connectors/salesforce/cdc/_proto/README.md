@@ -18,6 +18,13 @@ generator. Consumers of the installed package do not need that tool.
 Run `make salesforce-cdc-proto-verify` to compare regeneration in a temporary
 directory with committed output without modifying it.
 
+Local targets use `.venv/bin/python` by default. When the pinned generator
+is installed in another Python environment, as in CI, select it explicitly:
+
+```bash
+make salesforce-cdc-proto-verify VENV_BIN="$(dirname "$(command -v python)")"
+```
+
 If the proto needs to change, retrieve it from a reviewed upstream commit,
 verify the checksum, update `SOURCE.md`, and run the generation and
 verification targets. Review the source and both generated files together.
