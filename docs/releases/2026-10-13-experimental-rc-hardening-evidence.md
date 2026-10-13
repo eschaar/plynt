@@ -136,9 +136,12 @@ The hardening changes were committed and pushed on
   completed successfully for `de00000c0f5bcc5d857c62da173f32edf85297f9`.
 
 This is evidence for those exact revisions, not later commits.
-[PR #61](https://github.com/eschaar/plynth/pull/61) is open against `main`.
-Check, Verify, and Distribution still need remote evidence for the final
-revision; the successful Commit workflow does not replace those gates.
+[PR #61](https://github.com/eschaar/plynth/pull/61) was opened against `main`.
+It was subsequently merged at `68f912ce253a` after its final revision
+passed Check, Verify, Distribution, Commit, and Security.
+The proto-drift job initially failed because CI had no `.venv`; commit
+`dd3fe9336e10` selected the active CI Python and the job passed.
+This does not establish remote acceptance of later dependency refreshes.
 
 ### Main Integration Verification
 
@@ -182,9 +185,39 @@ constitute a security review of Plynth's source.
 
 ## Remaining Acceptance Work
 
-1. Review PR #61, then obtain successful Check, Verify, and
-   Distribution evidence for the final revision. Local verification and
-   the successful Commit workflow do not replace the full remote gates.
+### Dependency Refresh Follow-up
+
+The `chore/consolidate-dependabot-updates` follow-up keeps the original
+hardening evidence above as a historical baseline. It consolidates the
+outstanding PyJWT 2.15.1 and DRF 3.18.3 minima, then refreshes compatible
+HTTP, Pydantic, cryptography, test/lint tooling, and TruffleHog versions.
+Already-satisfied Dependabot proposals are not applied as downgrades.
+
+[ADR-0032](../architecture/adr/0032-grpc-codegen-version-refresh.md)
+approves `grpcio-tools==1.84.0` with `grpcio>=1.84.0,<2`.
+Regeneration changes only the generated gRPC runtime version check.
+The protobuf output is unchanged, preserving `protobuf>=7.35.1,<8`.
+The development environment also validates protobuf 7.36.2.
+
+The refreshed installed-wheel suites pass on Python 3.11-3.14: 2,141 tests
+and 100% statement coverage per version. Clean core and exact CDC-minimum
+wheel profiles pass on Python 3.11 and 3.14 with no setuptools or generator.
+The updated minima are grpcio 1.84.0, protobuf 7.35.1, fastavro 1.13.1,
+and PyJWT 2.15.1. Wheel-from-sdist build, twine, pinned regeneration,
+Ruff format/lint, mypy, configuration hooks, and dependency consistency pass.
+The installed dependency audit finds no known vulnerabilities; Plynth's
+unpublished development version is skipped by that auditor.
+
+These are local follow-up results, not remote CI evidence for this branch.
+The earlier PR #61 gates do not establish acceptance of the refreshed
+dependency versions. Django remains below 6, and provider validation
+limitations are unchanged.
+
+### Acceptance Checklist
+
+1. Review the dependency-refresh follow-up, then obtain successful Check,
+   Verify, and Distribution evidence for its final revision. Local
+   verification and the Commit workflow do not replace the full remote gates.
 1. Use CI/CD and release-please for all release versions and tags. If a
    formal prerelease is needed, configure it through that automation.
    Existing publication accepts stable SemVer tags and skips prereleases;

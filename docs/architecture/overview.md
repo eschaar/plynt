@@ -122,6 +122,8 @@ CDC remains experimental pending validation of authentication, real schemas,
 long-running operation, and opaque replay cursor fidelity against Salesforce.
 See [ADR-0031](adr/0031-experimental-release-installation-contract.md) for the
 installation and acceptance contract.
+The generator refresh and gRPC runtime alignment are recorded in
+[ADR-0032](adr/0032-grpc-codegen-version-refresh.md).
 See the [current hardening evidence](../releases/2026-10-13-experimental-rc-hardening-evidence.md)
 for verified revisions and outstanding checks. Versions and tags are owned
 by CI/CD and release-please; passing local gates does not approve publication.

@@ -13,8 +13,10 @@ Do not hand-edit the `.proto` or generated `.py` files. `README.md` and
 The schema is copied verbatim from upstream; see `SOURCE.md`. Both Python
 files are generated from that schema.
 
-Install the development extra to use the pinned `grpcio-tools==1.83.1`
+Install the development extra to use the pinned `grpcio-tools==1.84.0`
 generator. Consumers of the installed package do not need that tool.
+The version refresh is recorded in
+[ADR-0032](../../../../../../docs/architecture/adr/0032-grpc-codegen-version-refresh.md).
 Run `make salesforce-cdc-proto-verify` to compare regeneration in a temporary
 directory with committed output without modifying it.
 

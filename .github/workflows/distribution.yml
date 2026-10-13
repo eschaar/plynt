@@ -74,7 +74,7 @@ jobs:
           wheel-env/bin/python -m pip install "$wheel$extras" pytest
           if [ "$PROFILE" = "cdc-minimum" ]; then
             wheel-env/bin/python -m pip install \
-              'grpcio==1.83.1' 'protobuf==7.35.1' 'fastavro==1.13.1' \
+              'grpcio==1.84.0' 'protobuf==7.35.1' 'fastavro==1.13.1' \
               'PyJWT==2.15.1'
           fi
           wheel-env/bin/python -m pip check
