@@ -98,8 +98,10 @@ convention are rejected before the commit is created.
 
 ## Local Python Bootstrap
 
-The supported matrix is standard CPython 3.11-3.15 on Linux.
-`.python-version` lists exact local versions, with 3.15.0 as the default.
+The supported matrix is Python 3.11-3.15 on Linux using CPython, the standard
+Python implementation. Other implementations, such as PyPy, are not tested.
+`.python-version` lists exact local versions, with 3.14.8 as the default.
+Python 3.15 remains supported but is not the development default.
 The file does not install Python; pyenv must be installed and initialized
 before it can select versions or expose the executables needed by tox.
 
@@ -128,21 +130,28 @@ when appropriate. Repository tooling never edits that file automatically.
 `make python-install` installs all five listed interpreters, skips installed
 versions, and refreshes shims. The multi-version selection exposes each
 `python3.x` executable to tox; `python` selects the first available version.
-Confirm 3.15.0 is installed rather than relying on fallback to an older one.
+Confirm 3.14.8 is selected rather than relying on fallback to another version.
 
 Then run `make install`, `make check`, and `make test-all`.
-An existing `.venv` does not change Python when the version file changes.
-To preserve it, create a 3.15 environment inside the already-ignored `venv/`:
+Use `.venv` consistently for local development. An existing `.venv` does not
+change Python when the version file changes. Check its interpreter first:
 
 ```bash
-make install VENV=venv/python315 PYTHON=python3.15
-make check VENV=venv/python315
-make test-all VENV=venv/python315
+.venv/bin/python --version
+make install PYTHON=python3.14
+make check
+make test-all
 ```
+
+The `PYTHON` argument selects the interpreter only when `.venv` is created.
+If it uses another minor version, move it outside the checkout before
+running `make install` so it can be restored if needed.
 
 CI uses `actions/setup-python` for the same minor-version matrix, not pyenv.
 Poetry is not part of this repository's bootstrap or test workflow.
 See [ADR-0033](docs/architecture/adr/0033-python-315-support-and-local-pyenv.md).
+The default and local environment convention are updated by
+[ADR-0034](docs/architecture/adr/0034-python-default-and-local-environment.md).
 
 ## Distribution and CDC code generation
 
