@@ -52,7 +52,7 @@ The vendored Pub/Sub messages require `grpcio>=1.83.1,<2` and
 Upgrading from older gRPC or protobuf versions requires resolving those
 dependencies together; run `python -m pip check` afterward.
 
-The Salesforce extra also requires `PyJWT>=2.15.0,<3` to exclude affected
+The Salesforce extra also requires `PyJWT>=2.15.1,<3` to exclude affected
 signing-library versions identified during hardening. Development tooling
 sets security floors for urllib3 and virtualenv; neither becomes a core
 runtime dependency.
