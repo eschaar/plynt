@@ -45,6 +45,11 @@ pip install "plynth[fastapi]"
 Core-only installations preserve package imports. Constructing the built-in
 HTTP transport without `httpx2` raises an actionable dependency error.
 
+The HTTP extras require `httpx2>=2.13.1`. The Salesforce extra requires
+`pydantic>=2.14.1` and `cryptography>=50.0.2`; the DRF extra requires
+`djangorestframework>=3.18.3,<4`. Django remains on the supported 5.2 line,
+with `django>=5.2.17,<6`; this refresh does not enable Django 6.
+
 ## CDC runtime compatibility
 
 The vendored Pub/Sub messages require `grpcio>=1.83.1,<2` and
