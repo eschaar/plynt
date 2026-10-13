@@ -74,14 +74,14 @@ help:
 
 .venv:
 	$(PYTHON) -m venv $(VENV)
-	$(PIP) install --upgrade pip
-	$(PIP) install -e .[dev]
+	$(PIP) install --upgrade 'pip>=26.2,<27'
+	$(PIP) install -e '.[dev,httpx,grpc,salesforce,django,drf,fastapi]'
 
 .PHONY: install
 install:
 	@if [ ! -d "$(VENV)" ]; then $(PYTHON) -m venv $(VENV); fi
-	$(PIP) install --upgrade pip
-	$(PIP) install -e .[dev]
+	$(PIP) install --upgrade 'pip>=26.2,<27'
+	$(PIP) install -e '.[dev,httpx,grpc,salesforce,django,drf,fastapi]'
 
 # ---------------------------------------------------------------------------
 # Salesforce CDC vendored Pub/Sub proto
@@ -107,20 +107,20 @@ salesforce-cdc-proto-generate:
 
 .PHONY: salesforce-cdc-proto-verify
 salesforce-cdc-proto-verify:
-	@tmp=$$(mktemp -d); \
-	cp $(PROTO_DIR)/pubsub_api.proto $$tmp/; \
+	@set -eu; \
+	tmp=$$(mktemp -d); \
+	trap 'rm -f "$$tmp/pubsub_api.proto" "$$tmp/pubsub_api_pb2.py" "$$tmp/pubsub_api_pb2_grpc.py"; rmdir "$$tmp"' EXIT; \
+	cp $(PROTO_DIR)/pubsub_api.proto "$$tmp/"; \
 	$(VENV_BIN)/python -m grpc_tools.protoc \
-		--proto_path=$$tmp --python_out=$$tmp --grpc_python_out=$$tmp \
-		$$tmp/pubsub_api.proto; \
+		--proto_path="$$tmp" --python_out="$$tmp" --grpc_python_out="$$tmp" \
+		"$$tmp/pubsub_api.proto"; \
 	sed -i 's/^import pubsub_api_pb2 as pubsub__api__pb2$$/from . import pubsub_api_pb2 as pubsub__api__pb2/' \
-		$$tmp/pubsub_api_pb2_grpc.py; \
-	if ! diff -q $$tmp/pubsub_api_pb2.py $(PROTO_DIR)/pubsub_api_pb2.py >/dev/null \
-		|| ! diff -q $$tmp/pubsub_api_pb2_grpc.py $(PROTO_DIR)/pubsub_api_pb2_grpc.py >/dev/null; then \
+		"$$tmp/pubsub_api_pb2_grpc.py"; \
+	if ! diff -q "$$tmp/pubsub_api_pb2.py" $(PROTO_DIR)/pubsub_api_pb2.py >/dev/null \
+		|| ! diff -q "$$tmp/pubsub_api_pb2_grpc.py" $(PROTO_DIR)/pubsub_api_pb2_grpc.py >/dev/null; then \
 		echo "Vendored Salesforce Pub/Sub stub is out of date; run 'make salesforce-cdc-proto-generate'"; \
-		rm -rf $$tmp; \
 		exit 1; \
 	fi; \
-	rm -rf $$tmp; \
 	echo "Vendored Salesforce Pub/Sub stub is up to date."
 
 .PHONY: pre-commit-install

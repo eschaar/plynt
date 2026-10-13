@@ -404,3 +404,15 @@ class TestAsyncGrpcClientContract:
         await client.close()
 
         assert transport.closed is True
+
+    async def test_close_without_transport_cleanup_hook_preserves_usability(
+        self,
+    ) -> None:
+        transport = _RecordingTransport()
+        client = AsyncGrpcClient(target="dns:///grpc.local:443", transport=transport)
+
+        await client.close()
+        response = await client.unary_unary("/svc.v1.Health/Check", {"ready": True})
+
+        assert response["payload"] == {"ready": True}
+        assert len(transport.calls) == 1

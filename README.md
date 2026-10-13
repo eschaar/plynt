@@ -83,15 +83,18 @@ ______________________________________________________________________
 
 ## Project Status
 
-Plynth is currently in early development (0.x).
-
-APIs may change while the foundation is being shaped. Stability guarantees will come with a 1.0 release.
+Plynth is in the 0.x release line. Documented public APIs follow the
+compatibility and deprecation policy in
+[ADR-0027](docs/architecture/adr/0027-public-api-compatibility-and-deprecation-policy.md).
+Experimental capabilities are explicitly identified; Salesforce CDC still
+requires validation against a real org before production use.
 
 ______________________________________________________________________
 
 ## Installation
 
-Requires **Python 3.11 or later**.
+Supports **Python 3.11-3.14 on Linux**. Other environments are outside the
+current tested support contract.
 
 ```bash
 pip install plynth
@@ -109,10 +112,19 @@ pip install "plynth[salesforce]"  # Salesforce REST connector
 | Extra        | Installs                                | Typical use                                       |
 | ------------ | --------------------------------------- | ------------------------------------------------- |
 | `httpx`      | `httpx2` transport backend              | Core HTTP transport for sync and async clients    |
+| `grpc`       | gRPC and protobuf runtimes              | Async gRPC clients and transports                 |
 | `django`     | Django adapter support + `httpx2`       | Django integration helpers and cache adapters     |
 | `drf`        | DRF adapter support + Django + `httpx2` | DRF service mixins and exception mapping patterns |
 | `fastapi`    | FastAPI adapter support + `httpx2`      | FastAPI dependency wiring for plynth clients      |
-| `salesforce` | Salesforce connector dependencies       | Typed Salesforce REST APIs, bulk, and AI services |
+| `salesforce` | HTTP, signing, validation, Avro         | REST, bulk, AI; combine with `grpc` for CDC       |
+
+```bash
+pip install "plynth[grpc,salesforce]"  # Experimental Salesforce CDC
+```
+
+OAuth2 configuration and lifecycle helpers are included in the package.
+There is no separate `oauth` extra. See the
+[installation reference](docs/user/reference/installation.md) for all profiles.
 
 ### Public API surface
 
@@ -180,12 +192,14 @@ is implemented, what is planned, and what is explicitly out of scope.
 
 High-level planned areas:
 
-- Framework adapters (Django, FastAPI, Flask)
-- gRPC transport (`plynth[grpc]`) as foundation for Salesforce Pub/Sub CDC
+- Flask adapter, conditional on demonstrated demand
 - SOAP transport (`plynth[soap]`) as long-term extension
 
 Shipped connector highlights:
 
+- Django, DRF, and FastAPI framework adapters are implemented.
+- Async gRPC primitives and experimental Salesforce Pub/Sub CDC are
+  implemented; real-org CDC validation remains open.
 - Generic AI / LLM connector (`plynth.connectors.llm`) with neutral request,
   completion, and streaming chunk contract models.
 

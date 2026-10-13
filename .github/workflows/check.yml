@@ -37,7 +37,12 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e .[httpx,salesforce,django,drf,test]
+        run: |
+          python -m pip install --upgrade 'pip>=26.2,<27'
+          pip install -e '.[httpx,grpc,salesforce,django,drf,fastapi,test]'
+
+      - name: Check installed dependency consistency
+        run: pip check
 
       - name: Test
         run: pytest --tb=short -q
@@ -61,7 +66,9 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e .[dev]
+        run: |
+          python -m pip install --upgrade 'pip>=26.2,<27'
+          pip install -e '.[dev]'
 
       - name: Verify vendored stub matches proto
         run: make salesforce-cdc-proto-verify

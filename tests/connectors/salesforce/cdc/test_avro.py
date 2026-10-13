@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import json
+from io import BytesIO
+from types import SimpleNamespace
 from typing import Any
 
+import fastavro
 import pytest
 
 from plynth.connectors.salesforce.cdc import avro
@@ -46,6 +50,45 @@ class TestAvroPayloadDecoder:
 
         with pytest.raises(RuntimeError, match="fastavro runtime is not installed"):
             avro.ensure_fastavro_runtime()
+
+    def test_decodes_real_avro_record_and_reuses_schema(self) -> None:
+        """Round-trip real binary Avro rather than a decoder-shaped test double"""
+        schema = {
+            "type": "record",
+            "name": "Account",
+            "fields": [
+                {"name": "Name", "type": "string"},
+                {"name": "Description", "type": ["null", "string"]},
+                {
+                    "name": "Address",
+                    "type": {
+                        "type": "record",
+                        "name": "Address",
+                        "fields": [{"name": "City", "type": "string"}],
+                    },
+                },
+            ],
+        }
+        record = {
+            "Name": "Example",
+            "Description": None,
+            "Address": {"City": "Utrecht"},
+        }
+        output = BytesIO()
+        fastavro.schemaless_writer(output, schema, record)
+        decoder = avro.AvroPayloadDecoder()
+        schema_json = json.dumps(schema)
+
+        assert decoder.decode(schema_json, output.getvalue()) == record
+        assert decoder.decode(schema_json, output.getvalue()) == record
+
+    def test_real_avro_rejects_truncated_payload(self) -> None:
+        schema = (
+            '{"type":"record","name":"Account",'
+            '"fields":[{"name":"Name","type":"string"}]}'
+        )
+        with pytest.raises(EOFError):
+            avro.AvroPayloadDecoder().decode(schema, b"")
 
     def test_decodes_payload_with_runtime_shim(
         self,
@@ -108,3 +151,19 @@ class TestAvroPayloadDecoder:
             match="Decoded Avro payload is not a dictionary record",
         ):
             decoder.decode('{"type": "record", "name": "Account"}', b"x")
+
+    @pytest.mark.parametrize("missing_hook", ["parse_schema", "schemaless_reader"])
+    def test_rejects_runtime_without_required_callable(
+        self, monkeypatch: pytest.MonkeyPatch, missing_hook: str
+    ) -> None:
+        runtime = SimpleNamespace(
+            parse_schema=lambda schema: schema,
+            schemaless_reader=lambda stream, schema: {},
+        )
+        setattr(runtime, missing_hook, None)
+        monkeypatch.setattr(avro, "_load_fastavro_runtime", lambda: runtime)
+
+        with pytest.raises(RuntimeError, match=f"does not expose {missing_hook}"):
+            avro.AvroPayloadDecoder().decode(
+                '{"type":"record","name":"Account","fields":[]}', b""
+            )

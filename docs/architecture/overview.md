@@ -93,6 +93,21 @@ Configuration is typed and environment-driven through settings classes.
 HTTP settings can wire auth and cache configuration into transport factories.
 No framework-specific configuration logic is allowed in the core package.
 
+## Experimental Release Boundary
+
+Salesforce CDC composes `plynth[grpc,salesforce]`: gRPC and protobuf stay in
+the protocol extra, while Avro decoding belongs to the Salesforce extra.
+The core remains free of those runtime dependencies.
+
+Full tests exercise all implemented extras. Separate clean wheel installation
+tests verify that each documented profile works without development tooling.
+The wheel is built from the source distribution, not from an editable install.
+Codegen is pinned and compared against committed output.
+
+CDC remains experimental pending validation against a real Salesforce org.
+See [ADR-0031](adr/0031-experimental-release-installation-contract.md) for the
+installation and acceptance contract.
+
 ## ADRs
 
 Architecture decisions are captured in ADRs under `docs/architecture/adr/`.

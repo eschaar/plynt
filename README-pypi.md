@@ -12,7 +12,7 @@ Plynth focuses on a stable integration foundation:
 
 ## Installation
 
-Requires **Python 3.11 or later**.
+Supports **Python 3.11-3.14 on Linux**.
 
 ```bash
 pip install plynth
@@ -30,10 +30,15 @@ pip install "plynth[salesforce]"  # Salesforce REST connector
 | Extra        | Installs                                | Typical use                                       |
 | ------------ | --------------------------------------- | ------------------------------------------------- |
 | `httpx`      | `httpx2` transport backend              | Core HTTP transport for sync and async clients    |
+| `grpc`       | gRPC and protobuf runtimes              | Async gRPC clients and transports                 |
 | `django`     | Django adapter support + `httpx2`       | Django integration helpers and cache adapters     |
 | `drf`        | DRF adapter support + Django + `httpx2` | DRF service mixins and exception mapping patterns |
 | `fastapi`    | FastAPI adapter support + `httpx2`      | FastAPI dependency wiring for plynth clients      |
-| `salesforce` | Salesforce connector dependencies       | Typed Salesforce REST APIs, bulk, and AI services |
+| `salesforce` | HTTP, signing, validation, Avro         | REST, bulk, AI; combine with `grpc` for CDC       |
+
+Install `plynth[grpc,salesforce]` for experimental CDC support, including
+vendored Pub/Sub messages and the Avro decoder. Real Salesforce-org
+validation is still required before production CDC use.
 
 ### Public API surface
 
@@ -86,14 +91,15 @@ provider-specific fields in opaque `provider_extensions` payloads.
 
 ## Project Status
 
-Current public release line:
+Plynth remains in the 0.x release line. Documented APIs follow the
+compatibility and deprecation policy in ADR-0027. Current capabilities
+include HTTP, middleware, caching, streaming, Salesforce REST/Bulk/AI,
+LLM provider adapters, Django/DRF/FastAPI adapters, and async gRPC.
 
-- `0.1.0`: clean core foundation
-- `0.2.0`: Salesforce connector baseline
-- `0.2.1`: patch release
-- `0.3.0`: streaming response support
-- `0.4.0`: Salesforce Models and Agent APIs
-- `0.5.0`: raw response access and throttle governance
+The next experimental release candidate focuses on distribution and
+installation hardening. Local and CI tests do not replace validation
+against real external providers. PyPI publication remains disabled until
+release acceptance is explicitly approved.
 
 ## Documentation
 

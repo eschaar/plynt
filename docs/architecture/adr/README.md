@@ -4,7 +4,7 @@ This index lists architecture decision records (ADRs) for plynth.
 
 ## Status Summary
 
-- Accepted: 30
+- Accepted: 31
 - Proposed: 0
 
 ## ADR List
@@ -43,6 +43,7 @@ This index lists architecture decision records (ADRs) for plynth.
 | [ADR-0028](0028-supported-environments-and-extras-policy.md)        | Supported Environments and Extras Policy          | Accepted |
 | [ADR-0029](0029-release-acceptance-gates-and-evidence-model.md)     | Release Acceptance Gates and Evidence Model       | Accepted |
 | [ADR-0030](0030-grpc-protocol-boundary.md)                          | Generic gRPC Protocol Boundary and Scope          | Accepted |
+| [ADR-0031](0031-experimental-release-installation-contract.md)      | Experimental Release Installation Contract        | Accepted |
 
 <!-- markdownlint-enable MD060 -->
 
@@ -56,4 +57,4 @@ Add an ADR for changes that affect:
 - middleware execution semantics,
 - installation extras or optional-framework strategy.
 
-Use the next sequential number (currently: `0031`).
+Use the next sequential number (currently: `0032`).

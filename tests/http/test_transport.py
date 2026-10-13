@@ -122,6 +122,22 @@ def _mock_response(
 class TestHttpxSyncTransport:
     """Tests for HttpxSyncTransport."""
 
+    @pytest.mark.parametrize(
+        "transport_type", [HttpxSyncTransport, HttpxAsyncTransport]
+    )
+    def test_missing_backend_fails_before_constructing_transport(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        transport_type: type[HttpxSyncTransport] | type[HttpxAsyncTransport],
+    ) -> None:
+        error = ModuleNotFoundError("No module named 'httpx2'", name="httpx2")
+        monkeypatch.setattr(transport_module, "_HTTPX_IMPORT_ERROR", error)
+
+        with pytest.raises(ImportError, match=r"plynth\[httpx\]") as raised:
+            transport_type()
+
+        assert raised.value.__cause__ is error
+
     def test_send_returns_response(self) -> None:
         """A successful GET returns a Response with the correct status and body."""
         body = json.dumps({"ok": True}).encode()
