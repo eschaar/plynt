@@ -15,30 +15,30 @@ ______________________________________________________________________
 
 <!-- markdownlint-disable MD060 -->
 
-| #   | Area                                               | Status          | Notes                                                                              |
-| --- | -------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------- |
-| —   | `plynth.base` — protocol-agnostic abstractions     | **Done**        | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings        |
-| —   | `plynth.http` — transport, clients, auth, settings | **Done**        | httpx transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
-| —   | `plynth.middleware` — core middleware suite        | **Done**        | Protocol-agnostic middleware suite                                                 |
-| —   | `plynth.http.middleware` layer                     | **Done**        | HTTP auth middleware and HTTP-only transport concerns                              |
-| 1e  | `TracingMiddleware` `plynth[otel]`                 | **Conditional** | ADR required; use OTel auto-instrumentation unless plynth spans are needed         |
-| 1f  | `MetricsMiddleware` `plynth[prometheus]`           | **Conditional** | ADR required; use OTel unless standalone metrics are needed                        |
-| 1g  | `MockMiddleware`                                   | **Planned**     | Test/dev only; Tier 3                                                              |
-| 2   | Salesforce connector — REST + Bulk + AI            | **Done**        | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API     |
-| 2f  | Salesforce Pub/Sub CDC                             | **Deferred**    | gRPC ADR required first                                                            |
-| 2g  | `plynth-salesforce` package extraction             | **Deferred**    | After multi-connector gate                                                         |
-| 2l  | Salesforce GraphQL API                             | **Conditional** | Implement on repeated demand only                                                  |
-| 3   | Streaming response (SSE / chunked HTTP)            | **Done**        | ADR-0017; enables Salesforce AI and LLM connector                                  |
-| 3b  | Raw response access on `APIClient`                 | **Done**        | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                   |
-| 4a  | Django core adapter `plynth[django]`               | **Done**        | Shipped in v0.8.0; settings bridge, cache backend, transport helpers               |
-| 4b  | DRF integration layer `plynth[drf]`                | **Done**        | Shipped in v0.8.0; mixins, header helpers, sync/async support                      |
-| 4c  | FastAPI framework adapter `plynth[fastapi]`        | **Done**        | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs       |
-| 4d  | Flask framework adapter `plynth[flask]`            | **Conditional** | Convenience layer only; validate demand before ADR                                 |
-| 5   | Cache backend documentation                        | **Done**        | Redis SSL, framework-native wrapping, and custom backend how-to guides added       |
-| 6   | gRPC transport `plynth[grpc]`                      | **Planned**     | ADR required; first use case: Salesforce CDC                                       |
-| 7   | AI / LLM connector `plynth.connectors.llm`         | **Done**        | Generic contract, sync/async parity, OpenAI and Anthropic adapters                 |
-| 8   | SOAP transport `plynth[soap]`                      | **Planned**     | Long-term; ADR required; after gRPC validated                                      |
-| 9   | Connector package extraction                       | **Planned**     | Policy defined; individual extractions need ADR                                    |
+| #   | Area                                               | Status           | Notes                                                                               |
+| --- | -------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| —   | `plynth.base` — protocol-agnostic abstractions     | **Done**         | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings         |
+| —   | `plynth.http` — transport, clients, auth, settings | **Done**         | httpx2 transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
+| —   | `plynth.middleware` — core middleware suite        | **Done**         | Protocol-agnostic middleware suite                                                  |
+| —   | `plynth.http.middleware` layer                     | **Done**         | HTTP auth middleware and HTTP-only transport concerns                               |
+| 1e  | `TracingMiddleware` `plynth[otel]`                 | **Conditional**  | ADR required; use OTel auto-instrumentation unless plynth spans are needed          |
+| 1f  | `MetricsMiddleware` `plynth[prometheus]`           | **Conditional**  | ADR required; use OTel unless standalone metrics are needed                         |
+| 1g  | `MockMiddleware`                                   | **Planned**      | Test/dev only; Tier 3                                                               |
+| 2   | Salesforce connector — REST + Bulk + AI            | **Done**         | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API      |
+| 2f  | Salesforce Pub/Sub CDC                             | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
+| 2g  | `plynth-salesforce` package extraction             | **Deferred**     | After multi-connector gate                                                          |
+| 2l  | Salesforce GraphQL API                             | **Conditional**  | Implement on repeated demand only                                                   |
+| 3   | Streaming response (SSE / chunked HTTP)            | **Done**         | ADR-0017; enables Salesforce AI and LLM connector                                   |
+| 3b  | Raw response access on `APIClient`                 | **Done**         | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                    |
+| 4a  | Django core adapter `plynth[django]`               | **Done**         | Shipped in v0.8.0; settings bridge, cache backend, transport helpers                |
+| 4b  | DRF integration layer `plynth[drf]`                | **Done**         | Shipped in v0.8.0; mixins, header helpers, sync/async support                       |
+| 4c  | FastAPI framework adapter `plynth[fastapi]`        | **Done**         | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs        |
+| 4d  | Flask framework adapter `plynth[flask]`            | **Conditional**  | Convenience layer only; validate demand before ADR                                  |
+| 5   | Cache backend documentation                        | **Done**         | Redis SSL, framework-native wrapping, and custom backend how-to guides added        |
+| 6   | gRPC transport `plynth[grpc]`                      | **Implemented**  | ADR-0030; async calls and optional runtime                                          |
+| 7   | AI / LLM connector `plynth.connectors.llm`         | **Done**         | Generic contract, sync/async parity, OpenAI and Anthropic adapters                  |
+| 8   | SOAP transport `plynth[soap]`                      | **Planned**      | Long-term; ADR required; after gRPC validated                                       |
+| 9   | Connector package extraction                       | **Planned**      | Policy defined; individual extractions need ADR                                     |
 
 <!-- markdownlint-enable MD060 -->
 
@@ -47,9 +47,45 @@ Near-term scope note for item 7:
 - Provider adapters for OpenAI Responses and Anthropic Messages are
   implemented.
 
+Current delivery focus is hardening the experimental release candidate:
+installation isolation, complete adapter tests, reproducible CDC codegen,
+and distribution verification. Do not expand transport or connector scope
+before the existing release gates have evidence.
+
+### Experimental Candidate Acceptance
+
+- Local full suites pass on Linux Python 3.11-3.14 with 100% measured
+  statement coverage. Coverage is not branch coverage or provider validation.
+- Isolated installed-wheel profiles and exact CDC runtime minima pass.
+- Pinned codegen reproduces the vendored output; consumers need no generator.
+- Obtain full Check, Verify, and Distribution CI evidence for the final PR
+  revision before acceptance.
+- Validate real Salesforce auth, schemas, replay fidelity, and long-running
+  CDC operation separately. Integer replay IDs remain an unverified fit for
+  Salesforce's opaque cursors; `EARLIEST` is not exposed by the public request.
+- Leave release versions and tags to CI/CD and release-please. No named RC,
+  release, or publication is approved by local hardening alone.
+
+See the [hardening evidence](../releases/2026-10-13-experimental-rc-hardening-evidence.md)
+for revision-specific results and the
+[CDC deployment guide](../connectors/salesforce/user/how-to/deploy-cdc.md)
+for consumer responsibilities and API limitations.
+
+## Delivery Principles
+
+- Preserve sync and async support as one architectural principle across the
+  product roadmap.
+- Phase delivery by capability, not by one global transport milestone.
+- Keep stable HTTP capabilities on a sync/async parity path.
+- Treat gRPC and Salesforce eventing as async-first roadmap work.
+- Evaluate sync eventing later; it is not a current delivery promise.
+
 ______________________________________________________________________
 
-## Implemented Baseline (through v0.7.1)
+## Implemented Baseline (Current Checkout)
+
+This section describes implemented code, not a claim that every capability
+has been published in a release.
 
 ### Terminology baseline
 
@@ -232,7 +268,7 @@ ______________________________________________________________________
 
 ## Release Strategy
 
-Current release history:
+Selected historical release milestones:
 
 1. `0.1.0` core baseline release.
 1. `0.2.0` Salesforce connector baseline release.
@@ -255,12 +291,14 @@ Forward path:
 - Core API surface frozen for 1.0 preparation.
 - ADR set aligned with shipped behavior.
 - Full quality gate green (lint, typecheck, tests, coverage).
+- Full coverage runs enforce the configured 100% statement-coverage gate.
 - Public docs complete for core usage patterns.
 - Release automation and versioning policy validated end-to-end.
 
 ### Definition of Done: `v1.0.0` (Core + Salesforce)
 
-- Sync and async parity for supported Salesforce features.
+- Sync and async parity for supported Salesforce REST features; eventing
+  retains its explicit async-only boundary until a separate decision.
 - Connector docs and examples usable without internal context.
 - Stable error model and retry behavior documented and tested.
 - Explicit scope boundaries documented (what is supported vs deferred).
@@ -427,20 +465,18 @@ Implementation: `SalesforceBulkService` and `AsyncSalesforceBulkService` in
 lifecycle, exponential-backoff polling, auto-abort on failure, CSV helpers,
 `Sforce-Locator` pagination. 69 unit tests.
 
-#### 2f. Salesforce Pub/Sub API — Change Data Capture (deferred)
+#### 2f. Salesforce Pub/Sub API — Change Data Capture (experimental)
 
-- gRPC-based streaming API for CDC events
-- Protobuf schema resolution via Salesforce Schema Registry
-- Async consumer loop
+Implemented under SF-0013 and ADR-0030:
 
-**Note:** This is explicitly gRPC, not HTTP. The transport abstraction is
-protocol-agnostic (ADR-0006 allows non-HTTP transports via direct
-`SyncTransport` / `AsyncTransport` subclassing). A `GrpcAsyncTransport`
-extending `AsyncTransport` directly is the expected approach — no changes to
-`BaseSyncTransport` / `BaseAsyncTransport` are needed or expected.
+- Vendored Pub/Sub messages and async subscription orchestration.
+- Auth metadata, schema caching, Avro decoding, and header bitmap expansion.
+- Bounded batch flow control, reconnect, checkpoints, and cooperative shutdown.
+- Real local gRPC tests and isolated distribution smoke tests.
 
-**Prerequisite:** Write an ADR for gRPC transport before implementation.
-Defer until REST + Bulk are validated.
+Install `plynth[grpc,salesforce]`. Real Salesforce auth, schemas, replay
+cursor fidelity, and long-running operation remain acceptance checks before
+production use. Shadow-database materialization stays outside this library.
 
 #### 2g. Package extraction (`plynth-salesforce`)
 
@@ -693,24 +729,16 @@ ______________________________________________________________________
 
 ### 6. gRPC transport (`plynth[grpc]`)
 
-**Status:** Not started. Requires ADR before implementation.
+**Status:** Implemented under accepted ADR-0030.
 
-The transport abstraction (ADR-0006) is protocol-agnostic: a `GrpcAsyncTransport`
-extending `AsyncTransport` directly is the expected implementation path — no
-changes to `BaseSyncTransport` / `BaseAsyncTransport` are needed.
+- `GrpcAioTransport` manages an optional `grpc.aio` channel.
+- `AsyncGrpcClient` supports unary and streaming call patterns.
+- gRPC errors, settings, interceptors, and protobuf helpers are protocol-scoped.
+- Salesforce auth metadata, Avro schemas, replay, and flow control remain
+  in the Salesforce connector.
 
-Anticipated scope:
-
-- `GrpcAsyncTransport` — wraps a `grpc.aio` channel; maps plynth `Request` /
-  `Response` onto gRPC unary calls.
-- Auth: pluggable via gRPC `CallCredentials` (maps to existing auth concepts).
-- First use case: Salesforce Pub/Sub API (Change Data Capture, CDC events).
-- Protobuf schema resolution and streaming consumer loop are connector-level
-  concerns, not transport-level.
-
-**Prerequisite:** New ADR before implementation. Install extra `plynth[grpc]`
-per ADR-0003 dependency policy. Defer until Salesforce REST + Bulk are
-validated.
+No sync gRPC API is promised. ADR-0031 defines runtime compatibility and
+distribution checks for the experimental release candidate.
 
 ______________________________________________________________________
 

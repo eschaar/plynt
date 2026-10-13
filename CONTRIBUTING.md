@@ -96,6 +96,34 @@ convention are rejected before the commit is created.
 - Squash merge is preferred — the PR title becomes the squash commit message,
   so follow the commit convention for PR titles too.
 
+## Distribution and CDC code generation
+
+Development bootstrap includes every runtime extra. Run `make install`,
+then `make check` before proposing a release. The Distribution workflow
+builds a wheel from the sdist and checks fresh core and optional installs;
+the Verify workflow runs the complete Linux Python matrix.
+
+The full suite enforces 100% statement coverage for the configured source
+scope. Keep the existing exclusions unchanged; do not hide missing behavior
+with new coverage exclusions. This is not a branch-coverage guarantee.
+For a focused test run, use `pytest <test-path> --no-cov`; partial suites
+are not expected to cover the entire package.
+
+Vendored Salesforce Pub/Sub Python files are generated, not hand-edited.
+The development extra pins `grpcio-tools` to the version that produced
+the committed output:
+
+```bash
+make salesforce-cdc-proto-generate
+make salesforce-cdc-proto-verify
+```
+
+Upstream schema updates are a separate, reviewed operation: retrieve the
+chosen upstream commit, verify its provenance and checksum, update the
+vendored source metadata, and regenerate both Python files together.
+There is no automated `salesforce-cdc-proto-update` target.
+No generator is required by consumers of the installed wheel.
+
 ## Releases
 
 Releases are fully automated. On every merge to `main`, `release-please`

@@ -1,0 +1,44 @@
+# Salesforce CDC proto upstream watch.
+# Purpose: flag (not auto-fix) when Salesforce's upstream pubsub_api.proto
+# diverges from the vendored copy. Low frequency by design: the upstream
+# proto is a stable, rarely-changed contract (see _proto/SOURCE.md). This
+# job never modifies files or opens PRs — a human must review and re-vendor
+# deliberately via `make salesforce-cdc-proto-generate`.
+name: Salesforce CDC Proto Watch
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"  # Monthly on the 1st at 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  PROTO_DIR: src/plynth/connectors/salesforce/cdc/_proto
+  UPSTREAM_PROTO_URL: https://raw.githubusercontent.com/forcedotcom/pub-sub-api/main/pubsub_api.proto
+
+jobs:
+  watch:
+    name: Compare vendored proto against upstream
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download current upstream proto
+        run: curl -fsSL "$UPSTREAM_PROTO_URL" -o /tmp/upstream_pubsub_api.proto
+
+      - name: Compare against vendored copy
+        run: |
+          if diff -q /tmp/upstream_pubsub_api.proto "$PROTO_DIR/pubsub_api.proto" > /dev/null; then
+            echo "Vendored pubsub_api.proto matches upstream. No action needed."
+          else
+            echo "::warning::Upstream pubsub_api.proto has changed since it was vendored."
+            echo "Review the diff and re-vendor deliberately with:"
+            echo "  make salesforce-cdc-proto-generate"
+            echo "Update $PROTO_DIR/SOURCE.md with the new upstream commit and hash."
+            diff /tmp/upstream_pubsub_api.proto "$PROTO_DIR/pubsub_api.proto" || true
+            exit 1
+          fi

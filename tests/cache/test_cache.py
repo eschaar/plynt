@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 import sys
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from plynth.base.cache import CacheConfigBase
+from plynth.base.cache import (
+    CacheBackend,
+    CacheConfigBase,
+    SupportsSizeInfo,
+    SupportsStats,
+    SupportsTTL,
+)
 from plynth.cache import (
     DummyCache,
     DummyCacheConfig,
@@ -17,6 +24,46 @@ from plynth.cache import (
     RedisCacheConfig,
     cache_from_config,
 )
+
+
+class TestIncompleteCacheBackend:
+    """Ensure inherited contract methods fail instead of silently succeeding"""
+
+    @pytest.mark.parametrize(
+        ("method", "arguments"),
+        [
+            ("get", ("key",)),
+            ("set", ("key", "value")),
+            ("delete", ("key",)),
+            ("clear", ()),
+            ("ttl", ("key",)),
+            ("stats", ()),
+        ],
+    )
+    def test_unimplemented_operation_raises(
+        self, method: str, arguments: tuple[str, ...]
+    ) -> None:
+        backend = self._incomplete_backend()
+
+        with pytest.raises(NotImplementedError):
+            getattr(backend, method)(*arguments)
+
+    @pytest.mark.parametrize("attribute", ["maxsize", "currsize"])
+    def test_unimplemented_size_property_raises(self, attribute: str) -> None:
+        backend = self._incomplete_backend()
+
+        with pytest.raises(NotImplementedError):
+            getattr(backend, attribute)
+
+    @staticmethod
+    def _incomplete_backend() -> Any:
+        class IncompleteBackend(
+            CacheBackend, SupportsTTL, SupportsStats, SupportsSizeInfo
+        ):
+            pass
+
+        backend_type: type[Any] = IncompleteBackend
+        return backend_type()
 
 
 class TestCacheConfigBase:

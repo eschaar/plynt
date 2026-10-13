@@ -61,8 +61,8 @@ full walkthrough.
 
 ## Connectors
 
-Plynth ships with a Salesforce connector. Connector-specific documentation
-lives alongside the connector:
+Plynth ships with Salesforce and generic LLM connectors. Connector-specific
+documentation lives alongside each connector:
 
 - [Generic LLM connector](../connectors/llm/README.md)
 - [Salesforce connector](../connectors/salesforce/user/README.md)
@@ -78,11 +78,14 @@ and basic service behavior end-to-end.
 
 ## Installation extras
 
-| Extra                | Installs                          | Use when                             |
-| -------------------- | --------------------------------- | ------------------------------------ |
-| `plynth[httpx]`      | `httpx2`                          | You need the built-in HTTP transport |
-| `plynth[salesforce]` | `httpx2`, `PyJWT`, `cryptography` | Salesforce connector                 |
-| `plynth[oauth]`      | OAuth2 helpers                    | Custom OAuth2 flows                  |
-| `plynth[dev]`        | Test and lint dependencies        | Contributing to Plynth               |
+Install `plynth[httpx]` for built-in HTTP transports or
+`plynth[salesforce]` for Salesforce REST, Bulk, and AI services.
+Experimental Salesforce CDC composes `plynth[grpc,salesforce]`,
+including the Avro decoder.
 
-See [Installation reference](reference/installation.md) for details.
+Framework adapters use the `django`, `drf`, and `fastapi` extras. OAuth2
+helpers are included in the package; there is no separate `oauth` extra.
+Development bootstrap deliberately includes all implemented runtime extras.
+
+See the canonical [installation reference](reference/installation.md) for
+the complete profiles, runtime compatibility, and development commands.

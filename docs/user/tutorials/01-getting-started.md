@@ -6,7 +6,7 @@ JSON REST API. No external accounts or credentials are needed.
 
 ## Prerequisites
 
-- Python 3.12 or later
+- Python 3.11-3.14 on Linux
 - `pip` (or another package installer)
 
 ## Step 1 — Install
@@ -34,8 +34,10 @@ print(response.status_code)   # 200
 print(response.json())
 ```
 
-`Transport.send()` returns a `Response` with `status_code`, `headers`,
-`content` (bytes), and a `.json()` helper.
+The built-in HTTP transport returns an `HttpResponse` with `status_code`,
+`headers`, `content` (bytes), and a `.json()` helper. The neutral core
+`Response` carries bytes only; caller-supplied transports need not provide
+HTTP-specific parsing helpers.
 
 ## Step 3 — Use HTTPClient for convenience
 
@@ -62,8 +64,8 @@ print(resp.json())
 
 - It sends `Content-Type: application/json` and `Accept: application/json`
   by default.
-- It calls `raise_for_status()` on every response, raising an
-  `HttpStatusError` on 4xx and 5xx.
+- It maps 4xx and 5xx statuses to typed `HttpStatusError` subclasses by
+  default. Use `raw=True` to bypass that mapping.
 
 ```python
 from plynth.http.client import APIClient

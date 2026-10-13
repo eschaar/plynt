@@ -37,11 +37,12 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 try:
     import httpx2 as httpx
-except ImportError as exc:  # pragma: no cover
-    raise ImportError(
-        "httpx2 is required for HttpxSyncTransport and HttpxAsyncTransport. "
-        "Install it with: pip install plynth[httpx]"
-    ) from exc
+except ModuleNotFoundError as exc:  # pragma: no cover - clean core wheel smoke
+    if exc.name != "httpx2":
+        raise
+    _HTTPX_IMPORT_ERROR: ModuleNotFoundError | None = exc
+else:
+    _HTTPX_IMPORT_ERROR = None
 
 from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynth.base.request import Request
@@ -63,7 +64,17 @@ __all__ = [
 
 _logger = logging.getLogger(__name__)
 
-HttpxClientT = TypeVar("HttpxClientT", httpx.Client, httpx.AsyncClient)
+HttpxClientT = TypeVar("HttpxClientT", "httpx.Client", "httpx.AsyncClient")
+
+
+def _ensure_httpx_runtime() -> None:
+    """Require the optional backend only when constructing an HTTP transport"""
+    if _HTTPX_IMPORT_ERROR is not None:
+        raise ImportError(
+            "httpx2 is required for HttpxSyncTransport and HttpxAsyncTransport. "
+            "Install it with: pip install plynth[httpx]"
+        ) from _HTTPX_IMPORT_ERROR
+
 
 # Headers that must never appear in log output (case-insensitive match).
 _SCRUBBED_HEADERS: frozenset[str] = frozenset(
@@ -214,11 +225,13 @@ def _build_httpx_client_common(
 
 def _build_httpx_client(settings: HTTPSettings) -> httpx.Client:
     """Construct an ``httpx2.Client`` from ``HTTPSettings``."""
+    _ensure_httpx_runtime()
     return _build_httpx_client_common(settings, factory=httpx.Client)
 
 
 def _build_httpx_async_client(settings: HTTPSettings) -> httpx.AsyncClient:
     """Construct an ``httpx2.AsyncClient`` from ``HTTPSettings``."""
+    _ensure_httpx_runtime()
     return _build_httpx_client_common(settings, factory=httpx.AsyncClient)
 
 
@@ -264,6 +277,7 @@ class HttpxSyncTransport(BaseSyncTransport):
         log_bodies: bool = False,
     ) -> None:
         """Initialise a new ``HttpxSyncTransport``."""
+        _ensure_httpx_runtime()
         super().__init__(middlewares=middlewares)
         self._client = client or httpx.Client()
         self._log_bodies = log_bodies
@@ -486,6 +500,7 @@ class HttpxAsyncTransport(BaseAsyncTransport):
         log_bodies: bool = False,
     ) -> None:
         """Initialise a new ``HttpxAsyncTransport``."""
+        _ensure_httpx_runtime()
         super().__init__(middlewares=middlewares)
         self._client = client or httpx.AsyncClient()
         self._log_bodies = log_bodies

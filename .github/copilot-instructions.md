@@ -294,3 +294,17 @@ Stop and request an ADR before implementation if the change affects:
 - Follow the conventions of the Python standard library and popular frameworks for consistency.
 
 > Example: `request.py` and `response.py` for single data carriers; `errors.py` for multiple error types.
+
+### Class naming length and consistency
+
+- Before naming a new public class, check sibling classes already exported in
+  the same module's `__all__` and follow their established
+  `<Adjective><Domain><Concept>` pattern instead of inventing a new shape.
+- Avoid redundant words that repeat what a wrapped protocol or base type
+  already conveys (e.g. prefer `CacheSalesforceCDCCheckpointStore` over
+  `CacheBackendSalesforceCDCCheckpointStore` when the sibling
+  `InMemorySalesforceCDCCheckpointStore` already sets the pattern).
+- Renaming an already-exported public symbol touches the defining module, the
+  package `__init__.py` (import and `__all__`), tests, and any docs/how-to
+  examples referencing it. Grep the repository for the old name before
+  declaring a rename complete.

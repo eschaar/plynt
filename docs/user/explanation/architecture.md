@@ -4,7 +4,7 @@ This article describes how Plynth is structured and how its layers
 interact. Reading it will help you understand where to hook in your own
 logic and why each piece exists where it does.
 
-## Layers at a glance
+## HTTP layers at a glance
 
 ```mermaid
 graph TB
@@ -33,7 +33,7 @@ graph TB
 
 ## The transport layer
 
-The **transport** is the only component that makes network calls. It wraps
+The HTTP **transport** is the component that makes HTTP network calls. It wraps
 an HTTP library (currently httpx2) and applies the middleware chain before
 and after every request.
 
@@ -208,3 +208,26 @@ same pattern you would use for your own connector:
 
 See [Tutorial: Build your own connector](../tutorials/02-build-a-connector.md)
 to create a connector from scratch.
+
+## Optional gRPC and Salesforce CDC
+
+The HTTP diagrams above do not describe gRPC. `plynth.grpc` is a sibling
+protocol namespace with async transport/client helpers and protocol-specific
+interceptors. It does not reuse the HTTP middleware chain.
+
+The experimental Salesforce CDC package wraps a caller-supplied async gRPC
+channel through its Pub/Sub adapter. Auth metadata, schema caching, Avro
+decoding, field bitmap expansion, flow control, replay, and checkpoints stay
+inside the connector. Snapshot reconciliation and durable processing belong
+to the consuming application.
+
+Install `plynth[grpc,salesforce]` and see the
+[CDC deployment guide](../../connectors/salesforce/user/how-to/deploy-cdc.md).
+This path is async-only and still requires real-org validation.
+See [ADR-0030](../../architecture/adr/0030-grpc-protocol-boundary.md) and
+[ADR-0031](../../architecture/adr/0031-experimental-release-installation-contract.md)
+for protocol and installation boundaries.
+
+Core-only installations can still import HTTP clients and inject their own
+transports. Constructing a built-in httpx2 transport requires `plynth[http]`;
+see the [installation reference](../reference/installation.md).

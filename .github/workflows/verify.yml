@@ -40,8 +40,24 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install dependencies
-        run: pip install -e .[httpx,salesforce,django,drf,test]
+      - name: Install tox
+        run: python -m pip install --upgrade 'pip>=26.2,<27' tox
 
-      - name: Test
-        run: pytest --tb=short -q
+      - name: Tox env listing (evidence)
+        run: |
+          mkdir -p evidence
+          tox -av | tee evidence/tox-env-list-${{ matrix.python-version }}.txt
+
+      - name: Test via tox
+        run: |
+          tox -e ${{ matrix.python-version }} \
+            | tee evidence/tox-run-${{ matrix.python-version }}.txt
+
+      - name: Upload tox evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: tox-evidence-py${{ matrix.python-version }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 7

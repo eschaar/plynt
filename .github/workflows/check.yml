@@ -37,7 +37,38 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e .[httpx,salesforce,django,drf,test]
+        run: |
+          python -m pip install --upgrade 'pip>=26.2,<27'
+          pip install -e '.[httpx,grpc,salesforce,django,drf,fastapi,test]'
+
+      - name: Check installed dependency consistency
+        run: pip check
 
       - name: Test
         run: pytest --tb=short -q
+
+  salesforce-cdc-proto-drift:
+    # Fail if the vendored Salesforce Pub/Sub stub is out of sync with its
+    # vendored .proto source. Does not regenerate or auto-fix; a mismatch
+    # must be resolved by a human running `make salesforce-cdc-proto-generate`
+    # and reviewing the diff.
+    name: Salesforce CDC Proto Drift Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade 'pip>=26.2,<27'
+          pip install -e '.[dev]'
+
+      - name: Verify vendored stub matches proto
+        run: make salesforce-cdc-proto-verify VENV_BIN="$(dirname "$(command -v python)")"

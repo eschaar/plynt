@@ -1,12 +1,18 @@
 """Tests for plynth.base.transport (SyncTransport and AsyncTransport)."""
 
 import json
+from typing import Any
 
 import pytest
 
 from plynth.base.request import Request
 from plynth.base.response import Response
 from plynth.base.transport import AsyncTransport, SyncTransport
+
+
+def _instantiate(cls: type[Any]) -> Any:
+    """Instantiate class using dynamic type to support abstract-class checks"""
+    return cls()
 
 
 class FakeSyncTransport(SyncTransport):
@@ -31,7 +37,7 @@ class TestSyncTransport:
     def test_is_abstract(self) -> None:
         """Validate is abstract."""
         with pytest.raises(TypeError):
-            SyncTransport()  # type: ignore[abstract]
+            _instantiate(SyncTransport)
 
     def test_concrete_subclass_is_instantiable(self) -> None:
         """Validate concrete subclass is instantiable."""
@@ -52,10 +58,8 @@ class TestSyncTransport:
         class IncompleteTransport(SyncTransport):
             """Represent IncompleteTransport."""
 
-            pass
-
         with pytest.raises(TypeError):
-            IncompleteTransport()  # type: ignore[abstract]
+            _instantiate(IncompleteTransport)
 
 
 class TestAsyncTransport:
@@ -64,7 +68,7 @@ class TestAsyncTransport:
     def test_is_abstract(self) -> None:
         """Validate is abstract."""
         with pytest.raises(TypeError):
-            AsyncTransport()  # type: ignore[abstract]
+            _instantiate(AsyncTransport)
 
     def test_concrete_subclass_is_instantiable(self) -> None:
         """Validate concrete subclass is instantiable."""
@@ -85,7 +89,5 @@ class TestAsyncTransport:
         class IncompleteTransport(AsyncTransport):
             """Represent IncompleteTransport."""
 
-            pass
-
         with pytest.raises(TypeError):
-            IncompleteTransport()  # type: ignore[abstract]
+            _instantiate(IncompleteTransport)

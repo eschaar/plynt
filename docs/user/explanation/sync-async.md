@@ -38,9 +38,15 @@ adapters and no surprises.
 
 ## Async parity
 
-Every sync class has an async counterpart with identical behaviour and
-identical method signatures. Any middleware, service, or connector that
-exists in the sync variant also exists in the async variant.
+HTTP transports, clients, middleware, and supported REST services provide
+sync and async variants. Shared domain behavior should not depend on the
+execution model.
+
+This does not promise parity for every protocol. The initial gRPC foundation
+and experimental Salesforce CDC subscriber are async-only under
+[ADR-0030](../../architecture/adr/0030-grpc-protocol-boundary.md) and
+[SF-0013](../../connectors/salesforce/architecture/adr/sf-0013-salesforce-eventing-architecture.md).
+There is no synchronous CDC subscriber.
 
 When writing a connector for both models, create a sync service class and
 an async service class that share the URL-building and response-parsing

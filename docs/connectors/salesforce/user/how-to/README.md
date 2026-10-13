@@ -33,6 +33,8 @@
 
 - [Add resilience with circuit breaking](resilience.md) — protect against
   Salesforce downtime and observe quota usage
+- [Connect and deploy the experimental CDC subscriber](deploy-cdc.md) —
+  flow control, field decoding, checkpoints, recovery, and graceful shutdown
 
 ## Errors
 
