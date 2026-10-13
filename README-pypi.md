@@ -12,7 +12,7 @@ Plynth focuses on a stable integration foundation:
 
 ## Installation
 
-Supports **Python 3.11-3.14 on Linux**.
+Supports **Python 3.11-3.15 on Linux**.
 
 ```bash
 pip install plynth

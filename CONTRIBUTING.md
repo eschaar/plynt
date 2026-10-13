@@ -96,6 +96,54 @@ convention are rejected before the commit is created.
 - Squash merge is preferred — the PR title becomes the squash commit message,
   so follow the commit convention for PR titles too.
 
+## Local Python Bootstrap
+
+The supported matrix is standard CPython 3.11-3.15 on Linux.
+`.python-version` lists exact local versions, with 3.15.0 as the default.
+The file does not install Python; pyenv must be installed and initialized
+before it can select versions or expose the executables needed by tox.
+
+Install the compiler and libraries documented in pyenv's
+[build prerequisites](https://github.com/pyenv/pyenv/wiki#suggested-build-environment).
+For a new pyenv installation, use a reviewed release:
+
+```bash
+git clone --branch v2.8.9 --depth 1 https://github.com/pyenv/pyenv.git "$HOME/.pyenv"
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init - bash)"
+make python-install
+pyenv versions
+python --version
+```
+
+The clone command assumes `$HOME/.pyenv` does not already exist. For an
+existing installation, update it using the
+[official pyenv instructions](https://github.com/pyenv/pyenv#upgrading)
+so its build definitions include 3.15.0.
+Add the environment and initialization lines to your shell startup file
+following pyenv's instructions; use your shell name instead of `bash`
+when appropriate. Repository tooling never edits that file automatically.
+
+`make python-install` installs all five listed interpreters, skips installed
+versions, and refreshes shims. The multi-version selection exposes each
+`python3.x` executable to tox; `python` selects the first available version.
+Confirm 3.15.0 is installed rather than relying on fallback to an older one.
+
+Then run `make install`, `make check`, and `make test-all`.
+An existing `.venv` does not change Python when the version file changes.
+To preserve it, create a 3.15 environment inside the already-ignored `venv/`:
+
+```bash
+make install VENV=venv/python315 PYTHON=python3.15
+make check VENV=venv/python315
+make test-all VENV=venv/python315
+```
+
+CI uses `actions/setup-python` for the same minor-version matrix, not pyenv.
+Poetry is not part of this repository's bootstrap or test workflow.
+See [ADR-0033](docs/architecture/adr/0033-python-315-support-and-local-pyenv.md).
+
 ## Distribution and CDC code generation
 
 Development bootstrap includes every runtime extra. Run `make install`,

@@ -213,6 +213,43 @@ The earlier PR #61 gates do not establish acceptance of the refreshed
 dependency versions. Django remains below 6, and provider validation
 limitations are unchanged.
 
+### Python 3.15 Support Follow-up
+
+[ADR-0033](../architecture/adr/0033-python-315-support-and-local-pyenv.md)
+extends the required Linux matrix to standard CPython 3.11-3.15 and documents
+an explicit local pyenv bootstrap. The original four-version results above
+remain historical evidence, not results retroactively attributed to 3.15.
+
+The full installed-wheel tox matrix passes on CPython 3.11.17, 3.12.15,
+3.13.16, 3.14.8, and 3.15.0. Each environment passes 2,141 tests with
+7,124 measured statements, zero misses, and 100% statement coverage.
+The three external tests remain deselected; no full-suite tests are skipped.
+
+All eight isolated wheel profiles pass on both Python 3.11 and 3.15:
+core, HTTP, gRPC, CDC, Django, DRF, FastAPI, and exact CDC minima.
+The exact minima remain grpcio 1.84.0, protobuf 7.35.1, fastavro 1.13.1,
+and PyJWT 2.15.1. Dependency consistency passes in all 16 environments,
+without setuptools or the generator. Profiles without CDC retain the
+existing empty CDC parametrization skip; the full suites exercise that test.
+Wheel-from-sdist build, twine validation, `make check`, and changed-file
+formatting/configuration hooks pass.
+The documented `make install VENV=venv/python315 PYTHON=python3.15` bootstrap
+also passes, followed by `make check VENV=venv/python315` on Python 3.15.0.
+That directory uses the existing `venv/` ignore rule and preserves `.venv`.
+
+Local compatibility testing uses session-local prebuilt interpreters.
+pyenv 2.8.9 has definitions for all five listed versions. Its version
+selection and shims expose Python 3.15.0 by default and all five versioned
+executables. The `make python-install` target passes with these interpreters
+registered as existing versions, and fails explicitly when pyenv is absent.
+This verifies selection, rehash, and the skip-existing path, not source builds.
+Source compilation is not tested because the host lacks a compiler.
+The bootstrap documentation requires OS build prerequisites; no host pyenv
+installation or shell startup configuration is changed by this verification.
+
+These local results do not replace remote Check, Verify, and Distribution
+gates for the final revision. Salesforce provider acceptance remains open.
+
 ### Acceptance Checklist
 
 1. Review the dependency-refresh follow-up, then obtain successful Check,

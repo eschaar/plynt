@@ -54,7 +54,7 @@ before the existing release gates have evidence.
 
 ### Experimental Candidate Acceptance
 
-- Local full suites pass on Linux Python 3.11-3.14 with 100% measured
+- Full suites target Linux Python 3.11-3.15 with 100% measured
   statement coverage. Coverage is not branch coverage or provider validation.
 - Isolated installed-wheel profiles and exact CDC runtime minima pass.
 - Pinned codegen reproduces the vendored output; consumers need no generator.
@@ -251,7 +251,7 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
 - Full quality gate required and currently green: formatting, markdown lint,
   linting, type-checking, and test execution
 - ruff + mypy enforced via pre-commit
-- tox matrix: Python 3.11, 3.12, 3.13, 3.14
+- tox matrix: Python 3.11, 3.12, 3.13, 3.14, 3.15
 - ADR set maintained as the source of architectural truth
 
 ### Delivered Since v0.2.1

@@ -6,7 +6,7 @@ JSON REST API. No external accounts or credentials are needed.
 
 ## Prerequisites
 
-- Python 3.11-3.14 on Linux
+- Python 3.11-3.15 on Linux
 - `pip` (or another package installer)
 
 ## Step 1 — Install
@@ -30,7 +30,7 @@ transport = HttpxSyncTransport()
 request = Request(method="GET", url="https://httpbin.org/get")
 response = transport.send(request)
 
-print(response.status_code)   # 200
+print(response.status_code)  # 200
 print(response.json())
 ```
 
@@ -106,8 +106,10 @@ class TodoService(APIService):
 
     def list(self) -> list[Todo]:
         resp = self._client.get("/todos")
-        return [Todo(id=d["id"], title=d["title"], completed=d["completed"])
-                for d in resp.json()]
+        return [
+            Todo(id=d["id"], title=d["title"], completed=d["completed"])
+            for d in resp.json()
+        ]
 
 
 # Wire it up

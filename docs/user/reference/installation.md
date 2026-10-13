@@ -1,7 +1,7 @@
 # Installation and extras
 
 Plynth uses optional extras to keep the core dependency surface minimal.
-Supported environments are Linux with Python 3.11, 3.12, 3.13, and 3.14.
+Supported environments are Linux with Python 3.11, 3.12, 3.13, 3.14, and 3.15.
 Other combinations are outside the tested contract.
 
 ## Extras
@@ -103,7 +103,7 @@ The canonical development command deliberately composes runtime extras.
 The Distribution workflow builds a wheel from the source distribution and
 installs it in fresh environments for core, HTTP, gRPC, CDC, Django, DRF,
 and FastAPI. It also checks the CDC runtime minima. The full test matrix
-exercises all implemented runtime extras on Linux Python 3.11-3.14.
+exercises all implemented runtime extras on Linux Python 3.11-3.15.
 
 CDC still needs real Salesforce-org validation, including replay cursor
 fidelity. A local distribution passing these checks is not a production
