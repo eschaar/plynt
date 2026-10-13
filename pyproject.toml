@@ -63,7 +63,7 @@ Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 httpx = ["httpx2>=2.13.1"]
-grpc = ["grpcio>=1.83.1,<2", "protobuf>=7.35.1,<8"]
+grpc = ["grpcio>=1.84.0,<2", "protobuf>=7.35.1,<8"]
 django = ["django>=5.2.17,<6", "httpx2>=2.13.1"]
 drf = ["django>=5.2.17,<6", "djangorestframework>=3.18.3,<4", "httpx2>=2.13.1"]
 fastapi = ["fastapi>=0.141.1,<1", "httpx2>=2.13.1"]
@@ -97,7 +97,7 @@ dev = [
   "pip-audit",
   "pre-commit>=4.7.0",
   "tox>=4.65.4",
-  "grpcio-tools==1.83.1",
+  "grpcio-tools==1.84.0",
   # Security floors for transitive audit and environment tooling.
   "urllib3>=2.8.0,<3",
   "virtualenv>=21.7.13,<22",

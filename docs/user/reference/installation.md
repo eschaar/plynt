@@ -52,7 +52,7 @@ with `django>=5.2.17,<6`; this refresh does not enable Django 6.
 
 ## CDC runtime compatibility
 
-The vendored Pub/Sub messages require `grpcio>=1.83.1,<2` and
+The vendored Pub/Sub messages require `grpcio>=1.84.0,<2` and
 `protobuf>=7.35.1,<8`. The Salesforce extra includes `fastavro>=1.13.1,<2`.
 Upgrading from older gRPC or protobuf versions requires resolving those
 dependencies together; run `python -m pip check` afterward.
@@ -65,6 +65,9 @@ runtime dependency.
 These minima are smoke-tested independently of the development generator.
 No code generation runs during installation or package import.
 See [ADR-0031](../../architecture/adr/0031-experimental-release-installation-contract.md).
+The generator is pinned to `grpcio-tools==1.84.0` under
+[ADR-0032](../../architecture/adr/0032-grpc-codegen-version-refresh.md);
+consumers do not need that development-only package.
 
 Keep the installer itself current. The development and distribution gates
 bootstrap `pip>=26.2,<27`; this is tooling, not a Plynth runtime dependency:
