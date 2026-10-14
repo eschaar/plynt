@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.testsupport.vcr.config import StateTrackingMode, StateTrackingSettings
-from plynth.testsupport.vcr.session import (
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.testsupport.vcr.config import StateTrackingMode, StateTrackingSettings
+from plynt.testsupport.vcr.session import (
     _from_vcr_response,
     _maybe_pretty_json_body,
     _state_key,

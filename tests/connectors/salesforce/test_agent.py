@@ -6,16 +6,16 @@ import json
 from typing import Any
 from unittest.mock import MagicMock
 
-from plynth.base.response import AsyncStreamingResponse, StreamingResponse
-from plynth.connectors.salesforce.agent import (
+from plynt.base.response import AsyncStreamingResponse, StreamingResponse
+from plynt.connectors.salesforce.agent import (
     AsyncSalesforceAgentService,
     SalesforceAgentService,
 )
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.models import (
+from plynt.connectors.salesforce.models import (
     AgentFeedbackRequest,
     AgentMessageRequest,
     AgentMessageResponse,
@@ -24,8 +24,8 @@ from plynth.connectors.salesforce.models import (
     AgentSessionStartRequest,
     FeedbackAck,
 )
-from plynth.http.client import APIClient, AsyncAPIClient
-from plynth.http.renderer import JSONRenderer
+from plynt.http.client import APIClient, AsyncAPIClient
+from plynt.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 from tests.connectors.salesforce.conftest import DUMMY_INSTANCE_URL
 

@@ -6,13 +6,13 @@ Accepted
 
 ## Context
 
-Plynth's architecture already anticipates protocol namespaces beyond HTTP, and
+Plynt's architecture already anticipates protocol namespaces beyond HTTP, and
 the current roadmap identifies gRPC as the first likely next protocol. The
 first concrete driver is Salesforce eventing, which depends on long-lived,
 async-first streaming behavior rather than the existing request/response HTTP
 shape.
 
-Today, plynth has no core ADR that defines what belongs in a generic gRPC
+Today, plynt has no core ADR that defines what belongs in a generic gRPC
 layer, how gRPC should relate to the existing HTTP namespace, or where the
 boundary sits between reusable protocol concerns and connector-specific
 semantics.
@@ -30,25 +30,25 @@ middleware assumptions that do not hold for gRPC.
 
 ## Decision
 
-Plynth will treat gRPC as a sibling protocol namespace to HTTP, with a narrow,
+Plynt will treat gRPC as a sibling protocol namespace to HTTP, with a narrow,
 async-first, optional-install core boundary.
 
-1. gRPC belongs in `plynth` as its own protocol namespace, parallel to
-   `plynth.http`, rather than as a connector-private transport.
+1. gRPC belongs in `plynt` as its own protocol namespace, parallel to
+   `plynt.http`, rather than as a connector-private transport.
 1. The first supported posture for gRPC is async-first. This ADR does not
    promise a sync gRPC API or sync eventing adapter.
 1. gRPC runtime dependencies must remain optional and isolated behind an extra
-   such as `plynth[grpc]`.
+   such as `plynt[grpc]`.
 1. The phase-1 install path for Salesforce eventing is composition of extras:
-   `plynth[grpc,salesforce]`. `plynth[grpc]` remains the generic protocol
-   extra, and `plynth[salesforce]` remains the connector extra.
+   `plynt[grpc,salesforce]`. `plynt[grpc]` remains the generic protocol
+   extra, and `plynt[salesforce]` remains the connector extra.
 1. The initial core gRPC layer must stay small and generic. It may define only
    protocol-level building blocks needed to support gRPC transport concerns in
-   plynth.
+   plynt.
 1. Core gRPC must not define CDC, replay, ack, checkpoint, or other
    Salesforce-specific event semantics.
 1. gRPC cross-cutting behavior must use a protocol-specific interceptor or
-   hook model. Plynth must not assume direct reuse of the HTTP middleware
+   hook model. Plynt must not assume direct reuse of the HTTP middleware
    contract from ADR-0013.
 1. Reconnect handling, backpressure primitives, and subscribe-loop behavior may
    be promoted into generic gRPC abstractions later only if implementation
@@ -70,7 +70,7 @@ async-first, optional-install core boundary.
 - Makes later reuse more disruptive.
 
 **Why rejected:** The first use case is connector-driven, but the transport and
-dependency boundary are still protocol-level concerns that belong in plynth.
+dependency boundary are still protocol-level concerns that belong in plynt.
 
 ### Option B: Build a broad generic eventing framework in the core first
 
@@ -114,7 +114,7 @@ stream-lifecycle control.
 
 ## Rationale
 
-This decision keeps the core aligned with plynth's existing architectural
+This decision keeps the core aligned with plynt's existing architectural
 principles: protocol isolation, optional dependencies, and evidence-based
 abstraction.
 
@@ -123,7 +123,7 @@ reusable without forcing connector code to own generic transport concerns.
 Keeping the layer async-first matches the operational reality of the first
 known use case and avoids premature sync commitments.
 
-The small-core rule protects package stability. It lets plynth add the minimum
+The small-core rule protects package stability. It lets plynt add the minimum
 generic gRPC foundation now while deferring reusable reconnect, backpressure,
 and subscription behavior until there is proof that those concerns are truly
 cross-connector rather than Salesforce-specific.
@@ -132,7 +132,7 @@ cross-connector rather than Salesforce-specific.
 
 ### Positive
 
-- Plynth gains a clear protocol boundary for gRPC alongside HTTP.
+- Plynt gains a clear protocol boundary for gRPC alongside HTTP.
 - Optional dependency isolation remains consistent with the extras model.
 - Phase-1 eventing installation stays explicit without creating a new
   Salesforce-specific eventing extra.

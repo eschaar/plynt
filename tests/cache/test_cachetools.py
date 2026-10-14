@@ -1,16 +1,16 @@
-"""Tests for plynth.cache.cachetools (CachetoolsCache)."""
+"""Tests for plynt.cache.cachetools (CachetoolsCache)."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from plynth.base.cache import (
+from plynt.base.cache import (
     CacheBackend,
     SupportsSizeInfo,
     SupportsStats,
     SupportsTTL,
 )
-from plynth.cache import CachetoolsCache
+from plynt.cache import CachetoolsCache
 
 
 class _FakeCachetoolsCache:

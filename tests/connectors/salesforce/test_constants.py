@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Awaitable
 from typing import Any
 
-from plynth.connectors.salesforce.constants import (
+from plynt.connectors.salesforce.constants import (
     DEFAULT_API_VERSION,
     resolve_async_api_version,
     resolve_sync_api_version,

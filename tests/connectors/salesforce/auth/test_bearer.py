@@ -12,13 +12,13 @@ from urllib.parse import parse_qs
 import jwt as pyjwt
 import pytest
 
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.connectors.salesforce.auth import (
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.connectors.salesforce.auth import (
     AsyncSalesforceJWTBearerAuthMiddleware,
     SalesforceJWTBearerAuthMiddleware,
 )
-from plynth.connectors.salesforce.auth.bearer import _build_jwt_assertion
+from plynt.connectors.salesforce.auth.bearer import _build_jwt_assertion
 from tests.connectors.salesforce.auth.helpers import (
     DUMMY_JWT_USERNAME,
     DUMMY_PRIVATE_KEY,

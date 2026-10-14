@@ -1,13 +1,13 @@
-"""Tests for public package exports in ``plynth.http``."""
+"""Tests for public package exports in ``plynt.http``."""
 
 import importlib
 
-from plynth.http.client import APIClient, HTTPClient
-from plynth.http.errors import HttpStatusError, match_error
-from plynth.http.mapping import APIErrorMapper
-from plynth.http.service import APIService, HTTPService
-from plynth.http.settings import HTTPSettings
-from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
+from plynt.http.client import APIClient, HTTPClient
+from plynt.http.errors import HttpStatusError, match_error
+from plynt.http.mapping import APIErrorMapper
+from plynt.http.service import APIService, HTTPService
+from plynt.http.settings import HTTPSettings
+from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport
 
 
 class TestHttpPackage:
@@ -15,7 +15,7 @@ class TestHttpPackage:
 
     def test_package_exports_public_names(self) -> None:
         """Verify the stable public names exported by the package."""
-        module = importlib.import_module("plynth.http")
+        module = importlib.import_module("plynt.http")
 
         assert module.__all__ == [
             "APIClient",
@@ -66,7 +66,7 @@ class TestHttpPackage:
 
     def test_package_reexports_public_objects(self) -> None:
         """Verify package-level re-exports for HTTP layer entry points."""
-        module = importlib.import_module("plynth.http")
+        module = importlib.import_module("plynt.http")
 
         assert module.APIClient is APIClient
         assert module.APIErrorMapper is APIErrorMapper

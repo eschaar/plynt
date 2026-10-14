@@ -11,7 +11,7 @@ sits above the Client Layer (ADR-0008). Services are the business-specific entry
 points that translate between API endpoints and the application's own model
 objects.
 
-The `plynth` core package can provide generic, abstract base classes
+The `plynt` core package can provide generic, abstract base classes
 (`HTTPService`, `APIService`) that define the structural contract for services
 and eliminate boilerplate across downstream implementations. Business-specific
 service logic, response models, and error mapping belong in separate packages.
@@ -20,14 +20,15 @@ service logic, response models, and error mapping belong in separate packages.
 
 ### Generic service base classes in the core
 
-The `plynth` package ships two pairs of base classes for the Service Layer.
+The `plynt` package ships two pairs of base classes for the Service Layer.
 They mirror the Client Layer hierarchy (`HTTPClient` / `APIClient`) exactly:
 
 __`HTTPService`__ — base for services backed by a raw `HTTPClient`:
 
 ```python
-from plynth.http.client import HTTPClient
-from plynth.http.renderer import Renderer
+from plynt.http.client import HTTPClient
+from plynt.http.renderer import Renderer
+
 
 class HTTPService:
     def __init__(self, client: HTTPClient, renderer: Renderer | None = None) -> None:
@@ -38,9 +39,10 @@ class HTTPService:
 __`APIService(HTTPService)`__ — base for services backed by an `APIClient` (JSON REST):
 
 ```python
-from plynth.http.client import APIClient
-from plynth.http.renderer import JSONRenderer, Renderer
-from plynth.http.service import HTTPService
+from plynt.http.client import APIClient
+from plynt.http.renderer import JSONRenderer, Renderer
+from plynt.http.service import HTTPService
+
 
 class APIService(HTTPService):
     def __init__(self, client: APIClient, renderer: Renderer | None = None) -> None:
@@ -68,8 +70,9 @@ Downstream packages extend `HTTPService` or `APIService` and add their own
 endpoint methods:
 
 ```python
-from plynth.http.service import APIService
-from plynth.http.client import APIClient
+from plynt.http.service import APIService
+from plynt.http.client import APIClient
+
 
 class ProductService(APIService):
     def get_product(self, product_id: str) -> Product:
@@ -91,11 +94,12 @@ inside endpoint methods. Instead, `self._renderer` is called explicitly at
 the point where the body is produced:
 
 ```python
-from plynth.http.service import APIService
+from plynt.http.service import APIService
+
 
 class WidgetService(APIService):
     def create_widget(self, data: dict) -> Widget:
-        body = self._renderer.render(data)   # → bytes (JSONRenderer by default)
+        body = self._renderer.render(data)  # → bytes (JSONRenderer by default)
         resp = self._client.post("/widgets", content=body)
         return Widget.model_validate_json(resp.content)
 ```
@@ -125,7 +129,8 @@ When an `HttpStatusError` raised by `APIClient` has business-specific meaning,
 the service catches it and re-raises a domain-level exception:
 
 ```python
-from plynth.http.errors import NotFoundError as HttpNotFoundError
+from plynt.http.errors import NotFoundError as HttpNotFoundError
+
 
 def get_product(self, product_id: str) -> Product:
     try:
@@ -155,10 +160,10 @@ that contain no I/O.
 
 ## Placement in the Codebase
 
-The generic base classes live in `plynth`:
+The generic base classes live in `plynt`:
 
 ```text
-src/plynth/
+src/plynt/
   http/
     service.py   ← HTTPService, AsyncHTTPService,
                    APIService, AsyncAPIService
@@ -168,9 +173,9 @@ Business-specific service implementations belong in separate, business-specific
 packages:
 
 ```text
-plynth-acme/
+plynt-acme/
   src/
-    plynth_acme/
+    plynt_acme/
       services/
         product.py   ← ProductService(APIService)
         order.py     ← OrderService(APIService)
@@ -187,6 +192,6 @@ plynth-acme/
   without any boilerplate beyond their own endpoint methods.
 - The base classes act as lightweight structural interfaces, making services
   easy to mock and test.
-- The `plynth` core remains free of business-specific logic while still providing
+- The `plynt` core remains free of business-specific logic while still providing
   useful scaffolding for service authors.
 - Sync and async variants are provided without duplicating business logic.

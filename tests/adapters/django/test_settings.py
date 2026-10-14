@@ -1,4 +1,4 @@
-"""Tests for ``plynth.adapters.django.settings``."""
+"""Tests for ``plynt.adapters.django.settings``."""
 
 import sys
 from types import ModuleType, SimpleNamespace
@@ -6,8 +6,8 @@ from typing import cast
 
 import pytest
 
-from plynth.adapters.django import from_django_settings
-from plynth.http.settings import HTTPSettings
+from plynt.adapters.django import from_django_settings
+from plynt.http.settings import HTTPSettings
 
 
 class DemoSettings(HTTPSettings):
@@ -20,7 +20,7 @@ class TestFromDjangoSettings:
     """Verify mapping, normalization, and validation behavior."""
 
     def test_builds_settings_from_uppercase_mapping(self) -> None:
-        """Verify uppercase keys normalize into typed plynth settings fields."""
+        """Verify uppercase keys normalize into typed plynt settings fields."""
         settings_obj = SimpleNamespace(
             EXTERNAL_SERVICE={
                 "BASE_URL": "https://api.example.test",

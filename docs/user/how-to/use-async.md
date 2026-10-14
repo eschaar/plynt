@@ -1,6 +1,6 @@
 # How to use async
 
-Plynth provides async parity for every client, service, and middleware.
+Plynt provides async parity for every client, service, and middleware.
 Async clients share the same service layer as their sync counterparts —
 only the transport and top-level client differ.
 
@@ -8,9 +8,9 @@ only the transport and top-level client differ.
 
 ```python
 import asyncio
-from plynth.http.transport import HttpxAsyncTransport
-from plynth.http.client import AsyncAPIClient
-from plynth.http.auth import async_auth_from_config, OAuth2ClientCredentialsConfig
+from plynt.http.transport import HttpxAsyncTransport
+from plynt.http.client import AsyncAPIClient
+from plynt.http.auth import async_auth_from_config, OAuth2ClientCredentialsConfig
 
 auth = async_auth_from_config(
     OAuth2ClientCredentialsConfig(
@@ -29,6 +29,7 @@ client = AsyncAPIClient(base_url="https://api.example.com", transport=transport)
 async def main() -> None:
     response = await client.get("/items")
     print(response.json())
+
 
 asyncio.run(main())
 ```
@@ -52,6 +53,7 @@ Use `asyncio.gather` to send requests in parallel:
 ```python
 import asyncio
 
+
 async def main() -> None:
     items, users = await asyncio.gather(
         client.get("/items"),
@@ -64,7 +66,7 @@ async def main() -> None:
 Subclass `AsyncAPIService` the same way as the sync variant:
 
 ```python
-from plynth.http.service import AsyncAPIService
+from plynt.http.service import AsyncAPIService
 from dataclasses import dataclass
 
 
@@ -85,12 +87,12 @@ class ItemService(AsyncAPIService):
 Use async variants for all middleware when using `HttpxAsyncTransport`:
 
 ```python
-from plynth.middleware.logging import AsyncLoggingMiddleware
-from plynth.middleware.retry import AsyncRetryMiddleware
-from plynth.middleware.circuit_breaker import AsyncCircuitBreakerMiddleware
-from plynth.middleware.cache import AsyncCacheMiddleware
-from plynth.cache import LocMemCache
-from plynth.http.policies import HttpRetryPolicy, HttpCircuitBreakerPolicy
+from plynt.middleware.logging import AsyncLoggingMiddleware
+from plynt.middleware.retry import AsyncRetryMiddleware
+from plynt.middleware.circuit_breaker import AsyncCircuitBreakerMiddleware
+from plynt.middleware.cache import AsyncCacheMiddleware
+from plynt.cache import LocMemCache
+from plynt.http.policies import HttpRetryPolicy, HttpCircuitBreakerPolicy
 
 transport = HttpxAsyncTransport(
     middlewares=[
@@ -109,4 +111,4 @@ transport = HttpxAsyncTransport(
 
 - Async middleware classes use the same policy objects as sync ones.
 - Do not mix sync and async services on the same transport instance.
-- `pytest-asyncio` is recommended for testing async Plynth code.
+- `pytest-asyncio` is recommended for testing async Plynt code.

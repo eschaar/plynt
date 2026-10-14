@@ -1,15 +1,15 @@
-"""Tests for plynth.cache.dummy (DummyCache, DummyCacheConfig)."""
+"""Tests for plynt.cache.dummy (DummyCache, DummyCacheConfig)."""
 
 from __future__ import annotations
 
-from plynth.base.cache import (
+from plynt.base.cache import (
     CacheBackend,
     CacheConfigBase,
     SupportsSizeInfo,
     SupportsStats,
     SupportsTTL,
 )
-from plynth.cache import DummyCache, DummyCacheConfig
+from plynt.cache import DummyCache, DummyCacheConfig
 
 
 class TestDummyCache:

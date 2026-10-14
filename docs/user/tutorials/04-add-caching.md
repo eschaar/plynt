@@ -4,7 +4,7 @@ This tutorial adds `CacheMiddleware` to the connector built in
 [Tutorial 2](02-build-a-connector.md), starting with an in-memory cache
 and then switching to Redis for multi-process deployments.
 
-## How caching works in Plynth
+## How caching works in Plynt
 
 `CacheMiddleware` is a transport-level middleware. It:
 
@@ -22,9 +22,9 @@ that share that transport — no per-service configuration needed.
 process. It is fast and requires no external dependencies.
 
 ```python
-from plynth.cache import LocMemCache
-from plynth.middleware.cache import CacheMiddleware
-from plynth.http.transport import HttpxSyncTransport
+from plynt.cache import LocMemCache
+from plynt.middleware.cache import CacheMiddleware
+from plynt.http.transport import HttpxSyncTransport
 
 cache = LocMemCache()
 
@@ -49,8 +49,8 @@ when you run multiple workers or need cache entries to survive restarts.
 
 ```python
 import redis
-from plynth.cache import RedisCache
-from plynth.middleware.cache import CacheMiddleware
+from plynt.cache import RedisCache
+from plynt.middleware.cache import CacheMiddleware
 
 redis_client = redis.Redis(host="localhost", port=6379, db=0)
 cache = RedisCache(redis_client, prefix="issues:")
@@ -89,8 +89,8 @@ eviction with a size limit:
 
 ```python
 from cachetools import LRUCache
-from plynth.cache import CachetoolsCache
-from plynth.middleware.cache import CacheMiddleware
+from plynt.cache import CachetoolsCache
+from plynt.middleware.cache import CacheMiddleware
 
 cache = CachetoolsCache(LRUCache(maxsize=256))
 
@@ -102,17 +102,17 @@ transport = HttpxSyncTransport(
 ## Step 5 — Combine caching with other middleware
 
 ```python
-from plynth.cache import LocMemCache
-from plynth.middleware.cache import CacheMiddleware
-from plynth.middleware.logging import LoggingMiddleware
-from plynth.middleware.retry import RetryMiddleware
-from plynth.http.policies import HttpRetryPolicy
-from plynth.http.auth import auth_from_config
+from plynt.cache import LocMemCache
+from plynt.middleware.cache import CacheMiddleware
+from plynt.middleware.logging import LoggingMiddleware
+from plynt.middleware.retry import RetryMiddleware
+from plynt.http.policies import HttpRetryPolicy
+from plynt.http.auth import auth_from_config
 
 cache = LocMemCache()
 
 middlewares = [
-    CacheMiddleware(cache, ttl=300),   # outermost — cache hit skips everything
+    CacheMiddleware(cache, ttl=300),  # outermost — cache hit skips everything
     LoggingMiddleware(),
 ]
 
@@ -133,7 +133,7 @@ Use `AsyncCacheMiddleware` with `HttpxAsyncTransport`. The backend
 backend is needed.
 
 ```python
-from plynth.middleware.cache import AsyncCacheMiddleware
+from plynt.middleware.cache import AsyncCacheMiddleware
 
 transport = HttpxAsyncTransport(
     middlewares=[AsyncCacheMiddleware(LocMemCache(), ttl=300)]

@@ -18,32 +18,32 @@ Keep this ADR in Proposed until all trigger criteria below are true:
 
 ## Context
 
-Currently, Salesforce integration is embedded in the Plynth core repository.
+Currently, Salesforce integration is embedded in the Plynt core repository.
 This couples the core framework to a specific provider, making it harder to
 maintain architectural separation of concerns.
 
 ### Current State
 
-- `plynth` contains `connectors/salesforce/`
-- All consumers depend directly on the monolithic `plynth` package
+- `plynt` contains `connectors/salesforce/`
+- All consumers depend directly on the monolithic `plynt` package
 - Salesforce-specific logic is interleaved with core abstractions
 
 ### Desired State
 
-- `plynth` remains a framework-agnostic core library
+- `plynt` remains a framework-agnostic core library
 - Salesforce integration lives in its own repository
-- `salesforce-connector` package depends on `plynth`, not the reverse
+- `salesforce-connector` package depends on `plynt`, not the reverse
 
 ## Decision
 
-**Extract Salesforce integration to a separate repository while maintaining Plynth as a stable dependency.**
+**Extract Salesforce integration to a separate repository while maintaining Plynt as a stable dependency.**
 
 ### Dependency Direction
 
 ```text
 salesforce-connector-package
     ↓ depends on
-plynth (core)
+plynt (core)
 ```
 
 This keeps the core framework-agnostic and avoids circular dependencies.
@@ -75,7 +75,7 @@ This keeps the core framework-agnostic and avoids circular dependencies.
 **Exit Criteria:**
 
 - New repository builds and tests pass independently
-- Dependency direction remains `salesforce-package -> plynth`
+- Dependency direction remains `salesforce-package -> plynt`
 
 ### Phase 3: Local Two-Repo Development Workflow
 
@@ -86,12 +86,12 @@ Use a multi-root workspace with both repositories open.
 ```bash
 # In salesforce-connector workspace
 source .venv/bin/activate
-pip install -e ../plynth           # local editable Plynth
+pip install -e ../plynt           # local editable Plynt
 pytest -q                          # test against local changes
 ```
 
 **Note:** Use editable install only for local development. In CI and releases,
-pin Plynth to a fixed version or tag.
+pin Plynt to a fixed version or tag.
 
 **Exit Criteria:**
 
@@ -109,24 +109,24 @@ pin Plynth to a fixed version or tag.
 - Consumers import Salesforce integration from the new repository
 - Backward-compatibility policy is documented
 
-### Phase 5: Cleanup in Plynth
+### Phase 5: Cleanup in Plynt
 
-1. Remove old Salesforce integration modules from Plynth
-1. Remove obsolete tests and docs from Plynth
+1. Remove old Salesforce integration modules from Plynt
+1. Remove obsolete tests and docs from Plynt
 1. Keep a short pointer in docs to the external package location
 
 **Exit Criteria:**
 
-- Plynth no longer contains Salesforce integration implementation code
+- Plynt no longer contains Salesforce integration implementation code
 - Remaining docs clearly direct users to the external package
 
 ## Branch and Release Guidance
 
 **Preferred order when both repos need changes:**
 
-1. Plynth change first
+1. Plynt change first
 1. Salesforce package update second
-1. Plynth release/tag
+1. Plynt release/tag
 1. Salesforce dependency bump
 
 Avoid long-lived branches that span both repos without integration checks.
@@ -139,17 +139,17 @@ Avoid long-lived branches that span both repos without integration checks.
 
 ## Risks and Mitigations
 
-| Risk                                   | Mitigation                                                 |
-| -------------------------------------- | ---------------------------------------------------------- |
-| Hidden coupling to Plynth internals    | Enforce public API usage only and contract tests           |
-| Dependency drift between repos         | CI matrix with fixed and latest compatible Plynth versions |
-| Extraction causes user-facing breakage | Clear migration docs and compatibility window              |
+| Risk                                   | Mitigation                                                |
+| -------------------------------------- | --------------------------------------------------------- |
+| Hidden coupling to Plynt internals     | Enforce public API usage only and contract tests          |
+| Dependency drift between repos         | CI matrix with fixed and latest compatible Plynt versions |
+| Extraction causes user-facing breakage | Clear migration docs and compatibility window             |
 
 ## Consequences
 
 **Positive:**
 
-- Plynth remains truly framework-agnostic
+- Plynt remains truly framework-agnostic
 - Salesforce integration can evolve at its own pace
 - Core abstractions are protected from provider-specific coupling
 - Clear separation of concerns
@@ -162,7 +162,7 @@ Avoid long-lived branches that span both repos without integration checks.
 
 ## Alternatives Considered
 
-1. **Keep Salesforce in Plynth forever**
+1. **Keep Salesforce in Plynt forever**
    - Rejected: violates core framework-agnostic principle
 1. **Make Salesforce optional via extras**
    - Rejected: coupling still exists; doesn't solve architectural problem

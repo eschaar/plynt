@@ -15,11 +15,11 @@ from __future__ import annotations
 
 import os
 
-from plynth.connectors.llm import LLMGenerateRequest, LLMService
-from plynth.connectors.llm.adapters import build_openai_responses_adapter_set
-from plynth.http.client import APIClient
-from plynth.http.middleware.auth import BearerTokenAuthMiddleware
-from plynth.http.transport import HttpxSyncTransport
+from plynt.connectors.llm import LLMGenerateRequest, LLMService
+from plynt.connectors.llm.adapters import build_openai_responses_adapter_set
+from plynt.http.client import APIClient
+from plynt.http.middleware.auth import BearerTokenAuthMiddleware
+from plynt.http.transport import HttpxSyncTransport
 
 
 def _required_env(name: str) -> str:

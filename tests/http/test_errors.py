@@ -1,12 +1,12 @@
-"""Tests for plynth.http.errors (HttpStatusError)."""
+"""Tests for plynt.http.errors (HttpStatusError)."""
 
 from collections.abc import Callable
 from http import HTTPStatus
 
 import pytest
 
-from plynth.base.errors import BaseError, StatusError
-from plynth.http.errors import (
+from plynt.base.errors import BaseError, StatusError
+from plynt.http.errors import (
     BadRequestError,
     ConflictError,
     FeatureOfflineError,

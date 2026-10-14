@@ -45,11 +45,11 @@ from pathlib import Path
 
 import pytest
 
-from plynth.connectors.salesforce.auth import SalesforcePasswordAuthMiddleware
-from plynth.connectors.salesforce.client import SalesforceAPIClient
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
-from plynth.http.transport import HttpxSyncTransport
-from plynth.testsupport.vcr import (
+from plynt.connectors.salesforce.auth import SalesforcePasswordAuthMiddleware
+from plynt.connectors.salesforce.client import SalesforceAPIClient
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.http.transport import HttpxSyncTransport
+from plynt.testsupport.vcr import (
     DeterministicCassettePathResolver,
     VCRMiddleware,
     VCRMode,

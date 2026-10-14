@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from plynth.connectors.llm.models import (
+from plynt.connectors.llm.models import (
     LLMCompletion,
     LLMExecutionOptions,
     LLMGenerateRequest,

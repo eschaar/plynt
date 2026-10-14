@@ -10,8 +10,8 @@ from typing import Any
 import grpc
 import pytest
 
-from plynth.connectors.salesforce.cdc._proto import pubsub_api_pb2
-from plynth.connectors.salesforce.cdc.pubsub import (
+from plynt.connectors.salesforce.cdc._proto import pubsub_api_pb2
+from plynt.connectors.salesforce.cdc.pubsub import (
     GrpcMethodPubSubAdapter,
     GrpcStubPubSubAdapter,
     create_vendored_pubsub_adapter,
@@ -367,7 +367,7 @@ class TestGrpcStubPubSubAdapter:
 
 
 class TestVendoredStub:
-    """Verify the adapter against plynth's real vendored generated stub.
+    """Verify the adapter against plynt's real vendored generated stub.
 
     Unlike ``_FakeStub`` and friends above, these use the actual generated
     ``pubsub_api_pb2``/``pubsub_api_pb2_grpc`` classes, proving field names

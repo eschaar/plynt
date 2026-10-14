@@ -6,8 +6,8 @@ from typing import Any, TypedDict
 
 import pytest
 
-from plynth.base.response import Response
-from plynth.connectors.salesforce.errors import (
+from plynt.base.response import Response
+from plynt.connectors.salesforce.errors import (
     SalesforceAPIError,
     SalesforceDuplicateError,
     SalesforceInvalidFieldQueryError,
@@ -20,7 +20,7 @@ from plynth.connectors.salesforce.errors import (
     SalesforceValidationError,
     raise_for_salesforce_errors,
 )
-from plynth.http.renderer import JSONRenderer
+from plynt.http.renderer import JSONRenderer
 
 _JSON_RENDERER = JSONRenderer()
 

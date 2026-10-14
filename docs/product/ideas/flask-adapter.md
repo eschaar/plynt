@@ -1,7 +1,7 @@
-# Idea: Flask Adapter (`plynth[flask]`)
+# Idea: Flask Adapter (`plynt[flask]`)
 
 **Status:** Idea — not yet an ADR, no implementation started.
-**Priority:** Low — plynth already works in Flask without an adapter;
+**Priority:** Low — plynt already works in Flask without an adapter;
 this is a convenience layer only.
 
 Convert to an ADR if there is a concrete use case that cannot be cleanly
@@ -11,7 +11,7 @@ ______________________________________________________________________
 
 ## Goal
 
-Allow Flask applications to use plynth transports and clients with idiomatic
+Allow Flask applications to use plynt transports and clients with idiomatic
 Flask patterns — specifically the application factory pattern and
 `app.extensions` for managing shared resources.
 
@@ -30,7 +30,7 @@ ______________________________________________________________________
 
 ```python
 # This already works in Flask today — no adapter needed
-from plynth.http.transport import HttpxSyncTransport
+from plynt.http.transport import HttpxSyncTransport
 from myapp.settings import MyServiceSettings
 
 transport = HttpxSyncTransport.from_settings(MyServiceSettings())
@@ -47,22 +47,23 @@ ______________________________________________________________________
 
 ### 1. Flask extension pattern
 
-A `PlynthFlask` extension class manages one transport per Flask app and
+A `PlyntFlask` extension class manages one transport per Flask app and
 follows the standard Flask extension pattern:
 
 ```python
-from plynth.flask import PlynthFlask
+from plynt.flask import PlyntFlask
 from myapp.settings import MyServiceSettings
 
-plynth = PlynthFlask()
+plynt = PlyntFlask()
+
 
 def create_app():
     app = Flask(__name__)
-    plynth.init_app(app, settings=MyServiceSettings())
+    plynt.init_app(app, settings=MyServiceSettings())
     return app
 ```
 
-The transport is stored in `app.extensions["plynth.<name>"]` and retrieved
+The transport is stored in `app.extensions["plynt.<name>"]` and retrieved
 via `current_app.extensions` or a convenience proxy.
 
 ### 2. App context proxy
@@ -71,7 +72,8 @@ Within a request or app context, the transport is accessible without importing
 `app` directly:
 
 ```python
-from plynth.flask import current_transport
+from plynt.flask import current_transport
+
 
 @bp.route("/orders")
 def list_orders():
@@ -96,7 +98,7 @@ ______________________________________________________________________
 ## Install extra
 
 ```text
-pip install plynth[flask]
+pip install plynt[flask]
 ```
 
 Adds `flask` as a dependency. The `[httpx]` extra is a prerequisite.
@@ -105,7 +107,7 @@ ______________________________________________________________________
 
 ## Constraints
 
-- No Flask imports anywhere in `plynth.core` or `plynth.http`.
+- No Flask imports anywhere in `plynt.core` or `plynt.http`.
 - Sync-only — Flask's async model is not a target.
 - Must work with Flask 3.x.
 - The adapter must remain a thin convenience layer; any logic beyond
@@ -118,10 +120,10 @@ ______________________________________________________________________
 1. Is there a real demand for this, or does the existing zero-adapter approach
    cover all Flask use cases? Validate against at least one real Flask project
    before writing an ADR.
-1. Should `plynth.flask` follow the Flask extension naming convention
+1. Should `plynt.flask` follow the Flask extension naming convention
    (class-based `init_app`) or be a simpler set of factory functions?
 1. Multiple transports per app — store as a dict under a single
-   `app.extensions["plynth"]` key, or separate keys per named transport?
+   `app.extensions["plynt"]` key, or separate keys per named transport?
 
 ______________________________________________________________________
 
@@ -129,4 +131,4 @@ ______________________________________________________________________
 
 Validate the need with a real Flask project. If there is clear friction that
 the extension pattern would solve, write an ADR. Otherwise, document the
-zero-adapter approach in the plynth usage guide and close this idea.
+zero-adapter approach in the plynt usage guide and close this idea.

@@ -24,7 +24,7 @@ from typing import Any
 import grpc
 import pytest
 
-from plynth.connectors.salesforce.cdc import (
+from plynt.connectors.salesforce.cdc import (
     AsyncSalesforceCDCAuthMetadataProvider,
     AsyncSalesforceCDCSubscriber,
     InMemorySalesforceCDCCheckpointStore,
@@ -32,7 +32,7 @@ from plynth.connectors.salesforce.cdc import (
     SalesforceCDCSubscribeRequest,
     create_vendored_pubsub_adapter,
 )
-from plynth.connectors.salesforce.cdc._proto import (
+from plynt.connectors.salesforce.cdc._proto import (
     pubsub_api_pb2,
     pubsub_api_pb2_grpc,
 )

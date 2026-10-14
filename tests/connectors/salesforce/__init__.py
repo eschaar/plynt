@@ -1,1 +1,1 @@
-# plynth salesforce integration tests
+# plynt salesforce integration tests

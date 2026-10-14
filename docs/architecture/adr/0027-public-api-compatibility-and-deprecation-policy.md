@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth is preparing for public package release and needs a clear compatibility
+Plynt is preparing for public package release and needs a clear compatibility
 contract for users who depend on stable APIs across upgrades.
 
 Current architecture ADRs define layering, adapters, and boundaries, but there
@@ -18,7 +18,7 @@ guidance, and release decisions that are hard to justify.
 
 ## Decision
 
-Plynth will adopt a package-level compatibility and deprecation policy:
+Plynt will adopt a package-level compatibility and deprecation policy:
 
 1. Public API scope includes documented symbols, typed models, adapter
    factories, middleware extension points, and installation extras behavior.
@@ -59,7 +59,7 @@ Plynth will adopt a package-level compatibility and deprecation policy:
 - Slows architectural evolution.
 - Forces permanent support for poor early choices.
 
-**Why rejected:** Plynth needs controlled change, not zero change.
+**Why rejected:** Plynt needs controlled change, not zero change.
 
 ### Option C: Deprecate and remove within the same minor release
 

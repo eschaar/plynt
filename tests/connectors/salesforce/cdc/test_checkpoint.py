@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 
-from plynth.cache import LocMemCache
-from plynth.connectors.salesforce.cdc.checkpoint import (
+from plynt.cache import LocMemCache
+from plynt.connectors.salesforce.cdc.checkpoint import (
     CacheSalesforceCDCCheckpointStore,
     InMemorySalesforceCDCCheckpointStore,
     SalesforceCDCCheckpointStore,

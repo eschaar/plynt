@@ -1,4 +1,4 @@
-"""Test ``plynth.adapters.django.drf.views``"""
+"""Test ``plynt.adapters.django.drf.views``"""
 
 from __future__ import annotations
 
@@ -9,25 +9,25 @@ from typing import Any, ClassVar, cast
 
 import pytest
 
-import plynth.adapters.django.drf.views as drf_views
-from plynth.adapters.django.drf.views import (
-    AsyncPlynthServiceMixin,
+import plynt.adapters.django.drf.views as drf_views
+from plynt.adapters.django.drf.views import (
+    AsyncPlyntServiceMixin,
     CacheAliasesConfig,
-    PlynthServiceMixin,
+    PlyntServiceMixin,
     RequestHeadersConfig,
 )
-from plynth.base.middleware import AsyncMiddleware
-from plynth.http.settings import HTTPSettings
-from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
-from plynth.middleware.header import AsyncHeaderMiddleware, HeaderMiddleware
+from plynt.base.middleware import AsyncMiddleware
+from plynt.http.settings import HTTPSettings
+from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport
+from plynt.middleware.header import AsyncHeaderMiddleware, HeaderMiddleware
 
 
 class _DemoSettings(HTTPSettings):
     """Provide minimal settings class for mixin tests"""
 
 
-class _DemoView(PlynthServiceMixin):
-    """Provide concrete test view with plynth mixin configuration"""
+class _DemoView(PlyntServiceMixin):
+    """Provide concrete test view with plynt mixin configuration"""
 
     settings_name = "SERVICE"
     settings_class = _DemoSettings
@@ -42,8 +42,8 @@ class _DemoView(PlynthServiceMixin):
         return self._settings_obj
 
 
-class _AsyncDemoView(AsyncPlynthServiceMixin):
-    """Provide concrete async test view with plynth mixin configuration"""
+class _AsyncDemoView(AsyncPlyntServiceMixin):
+    """Provide concrete async test view with plynt mixin configuration"""
 
     settings_name = "SERVICE"
     settings_class = _DemoSettings
@@ -58,7 +58,7 @@ class _AsyncDemoView(AsyncPlynthServiceMixin):
         return self._settings_obj
 
 
-class TestPlynthServiceMixin:
+class TestPlyntServiceMixin:
     """Verify DRF service mixin behavior"""
 
     def test_get_django_settings_object_reads_global_settings(
@@ -73,7 +73,7 @@ class TestPlynthServiceMixin:
             lambda name: SimpleNamespace(settings=sentinel_settings),
         )
 
-        class _ImportingView(PlynthServiceMixin):
+        class _ImportingView(PlyntServiceMixin):
             settings_name = "SERVICE"
             settings_class = _DemoSettings
 
@@ -82,7 +82,7 @@ class TestPlynthServiceMixin:
     def test_requires_settings_name(self) -> None:
         """Raise when settings name is missing"""
 
-        class _MissingName(PlynthServiceMixin):
+        class _MissingName(PlyntServiceMixin):
             settings_name = None
             settings_class = _DemoSettings
 
@@ -92,7 +92,7 @@ class TestPlynthServiceMixin:
     def test_requires_settings_class(self) -> None:
         """Raise when settings class is missing"""
 
-        class _MissingClass(PlynthServiceMixin):
+        class _MissingClass(PlyntServiceMixin):
             settings_name = "SERVICE"
             settings_class = None
 
@@ -298,7 +298,7 @@ class TestPlynthServiceMixin:
         """Close the cached transport after the response is finalized"""
         close_calls = {"value": 0}
 
-        class _FinalizeView(PlynthServiceMixin):
+        class _FinalizeView(PlyntServiceMixin):
             settings_name = "SERVICE"
             settings_class = _DemoSettings
 
@@ -330,7 +330,7 @@ class TestPlynthServiceMixin:
                 del request, args, kwargs
                 return response
 
-        class _FinalizeView(PlynthServiceMixin, _ParentFinalize):
+        class _FinalizeView(PlyntServiceMixin, _ParentFinalize):
             settings_name = "SERVICE"
             settings_class = _DemoSettings
 
@@ -427,7 +427,7 @@ class TestPlynthServiceMixin:
         """Raise with available names when requested service is unknown"""
         view = _DemoView()
 
-        with pytest.raises(KeyError, match="Unknown plynth service"):
+        with pytest.raises(KeyError, match="Unknown plynt service"):
             view.get_service("missing")
 
 
@@ -439,13 +439,13 @@ class _AsyncCustomMiddleware(AsyncMiddleware):
         return await next_handler(request)
 
 
-class TestAsyncPlynthServiceMixin:
+class TestAsyncPlyntServiceMixin:
     """Verify async DRF service mixin behavior"""
 
     def test_requires_settings_name(self) -> None:
         """Raise when settings name is missing"""
 
-        class _MissingName(AsyncPlynthServiceMixin):
+        class _MissingName(AsyncPlyntServiceMixin):
             settings_name = None
             settings_class = _DemoSettings
 
@@ -455,7 +455,7 @@ class TestAsyncPlynthServiceMixin:
     def test_requires_settings_class(self) -> None:
         """Raise when settings class is missing"""
 
-        class _MissingClass(AsyncPlynthServiceMixin):
+        class _MissingClass(AsyncPlyntServiceMixin):
             settings_name = "SERVICE"
             settings_class = None
 
@@ -669,7 +669,7 @@ class TestAsyncPlynthServiceMixin:
         """Close the cached async transport after the response is finalized"""
         close_calls = {"value": 0}
 
-        class _FinalizeView(AsyncPlynthServiceMixin):
+        class _FinalizeView(AsyncPlyntServiceMixin):
             settings_name = "SERVICE"
             settings_class = _DemoSettings
 
@@ -700,7 +700,7 @@ class TestAsyncPlynthServiceMixin:
                 del request, args, kwargs
                 return response
 
-        class _FinalizeView(AsyncPlynthServiceMixin, _ParentFinalize):
+        class _FinalizeView(AsyncPlyntServiceMixin, _ParentFinalize):
             settings_name = "SERVICE"
             settings_class = _DemoSettings
 
@@ -767,7 +767,7 @@ class TestAsyncPlynthServiceMixin:
         """Schedule cleanup task when finalize_response runs inside event loop."""
         close_calls = {"value": 0}
 
-        class _FinalizeInLoopView(AsyncPlynthServiceMixin):
+        class _FinalizeInLoopView(AsyncPlyntServiceMixin):
             settings_name = "SERVICE"
             settings_class = _DemoSettings
 
@@ -788,7 +788,7 @@ class TestAsyncPlynthServiceMixin:
     def test_finalize_response_reraises_unexpected_runtime_error(self) -> None:
         """Re-raise runtime errors that are not loop-state related."""
 
-        class _FinalizeView(AsyncPlynthServiceMixin):
+        class _FinalizeView(AsyncPlyntServiceMixin):
             settings_name = "SERVICE"
             settings_class = _DemoSettings
 
@@ -878,5 +878,5 @@ class TestAsyncPlynthServiceMixin:
         """Raise with available names when requested async service is unknown"""
         view = _AsyncDemoView()
 
-        with pytest.raises(KeyError, match="Unknown plynth service"):
+        with pytest.raises(KeyError, match="Unknown plynt service"):
             view.get_service("missing")

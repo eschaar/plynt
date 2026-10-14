@@ -12,7 +12,7 @@ evidence or assert that external provider behavior has been verified.
 ## Scope and Decisions
 
 - Preserve the minimal framework-independent core and existing public names.
-- Keep CDC installed through `plynth[grpc,salesforce]`.
+- Keep CDC installed through `plynt[grpc,salesforce]`.
 - Include real Avro decoding in the Salesforce extra.
 - Align gRPC/protobuf minima with vendored generated messages.
 - Pin the development generator and verify committed output independently.
@@ -108,7 +108,7 @@ python -m venv wheel-env
 wheel-env/bin/python -m pip install --upgrade "pip>=26.2,<27"
 wheel-env/bin/python -m pip uninstall --yes setuptools
 wheel-env/bin/python -m pip install "dist/<wheel>.whl[grpc,salesforce]" pytest
-PLYNTH_WHEEL_PROFILE=cdc wheel-env/bin/python -m pytest \
+PLYNT_WHEEL_PROFILE=cdc wheel-env/bin/python -m pytest \
   tests/distribution/test_installed.py --noconftest \
   --import-mode=importlib -c /dev/null -p no:cacheprovider -q
 ```
@@ -128,15 +128,15 @@ The hardening changes were committed and pushed on
 - `74bef3bdeeae`: CDC flow control and bitmap decoding.
 - `f78247e2918ded6d37f2be0fe42a78e3411985f8`: installation hardening and
   the full-coverage gate.
-- [Commit workflow run 38480835588](https://github.com/eschaar/plynth/actions/runs/38480835588)
+- [Commit workflow run 38480835588](https://github.com/eschaar/plynt/actions/runs/38480835588)
   completed successfully for `f78247e2918ded6d37f2be0fe42a78e3411985f8`.
 - `de00000c0f5bcc5d857c62da173f32edf85297f9`: documentation alignment for
   CDC scope, navigation, initial load, replay, and remote evidence.
-- [Commit workflow run 38481491740](https://github.com/eschaar/plynth/actions/runs/38481491740)
+- [Commit workflow run 38481491740](https://github.com/eschaar/plynt/actions/runs/38481491740)
   completed successfully for `de00000c0f5bcc5d857c62da173f32edf85297f9`.
 
 This is evidence for those exact revisions, not later commits.
-[PR #61](https://github.com/eschaar/plynth/pull/61) was opened against `main`.
+[PR #61](https://github.com/eschaar/plynt/pull/61) was opened against `main`.
 It was subsequently merged at `68f912ce253a` after its final revision
 passed Check, Verify, Distribution, Commit, and Security.
 The proto-drift job initially failed because CI had no `.venv`; commit
@@ -164,7 +164,7 @@ requirements; no dependency installation was needed for this verification.
 - Salesforce now installs `fastavro>=1.13.1,<2`, including for REST-only
   users. This intentionally preserves the existing installation profile.
 - Salesforce requires `PyJWT>=2.15.0,<3`. The installed 2.13.0 version
-  had advisories. Plynth calls JWT signing rather than decode APIs, but
+  had advisories. Plynt calls JWT signing rather than decode APIs, but
   the dependency is upgraded without broad advisory exemptions.
 - Development floors exclude affected urllib3 and virtualenv releases.
   Fresh wheel environments also upgrade the bundled pip, which otherwise
@@ -180,8 +180,8 @@ requirements; no dependency installation was needed for this verification.
 
 Audit results describe the scanned installed versions, not every future
 resolution permitted by the metadata. The local development build is
-not published on PyPI, so the auditor skips Plynth itself; this does not
-constitute a security review of Plynth's source.
+not published on PyPI, so the auditor skips Plynt itself; this does not
+constitute a security review of Plynt's source.
 
 ## Remaining Acceptance Work
 
@@ -205,7 +205,7 @@ wheel profiles pass on Python 3.11 and 3.14 with no setuptools or generator.
 The updated minima are grpcio 1.84.0, protobuf 7.35.1, fastavro 1.13.1,
 and PyJWT 2.15.1. Wheel-from-sdist build, twine, pinned regeneration,
 Ruff format/lint, mypy, configuration hooks, and dependency consistency pass.
-The installed dependency audit finds no known vulnerabilities; Plynth's
+The installed dependency audit finds no known vulnerabilities; Plynt's
 unpublished development version is skipped by that auditor.
 
 These are local follow-up results, not remote CI evidence for this branch.
@@ -281,7 +281,7 @@ reject Python 3.11 and an explicit Django 5.2.18 constraint.
 Wheel-from-sdist build, twine, `make check`, Ruff, mypy, formatting hooks,
 dependency consistency, and pinned gRPC regeneration pass.
 The installed dependency audit finds no known vulnerabilities; it skips
-the unpublished Plynth development build.
+the unpublished Plynt development build.
 
 The default and single-version CI jobs use Python 3.14. Local instructions
 consistently use `.venv`; changing `.python-version` does not replace it.

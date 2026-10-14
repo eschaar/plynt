@@ -1,7 +1,7 @@
 """Focused contract tests for the Salesforce CDC subscriber.
 
 These tests intentionally use small fake gRPC client doubles instead of real
-generated Pub/Sub stubs. The goal is to validate plynth's orchestration logic:
+generated Pub/Sub stubs. The goal is to validate plynt's orchestration logic:
 metadata shaping, schema loading, payload decoding, and bounded reconnect.
 """
 
@@ -14,7 +14,7 @@ from typing import Any
 
 import pytest
 
-from plynth.connectors.salesforce.cdc import (
+from plynt.connectors.salesforce.cdc import (
     AsyncSalesforceCDCAuthMetadataProvider,
     AsyncSalesforceCDCSubscriber,
     InMemorySalesforceCDCCheckpointStore,
@@ -23,8 +23,8 @@ from plynth.connectors.salesforce.cdc import (
     SalesforceCDCOverflowError,
     SalesforceCDCSubscribeRequest,
 )
-from plynth.connectors.salesforce.cdc.service import _CheckpointingCDCStream
-from plynth.grpc.errors import GrpcTransportError
+from plynt.connectors.salesforce.cdc.service import _CheckpointingCDCStream
+from plynt.grpc.errors import GrpcTransportError
 
 
 class _FakeAsyncGrpcClient:

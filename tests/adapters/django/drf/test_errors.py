@@ -1,4 +1,4 @@
-"""Tests for ``plynth.adapters.django.drf.errors``."""
+"""Tests for ``plynt.adapters.django.drf.errors``."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from typing import Any
 
 import pytest
 
-import plynth.adapters.django.drf.errors as drf_errors
-from plynth.base.errors import (
+import plynt.adapters.django.drf.errors as drf_errors
+from plynt.base.errors import (
     BaseError,
     ConfigurationError,
     DependencyUnavailableError,
@@ -18,13 +18,13 @@ from plynth.base.errors import (
     OperationFailedError,
     StreamInterruptedError,
 )
-from plynth.http.errors import NotFoundError
+from plynt.http.errors import NotFoundError
 
 
 class TestBuildErrorPayload:
-    """Verify safe payload generation from plynth and generic exceptions."""
+    """Verify safe payload generation from plynt and generic exceptions."""
 
-    def test_builds_payload_from_plynth_error_without_details_by_default(self) -> None:
+    def test_builds_payload_from_plynt_error_without_details_by_default(self) -> None:
         """Exclude details unless explicitly requested."""
         exc = InvalidInputError("bad request", details={"field": ["required"]})
 
@@ -40,7 +40,7 @@ class TestBuildErrorPayload:
 
         assert payload["details"] == {"field": ["required"]}
 
-    def test_builds_fallback_payload_for_non_plynth_exception(self) -> None:
+    def test_builds_fallback_payload_for_non_plynt_exception(self) -> None:
         """Return generic safe payload for unknown exceptions."""
         payload = drf_errors.build_error_payload(RuntimeError("boom"))
 
@@ -107,7 +107,7 @@ class TestMapExceptionToDrfResponse:
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """Map plynth invalid input errors to HTTP 400."""
+        """Map plynt invalid input errors to HTTP 400."""
 
         class _FakeResponse:
             def __init__(self, data: dict[str, Any], *, status: int) -> None:
@@ -332,8 +332,8 @@ class TestMapExceptionToDrfResponse:
         assert response.status_code == 400
 
 
-class TestPlynthExceptionHandler:
-    """Verify DRF-first fallback behavior of plynth exception handler."""
+class TestPlyntExceptionHandler:
+    """Verify DRF-first fallback behavior of plynt exception handler."""
 
     def test_returns_drf_default_response_when_available(
         self,
@@ -349,15 +349,15 @@ class TestPlynthExceptionHandler:
 
         monkeypatch.setattr(importlib, "import_module", _import_module)
 
-        response = drf_errors.plynth_exception_handler(RuntimeError("boom"), {})
+        response = drf_errors.plynt_exception_handler(RuntimeError("boom"), {})
 
         assert response is sentinel
 
-    def test_falls_back_to_plynth_mapping_when_drf_returns_none(
+    def test_falls_back_to_plynt_mapping_when_drf_returns_none(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """Use mapped plynth response when DRF does not handle exception."""
+        """Use mapped plynt response when DRF does not handle exception."""
         fallback = object()
 
         monkeypatch.setattr(
@@ -373,6 +373,6 @@ class TestPlynthExceptionHandler:
 
         monkeypatch.setattr(importlib, "import_module", _import_module)
 
-        response = drf_errors.plynth_exception_handler(RuntimeError("boom"), {})
+        response = drf_errors.plynt_exception_handler(RuntimeError("boom"), {})
 
         assert response is fallback

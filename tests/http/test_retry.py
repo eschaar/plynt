@@ -1,11 +1,11 @@
-"""Tests for plynth.http.policies.HttpRetryPolicy."""
+"""Tests for plynt.http.policies.HttpRetryPolicy."""
 
 from __future__ import annotations
 
 from http import HTTPStatus
 
-from plynth.base.policies import RetryPolicy
-from plynth.http.policies import HttpRetryPolicy
+from plynt.base.policies import RetryPolicy
+from plynt.http.policies import HttpRetryPolicy
 
 
 class TestHttpRetryPolicy:

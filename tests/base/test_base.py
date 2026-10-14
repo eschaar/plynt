@@ -1,13 +1,13 @@
-"""Tests for plynth.base.transport (SyncTransport and AsyncTransport)."""
+"""Tests for plynt.base.transport (SyncTransport and AsyncTransport)."""
 
 import json
 from typing import Any
 
 import pytest
 
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.base.transport import AsyncTransport, SyncTransport
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.base.transport import AsyncTransport, SyncTransport
 
 
 def _instantiate(cls: type[Any]) -> Any:

@@ -12,9 +12,9 @@ from __future__ import annotations
 
 import json
 
-from plynth.base.response import Response
-from plynth.connectors.salesforce.utility import _salesforce_quota_signal
-from plynth.middleware.throttle import _extract_throttle_signal
+from plynt.base.response import Response
+from plynt.connectors.salesforce.utility import _salesforce_quota_signal
+from plynt.middleware.throttle import _extract_throttle_signal
 
 # ---------------------------------------------------------------------------
 # Salesforce quota-exhaustion signal normalization

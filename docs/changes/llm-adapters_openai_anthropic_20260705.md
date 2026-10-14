@@ -20,7 +20,7 @@ Requested outcome:
 
 Explicit non-goals:
 
-1. No broad redesign of core `plynth.base` or `plynth.http` layers.
+1. No broad redesign of core `plynt.base` or `plynt.http` layers.
 1. No provider SDK lock-in inside generic service classes.
 1. No mandatory live integration tests in default CI.
 
@@ -35,7 +35,7 @@ Constraints and dependencies:
 Repository evidence:
 
 1. Generic LLM connector is present and tested in
-   `src/plynth/connectors/llm/`.
+   `src/plynt/connectors/llm/`.
 1. Generic LLM docs mention provider adapters as planned, not implemented in
    [docs/connectors/llm/README.md](../connectors/llm/README.md).
 1. Product roadmap marks provider adapters as planned in
@@ -52,7 +52,7 @@ Current behavior summary:
 
 Target design:
 
-1. Add adapter modules under `src/plynth/connectors/llm/adapters/`.
+1. Add adapter modules under `src/plynt/connectors/llm/adapters/`.
 1. Start with OpenAI Responses API mapping as primary route.
 1. Add Anthropic mapping after OpenAI patterns are validated.
 1. Keep provider-specific data in `provider_extensions` only.
@@ -132,12 +132,12 @@ Regression path:
 2026-07-05 (Step 1 started):
 
 1. Added OpenAI adapter package and non-streaming Responses mapping:
-   `src/plynth/connectors/llm/adapters/__init__.py`
-   and `src/plynth/connectors/llm/adapters/openai.py`.
+   `src/plynt/connectors/llm/adapters/__init__.py`
+   and `src/plynt/connectors/llm/adapters/openai.py`.
 1. Extended generic services with optional response normalization adapters in
-   `src/plynth/connectors/llm/service.py`.
+   `src/plynt/connectors/llm/service.py`.
 1. Exposed adapter types and helpers through
-   `src/plynth/connectors/llm/__init__.py`.
+   `src/plynt/connectors/llm/__init__.py`.
 1. Added focused adapter tests in
    `tests/connectors/llm/adapters/test_openai.py`.
 1. Verified lint, type-check, and focused tests for this increment.
@@ -147,7 +147,7 @@ Regression path:
 1. Replaced ad-hoc payload and response callables with a typed adapter set
    architecture used directly by `LLMService` and `AsyncLLMService`.
 1. Added base adapter contracts and defaults in
-   `src/plynth/connectors/llm/adapters/base.py`.
+   `src/plynt/connectors/llm/adapters/base.py`.
 1. Switched OpenAI mapping to class-based adapters and an explicit
    `build_openai_responses_adapter_set()` entry point.
 1. Updated service and adapter tests to validate request, completion, and

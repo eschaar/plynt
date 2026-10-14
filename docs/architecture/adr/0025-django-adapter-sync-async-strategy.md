@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-ADR-0024 established Django as the first framework adapter for plynth. Since
+ADR-0024 established Django as the first framework adapter for plynt. Since
 then, the core transport, client, service, middleware, and connector layers
 have continued to preserve sync and async symmetry. That symmetry is explicit in
 ADR-0006, ADR-0008, ADR-0009, ADR-0010, ADR-0011, ADR-0012, ADR-0014,
@@ -16,10 +16,10 @@ The current Django adapter does not yet preserve that symmetry. The shipped
 surface is sync-only:
 
 - `transport_from_django_settings()` builds `HttpxSyncTransport`
-- `PlynthServiceMixin` composes `SyncMiddleware`
+- `PlyntServiceMixin` composes `SyncMiddleware`
 - DRF integration examples and tests assume sync `APIView` handlers
 
-This creates an architectural mismatch. Plynth can speak to async backends,
+This creates an architectural mismatch. Plynt can speak to async backends,
 including Salesforce through the async transport path, but the Django adapter
 currently forces framework consumers back onto the sync path.
 
@@ -32,13 +32,13 @@ DRF is a weaker foundation for first-class async than Django itself. The DRF
 documentation for `APIView` and `GenericAPIView` remains dispatch- and policy-
 oriented around synchronous lifecycle methods. The generic view layer is also
 heavily documented around ORM-style `queryset` flows, which is not a good fit
-for plynth's non-ORM backend integration use cases. That does not make async
+for plynt's non-ORM backend integration use cases. That does not make async
 DRF impossible, but it does mean the adapter must be deliberate about scope and
 must avoid over-promising parity across all DRF abstractions.
 
 ## Decision
 
-Plynth will extend the Django adapter strategy to support both sync and async
+Plynt will extend the Django adapter strategy to support both sync and async
 execution paths.
 
 The strategy is:
@@ -51,7 +51,7 @@ The strategy is:
    parity with the sync surface wherever practical.
 1. Treat DRF async support as staged and scope-limited.
 1. Support async DRF first for `APIView`-style integrations with explicit async
-   handlers and async plynth services.
+   handlers and async plynt services.
 1. Defer first-class async support for DRF generic views, mixins, and viewsets
    until direct runtime validation proves that the execution path is reliably
    async-safe and worth the maintenance cost.
@@ -72,7 +72,7 @@ The strategy is:
 - Forces async-capable connectors back through sync views.
 - Makes `httpx2` async support less useful for Django consumers.
 
-**Why rejected:** This would make the framework adapter the point where plynth's
+**Why rejected:** This would make the framework adapter the point where plynt's
 execution-model symmetry stops being consumable.
 
 ### Option B: Add async support only through sync/async bridge wrappers
@@ -96,7 +96,7 @@ adapter design.
 
 **Pros:**
 
-- Preserves plynth's execution-model symmetry.
+- Preserves plynt's execution-model symmetry.
 - Keeps the core architecture unchanged and framework-agnostic.
 - Lets Django ASGI consumers use async upstream I/O correctly.
 - Avoids premature commitment to DRF abstractions that remain sync-oriented.
@@ -127,11 +127,11 @@ adapter a sound architectural extension.
 DRF is more nuanced. Its `APIView` abstraction can still be useful as a thin API
 boundary, but the broader DRF surface is built around synchronous dispatch,
 policy hooks, serializers, and generic-view patterns that are commonly paired
-with the ORM. For plynth's adapter, the safest async strategy is therefore to
+with the ORM. For plynt's adapter, the safest async strategy is therefore to
 start with thin `APIView`-style integration and avoid promising async parity for
 generic views and viewsets until those paths are validated in practice.
 
-This decision also aligns with plynth's non-ORM positioning. If a consumer is
+This decision also aligns with plynt's non-ORM positioning. If a consumer is
 using Django or DRF as an API shell over external backends such as Salesforce,
 the highest async value comes from concurrent upstream HTTP I/O, not from ORM-
 centric abstractions.
@@ -140,9 +140,9 @@ centric abstractions.
 
 ### Positive
 
-- Django consumers can use async plynth transports without leaving the adapter
+- Django consumers can use async plynt transports without leaving the adapter
   boundary.
-- The adapter strategy remains aligned with plynth's sync/async core design.
+- The adapter strategy remains aligned with plynt's sync/async core design.
 - DRF support stays honest about where async maturity is strong and where it is
   still limited.
 - The design encourages thin API layers over non-ORM backends.

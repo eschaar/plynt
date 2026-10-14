@@ -1,6 +1,6 @@
-# Plynth architecture
+# Plynt architecture
 
-This article describes how Plynth is structured and how its layers
+This article describes how Plynt is structured and how its layers
 interact. Reading it will help you understand where to hook in your own
 logic and why each piece exists where it does.
 
@@ -43,7 +43,7 @@ implementations. Both extend abstract base classes
 can substitute alternative transports.
 
 ```python
-from plynth.http.transport import HttpxSyncTransport
+from plynt.http.transport import HttpxSyncTransport
 
 transport = HttpxSyncTransport()
 ```
@@ -75,11 +75,11 @@ and Express conventions.
 ```python
 transport = HttpxSyncTransport(
     middlewares=[
-        CacheMiddleware(backend),           # outermost — short-circuit first
+        CacheMiddleware(backend),  # outermost — short-circuit first
         HeaderMiddleware({"User-Agent": "my-app/1.0"}),
         OAuth2ClientCredentialsAuthMiddleware(...),
         RetryMiddleware(RetryPolicy(max_attempts=3)),
-        CircuitBreakerMiddleware(policy),   # innermost above I/O
+        CircuitBreakerMiddleware(policy),  # innermost above I/O
     ]
 )
 ```
@@ -105,10 +105,10 @@ detailed explanation of why ordering matters.
   upstream status and headers without typed exception mapping.
 
 ```python
-from plynth.http.client import APIClient
+from plynt.http.client import APIClient
 
 client = APIClient(base_url="https://api.example.com", transport=transport)
-resp = client.get("/items")          # raises on 4xx/5xx automatically
+resp = client.get("/items")  # raises on 4xx/5xx automatically
 ```
 
 ### Raw mode and layer boundary
@@ -136,7 +136,8 @@ models. Your application code interacts with services — never with clients
 or transports directly.
 
 ```python
-from plynth.http.service import APIService
+from plynt.http.service import APIService
+
 
 class ItemService(APIService):
     def list_items(self) -> list[Item]:
@@ -158,8 +159,9 @@ timeouts, auth config, and cache config. Services are typically wired up
 from a single settings object.
 
 ```python
-from plynth.http.settings import HTTPSettings
-from plynth.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.settings import HTTPSettings
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+
 
 class MyServiceSettings(HTTPSettings):
     model_config = SettingsConfigDict(env_prefix="MY_", env_file=".env")
@@ -174,6 +176,7 @@ class MyServiceSettings(HTTPSettings):
             token_url="https://auth.example.com/token",
         )
 
+
 settings = MyServiceSettings()
 transport = HttpxSyncTransport.from_settings(settings)
 ```
@@ -184,7 +187,7 @@ the settings object and constructs a fully wired transport.
 ## The cache layer
 
 `CacheBackend` is a simple protocol: `get`, `set`, `delete`, `clear`.
-Plynth ships four implementations:
+Plynt ships four implementations:
 
 | Backend           | When to use                                 |
 | ----------------- | ------------------------------------------- |
@@ -211,7 +214,7 @@ to create a connector from scratch.
 
 ## Optional gRPC and Salesforce CDC
 
-The HTTP diagrams above do not describe gRPC. `plynth.grpc` is a sibling
+The HTTP diagrams above do not describe gRPC. `plynt.grpc` is a sibling
 protocol namespace with async transport/client helpers and protocol-specific
 interceptors. It does not reuse the HTTP middleware chain.
 
@@ -221,7 +224,7 @@ decoding, field bitmap expansion, flow control, replay, and checkpoints stay
 inside the connector. Snapshot reconciliation and durable processing belong
 to the consuming application.
 
-Install `plynth[grpc,salesforce]` and see the
+Install `plynt[grpc,salesforce]` and see the
 [CDC deployment guide](../../connectors/salesforce/user/how-to/deploy-cdc.md).
 This path is async-only and still requires real-org validation.
 See [ADR-0030](../../architecture/adr/0030-grpc-protocol-boundary.md) and
@@ -229,5 +232,5 @@ See [ADR-0030](../../architecture/adr/0030-grpc-protocol-boundary.md) and
 for protocol and installation boundaries.
 
 Core-only installations can still import HTTP clients and inject their own
-transports. Constructing a built-in httpx2 transport requires `plynth[http]`;
+transports. Constructing a built-in httpx2 transport requires `plynt[http]`;
 see the [installation reference](../reference/installation.md).

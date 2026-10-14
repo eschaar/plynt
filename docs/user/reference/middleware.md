@@ -1,14 +1,14 @@
 # Middleware reference
 
-Plynth middleware implements `SyncMiddleware` or `AsyncMiddleware` from
-`plynth.base.middleware`. All middleware is passed as a list to the
+Plynt middleware implements `SyncMiddleware` or `AsyncMiddleware` from
+`plynt.base.middleware`. All middleware is passed as a list to the
 transport constructor.
 
 ______________________________________________________________________
 
 ## CacheMiddleware
 
-**Module:** `plynth.middleware.cache`
+**Module:** `plynt.middleware.cache`
 **Async variant:** `AsyncCacheMiddleware`
 
 Caches successful `GET` responses. Responses with status ≥ 400 are never
@@ -33,7 +33,7 @@ ______________________________________________________________________
 
 ## LoggingMiddleware
 
-**Module:** `plynth.middleware.logging`
+**Module:** `plynt.middleware.logging`
 **Async variant:** `AsyncLoggingMiddleware`
 
 Logs request method, URL, response status code, and elapsed time.
@@ -48,7 +48,7 @@ ______________________________________________________________________
 
 ## HeaderMiddleware
 
-**Module:** `plynth.middleware.header`
+**Module:** `plynt.middleware.header`
 **Async variant:** `AsyncHeaderMiddleware`
 
 Injects static headers on every outgoing request.
@@ -65,7 +65,7 @@ ______________________________________________________________________
 
 ## RetryMiddleware
 
-**Module:** `plynth.middleware.retry`
+**Module:** `plynt.middleware.retry`
 **Async variant:** `AsyncRetryMiddleware`
 
 Retries failed requests with exponential backoff.
@@ -74,7 +74,7 @@ Retries failed requests with exponential backoff.
 RetryMiddleware(policy: RetryPolicy | HttpRetryPolicy)
 ```
 
-### Policy: `HttpRetryPolicy` (`plynth.http.policies`)
+### Policy: `HttpRetryPolicy` (`plynt.http.policies`)
 
 Extends `RetryPolicy` with HTTP status code awareness. Recommended for
 HTTP transports.
@@ -88,7 +88,7 @@ HTTP transports.
 | `retry_on_network_error` | `bool`           | `True`                      | Retry on network-level exceptions          |
 | `retryable_status_codes` | `frozenset[int]` | `{429, 500, 502, 503, 504}` | HTTP codes that trigger a retry            |
 
-### Policy: `RetryPolicy` (`plynth.base.policies`)
+### Policy: `RetryPolicy` (`plynt.base.policies`)
 
 Protocol-agnostic base. Same fields as `HttpRetryPolicy`, but
 `retryable_status_codes` defaults to an empty frozenset.
@@ -97,7 +97,7 @@ ______________________________________________________________________
 
 ## CircuitBreakerMiddleware
 
-**Module:** `plynth.middleware.circuit_breaker`
+**Module:** `plynt.middleware.circuit_breaker`
 **Async variant:** `AsyncCircuitBreakerMiddleware`
 
 Opens a circuit after repeated failures to prevent cascading errors.
@@ -106,7 +106,7 @@ Opens a circuit after repeated failures to prevent cascading errors.
 CircuitBreakerMiddleware(policy: CircuitBreakerPolicy)
 ```
 
-### Policy: `CircuitBreakerPolicy` (`plynth.base.policies`)
+### Policy: `CircuitBreakerPolicy` (`plynt.base.policies`)
 
 | Field                  | Type             | Default       | Description                                     |
 | ---------------------- | ---------------- | ------------- | ----------------------------------------------- |
@@ -126,7 +126,7 @@ ______________________________________________________________________
 
 ## RateLimitMiddleware
 
-**Module:** `plynth.middleware.rate_limit`
+**Module:** `plynt.middleware.rate_limit`
 **Async variant:** `AsyncRateLimitMiddleware`
 
 Enforces a maximum request rate using a sliding window counter on the
@@ -136,7 +136,7 @@ client side.
 RateLimitMiddleware(policy: RateLimitPolicy)
 ```
 
-### Policy: `RateLimitPolicy` (`plynth.base.policies`)
+### Policy: `RateLimitPolicy` (`plynt.base.policies`)
 
 | Field            | Type    | Default | Description                 |
 | ---------------- | ------- | ------- | --------------------------- |
@@ -152,7 +152,7 @@ ______________________________________________________________________
 
 ## ThrottleGovernanceMiddleware
 
-**Module:** `plynth.middleware.throttle`
+**Module:** `plynt.middleware.throttle`
 **Async variant:** `AsyncThrottleGovernanceMiddleware`
 
 Reacts to throttle or backpressure signals returned by upstream APIs.
@@ -165,7 +165,7 @@ fallback delay source when `Retry-After` is absent.
 ThrottleGovernanceMiddleware(policy: ThrottleGovernancePolicy | None = None)
 ```
 
-### Policy: `ThrottleGovernancePolicy` (`plynth.base.policies`)
+### Policy: `ThrottleGovernancePolicy` (`plynt.base.policies`)
 
 | Field                 | Type    | Default | Description                                             |
 | --------------------- | ------- | ------- | ------------------------------------------------------- |
@@ -192,11 +192,11 @@ recommended order for a typical stack is:
 
 ```python
 middlewares = [
-    CacheMiddleware(...),           # outermost — short-circuit on hit
+    CacheMiddleware(...),  # outermost — short-circuit on hit
     LoggingMiddleware(),
     HeaderMiddleware({...}),
-    auth_middleware,                # from auth_from_config()
-    RetryMiddleware(...),           # wraps throttle so it sees governance delay
+    auth_middleware,  # from auth_from_config()
+    RetryMiddleware(...),  # wraps throttle so it sees governance delay
     ThrottleGovernanceMiddleware(...),
     CircuitBreakerMiddleware(...),  # innermost
 ]

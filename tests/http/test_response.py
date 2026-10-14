@@ -1,4 +1,4 @@
-"""Tests for plynth.http.response.HttpResponse."""
+"""Tests for plynt.http.response.HttpResponse."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from plynth.http.errors import HttpStatusError
-from plynth.http.response import HttpResponse
+from plynt.http.errors import HttpStatusError
+from plynt.http.response import HttpResponse
 
 
 class TestHttpResponseEncoding:

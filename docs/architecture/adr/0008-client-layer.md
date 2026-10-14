@@ -25,7 +25,7 @@ is in what conventions they apply, not in their architectural tier.
 ### One layer, multiple client flavours
 
 The Client Layer is a single architectural tier that contains several concrete
-client classes. Currently implemented in `plynth`:
+client classes. Currently implemented in `plynt`:
 
 | Class                            | Module           | Description                                 |
 | -------------------------------- | ---------------- | ------------------------------------------- |
@@ -65,10 +65,11 @@ Every Client Layer implementation is __not__ responsible for:
 any protocol-specific headers by default and do __not__ raise on 4xx/5xx.
 
 ```python
-from plynth.base.transport import SyncTransport
-from plynth.base.request import Request
-from plynth.base.response import Response
+from plynt.base.transport import SyncTransport
+from plynt.base.request import Request
+from plynt.base.response import Response
 from typing import Any
+
 
 class HTTPClient:
     def __init__(
@@ -100,8 +101,13 @@ class HTTPClient:
         )
         return self._transport.send(req)
 
-    def get(self, path: str, *, headers: dict[str, str] | None = None,
-            params: dict[str, Any] | None = None) -> Response:
+    def get(
+        self,
+        path: str,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+    ) -> Response:
         return self.request("GET", path, headers=headers, params=params)
 
     # post(), put(), patch(), delete() — same pattern
@@ -120,16 +126,17 @@ class HTTPClient:
    raising a typed `HttpStatusError` subclass instead of returning silently.
 
 ```python
-from plynth.http.errors import match_error
-from plynth.http.client import HTTPClient
-from plynth.base.transport import SyncTransport
-from plynth.base.response import Response
+from plynt.http.errors import match_error
+from plynt.http.client import HTTPClient
+from plynt.base.transport import SyncTransport
+from plynt.base.response import Response
 from typing import Any
 
 _JSON_HEADERS: dict[str, str] = {
     "Content-Type": "application/json",
     "Accept": "application/json",
 }
+
 
 class APIClient(HTTPClient):
     def __init__(
@@ -141,9 +148,18 @@ class APIClient(HTTPClient):
         merged = {**_JSON_HEADERS, **(headers or {})}
         super().__init__(base_url, transport, headers=merged)
 
-    def request(self, method: str, path: str, *, headers: dict[str, str] | None = None,
-                params: dict[str, Any] | None = None, content: bytes | None = None) -> Response:
-        resp = super().request(method, path, headers=headers, params=params, content=content)
+    def request(
+        self,
+        method: str,
+        path: str,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        content: bytes | None = None,
+    ) -> Response:
+        resp = super().request(
+            method, path, headers=headers, params=params, content=content
+        )
         if resp.status_code >= 400:
             raise match_error(
                 resp.status_code,
@@ -157,7 +173,7 @@ class APIClient(HTTPClient):
 
 #### Typed error hierarchy
 
-`match_error()` (from `plynth.http.errors`) maps a status code to the most
+`match_error()` (from `plynt.http.errors`) maps a status code to the most
 specific `HttpStatusError` subclass, falling back to plain `HttpStatusError`:
 
 ```text

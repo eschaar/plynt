@@ -1,20 +1,20 @@
 # How to use middleware
 
-Plynth's transport accepts a list of middleware objects that wrap every
+Plynt's transport accepts a list of middleware objects that wrap every
 outgoing request. Middleware is composable and order-dependent: the first
 item in the list is the outermost wrapper.
 
 ## Available middleware
 
-| Class                          | Module                              | Purpose                                     |
-| ------------------------------ | ----------------------------------- | ------------------------------------------- |
-| `CacheMiddleware`              | `plynth.middleware.cache`           | Cache GET responses                         |
-| `LoggingMiddleware`            | `plynth.middleware.logging`         | Log request/response metadata               |
-| `HeaderMiddleware`             | `plynth.middleware.header`          | Inject static headers on every request      |
-| `RetryMiddleware`              | `plynth.middleware.retry`           | Retry on transient failures with backoff    |
-| `CircuitBreakerMiddleware`     | `plynth.middleware.circuit_breaker` | Open circuit after repeated failures        |
-| `RateLimitMiddleware`          | `plynth.middleware.rate_limit`      | Enforce a max request rate (sliding window) |
-| `ThrottleGovernanceMiddleware` | `plynth.middleware.throttle`        | React to upstream throttle signals          |
+| Class                          | Module                             | Purpose                                     |
+| ------------------------------ | ---------------------------------- | ------------------------------------------- |
+| `CacheMiddleware`              | `plynt.middleware.cache`           | Cache GET responses                         |
+| `LoggingMiddleware`            | `plynt.middleware.logging`         | Log request/response metadata               |
+| `HeaderMiddleware`             | `plynt.middleware.header`          | Inject static headers on every request      |
+| `RetryMiddleware`              | `plynt.middleware.retry`           | Retry on transient failures with backoff    |
+| `CircuitBreakerMiddleware`     | `plynt.middleware.circuit_breaker` | Open circuit after repeated failures        |
+| `RateLimitMiddleware`          | `plynt.middleware.rate_limit`      | Enforce a max request rate (sliding window) |
+| `ThrottleGovernanceMiddleware` | `plynt.middleware.throttle`        | React to upstream throttle signals          |
 
 Async variants (`AsyncCacheMiddleware`, `AsyncLoggingMiddleware`,
 `AsyncRetryMiddleware`, etc.) exist for every sync class.
@@ -22,8 +22,8 @@ Async variants (`AsyncCacheMiddleware`, `AsyncLoggingMiddleware`,
 ## Add logging
 
 ```python
-from plynth.middleware.logging import LoggingMiddleware
-from plynth.http.transport import HttpxSyncTransport
+from plynt.middleware.logging import LoggingMiddleware
+from plynt.http.transport import HttpxSyncTransport
 
 transport = HttpxSyncTransport(middlewares=[LoggingMiddleware()])
 ```
@@ -31,8 +31,8 @@ transport = HttpxSyncTransport(middlewares=[LoggingMiddleware()])
 ## Add retry
 
 ```python
-from plynth.middleware.retry import RetryMiddleware
-from plynth.http.policies import HttpRetryPolicy
+from plynt.middleware.retry import RetryMiddleware
+from plynt.http.policies import HttpRetryPolicy
 
 transport = HttpxSyncTransport(
     middlewares=[
@@ -49,8 +49,8 @@ transport = HttpxSyncTransport(
 ## Add circuit breaking
 
 ```python
-from plynth.middleware.circuit_breaker import CircuitBreakerMiddleware
-from plynth.http.policies import HttpCircuitBreakerPolicy
+from plynt.middleware.circuit_breaker import CircuitBreakerMiddleware
+from plynt.http.policies import HttpCircuitBreakerPolicy
 
 transport = HttpxSyncTransport(
     middlewares=[
@@ -68,7 +68,7 @@ transport = HttpxSyncTransport(
 ## Add static request headers
 
 ```python
-from plynth.middleware.header import HeaderMiddleware
+from plynt.middleware.header import HeaderMiddleware
 
 transport = HttpxSyncTransport(
     middlewares=[
@@ -80,12 +80,10 @@ transport = HttpxSyncTransport(
 ## Add response caching
 
 ```python
-from plynth.cache import LocMemCache
-from plynth.middleware.cache import CacheMiddleware
+from plynt.cache import LocMemCache
+from plynt.middleware.cache import CacheMiddleware
 
-transport = HttpxSyncTransport(
-    middlewares=[CacheMiddleware(LocMemCache(), ttl=300)]
-)
+transport = HttpxSyncTransport(middlewares=[CacheMiddleware(LocMemCache(), ttl=300)])
 ```
 
 See [How to use caching](use-cache.md) for backend options.
@@ -97,14 +95,14 @@ Place auth between headers and retry. Place `CircuitBreakerMiddleware`
 innermost so the breaker trips on failures that exhaust retries:
 
 ```python
-from plynth.cache import LocMemCache
-from plynth.middleware.cache import CacheMiddleware
-from plynth.middleware.logging import LoggingMiddleware
-from plynth.middleware.header import HeaderMiddleware
-from plynth.middleware.retry import RetryMiddleware
-from plynth.middleware.circuit_breaker import CircuitBreakerMiddleware
-from plynth.http.policies import HttpRetryPolicy, HttpCircuitBreakerPolicy
-from plynth.http.auth import auth_from_config, OAuth2ClientCredentialsConfig
+from plynt.cache import LocMemCache
+from plynt.middleware.cache import CacheMiddleware
+from plynt.middleware.logging import LoggingMiddleware
+from plynt.middleware.header import HeaderMiddleware
+from plynt.middleware.retry import RetryMiddleware
+from plynt.middleware.circuit_breaker import CircuitBreakerMiddleware
+from plynt.http.policies import HttpRetryPolicy, HttpCircuitBreakerPolicy
+from plynt.http.auth import auth_from_config, OAuth2ClientCredentialsConfig
 
 auth = auth_from_config(OAuth2ClientCredentialsConfig(...))
 
@@ -128,14 +126,12 @@ Use `RateLimitMiddleware` to prevent exceeding a target API's request
 quota from the client side:
 
 ```python
-from plynth.middleware.rate_limit import RateLimitMiddleware
-from plynth.base.policies import RateLimitPolicy
+from plynt.middleware.rate_limit import RateLimitMiddleware
+from plynt.base.policies import RateLimitPolicy
 
 transport = HttpxSyncTransport(
     middlewares=[
-        RateLimitMiddleware(
-            RateLimitPolicy(max_requests=10, window_seconds=1.0)
-        )
+        RateLimitMiddleware(RateLimitPolicy(max_requests=10, window_seconds=1.0))
     ]
 )
 ```
@@ -148,8 +144,8 @@ Use `ThrottleGovernanceMiddleware` to react to throttle signals returned by
 the upstream API (for example `429` or `503` with `Retry-After`).
 
 ```python
-from plynth.base.policies import ThrottleGovernancePolicy
-from plynth.middleware.throttle import ThrottleGovernanceMiddleware
+from plynt.base.policies import ThrottleGovernancePolicy
+from plynt.middleware.throttle import ThrottleGovernanceMiddleware
 
 transport = HttpxSyncTransport(
     middlewares=[
@@ -170,14 +166,16 @@ integration to work: put `RetryMiddleware` before
 outermost). This lets retry read per-attempt governance delay metadata.
 
 ```python
-from plynth.base.policies import ThrottleGovernancePolicy
-from plynth.http.policies import HttpRetryPolicy
-from plynth.middleware.retry import RetryMiddleware
-from plynth.middleware.throttle import ThrottleGovernanceMiddleware
+from plynt.base.policies import ThrottleGovernancePolicy
+from plynt.http.policies import HttpRetryPolicy
+from plynt.middleware.retry import RetryMiddleware
+from plynt.middleware.throttle import ThrottleGovernanceMiddleware
 
 transport = HttpxSyncTransport(
     middlewares=[
-        RetryMiddleware(HttpRetryPolicy(max_attempts=3, retryable_status_codes={429, 503})),
+        RetryMiddleware(
+            HttpRetryPolicy(max_attempts=3, retryable_status_codes={429, 503})
+        ),
         ThrottleGovernanceMiddleware(
             ThrottleGovernancePolicy(
                 reject_on_detection=False,

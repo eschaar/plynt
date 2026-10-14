@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from plynth.connectors.salesforce.cdc._bitmap import _FieldBitmapDecoder
+from plynt.connectors.salesforce.cdc._bitmap import _FieldBitmapDecoder
 
 
 @pytest.fixture

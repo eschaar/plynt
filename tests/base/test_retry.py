@@ -1,8 +1,8 @@
-"""Tests for plynth.base.policies.RetryPolicy."""
+"""Tests for plynt.base.policies.RetryPolicy."""
 
 from __future__ import annotations
 
-from plynth.base.policies import RetryPolicy
+from plynt.base.policies import RetryPolicy
 
 
 class TestRetryPolicy:

@@ -1,7 +1,7 @@
 # DRF service view example
 
 Use this snippet as a copy-paste starting point for integrating
-`PlynthServiceMixin` or `AsyncPlynthServiceMixin` in a DRF `APIView`.
+`PlyntServiceMixin` or `AsyncPlyntServiceMixin` in a DRF `APIView`.
 
 ```python
 from typing import ClassVar, cast
@@ -9,15 +9,15 @@ from typing import ClassVar, cast
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from plynth.adapters.django.drf.views import (
-    AsyncPlynthServiceMixin,
+from plynt.adapters.django.drf.views import (
+    AsyncPlyntServiceMixin,
     CacheAliasesConfig,
-    PlynthServiceMixin,
+    PlyntServiceMixin,
 )
-from plynth.base.transport import AsyncTransport, SyncTransport
-from plynth.http.auth import OAuth2ClientCredentialsConfig
-from plynth.http.client import APIClient, AsyncAPIClient
-from plynth.http.settings import HTTPSettings
+from plynt.base.transport import AsyncTransport, SyncTransport
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.client import APIClient, AsyncAPIClient
+from plynt.http.settings import HTTPSettings
 
 
 class ExternalAPISettings(HTTPSettings):
@@ -44,12 +44,12 @@ def build_async_catalog_service(transport: AsyncTransport) -> AsyncAPIClient:
     return AsyncAPIClient(base_url="https://api.example.com", transport=transport)
 
 
-class ProductListView(PlynthServiceMixin, APIView):
+class ProductListView(PlyntServiceMixin, APIView):
     settings_name = "EXTERNAL_API"
     settings_class = ExternalAPISettings
     cache_aliases = CacheAliasesConfig(
-        response="plynth_responses",
-        auth="plynth_tokens",
+        response="plynt_responses",
+        auth="plynt_tokens",
     )
     service_factories: ClassVar = {
         "catalog": build_catalog_service,
@@ -65,12 +65,12 @@ class ProductListView(PlynthServiceMixin, APIView):
         return Response(upstream.json())
 
 
-class AsyncProductListView(AsyncPlynthServiceMixin, APIView):
+class AsyncProductListView(AsyncPlyntServiceMixin, APIView):
     settings_name = "EXTERNAL_API"
     settings_class = ExternalAPISettings
     cache_aliases = CacheAliasesConfig(
-        response="plynth_responses",
-        auth="plynth_tokens",
+        response="plynt_responses",
+        auth="plynt_tokens",
     )
     service_factories: ClassVar = {
         "catalog": build_async_catalog_service,
@@ -92,5 +92,5 @@ class AsyncProductListView(AsyncPlynthServiceMixin, APIView):
 1. Use the view mainly for request validation, orchestration, and response
    shaping.
 1. Configure auth and cache aliases in Django `settings.py`.
-1. Use `AsyncPlynthServiceMixin` only for explicit async `APIView` handlers
+1. Use `AsyncPlyntServiceMixin` only for explicit async `APIView` handlers
    under ASGI.

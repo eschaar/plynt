@@ -14,30 +14,26 @@ Use `CacheMiddleware` to cache `GET` responses at the transport level.
 ## In-process cache
 
 ```python
-from plynth.cache import LocMemCache
-from plynth.middleware.cache import CacheMiddleware
-from plynth.http.transport import HttpxSyncTransport
+from plynt.cache import LocMemCache
+from plynt.middleware.cache import CacheMiddleware
+from plynt.http.transport import HttpxSyncTransport
 
-transport = HttpxSyncTransport(
-    middlewares=[CacheMiddleware(LocMemCache(), ttl=300)]
-)
+transport = HttpxSyncTransport(middlewares=[CacheMiddleware(LocMemCache(), ttl=300)])
 ```
 
 ## Redis shared cache
 
 ```python
 import redis
-from plynth.cache import RedisCache
-from plynth.middleware.cache import CacheMiddleware
-from plynth.http.transport import HttpxSyncTransport
+from plynt.cache import RedisCache
+from plynt.middleware.cache import CacheMiddleware
+from plynt.http.transport import HttpxSyncTransport
 
 cache = RedisCache(
     redis.Redis(host="localhost", port=6379, db=0),
     prefix="my-service:",
 )
-transport = HttpxSyncTransport(
-    middlewares=[CacheMiddleware(cache)]
-)
+transport = HttpxSyncTransport(middlewares=[CacheMiddleware(cache)])
 ```
 
 ## Redis shared cache with TLS or custom SSL settings
@@ -47,9 +43,9 @@ Use `redis.Redis(...)` SSL options directly and pass the configured client to
 
 ```python
 import redis
-from plynth.cache import RedisCache
-from plynth.middleware.cache import CacheMiddleware
-from plynth.http.transport import HttpxSyncTransport
+from plynt.cache import RedisCache
+from plynt.middleware.cache import CacheMiddleware
+from plynt.http.transport import HttpxSyncTransport
 
 redis_client = redis.Redis(
     host="redis.internal",
@@ -61,9 +57,7 @@ redis_client = redis.Redis(
 )
 
 cache = RedisCache(redis_client, prefix="my-service:")
-transport = HttpxSyncTransport(
-    middlewares=[CacheMiddleware(cache, ttl=300)]
-)
+transport = HttpxSyncTransport(middlewares=[CacheMiddleware(cache, ttl=300)])
 ```
 
 If your platform requires different TLS options, configure them on the Redis
@@ -73,24 +67,20 @@ client the same way and keep `RedisCache` unchanged.
 
 ```python
 from cachetools import LRUCache
-from plynth.cache import CachetoolsCache
-from plynth.middleware.cache import CacheMiddleware
+from plynt.cache import CachetoolsCache
+from plynt.middleware.cache import CacheMiddleware
 
 cache = CachetoolsCache(LRUCache(maxsize=512))
-transport = HttpxSyncTransport(
-    middlewares=[CacheMiddleware(cache)]
-)
+transport = HttpxSyncTransport(middlewares=[CacheMiddleware(cache)])
 ```
 
 ## Disable caching in tests
 
 ```python
-from plynth.cache import DummyCache
-from plynth.middleware.cache import CacheMiddleware
+from plynt.cache import DummyCache
+from plynt.middleware.cache import CacheMiddleware
 
-transport = HttpxSyncTransport(
-    middlewares=[CacheMiddleware(DummyCache())]
-)
+transport = HttpxSyncTransport(middlewares=[CacheMiddleware(DummyCache())])
 ```
 
 Alternatively, omit `CacheMiddleware` entirely in the test transport.
@@ -115,17 +105,17 @@ Use `AsyncCacheMiddleware` with `HttpxAsyncTransport`. The cache backend is
 the same; no async-specific backend is needed:
 
 ```python
-from plynth.middleware.cache import AsyncCacheMiddleware
+from plynt.middleware.cache import AsyncCacheMiddleware
 
 transport = HttpxAsyncTransport(
     middlewares=[AsyncCacheMiddleware(LocMemCache(), ttl=300)]
 )
 ```
 
-## Wrap framework-native caches behind Plynth's cache protocol
+## Wrap framework-native caches behind Plynt's cache protocol
 
 Any object that implements `get`, `set`, and `delete` with compatible
-semantics can be used as a Plynth cache backend.
+semantics can be used as a Plynt cache backend.
 
 Example wrapper for Django's `django.core.cache`:
 
@@ -152,7 +142,7 @@ Use this adapter exactly like built-in backends:
 
 ```python
 from django.core.cache import caches
-from plynth.middleware.cache import CacheMiddleware
+from plynt.middleware.cache import CacheMiddleware
 
 cache_backend = DjangoCacheAdapter(caches["default"])
 middleware = CacheMiddleware(cache_backend, ttl=300)

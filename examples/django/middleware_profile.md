@@ -1,16 +1,16 @@
 # Django middleware profile example
 
 Use this checklist-style snippet to keep inbound Django middleware behavior
-aligned with outbound plynth calls.
+aligned with outbound plynt calls.
 
 ```python
-from plynth.adapters.django.drf.views import (
-    PlynthServiceMixin,
+from plynt.adapters.django.drf.views import (
+    PlyntServiceMixin,
     RequestHeadersConfig,
 )
 
 
-class ExampleView(PlynthServiceMixin):
+class ExampleView(PlyntServiceMixin):
     request_headers = RequestHeadersConfig(
         enabled=True,
         mapping={
@@ -27,4 +27,4 @@ class ExampleView(PlynthServiceMixin):
 
 1. Keep request-header forwarding explicit and minimal.
 1. Do not derive outbound base URLs from inbound host headers.
-1. Keep Django response caching and plynth upstream caching separate.
+1. Keep Django response caching and plynt upstream caching separate.

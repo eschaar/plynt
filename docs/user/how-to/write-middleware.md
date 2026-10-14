@@ -1,16 +1,18 @@
 # How to write custom middleware
 
-Plynth middleware is a pair of protocols — `SyncMiddleware` and
+Plynt middleware is a pair of protocols — `SyncMiddleware` and
 `AsyncMiddleware`. Implement the `handle` method and insert your class into
 a transport's `middlewares` list.
 
 ## The protocols
 
 ```python
-# plynth.base.middleware
+# plynt.base.middleware
+
 
 class SyncMiddleware(Protocol):
     def handle(self, request: Request, next_handler: NextSyncHandler) -> Response: ...
+
 
 class AsyncMiddleware(Protocol):
     async def handle(
@@ -27,9 +29,9 @@ intend to short-circuit the chain.
 ```python
 import time
 import logging
-from plynth.base.middleware import NextSyncHandler
-from plynth.base.request import Request
-from plynth.base.response import Response
+from plynt.base.middleware import NextSyncHandler
+from plynt.base.request import Request
+from plynt.base.response import Response
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +43,13 @@ class TimingMiddleware:
         start = time.monotonic()
         response = next_handler(request)
         elapsed_ms = int((time.monotonic() - start) * 1000)
-        logger.info("%s %s → %s (%dms)", request.method, request.url,
-                    response.status_code, elapsed_ms)
+        logger.info(
+            "%s %s → %s (%dms)",
+            request.method,
+            request.url,
+            response.status_code,
+            elapsed_ms,
+        )
         return response
 ```
 
@@ -57,14 +64,17 @@ class CorrelationHeaderMiddleware:
 
     def handle(self, request: Request, next_handler: NextSyncHandler) -> Response:
         import uuid
+
         headers = dict(request.headers)
         headers.setdefault(self._header_name, str(uuid.uuid4()))
-        return next_handler(Request(
-            method=request.method,
-            url=request.url,
-            headers=headers,
-            content=request.content,
-        ))
+        return next_handler(
+            Request(
+                method=request.method,
+                url=request.url,
+                headers=headers,
+                content=request.content,
+            )
+        )
 ```
 
 ## Example: short-circuit on a condition
@@ -73,7 +83,7 @@ Return a `Response` directly without calling `next_handler` to prevent the
 request from reaching the network:
 
 ```python
-from plynth.base.response import Response
+from plynt.base.response import Response
 
 
 class MaintenanceModeMiddleware:
@@ -113,7 +123,7 @@ class StatusNormalizationMiddleware:
 
 ```python
 import logging
-from plynth.http.errors import HttpStatusError
+from plynt.http.errors import HttpStatusError
 
 logger = logging.getLogger(__name__)
 
@@ -125,8 +135,12 @@ class ErrorLoggingMiddleware:
         try:
             return next_handler(request)
         except HttpStatusError as exc:
-            logger.warning("HTTP error: %s %s → %s", request.method,
-                           request.url, exc.response.status_code)
+            logger.warning(
+                "HTTP error: %s %s → %s",
+                request.method,
+                request.url,
+                exc.response.status_code,
+            )
             raise
 ```
 
@@ -135,17 +149,25 @@ class ErrorLoggingMiddleware:
 Implement `async def handle(...)` and use with `HttpxAsyncTransport`:
 
 ```python
-from plynth.base.middleware import NextAsyncHandler
+from plynt.base.middleware import NextAsyncHandler
 
 
 class AsyncTimingMiddleware:
-    async def handle(self, request: Request, next_handler: NextAsyncHandler) -> Response:
+    async def handle(
+        self, request: Request, next_handler: NextAsyncHandler
+    ) -> Response:
         import time
+
         start = time.monotonic()
         response = await next_handler(request)
         elapsed_ms = int((time.monotonic() - start) * 1000)
-        logger.info("%s %s → %s (%dms)", request.method, request.url,
-                    response.status_code, elapsed_ms)
+        logger.info(
+            "%s %s → %s (%dms)",
+            request.method,
+            request.url,
+            response.status_code,
+            elapsed_ms,
+        )
         return response
 ```
 
@@ -157,7 +179,7 @@ like retry and circuit breaking later:
 
 ```python
 middlewares = [
-    TimingMiddleware(),          # outermost
+    TimingMiddleware(),  # outermost
     LoggingMiddleware(),
     auth_middleware,
     RetryMiddleware(...),

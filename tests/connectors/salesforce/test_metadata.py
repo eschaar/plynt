@@ -8,21 +8,21 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from plynth.base.response import Response
-from plynth.connectors.salesforce.errors import (
+from plynt.base.response import Response
+from plynt.connectors.salesforce.errors import (
     MetadataDeployTimeoutError,
     SalesforceMetadataDeployError,
 )
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.metadata import (
+from plynt.connectors.salesforce.metadata import (
     AsyncSalesforceMetadataService,
     SalesforceMetadataDeployResult,
     SalesforceMetadataService,
 )
-from plynth.http.client import APIClient, AsyncAPIClient
+from plynt.http.client import APIClient, AsyncAPIClient
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 from tests.connectors.salesforce.conftest import DUMMY_INSTANCE_URL, render_json_bytes
 
@@ -153,7 +153,7 @@ class TestSalesforceMetadataService:
         client = APIClient(base_url=DUMMY_INSTANCE_URL, transport=transport)
         service = SalesforceMetadataService(client)
 
-        with patch("plynth.connectors.salesforce.metadata.time.sleep"):
+        with patch("plynt.connectors.salesforce.metadata.time.sleep"):
             result = service.wait_for_deploy(_DEPLOY_ID, poll_interval=0.0)
 
         assert result.status == "Succeeded"
@@ -173,7 +173,7 @@ class TestSalesforceMetadataService:
         client = APIClient(base_url=DUMMY_INSTANCE_URL, transport=transport)
         service = SalesforceMetadataService(client)
 
-        with patch("plynth.connectors.salesforce.metadata.time.sleep"):
+        with patch("plynt.connectors.salesforce.metadata.time.sleep"):
             result = service.wait_for_deploy(_DEPLOY_ID, poll_interval=0.0)
 
         assert result.done is True
@@ -196,9 +196,9 @@ class TestSalesforceMetadataService:
         service = SalesforceMetadataService(client)
 
         with (
-            patch("plynth.connectors.salesforce.metadata.time.sleep"),
+            patch("plynt.connectors.salesforce.metadata.time.sleep"),
             patch(
-                "plynth.connectors.salesforce.metadata.time.monotonic",
+                "plynt.connectors.salesforce.metadata.time.monotonic",
                 side_effect=[0.0, 2.0],
             ),
             pytest.raises(MetadataDeployTimeoutError),
@@ -306,7 +306,7 @@ class TestAsyncSalesforceMetadataService:
         service = AsyncSalesforceMetadataService(client)
 
         with patch(
-            "plynth.connectors.salesforce.metadata.asyncio.sleep",
+            "plynt.connectors.salesforce.metadata.asyncio.sleep",
             new_callable=AsyncMock,
         ):
             result = await service.wait_for_deploy(_DEPLOY_ID, poll_interval=0.0)
@@ -332,11 +332,11 @@ class TestAsyncSalesforceMetadataService:
 
         with (
             patch(
-                "plynth.connectors.salesforce.metadata.asyncio.sleep",
+                "plynt.connectors.salesforce.metadata.asyncio.sleep",
                 new_callable=AsyncMock,
             ),
             patch(
-                "plynth.connectors.salesforce.metadata.time.monotonic",
+                "plynt.connectors.salesforce.metadata.time.monotonic",
                 side_effect=[0.0, 2.0],
             ),
             pytest.raises(MetadataDeployTimeoutError),

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import Field, ValidationError
 
-from plynth.connectors.salesforce.models import (
+from plynt.connectors.salesforce.models import (
     AgentMessageResponse,
     AgentSession,
     AgentSessionEndAck,

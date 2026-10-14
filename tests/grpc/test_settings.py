@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from plynth.grpc.settings import GrpcSettings
+from plynt.grpc.settings import GrpcSettings
 
 
 class TestGrpcSettingsContract:
@@ -20,10 +20,10 @@ class TestGrpcSettingsContract:
         assert settings.metadata == {}
 
     def test_env_prefix_is_applied(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Validate fields resolve from the PLYNTH_GRPC env namespace."""
-        monkeypatch.setenv("PLYNTH_GRPC_TARGET", "dns:///env.grpc.local:443")
-        monkeypatch.setenv("PLYNTH_GRPC_TIMEOUT", "7.25")
-        monkeypatch.setenv("PLYNTH_GRPC_SECURE", "false")
+        """Validate fields resolve from the PLYNT_GRPC env namespace."""
+        monkeypatch.setenv("PLYNT_GRPC_TARGET", "dns:///env.grpc.local:443")
+        monkeypatch.setenv("PLYNT_GRPC_TIMEOUT", "7.25")
+        monkeypatch.setenv("PLYNT_GRPC_SECURE", "false")
 
         settings = GrpcSettings()
 

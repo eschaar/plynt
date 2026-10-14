@@ -2,10 +2,10 @@
 
 import importlib
 
-from plynth.adapters.django.drf import (
-    AsyncPlynthServiceMixin,
+from plynt.adapters.django.drf import (
+    AsyncPlyntServiceMixin,
     CacheAliasesConfig,
-    PlynthServiceMixin,
+    PlyntServiceMixin,
     RequestHeadersConfig,
     build_async_request_header_middleware,
     build_request_header_middleware,
@@ -17,12 +17,12 @@ class TestDrfAdapterPackage:
 
     def test_package_exports_module_names(self) -> None:
         """Verify expected public exports from DRF adapter package."""
-        module = importlib.import_module("plynth.adapters.django.drf")
+        module = importlib.import_module("plynt.adapters.django.drf")
 
         assert module.__all__ == [
-            "AsyncPlynthServiceMixin",
+            "AsyncPlyntServiceMixin",
             "CacheAliasesConfig",
-            "PlynthServiceMixin",
+            "PlyntServiceMixin",
             "RequestHeadersConfig",
             "build_async_request_header_middleware",
             "build_request_header_middleware",
@@ -33,11 +33,11 @@ class TestDrfAdapterPackage:
 
     def test_package_reexports_public_helpers(self) -> None:
         """Verify package-level re-exports for DRF helper entry points."""
-        module = importlib.import_module("plynth.adapters.django.drf")
+        module = importlib.import_module("plynt.adapters.django.drf")
 
-        assert module.AsyncPlynthServiceMixin is AsyncPlynthServiceMixin
+        assert module.AsyncPlyntServiceMixin is AsyncPlyntServiceMixin
         assert module.CacheAliasesConfig is CacheAliasesConfig
-        assert module.PlynthServiceMixin is PlynthServiceMixin
+        assert module.PlyntServiceMixin is PlyntServiceMixin
         assert module.RequestHeadersConfig is RequestHeadersConfig
         assert (
             module.build_async_request_header_middleware
@@ -47,6 +47,6 @@ class TestDrfAdapterPackage:
 
     def test_submodules_import_without_drf_installed(self) -> None:
         """Verify DRF adapter modules import without DRF dependency."""
-        importlib.import_module("plynth.adapters.django.drf.errors")
-        importlib.import_module("plynth.adapters.django.drf.headers")
-        importlib.import_module("plynth.adapters.django.drf.views")
+        importlib.import_module("plynt.adapters.django.drf.errors")
+        importlib.import_module("plynt.adapters.django.drf.headers")
+        importlib.import_module("plynt.adapters.django.drf.views")

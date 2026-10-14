@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from plynth.testsupport.vcr.path import (
+from plynt.testsupport.vcr.path import (
     DeterministicCassettePathResolver,
     build_cassette_path,
 )

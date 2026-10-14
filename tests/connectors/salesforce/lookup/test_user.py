@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from plynth.connectors.salesforce.lookup import (
+from plynt.connectors.salesforce.lookup import (
     AsyncSalesforceUserLookupService,
     SalesforceUserLookupService,
 )
@@ -94,7 +94,7 @@ class TestAsyncSalesforceUserLookupService:
             return "63.0"
 
         monkeypatch.setattr(
-            "plynth.connectors.salesforce.lookup.base.resolve_async_api_version",
+            "plynt.connectors.salesforce.lookup.base.resolve_async_api_version",
             fake_resolve,
         )
 

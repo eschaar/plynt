@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth previously used `httpx` as the HTTP backend for
+Plynt previously used `httpx` as the HTTP backend for
 `HttpxSyncTransport` and `HttpxAsyncTransport`.
 
 The project `httpx2` is available as a maintained continuation with active
@@ -14,13 +14,13 @@ releases and a compatible sync/async client model. Because this repository is
 currently private, we can prioritize internal consistency and delivery speed
 over broad backward-compatibility constraints.
 
-We still want to avoid unnecessary churn in the plynth-facing API surface.
+We still want to avoid unnecessary churn in the plynt-facing API surface.
 The existing transport class names are already widely used across this codebase
 and documentation.
 
 ## Decision
 
-Migrate plynth's HTTP transport backend from `httpx` to `httpx2`.
+Migrate plynt's HTTP transport backend from `httpx` to `httpx2`.
 
 The migration rules are:
 
@@ -33,7 +33,7 @@ The migration rules are:
 
 ## Boundary Note: Transport vs Middleware Responsibilities
 
-To avoid overlap and confusion, plynth keeps a strict separation:
+To avoid overlap and confusion, plynt keeps a strict separation:
 
 - Connection-level concerns live in the HTTP transport backend:
   protocol (`http2`), connection pooling limits, keep-alive lifecycle,
@@ -60,12 +60,12 @@ request/response behavior and reliability policy.
 - Misses the active-maintenance path selected for this project.
 - Delays inevitable backend refresh work.
 
-### Option B: Migrate to `httpx2` while preserving plynth names
+### Option B: Migrate to `httpx2` while preserving plynt names
 
 **Pros:**
 
 - Adopts an actively maintained backend.
-- Limits churn by preserving plynth's public transport names.
+- Limits churn by preserving plynt's public transport names.
 - Keeps migration localized to transport internals.
 
 **Cons:**
@@ -89,7 +89,7 @@ request/response behavior and reliability policy.
 ## Rationale
 
 Option B gives the best balance: we get a maintained HTTP backend while
-preserving a stable plynth-level API shape. The repository's private status
+preserving a stable plynt-level API shape. The repository's private status
 reduces migration risk tolerance constraints, but preserving names still avoids
 unnecessary internal churn.
 
@@ -98,7 +98,7 @@ unnecessary internal churn.
 ### Positive
 
 - HTTP backend aligns with active upstream maintenance.
-- Minimal plynth API disruption.
+- Minimal plynt API disruption.
 
 ### Negative / Tradeoffs
 
@@ -123,7 +123,7 @@ Mitigations:
 ## Acceptance Criteria
 
 1. HTTP transport implementation imports and uses `httpx2`.
-1. Existing plynth transport class names remain unchanged.
+1. Existing plynt transport class names remain unchanged.
 1. HTTP transport tests pass after migration updates.
 1. Public docs and dependency metadata reference the new backend correctly.
 1. Full local quality gate remains green.

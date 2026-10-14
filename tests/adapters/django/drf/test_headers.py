@@ -1,4 +1,4 @@
-"""Tests for ``plynth.adapters.django.drf.headers``."""
+"""Tests for ``plynt.adapters.django.drf.headers``."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from plynth.adapters.django.drf.headers import (
+from plynt.adapters.django.drf.headers import (
     build_async_request_header_middleware,
     build_request_header_middleware,
 )
-from plynth.base.request import Request
-from plynth.base.response import Response
+from plynt.base.request import Request
+from plynt.base.response import Response
 
 
 class TestBuildRequestHeaderMiddleware:

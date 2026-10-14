@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import pytest
 
-from plynth.connectors.llm.adapters.base import (
+from plynt.connectors.llm.adapters.base import (
     DefaultLLMCompletionAdapter,
     DefaultLLMRequestAdapter,
     DefaultLLMStreamAdapter,
@@ -15,7 +15,7 @@ from plynth.connectors.llm.adapters.base import (
     LLMStreamAdapter,
     RoutedEventStreamAdapter,
 )
-from plynth.connectors.llm.models import LLMExecutionOptions, LLMGenerateRequest
+from plynt.connectors.llm.models import LLMExecutionOptions, LLMGenerateRequest
 
 
 class TestDefaultLLMRequestAdapter:

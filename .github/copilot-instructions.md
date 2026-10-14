@@ -51,7 +51,7 @@ Args:
 - One line per parameter where possible.
 - No Sphinx cross-references (`:class:`, `:meth:`, `:attr:`).
 - Use plain names: `SalesforceQueryResponse`, not
-  `:class:`~plynth.connectors.salesforce.models.SalesforceQueryResponse``.
+  `:class:`~plynt.connectors.salesforce.models.SalesforceQueryResponse``.
 
 **`Returns:` format**
 
@@ -225,10 +225,10 @@ Use this profile for day-to-day implementation decisions in this repository.
 
 ### 17.1 Source Boundaries
 
-- Core framework-agnostic code lives in `src/plynth/base`, `src/plynth/http`,
-  `src/plynth/middleware`, and `src/plynth/cache`.
-- Connector-specific code lives under `src/plynth/connectors/*`.
-- `src/plynth/connectors/salesforce` is the active validation connector.
+- Core framework-agnostic code lives in `src/plynt/base`, `src/plynt/http`,
+  `src/plynt/middleware`, and `src/plynt/cache`.
+- Connector-specific code lives under `src/plynt/connectors/*`.
+- `src/plynt/connectors/salesforce` is the active validation connector.
 - Keep connector-to-connector dependencies out of scope.
 - If shared behavior is needed, move it to a neutral core abstraction.
 
@@ -254,9 +254,9 @@ When validating focused changes, prefer targeted pytest runs first, then run
 
 ### 17.4 AI Connector Track Rules
 
-- `plynth.connectors.llm` and Salesforce AI services may progress in parallel.
+- `plynt.connectors.llm` and Salesforce AI services may progress in parallel.
 - Do not make the LLM connector depend on Salesforce internals.
-- Do not make Salesforce AI services depend on `plynth.connectors.llm`.
+- Do not make Salesforce AI services depend on `plynt.connectors.llm`.
 - Share only transport, streaming, middleware, and typed core abstractions.
 
 ### 17.5 ADR Trigger Checklist

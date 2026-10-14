@@ -1,4 +1,4 @@
-"""Shared test fixtures and mock helpers for the plynth test suite."""
+"""Shared test fixtures and mock helpers for the plynt test suite."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from plynth.base.response import Response
-from plynth.base.transport import AsyncTransport, SyncTransport
-from plynth.http.client import APIClient, AsyncAPIClient, AsyncHTTPClient, HTTPClient
-from plynth.testsupport.vcr import (
+from plynt.base.response import Response
+from plynt.base.transport import AsyncTransport, SyncTransport
+from plynt.http.client import APIClient, AsyncAPIClient, AsyncHTTPClient, HTTPClient
+from plynt.testsupport.vcr import (
     StateTrackingMode,
     StateTrackingSettings,
     VCRMode,

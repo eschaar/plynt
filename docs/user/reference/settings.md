@@ -1,17 +1,17 @@
 # Settings reference
 
-Plynth uses a three-layer settings hierarchy built on `pydantic-settings`.
+Plynt uses a three-layer settings hierarchy built on `pydantic-settings`.
 Each layer extends the previous one.
 
 ```text
-Settings          (plynth.base.settings)
-└── HTTPSettings  (plynth.http.settings)
+Settings          (plynt.base.settings)
+└── HTTPSettings  (plynt.http.settings)
     └── ApiSettings
 ```
 
 ## Settings (base)
 
-**Module:** `plynth.base.settings`
+**Module:** `plynt.base.settings`
 
 | Field   | Type   | Default | Description       |
 | ------- | ------ | ------- | ----------------- |
@@ -24,7 +24,7 @@ ______________________________________________________________________
 
 ## HTTPSettings
 
-**Module:** `plynth.http.settings`
+**Module:** `plynt.http.settings`
 
 Extends `Settings` with all fields needed to build an HTTP transport.
 
@@ -54,11 +54,12 @@ Extends `Settings` with all fields needed to build an HTTP transport.
 
 ### Default env prefix
 
-`PLYNTH_` — override in a subclass via `model_config`:
+`PLYNT_` — override in a subclass via `model_config`:
 
 ```python
 from pydantic_settings import SettingsConfigDict
-from plynth.http.settings import HTTPSettings
+from plynt.http.settings import HTTPSettings
+
 
 class MySettings(HTTPSettings):
     model_config = SettingsConfigDict(
@@ -70,7 +71,7 @@ class MySettings(HTTPSettings):
 ### Build a transport from settings
 
 ```python
-from plynth.http.transport import HttpxSyncTransport
+from plynt.http.transport import HttpxSyncTransport
 
 settings = MySettings()
 transport = HttpxSyncTransport.from_settings(settings)
@@ -82,9 +83,9 @@ object automatically.
 ### Example — full subclass
 
 ```python
-from plynth.http.auth import OAuth2ClientCredentialsConfig
-from plynth.http.policies import HttpRetryPolicy
-from plynth.http.settings import HTTPSettings
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.policies import HttpRetryPolicy
+from plynt.http.settings import HTTPSettings
 from pydantic_settings import SettingsConfigDict
 
 
@@ -116,13 +117,14 @@ ______________________________________________________________________
 
 ## ApiSettings
 
-**Module:** `plynth.http.settings`
+**Module:** `plynt.http.settings`
 
 Thin subclass of `HTTPSettings`. Signals that the service uses a REST API
 rather than arbitrary HTTP. No additional fields.
 
 ```python
-from plynth.http.settings import ApiSettings
+from plynt.http.settings import ApiSettings
+
 
 class MyApiSettings(ApiSettings):
     model_config = SettingsConfigDict(env_prefix="MY_")

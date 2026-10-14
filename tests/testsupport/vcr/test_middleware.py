@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from plynth.base.request import Request as PlynthRequest
-from plynth.base.response import Response as PlynthResponse
-from plynth.testsupport.vcr import (
+from plynt.base.request import Request as PlyntRequest
+from plynt.base.response import Response as PlyntResponse
+from plynt.testsupport.vcr import (
     AsyncVCRMiddleware,
     StateTrackingMode,
     StateTrackingSettings,
@@ -218,7 +218,7 @@ class TestVCRMiddleware:
             cassette_path=str(cassette_path), settings=settings
         )
 
-        async def dummy_handler(request: PlynthRequest) -> PlynthResponse:
+        async def dummy_handler(request: PlyntRequest) -> PlyntResponse:
             """Return dummy handler."""
             raise AssertionError("should not be called")
 
@@ -277,7 +277,7 @@ class TestVCRMiddleware:
         middleware = VCRMiddleware(cassette_path=str(cassette_path), settings=settings)
         responder = SyncResponder([resp(200, b"ok")])
 
-        request = PlynthRequest(
+        request = PlyntRequest(
             method="GET",
             url="https://example.test/search",
             params={"q": "hello"},
@@ -314,7 +314,7 @@ class TestVCRMiddleware:
         cassette_path = tmp_path / "headers.yaml"
         settings = VCRSettings(mode=VCRMode.NEW_EPISODES)
         middleware = VCRMiddleware(cassette_path=str(cassette_path), settings=settings)
-        response_with_headers = PlynthResponse(
+        response_with_headers = PlyntResponse(
             status_code=200,
             headers={"Content-Type": "application/json"},
             content=b"{}",

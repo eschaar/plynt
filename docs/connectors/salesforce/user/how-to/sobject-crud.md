@@ -9,7 +9,7 @@ A configured `SalesforceAPIFacade`. See
 [Tutorial 1](../tutorials/01-connect-and-query.md) for setup.
 
 ```python
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
 
 sf = SalesforceAPIFacade(client)
 svc = sf.sobject("Contact")
@@ -51,13 +51,15 @@ ______________________________________________________________________
 ## Create a record
 
 ```python
-result = svc.create({
-    "FirstName": "Jane",
-    "LastName": "Doe",
-    "Email": "jane.doe@example.com",
-})
-print(result.id)        # "003Dn000001xyzABC"
-print(result.success)   # True
+result = svc.create(
+    {
+        "FirstName": "Jane",
+        "LastName": "Doe",
+        "Email": "jane.doe@example.com",
+    }
+)
+print(result.id)  # "003Dn000001xyzABC"
+print(result.success)  # True
 ```
 
 `create()` returns a `SObjectCreateResult` with `id` and `success` fields.
@@ -178,7 +180,7 @@ All methods have async equivalents. Use `AsyncSalesforceAPIFacade` and
 `await` each call:
 
 ```python
-from plynth.connectors.salesforce.facade import AsyncSalesforceAPIFacade
+from plynt.connectors.salesforce.facade import AsyncSalesforceAPIFacade
 
 sf = AsyncSalesforceAPIFacade(async_client)
 svc = sf.sobject("Contact")

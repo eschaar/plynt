@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2026-05-08
-**Scope:** `plynth.http.middleware.auth`, `plynth.connectors.salesforce`
+**Scope:** `plynt.http.middleware.auth`, `plynt.connectors.salesforce`
 
 ______________________________________________________________________
 
@@ -19,7 +19,7 @@ From Summer '23, the Username-Password flow is blocked by default in all
 newly created Salesforce orgs. The JWT Bearer flow is the primary alternative
 for automated integrations where interactive login is not possible.
 
-The existing `OAuth2AuthMiddlewareBase` in `plynth.http.middleware.auth`
+The existing `OAuth2AuthMiddlewareBase` in `plynt.http.middleware.auth`
 already provides token lifecycle management (caching, lock,
 401-invalidate-retry). JWT Bearer is specified generically in RFC 7523 and is
 not Salesforce-specific, so the shared OAuth2 package is the right home for
@@ -29,10 +29,10 @@ ______________________________________________________________________
 
 ## Decision
 
-### 1. Add generic RFC 7523 middleware in plynth core
+### 1. Add generic RFC 7523 middleware in plynt core
 
 `OAuth2JWTBearerMiddleware` and `AsyncOAuth2JWTBearerMiddleware` are added to
-`plynth.http.middleware.auth.oauth2`. They implement RFC 7523 token request
+`plynt.http.middleware.auth.oauth2`. They implement RFC 7523 token request
 shape and reuse the existing OAuth2 token lifecycle from the base classes.
 
 To keep core dependency-light, JWT signing is delegated to an
@@ -79,7 +79,7 @@ token_url = "https://test.salesforce.com/services/oauth2/token"
 ### 4. Dependency
 
 Salesforce JWT signing requires `PyJWT>=2.12.1` and `cryptography>=50.0.1`.
-This remains connector-scoped via optional extra `plynth[salesforce]`:
+This remains connector-scoped via optional extra `plynt[salesforce]`:
 
 ```toml
 [project.optional-dependencies]
@@ -93,7 +93,7 @@ signing is connector-level behavior. A lazy import with a clear
 ### 5. Cache key
 
 ```text
-plynth:oauth2:sha256("jwt:<token_url>:<client_id>:<username>")
+plynt:oauth2:sha256("jwt:<token_url>:<client_id>:<username>")
 ```
 
 This is consistent with the existing Client Credentials and Password cache
@@ -103,8 +103,8 @@ ______________________________________________________________________
 
 ## Consequences
 
-- Generic RFC 7523 middleware is now available in `plynth.http.middleware.auth`.
-- Callers who need JWT Bearer must install `plynth[salesforce]`.
+- Generic RFC 7523 middleware is now available in `plynt.http.middleware.auth`.
+- Callers who need JWT Bearer must install `plynt[salesforce]`.
 - The private key is held in memory for the lifetime of the middleware
   instance; callers are responsible for loading it securely (e.g. from an
   environment variable or secret manager).

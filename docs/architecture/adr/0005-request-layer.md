@@ -7,7 +7,7 @@ Accepted
 ## Context
 
 A protocol-agnostic Request abstraction is essential as the foundation for all
-layers in Plynth. This layer provides a uniform representation of outgoing
+layers in Plynt. This layer provides a uniform representation of outgoing
 requests, independent of the transport, protocol, or domain used. This makes
 middleware, clients, transports, and services generic, testable, and extensible.
 
@@ -16,7 +16,7 @@ middleware, clients, transports, and services generic, testable, and extensible.
 ### Placement in the Codebase
 
 The `Request` class is implemented as a standalone module (`request.py`) within
-the `base/` namespace: `plynth.base.request`.
+the `base/` namespace: `plynt.base.request`.
 
 It lives in `base/` rather than `http/` for a deliberate structural reason: the
 Transport ABCs (`SyncTransport`, `AsyncTransport`) in `base/transport.py` reference
@@ -52,11 +52,12 @@ The Request Layer is __not__ responsible for:
 
 ### Abstract Interface
 
-`Request` is defined in `plynth.base.request` as a plain dataclass:
+`Request` is defined in `plynt.base.request` as a plain dataclass:
 
 ```python
 from dataclasses import dataclass, field
 from typing import Any
+
 
 @dataclass
 class Request:
@@ -103,13 +104,13 @@ Decision: Add an opt-in `stream` field to `Request`:
 ```python
 @dataclass
 class Request:
-  method: str
-  url: str
-  headers: dict[str, str] = field(default_factory=dict)
-  params: dict[str, Any] = field(default_factory=dict)
-  content: bytes | None = None
-  timeout: float | None = None
-  stream: bool = False
+    method: str
+    url: str
+    headers: dict[str, str] = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
+    content: bytes | None = None
+    timeout: float | None = None
+    stream: bool = False
 ```
 
 When `stream=True`, transports may return streaming response objects instead

@@ -1,13 +1,13 @@
-# How to use Django cache with Plynth
+# How to use Django cache with Plynt
 
 Use `DjangoCacheBackend` when a Django service already has cache aliases
-configured in `settings.py` and you want Plynth response caching without
+configured in `settings.py` and you want Plynt response caching without
 building a custom adapter.
 
 ## Install extras
 
 ```bash
-pip install "plynth[django,httpx]"
+pip install "plynt[django,httpx]"
 ```
 
 ## Configure Django cache aliases
@@ -19,11 +19,11 @@ Define at least one alias in Django `CACHES`.
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "plynth-default",
+        "LOCATION": "plynt-default",
     },
-    "plynth_api": {
+    "plynt_api": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "plynth-api",
+        "LOCATION": "plynt-api",
     },
 }
 ```
@@ -31,14 +31,12 @@ CACHES = {
 ## Build transport with Django cache backend
 
 ```python
-from plynth.adapters.django.cache import DjangoCacheBackend
-from plynth.http.transport import HttpxSyncTransport
-from plynth.middleware.cache import CacheMiddleware
+from plynt.adapters.django.cache import DjangoCacheBackend
+from plynt.http.transport import HttpxSyncTransport
+from plynt.middleware.cache import CacheMiddleware
 
-cache_backend = DjangoCacheBackend(alias="plynth_api")
-transport = HttpxSyncTransport(
-    middlewares=[CacheMiddleware(cache_backend, ttl=300)]
-)
+cache_backend = DjangoCacheBackend(alias="plynt_api")
+transport = HttpxSyncTransport(middlewares=[CacheMiddleware(cache_backend, ttl=300)])
 ```
 
 ## What is stored in cache
@@ -46,7 +44,7 @@ transport = HttpxSyncTransport(
 When a response is cached, `DjangoCacheBackend` stores an explicit payload:
 
 1. `schema_version` for compatibility checks
-1. `kind` marker (`plynth.response`)
+1. `kind` marker (`plynt.response`)
 1. `status_code`
 1. `headers`
 1. `content_b64` (base64-encoded response bytes)
@@ -57,15 +55,13 @@ value instead of raising.
 ## End-to-end usage pattern
 
 ```python
-from plynth.adapters.django.cache import DjangoCacheBackend
-from plynth.http.client import APIClient
-from plynth.http.transport import HttpxSyncTransport
-from plynth.middleware.cache import CacheMiddleware
+from plynt.adapters.django.cache import DjangoCacheBackend
+from plynt.http.client import APIClient
+from plynt.http.transport import HttpxSyncTransport
+from plynt.middleware.cache import CacheMiddleware
 
-cache_backend = DjangoCacheBackend(alias="plynth_api")
-transport = HttpxSyncTransport(
-    middlewares=[CacheMiddleware(cache_backend, ttl=120)]
-)
+cache_backend = DjangoCacheBackend(alias="plynt_api")
+transport = HttpxSyncTransport(middlewares=[CacheMiddleware(cache_backend, ttl=120)])
 client = APIClient(base_url="https://api.example.com", transport=transport)
 
 response = client.get("/products")

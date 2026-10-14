@@ -1,7 +1,7 @@
 # Authentication flows explained
 
 This article explains the OAuth 2.0 flows that Salesforce supports, when
-to use each one, and the limitations that affect which flow Plynth can use.
+to use each one, and the limitations that affect which flow Plynt can use.
 
 ## Client Credentials (recommended for Spring '23+ orgs)
 
@@ -108,7 +108,7 @@ integrations and is mandatory for orgs created Summer '23 or later.
 - No shared secret is ever transmitted over the network.
 - Compromise of the certificate does not expose a reusable password.
 - Mandatory for Summer '23+ orgs where ROPC is blocked by default.
-- The JWT assertion is signed locally; Plynth never stores the private key
+- The JWT assertion is signed locally; Plynt never stores the private key
   beyond the middleware instance's lifetime.
 
 ### Connected App setup (JWT Bearer)
@@ -124,9 +124,9 @@ In Salesforce Setup → App Manager the Connected App must have:
 
 ```python
 import os
-from plynth.connectors.salesforce.auth import SalesforceJWTBearerAuthMiddleware
-from plynth.connectors.salesforce.client import SalesforceAPIClient
-from plynth.http.transport import HttpxSyncTransport
+from plynt.connectors.salesforce.auth import SalesforceJWTBearerAuthMiddleware
+from plynt.connectors.salesforce.client import SalesforceAPIClient
+from plynt.http.transport import HttpxSyncTransport
 
 auth = SalesforceJWTBearerAuthMiddleware(
     client_id=os.environ["SF_CLIENT_ID"],
@@ -142,7 +142,7 @@ Sandbox: change `token_url` to `https://test.salesforce.com/services/oauth2/toke
 the JWT `aud` claim is derived automatically.
 
 **Dependencies:** requires `PyJWT>=2.12.1` and `cryptography>=50.0.1`, both included
-in `pip install 'plynth[salesforce]'`.
+in `pip install 'plynt[salesforce]'`.
 
 ## Choosing a flow
 

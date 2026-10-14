@@ -7,10 +7,10 @@ from typing import Any
 
 import pytest
 
-from plynth.base.response import Response
-from plynth.http.client import APIClient, AsyncAPIClient, AsyncHTTPClient, HTTPClient
-from plynth.http.renderer import ExtendedJSONRenderer, JSONRenderer, Renderer
-from plynth.http.service import (
+from plynt.base.response import Response
+from plynt.http.client import APIClient, AsyncAPIClient, AsyncHTTPClient, HTTPClient
+from plynt.http.renderer import ExtendedJSONRenderer, JSONRenderer, Renderer
+from plynt.http.service import (
     APIService,
     AsyncAPIService,
     AsyncHTTPService,

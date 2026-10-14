@@ -1,5 +1,5 @@
-"""Tests for plynth.log filters (ThrottleLogs, ExceptionInfoFilter,
-PlynthHTTPFilter)."""
+"""Tests for plynt.log filters (ThrottleLogs, ExceptionInfoFilter,
+PlyntHTTPFilter)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import re
 
 import pytest
 
-from plynth.log import ExceptionInfoFilter, PlynthHTTPFilter, ThrottleLogs
+from plynt.log import ExceptionInfoFilter, PlyntHTTPFilter, ThrottleLogs
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -84,24 +84,24 @@ class TestThrottleLogs:
 
     def test_name_filter_passes_unrelated_loggers_unconditionally(self) -> None:
         """Validate name filter passes unrelated loggers unconditionally."""
-        f = ThrottleLogs(name="plynth.http", limit=0, window=3600)
+        f = ThrottleLogs(name="plynt.http", limit=0, window=3600)
         # Even with limit=0, unrelated loggers are never suppressed.
         for _ in range(10):
             assert f.filter(_make_record(name="django.request")) is True
 
     def test_name_filter_targets_exact_prefix(self) -> None:
         """Validate name filter targets exact prefix."""
-        f = ThrottleLogs(name="plynth.http", limit=1, window=3600)
+        f = ThrottleLogs(name="plynt.http", limit=1, window=3600)
         # First record from matched logger passes.
-        assert f.filter(_make_record(name="plynth.http", created=1000.0)) is True
+        assert f.filter(_make_record(name="plynt.http", created=1000.0)) is True
         # Second record from matched logger is suppressed.
-        assert f.filter(_make_record(name="plynth.http", created=1000.0)) is False
+        assert f.filter(_make_record(name="plynt.http", created=1000.0)) is False
 
     def test_name_filter_matches_child_loggers(self) -> None:
         """Logger names that are children of the target prefix are also targeted."""
-        f = ThrottleLogs(name="plynth.http", limit=1, window=3600)
-        f.filter(_make_record(name="plynth.http.transport", created=1000.0))
-        assert f.filter(_make_record(name="plynth.http.auth", created=1000.0)) is False
+        f = ThrottleLogs(name="plynt.http", limit=1, window=3600)
+        f.filter(_make_record(name="plynt.http.transport", created=1000.0))
+        assert f.filter(_make_record(name="plynt.http.auth", created=1000.0)) is False
 
     def test_no_name_filter_counts_all_loggers(self) -> None:
         """Validate no name filter counts all loggers."""
@@ -127,11 +127,11 @@ class TestThrottleLogs:
     def test_pattern_and_name_both_required_to_count(self) -> None:
         """A record must match both name AND pattern to be counted."""
         pattern = re.compile(r"timeout")
-        f = ThrottleLogs(name="plynth.http", limit=0, pattern=pattern, window=3600)
+        f = ThrottleLogs(name="plynt.http", limit=0, pattern=pattern, window=3600)
         # Wrong logger — passes even though pattern matches.
         assert f.filter(_make_record(name="other", msg="timeout")) is True
         # Right logger but wrong message — also passes.
-        assert f.filter(_make_record(name="plynth.http", msg="all good")) is True
+        assert f.filter(_make_record(name="plynt.http", msg="all good")) is True
 
     def test_default_limit_is_sixty(self) -> None:
         """Validate default limit is sixty."""
@@ -234,21 +234,21 @@ class TestExceptionInfoFilter:
 
 
 # ---------------------------------------------------------------------------
-# PlynthHTTPFilter
+# PlyntHTTPFilter
 # ---------------------------------------------------------------------------
 
 
-class TestPlynthHTTPFilter:
-    """Test suite for PlynthHTTPFilter."""
+class TestPlyntHTTPFilter:
+    """Test suite for PlyntHTTPFilter."""
 
-    def test_default_parameters_target_plynth_http_namespace(self) -> None:
-        """Validate default parameters target plynth http namespace."""
-        f = PlynthHTTPFilter()
+    def test_default_parameters_target_plynt_http_namespace(self) -> None:
+        """Validate default parameters target plynt http namespace."""
+        f = PlyntHTTPFilter()
         assert f._limit == 60
         assert f._window == 3600
 
     def test_custom_limit_and_window_are_forwarded(self) -> None:
         """Validate custom limit and window are forwarded."""
-        f = PlynthHTTPFilter(limit=5, window=300)
+        f = PlyntHTTPFilter(limit=5, window=300)
         assert f._limit == 5
         assert f._window == 300

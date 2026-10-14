@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from plynth.connectors.salesforce.settings import SalesforceSettings
-from plynth.http.settings import ApiSettings
+from plynt.connectors.salesforce.settings import SalesforceSettings
+from plynt.http.settings import ApiSettings
 
 
 class TestSalesforceSettings:

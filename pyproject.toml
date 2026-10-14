@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 fallback_version = "0.2.0"
 
 [project]
-name = "plynth"
+name = "plynt"
 dynamic = ["version"]
 description = "Framework-agnostic Python library for building external HTTP API clients and service integrations"
 readme = "README-pypi.md"
@@ -56,10 +56,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/eschaar/plynth"
-Repository = "https://github.com/eschaar/plynth"
-Issues = "https://github.com/eschaar/plynth/issues"
-Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/eschaar/plynt"
+Repository = "https://github.com/eschaar/plynt"
+Issues = "https://github.com/eschaar/plynt/issues"
+Changelog = "https://github.com/eschaar/plynt/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 httpx = ["httpx2>=2.13.1"]
@@ -104,7 +104,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=plynth --cov-report=term-missing --tb=short -m 'not external'"
+addopts = "--cov=plynt --cov-report=term-missing --tb=short -m 'not external'"
 asyncio_mode = "auto"
 junit_family = "xunit2"
 markers = [
@@ -116,7 +116,7 @@ package-dir = { "" = "src" }
 include-package-data = true
 
 [tool.setuptools.package-data]
-"plynth.connectors.salesforce.cdc._proto" = ["*.proto", "*.md"]
+"plynt.connectors.salesforce.cdc._proto" = ["*.proto", "*.md"]
 
 [tool.coverage.run]
 omit = [
@@ -145,8 +145,8 @@ exclude = [
   ".venv",
   "venv",
   "migrations",
-  "src/plynth/connectors/salesforce/cdc/_proto/pubsub_api_pb2.py",
-  "src/plynth/connectors/salesforce/cdc/_proto/pubsub_api_pb2_grpc.py",
+  "src/plynt/connectors/salesforce/cdc/_proto/pubsub_api_pb2.py",
+  "src/plynt/connectors/salesforce/cdc/_proto/pubsub_api_pb2_grpc.py",
 ]
 
 [tool.ruff.lint]
@@ -210,8 +210,8 @@ no_implicit_optional = true
 ignore_missing_imports = true
 allow_untyped_globals = true
 exclude = [
-  "^src/plynth/connectors/salesforce/cdc/_proto/pubsub_api_pb2\\.py$",
-  "^src/plynth/connectors/salesforce/cdc/_proto/pubsub_api_pb2_grpc\\.py$",
+  "^src/plynt/connectors/salesforce/cdc/_proto/pubsub_api_pb2\\.py$",
+  "^src/plynt/connectors/salesforce/cdc/_proto/pubsub_api_pb2_grpc\\.py$",
 ]
 
 [[tool.mypy.overrides]]
@@ -220,8 +220,8 @@ exclude = [
 # treats these modules as untyped (Any), which also avoids no-untyped-call
 # errors in callers that construct the generated stub classes.
 module = [
-  "plynth.connectors.salesforce.cdc._proto.pubsub_api_pb2",
-  "plynth.connectors.salesforce.cdc._proto.pubsub_api_pb2_grpc",
+  "plynt.connectors.salesforce.cdc._proto.pubsub_api_pb2",
+  "plynt.connectors.salesforce.cdc._proto.pubsub_api_pb2_grpc",
 ]
 ignore_errors = true
 follow_imports = "skip"
@@ -230,7 +230,7 @@ follow_imports = "skip"
 # _ReadableDumper(Dumper) requires type: ignore[misc] for Pylance/pyright
 # because the base class resolves to CDumper (a C extension) at runtime.
 # mypy does not flag the inheritance itself, so the ignore appears unused to it.
-module = "plynth.testsupport.vcr.serializer"
+module = "plynt.testsupport.vcr.serializer"
 warn_unused_ignores = false
 
 # ---------------------------------------------------------------------------
@@ -256,7 +256,7 @@ pythonVersion = "3.12"
 typeCheckingMode = "basic"
 
 [tool.pylint.main]
-ignore-paths = ["^tests/.*$", "^src/plynth/connectors/salesforce/cdc/_proto/.*$"]
+ignore-paths = ["^tests/.*$", "^src/plynt/connectors/salesforce/cdc/_proto/.*$"]
 
 [tool.pylint.messages_control]
 disable = ["missing-function-docstring"]

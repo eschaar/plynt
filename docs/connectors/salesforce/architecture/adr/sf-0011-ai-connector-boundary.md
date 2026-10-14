@@ -2,13 +2,13 @@
 
 **Status:** Accepted
 **Date:** 2026-05-14
-**Scope:** `plynth.connectors.salesforce`, `plynth.connectors.llm`
+**Scope:** `plynt.connectors.salesforce`, `plynt.connectors.llm`
 
 ______________________________________________________________________
 
 ## Context
 
-Plynth has two parallel AI tracks:
+Plynt has two parallel AI tracks:
 
 - Salesforce-specific AI APIs (`Models` and `Agent` services)
 - A generic provider-agnostic LLM connector
@@ -23,15 +23,15 @@ ______________________________________________________________________
 
 ### 1. Keep connectors independent
 
-`plynth.connectors.salesforce` must not import from
-`plynth.connectors.llm`, and `plynth.connectors.llm` must not import from
-`plynth.connectors.salesforce`.
+`plynt.connectors.salesforce` must not import from
+`plynt.connectors.llm`, and `plynt.connectors.llm` must not import from
+`plynt.connectors.salesforce`.
 
 ### 2. Share only neutral core primitives
 
 Reusable behavior must flow through framework-agnostic core modules such as:
 
-- transport abstractions (`plynth.base.transport`, `plynth.http`)
+- transport abstractions (`plynt.base.transport`, `plynt.http`)
 - streaming response primitives (`StreamingResponse`,
   `AsyncStreamingResponse`)
 - middleware (`retry`, `rate_limit`, `auth`, `logging`, `cache`)

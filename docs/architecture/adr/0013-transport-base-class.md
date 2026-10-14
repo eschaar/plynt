@@ -42,19 +42,20 @@ and 0012, and the `before_send` / `after_send` middleware contract.
 
 ### Two-Tier Transport Hierarchy
 
-**Tier 1 — Abstract contracts** (`plynth.base.transport`):
+**Tier 1 — Abstract contracts** (`plynt.base.transport`):
 
 ```python
 class SyncTransport(ABC):
     @abstractmethod
     def send(self, request: Request) -> Response: ...
 
+
 class AsyncTransport(ABC):
     @abstractmethod
     async def send(self, request: Request) -> Response: ...
 ```
 
-**Tier 2 — Abstract base with middleware chain** (`plynth.base.transport`):
+**Tier 2 — Abstract base with middleware chain** (`plynt.base.transport`):
 
 ```python
 class BaseSyncTransport(SyncTransport):
@@ -84,7 +85,7 @@ class BaseSyncTransport(SyncTransport):
 
 ### Middleware Protocol: `handle(request, next_handler)`
 
-`SyncMiddleware` and `AsyncMiddleware` in `plynth.base.middleware` use a single
+`SyncMiddleware` and `AsyncMiddleware` in `plynt.base.middleware` use a single
 `handle(request, next_handler)` method:
 
 ```python
@@ -93,10 +94,10 @@ from collections.abc import Awaitable, Callable
 NextSyncHandler = Callable[[Request], Response]
 NextAsyncHandler = Callable[[Request], Awaitable[Response]]
 
+
 class SyncMiddleware(Protocol):
-    def handle(
-        self, request: Request, next_handler: NextSyncHandler
-    ) -> Response: ...
+    def handle(self, request: Request, next_handler: NextSyncHandler) -> Response: ...
+
 
 class AsyncMiddleware(Protocol):
     async def handle(
@@ -135,9 +136,9 @@ A.handle (exit)
 
 ```python
 middlewares = [
-    CacheMiddleware(...),           # outermost
-    OAuth2AuthMiddleware(...),      # or BearerToken / Basic
-    RetryMiddleware(policy),        # innermost above I/O
+    CacheMiddleware(...),  # outermost
+    OAuth2AuthMiddleware(...),  # or BearerToken / Basic
+    RetryMiddleware(policy),  # innermost above I/O
 ]
 ```
 
@@ -185,11 +186,11 @@ def from_settings(cls, settings: HTTPSettings) -> HttpxSyncTransport:
 Users who need a custom configuration construct the transport directly:
 
 ```python
-from plynth.middleware.retry import RetryMiddleware
-from plynth.http.middleware.auth import BearerTokenAuthMiddleware
-from plynth.cache import LocMemCache
-from plynth.middleware.cache import CacheMiddleware
-from plynth.http.policies import HttpRetryPolicy
+from plynt.middleware.retry import RetryMiddleware
+from plynt.http.middleware.auth import BearerTokenAuthMiddleware
+from plynt.cache import LocMemCache
+from plynt.middleware.cache import CacheMiddleware
+from plynt.http.policies import HttpRetryPolicy
 
 transport = HttpxSyncTransport(
     client=httpx2.Client(...),
@@ -213,10 +214,10 @@ transport = HttpxSyncTransport(
 
 | Concern                                        | Location                             |
 | ---------------------------------------------- | ------------------------------------ |
-| `SyncTransport` / `AsyncTransport` ABCs        | `plynth.base.transport`              |
-| `SyncMiddleware` / `AsyncMiddleware` protocols | `plynth.base.middleware`             |
-| `BaseSyncTransport` / `BaseAsyncTransport`     | `plynth.base.transport`              |
-| `HttpxSyncTransport` / `HttpxAsyncTransport`   | `plynth.http.transport`              |
+| `SyncTransport` / `AsyncTransport` ABCs        | `plynt.base.transport`               |
+| `SyncMiddleware` / `AsyncMiddleware` protocols | `plynt.base.middleware`              |
+| `BaseSyncTransport` / `BaseAsyncTransport`     | `plynt.base.transport`               |
+| `HttpxSyncTransport` / `HttpxAsyncTransport`   | `plynt.http.transport`               |
 | Settings-to-transport wiring                   | `HttpxSyncTransport.from_settings()` |
 
 ## Consequences

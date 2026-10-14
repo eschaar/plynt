@@ -1,13 +1,13 @@
-"""Tests for plynth.middleware.header (HeaderMiddleware, AsyncHeaderMiddleware)."""
+"""Tests for plynt.middleware.header (HeaderMiddleware, AsyncHeaderMiddleware)."""
 
 from __future__ import annotations
 
 import pytest
 
-from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.middleware.header import AsyncHeaderMiddleware, HeaderMiddleware
+from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.middleware.header import AsyncHeaderMiddleware, HeaderMiddleware
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -1,6 +1,6 @@
-# Plynth Product Requirements
+# Plynt Product Requirements
 
-This document defines the current product requirements for plynth.
+This document defines the current product requirements for plynt.
 It complements the roadmap and should stay aligned with ADR decisions.
 
 ______________________________________________________________________
@@ -34,7 +34,7 @@ ______________________________________________________________________
 1. Keep Salesforce CDC flow control, replay, checkpoints, and Avro semantics
    inside the Salesforce connector.
 1. Preserve the async-only phase-1 boundary in ADR-0030 and SF-0013.
-1. Install CDC through `plynth[grpc,salesforce]`, including real Avro decoding.
+1. Install CDC through `plynt[grpc,salesforce]`, including real Avro decoding.
 1. Keep CDC experimental until real-org authentication, schemas, replay
    fidelity, and long-running operation have acceptance evidence.
 

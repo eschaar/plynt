@@ -22,7 +22,7 @@ integrations. It uses an RSA key pair instead of a shared secret:
 - Upload the **public certificate** to the Connected App in Salesforce Setup.
 - Store the **private key** in your runtime secret store (environment variable,
   secrets manager). Never hardcode or commit it.
-- Plynth signs a fresh JWT assertion on each token fetch and sends it to the
+- Plynt signs a fresh JWT assertion on each token fetch and sends it to the
   token endpoint. Salesforce verifies the signature against the uploaded
   certificate.
 
@@ -32,15 +32,15 @@ Username/Password flow is blocked by default.
 ```python
 import os
 
-from plynth.connectors.salesforce.auth import SalesforceJWTBearerAuthMiddleware
-from plynth.connectors.salesforce.client import SalesforceAPIClient
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
-from plynth.http.transport import HttpxSyncTransport
+from plynt.connectors.salesforce.auth import SalesforceJWTBearerAuthMiddleware
+from plynt.connectors.salesforce.client import SalesforceAPIClient
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.http.transport import HttpxSyncTransport
 
 auth = SalesforceJWTBearerAuthMiddleware(
-    client_id=os.environ["SF_CLIENT_ID"],         # Consumer Key of the Connected App
-    username=os.environ["SF_USERNAME"],           # Salesforce username to run as
-    private_key=os.environ["SF_PRIVATE_KEY_PEM"], # RSA private key, PEM-encoded
+    client_id=os.environ["SF_CLIENT_ID"],  # Consumer Key of the Connected App
+    username=os.environ["SF_USERNAME"],  # Salesforce username to run as
+    private_key=os.environ["SF_PRIVATE_KEY_PEM"],  # RSA private key, PEM-encoded
     token_url="https://login.salesforce.com/services/oauth2/token",
 )
 transport = HttpxSyncTransport(middlewares=[auth])
@@ -76,8 +76,8 @@ other change is needed for sandbox.
 ### Async (JWT Bearer)
 
 ```python
-from plynth.connectors.salesforce.auth import AsyncSalesforceJWTBearerAuthMiddleware
-from plynth.http.transport import HttpxAsyncTransport
+from plynt.connectors.salesforce.auth import AsyncSalesforceJWTBearerAuthMiddleware
+from plynt.http.transport import HttpxAsyncTransport
 
 auth = AsyncSalesforceJWTBearerAuthMiddleware(
     client_id=os.environ["SF_CLIENT_ID"],
@@ -91,10 +91,10 @@ transport = HttpxAsyncTransport(middlewares=[auth])
 ### Dependencies
 
 JWT Bearer requires `PyJWT>=2.12.1` and `cryptography>=50.0.1`. Both are included in
-the `plynth[salesforce]` extra:
+the `plynt[salesforce]` extra:
 
 ```bash
-pip install "plynth[salesforce]"
+pip install "plynt[salesforce]"
 ```
 
 ______________________________________________________________________
@@ -106,10 +106,10 @@ a certificate is not desired. The `client_secret` is transmitted on every
 token request, so ensure TLS is in use and rotate secrets regularly.
 
 ```python
-from plynth.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
-from plynth.connectors.salesforce.client import SalesforceAPIClient
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
-from plynth.http.transport import HttpxSyncTransport
+from plynt.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
+from plynt.connectors.salesforce.client import SalesforceAPIClient
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.http.transport import HttpxSyncTransport
 
 auth = SalesforceClientCredentialsAuthMiddleware(
     client_id="3MVG9...",
@@ -146,8 +146,10 @@ auth = SalesforceClientCredentialsAuthMiddleware(
 ### Async (Client Credentials)
 
 ```python
-from plynth.connectors.salesforce.auth import AsyncSalesforceClientCredentialsAuthMiddleware
-from plynth.http.transport import HttpxAsyncTransport
+from plynt.connectors.salesforce.auth import (
+    AsyncSalesforceClientCredentialsAuthMiddleware,
+)
+from plynt.http.transport import HttpxAsyncTransport
 
 auth = AsyncSalesforceClientCredentialsAuthMiddleware(
     client_id="...",
@@ -167,7 +169,7 @@ Use it only for legacy orgs where neither JWT Bearer nor Client Credentials
 is available.
 
 ```python
-from plynth.connectors.salesforce.auth import SalesforcePasswordAuthMiddleware
+from plynt.connectors.salesforce.auth import SalesforcePasswordAuthMiddleware
 
 auth = SalesforcePasswordAuthMiddleware(
     client_id="3MVG9...",
@@ -175,7 +177,7 @@ auth = SalesforcePasswordAuthMiddleware(
     token_url="https://login.salesforce.com/services/oauth2/token",
     username="user@example.com",
     password="hunter2",
-    security_token="XXXX",   # append to password if IP is not allowlisted
+    security_token="XXXX",  # append to password if IP is not allowlisted
 )
 ```
 
@@ -184,11 +186,11 @@ ______________________________________________________________________
 ## Session token (edge case)
 
 Use `SalesforceSessionAuthMiddleware` when token acquisition and refresh are
-handled entirely outside Plynth (e.g. by a platform runtime or a sidecar).
-Plynth only injects the bearer token and routes to the correct `instance_url`.
+handled entirely outside Plynt (e.g. by a platform runtime or a sidecar).
+Plynt only injects the bearer token and routes to the correct `instance_url`.
 
 ```python
-from plynth.connectors.salesforce.auth import SalesforceSessionAuthMiddleware
+from plynt.connectors.salesforce.auth import SalesforceSessionAuthMiddleware
 
 auth = SalesforceSessionAuthMiddleware(
     access_token="00D...",
@@ -197,14 +199,14 @@ auth = SalesforceSessionAuthMiddleware(
 ```
 
 There is no token refresh. If the token expires, the next request will fail
-with a 401 and Plynth will not retry with a new token.
+with a 401 and Plynt will not retry with a new token.
 
 ### Async
 
 ### Async (Session token)
 
 ```python
-from plynth.connectors.salesforce.auth import AsyncSalesforceSessionAuthMiddleware
+from plynt.connectors.salesforce.auth import AsyncSalesforceSessionAuthMiddleware
 ```
 
 ______________________________________________________________________
@@ -216,12 +218,14 @@ Avoid hardcoding credentials. Use `SalesforceSettings` with pydantic-settings:
 ```python
 import os
 from pydantic_settings import SettingsConfigDict
-from plynth.connectors.salesforce.auth import SalesforceJWTBearerAuthMiddleware
-from plynth.connectors.salesforce.settings import SalesforceSettings
+from plynt.connectors.salesforce.auth import SalesforceJWTBearerAuthMiddleware
+from plynt.connectors.salesforce.settings import SalesforceSettings
+
 
 class MySettings(SalesforceSettings):
     model_config = SettingsConfigDict(env_prefix="SF_", env_file=".env")
-    jwt_private_key: str = ""   # SF_JWT_PRIVATE_KEY
+    jwt_private_key: str = ""  # SF_JWT_PRIVATE_KEY
+
 
 s = MySettings()
 auth = SalesforceJWTBearerAuthMiddleware(

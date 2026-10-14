@@ -7,28 +7,28 @@ Accepted
 ## Implementation Notes
 
 **Implemented:** `SyncMiddleware` / `AsyncMiddleware` protocol
-(`plynth.base.middleware`); `BearerTokenAuthMiddleware`, `BasicAuthMiddleware`,
+(`plynt.base.middleware`); `BearerTokenAuthMiddleware`, `BasicAuthMiddleware`,
 `OAuth2AuthMiddlewareBase`, `OAuth2ClientCredentialsMiddleware`,
 `OAuth2PasswordMiddleware`, `OAuth2AuthMiddleware` (alias);
 async counterparts (`AsyncBearerTokenAuthMiddleware`, etc.) in
-`plynth.http.middleware.auth`.
+`plynt.http.middleware.auth`.
 
 **Implemented:** Typed auth configuration: `BearerAuthConfig`,
 `BasicAuthConfig`, `OAuth2ClientCredentialsConfig`, `OAuth2PasswordConfig`,
 `AuthConfig` type alias, `auth_from_config()`, `async_auth_from_config()` in
-`plynth.http.auth`.
+`plynt.http.auth`.
 
 **Removed:** Flat credential fields (`bearer_token`, `client_id`,
 `client_secret`, `token_url`, `auth_max_attempts`, `basic_username`,
 `basic_password`) from `HTTPSettings`. Replaced by the `auth` property.
 
 **Removed:** `Authenticator` / `AsyncAuthenticator` protocols
-(`plynth.core.auth`); `authenticator=` parameter on `BaseSyncTransport` /
+(`plynt.core.auth`); `authenticator=` parameter on `BaseSyncTransport` /
 `BaseAsyncTransport`.
 
 ## Context
 
-Plynth is a framework-agnostic API client library. Many external APIs require
+Plynt is a framework-agnostic API client library. Many external APIs require
 authentication — most commonly OAuth2 client credentials or bearer tokens,
 but also API keys, Basic Auth, and custom schemes.
 
@@ -84,16 +84,16 @@ and a dedicated `authenticator=` constructor parameter handled auth inside
 
 ```python
 middlewares = [
-    CacheMiddleware(...),           # outermost: cache hit skips auth + I/O
-    BearerTokenAuthMiddleware(...), # or OAuth2AuthMiddleware / BasicAuthMiddleware
-    RetryMiddleware(policy),        # innermost above network I/O
+    CacheMiddleware(...),  # outermost: cache hit skips auth + I/O
+    BearerTokenAuthMiddleware(...),  # or OAuth2AuthMiddleware / BasicAuthMiddleware
+    RetryMiddleware(policy),  # innermost above network I/O
 ]
 ```
 
-### Auth Middleware Directory: `plynth.http.middleware.auth/`
+### Auth Middleware Directory: `plynt.http.middleware.auth/`
 
 ```text
-plynth/http/middleware/auth/
+plynt/http/middleware/auth/
     __init__.py     # re-exports all classes
     bearer.py       # BearerTokenAuthMiddleware, AsyncBearerTokenAuthMiddleware
     basic.py        # BasicAuthMiddleware, AsyncBasicAuthMiddleware
@@ -106,6 +106,8 @@ Sync bearer and basic (no 401 retry):
 
 ```python
 class BearerTokenAuthMiddleware(SyncMiddleware): ...
+
+
 class BasicAuthMiddleware(SyncMiddleware): ...
 ```
 
@@ -118,12 +120,15 @@ Sync OAuth2 — abstract base and concrete flows:
 class OAuth2AuthMiddlewareBase(SyncMiddleware, ABC):
     """Abstract base; handles token lifecycle, 401-retry, and invalidation."""
 
+
 class OAuth2ClientCredentialsMiddleware(OAuth2AuthMiddlewareBase):
     """Client Credentials flow (grant_type=client_credentials)."""
+
 
 class OAuth2PasswordMiddleware(OAuth2AuthMiddlewareBase):
     """Resource Owner Password Credentials flow (grant_type=password).
     Legacy; avoid for new integrations."""
+
 
 OAuth2AuthMiddleware = OAuth2ClientCredentialsMiddleware  # backward alias
 ```
@@ -134,18 +139,18 @@ Async mirrors follow the same hierarchy, prefixed `Async`.
 
 ```python
 def handle(self, request, next_handler):
-    request.headers.update(self._get_token_header())   # lazy fetch + cache
-    response = next_handler(request)                   # → Retry → I/O
+    request.headers.update(self._get_token_header())  # lazy fetch + cache
+    response = next_handler(request)  # → Retry → I/O
     if response.status_code == 401:
-        self._invalidate()                             # discard stale token
+        self._invalidate()  # discard stale token
         request.headers.update(self._get_token_header())  # re-fetch
-        response = next_handler(request)               # one retry
+        response = next_handler(request)  # one retry
     return response
 ```
 
 ### Token Caching in OAuth2 Middleware
 
-Token caching uses the `CacheBackend` protocol from `plynth.base.cache`
+Token caching uses the `CacheBackend` protocol from `plynt.base.cache`
 (ADR-0010). Each OAuth2 middleware instance stores `(token, expires_at)`
 tuples in the backend.
 
@@ -161,17 +166,19 @@ tuples in the backend.
 ### Typed Auth Configuration Pattern
 
 Auth mechanism is made explicit through typed configuration dataclasses in
-`plynth.http.auth`:
+`plynt.http.auth`:
 
 ```python
 @dataclass
 class BearerAuthConfig:
     token: str
 
+
 @dataclass
 class BasicAuthConfig:
     username: str
     password: str
+
 
 @dataclass
 class OAuth2ClientCredentialsConfig:
@@ -181,6 +188,7 @@ class OAuth2ClientCredentialsConfig:
     max_retries: int = 2
     ttl_leeway: int = 30
 
+
 @dataclass
 class OAuth2JWTBearerConfig:
     token_url: str
@@ -189,6 +197,7 @@ class OAuth2JWTBearerConfig:
     scope: str | None = None
     max_retries: int = 2
     ttl_leeway: int = 30
+
 
 @dataclass
 class OAuth2PasswordConfig:
@@ -212,6 +221,7 @@ def auth_from_config(
     config: AuthConfig,
     token_cache: CacheBackend | None = None,
 ) -> SyncMiddleware: ...
+
 
 def async_auth_from_config(
     config: AuthConfig,
@@ -241,11 +251,12 @@ Credential values remain as plain pydantic env-var fields on the settings
 subclass; the `auth` property assembles them into an `AuthConfig` object:
 
 ```python
-from plynth.http.auth import OAuth2ClientCredentialsConfig
-from plynth.http.settings import HTTPSettings
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.settings import HTTPSettings
+
 
 class MySettings(HTTPSettings):
-    client_id:     str = ""  # MY_CLIENT_ID=...
+    client_id: str = ""  # MY_CLIENT_ID=...
     client_secret: str = ""  # MY_CLIENT_SECRET=...
 
     @property
@@ -270,8 +281,9 @@ auth_config = settings.auth
 if auth_config is not None:
     auth_token_cache = (
         cache_from_config(caches[settings.default_auth_cache])
-        if caches and settings.default_auth_cache
-            and settings.default_auth_cache in caches
+        if caches
+        and settings.default_auth_cache
+        and settings.default_auth_cache in caches
         else None
     )
     middlewares.append(auth_from_config(auth_config, token_cache=auth_token_cache))
@@ -279,7 +291,7 @@ if auth_config is not None:
 
 ### No `Authenticator` Protocol in Core
 
-`plynth.core.auth` is retired. Auth is middleware, not a separate protocol.
+`plynt.core.auth` is retired. Auth is middleware, not a separate protocol.
 
 ## Consequences
 

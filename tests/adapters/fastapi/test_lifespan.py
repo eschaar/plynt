@@ -11,14 +11,14 @@ import pytest
 
 pytest.importorskip("fastapi")
 
-from plynth.adapters.fastapi import (
-    PlynthLifespan,
+from plynt.adapters.fastapi import (
+    PlyntLifespan,
     get_client,
     get_transport,
 )
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.base.transport import AsyncTransport
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.base.transport import AsyncTransport
 
 fastapi = __import__("fastapi")
 fastapi_testclient = __import__("fastapi.testclient", fromlist=["TestClient"])
@@ -81,7 +81,7 @@ class TestFastAPILifespan:
         transport = _FakeAsyncTransport()
 
         app = FastAPI(
-            lifespan=PlynthLifespan({"salesforce": lambda: transport}),
+            lifespan=PlyntLifespan({"salesforce": lambda: transport}),
         )
 
         @app.get("/probe")  # type: ignore
@@ -102,7 +102,7 @@ class TestFastAPILifespan:
         transport = _FakeAsyncTransport()
 
         app = FastAPI(
-            lifespan=PlynthLifespan({"salesforce": lambda: transport}),
+            lifespan=PlyntLifespan({"salesforce": lambda: transport}),
         )
         client_dependency = Depends(
             get_client("salesforce", _DemoClient, service_name="svc")
@@ -128,7 +128,7 @@ class TestFastAPILifespan:
     def test_missing_transport_returns_server_error(self) -> None:
         """Return a runtime error when dependency requests unknown transport."""
         app = FastAPI(
-            lifespan=PlynthLifespan({"salesforce": _FakeAsyncTransport}),
+            lifespan=PlyntLifespan({"salesforce": _FakeAsyncTransport}),
         )
 
         @app.get("/missing")  # type: ignore
@@ -153,7 +153,7 @@ class TestFastAPILifespan:
             "broken": _raise,
         }
 
-        app = FastAPI(lifespan=PlynthLifespan(factories))
+        app = FastAPI(lifespan=PlyntLifespan(factories))
 
         with pytest.raises(RuntimeError, match="boom"):
             with TestClient(app):
@@ -166,7 +166,7 @@ class TestFastAPILifespan:
         transport = _FakeSyncTransport()
 
         app = FastAPI(
-            lifespan=PlynthLifespan({"salesforce": lambda: transport}),
+            lifespan=PlyntLifespan({"salesforce": lambda: transport}),
         )
 
         @app.get("/probe")  # type: ignore
@@ -185,11 +185,11 @@ class TestFastAPILifespan:
     def test_lifespan_rejects_empty_transport_mapping(self) -> None:
         """Raise for empty transport factory mapping."""
         with pytest.raises(ValueError, match="must not be empty"):
-            PlynthLifespan({})
+            PlyntLifespan({})
 
     def test_lifespan_requires_app_state(self) -> None:
         """Raise when app object does not expose state."""
-        lifespan = PlynthLifespan({"salesforce": _FakeAsyncTransport})
+        lifespan = PlyntLifespan({"salesforce": _FakeAsyncTransport})
 
         async def _run() -> None:
             async with lifespan(object()):
@@ -221,7 +221,7 @@ class TestFastAPILifespan:
             await asyncio.sleep(0)
             return transport
 
-        app = FastAPI(lifespan=PlynthLifespan({"salesforce": _build}))
+        app = FastAPI(lifespan=PlyntLifespan({"salesforce": _build}))
 
         @app.get("/probe")  # type: ignore
         async def probe(
@@ -237,7 +237,7 @@ class TestFastAPILifespan:
     def test_lifespan_awaits_close_return_value_when_awaitable(self) -> None:
         """Await close return value when sync close exposes awaitable work."""
         transport = _AwaitableCloseTransport()
-        app = FastAPI(lifespan=PlynthLifespan({"salesforce": lambda: transport}))
+        app = FastAPI(lifespan=PlyntLifespan({"salesforce": lambda: transport}))
 
         @app.get("/probe")  # type: ignore
         async def probe(

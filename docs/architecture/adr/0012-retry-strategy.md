@@ -6,9 +6,9 @@ Accepted
 
 ## Implementation Notes
 
-**Implemented:** `RetryPolicy` (`plynth.base.policies`), `HttpRetryPolicy`
-(`plynth.http.policies`), `RetryMiddleware` / `AsyncRetryMiddleware`
-(`plynth.middleware.retry`), wiring via
+**Implemented:** `RetryPolicy` (`plynt.base.policies`), `HttpRetryPolicy`
+(`plynt.http.policies`), `RetryMiddleware` / `AsyncRetryMiddleware`
+(`plynt.middleware.retry`), wiring via
 `HttpxSyncTransport.from_settings()`, and the typed `retry` property on
 `HTTPSettings` (see "Typed retry configuration via settings" below).
 
@@ -43,10 +43,11 @@ design. No separate `RetryingSyncTransport` wrapper class is introduced.
 
 ### `RetryPolicy` / `HttpRetryPolicy` data classes
 
-`RetryPolicy` is protocol-agnostic and lives in `plynth.base.policies`:
+`RetryPolicy` is protocol-agnostic and lives in `plynt.base.policies`:
 
 ```python
 from dataclasses import dataclass, field
+
 
 @dataclass
 class RetryPolicy:
@@ -59,7 +60,7 @@ class RetryPolicy:
     retryable_status_codes: frozenset[int] = field(default_factory=frozenset)
 ```
 
-`HttpRetryPolicy` (`plynth.http.policies`) extends `RetryPolicy` with HTTP
+`HttpRetryPolicy` (`plynt.http.policies`) extends `RetryPolicy` with HTTP
 defaults:
 
 ```python
@@ -132,7 +133,7 @@ See ADR-0013 for the full design. There is no manual wrapper nesting.
 `HTTPSettings` exposes a single retry field:
 
 ```text
-PLYNTH_MAX_ATTEMPTS=3
+PLYNT_MAX_ATTEMPTS=3
 ```
 
 `HttpxSyncTransport.from_settings()` reads `settings.max_attempts` and
@@ -147,8 +148,9 @@ Override it in a subclass to expose the full set of backoff parameters
 to the settings layer without using the flat `max_attempts` field:
 
 ```python
-from plynth.http.policies import HttpRetryPolicy
-from plynth.http.settings import HTTPSettings
+from plynt.http.policies import HttpRetryPolicy
+from plynt.http.settings import HTTPSettings
+
 
 class MySettings(HTTPSettings):
     @property
@@ -174,12 +176,12 @@ See the "`Policy` vs `Config` naming" section below for the rationale.
 
 | Concern                          | Location                             |
 | -------------------------------- | ------------------------------------ |
-| `RetryPolicy` dataclass          | `plynth.base.policies`               |
-| `HttpRetryPolicy` dataclass      | `plynth.http.policies`               |
+| `RetryPolicy` dataclass          | `plynt.base.policies`                |
+| `HttpRetryPolicy` dataclass      | `plynt.http.policies`                |
 | `RetryingSyncTransport`          | superseded — see ADR-0013            |
 | `RetryingAsyncTransport`         | superseded — see ADR-0013            |
-| `max_attempts` field in settings | `plynth.http.settings`               |
-| `retry` typed property           | `plynth.http.settings.HTTPSettings`  |
+| `max_attempts` field in settings | `plynt.http.settings`                |
+| `retry` typed property           | `plynt.http.settings.HTTPSettings`   |
 | Retry wiring from settings       | `HttpxSyncTransport.from_settings()` |
 
 No retry logic is placed in clients, services, or the `core.base` abstractions.

@@ -12,9 +12,9 @@ import pytest
 
 pytest.importorskip("fastapi")
 
-import plynth.adapters.fastapi.services as fastapi_services
-from plynth.adapters.fastapi import (
-    PlynthLifespan,
+import plynt.adapters.fastapi.services as fastapi_services
+from plynt.adapters.fastapi import (
+    PlyntLifespan,
     build_service_dependencies,
     get_service,
 )
@@ -63,7 +63,7 @@ class TestFastAPIServiceHelper:
             build_count["count"] += 1
             return _Service(transport=bound_transport)
 
-        app = FastAPI(lifespan=PlynthLifespan({"backend": lambda: transport}))
+        app = FastAPI(lifespan=PlyntLifespan({"backend": lambda: transport}))
 
         service_dep = Depends(
             get_service(
@@ -103,7 +103,7 @@ class TestFastAPIServiceHelper:
             build_count["count"] += 1
             return _Service(transport=bound_transport)
 
-        app = FastAPI(lifespan=PlynthLifespan({"backend": lambda: transport}))
+        app = FastAPI(lifespan=PlyntLifespan({"backend": lambda: transport}))
 
         service_dependency = get_service(
             "backend_service",
@@ -137,7 +137,7 @@ class TestFastAPIServiceHelper:
         """Create multiple named dependencies that share one transport."""
         transport = _Transport()
 
-        app = FastAPI(lifespan=PlynthLifespan({"backend": lambda: transport}))
+        app = FastAPI(lifespan=PlyntLifespan({"backend": lambda: transport}))
 
         deps = build_service_dependencies(
             transport_name="backend",
@@ -190,7 +190,7 @@ class TestFastAPIServiceHelper:
         request = SimpleNamespace(
             state=SimpleNamespace(),
             app=SimpleNamespace(
-                state=SimpleNamespace(_plynth_transports={"backend": transport})
+                state=SimpleNamespace(_plynt_transports={"backend": transport})
             ),
         )
 

@@ -1,6 +1,6 @@
 # DRF serializer and business-layer patterns
 
-Use these patterns when DRF endpoints call upstream services through plynth.
+Use these patterns when DRF endpoints call upstream services through plynt.
 The goal is to keep API contracts stable, business logic testable, and views
 small.
 
@@ -8,9 +8,9 @@ small.
 
 1. Serializers define and enforce request and response contracts.
 1. Business layer owns orchestration, filtering, enrichment, and policy rules.
-1. Plynth clients focus on transport, auth, retry, and middleware.
+1. Plynt clients focus on transport, auth, retry, and middleware.
 1. Views coordinate the flow and return HTTP responses.
-1. Async variants keep the same layering; only the view method, plynth client,
+1. Async variants keep the same layering; only the view method, plynt client,
    and transport path switch to async.
 
 ## Pattern 1: Thin view with application service
@@ -26,7 +26,7 @@ Implementation:
 
 1. Validate input with an input serializer.
 1. Pass validated data into an application service.
-1. Let the service call plynth clients and compose domain output.
+1. Let the service call plynt clients and compose domain output.
 1. Serialize output with an output serializer.
 
 Benefits:
@@ -67,7 +67,7 @@ When to use:
 
 Implementation:
 
-1. Aggregator service receives plynth clients.
+1. Aggregator service receives plynt clients.
 1. Fetch data from each upstream.
 1. Normalize upstream models to internal structures.
 1. Merge and filter combined result.
@@ -126,7 +126,7 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from plynth.adapters.django.drf.views import PlynthServiceMixin
+from plynt.adapters.django.drf.views import PlyntServiceMixin
 
 
 class ProductQuerySerializer(serializers.Serializer):
@@ -174,7 +174,7 @@ class ProductOrchestrator:
         return {"items": items, "total": len(items)}
 
 
-class ProductListView(PlynthServiceMixin, APIView):
+class ProductListView(PlyntServiceMixin, APIView):
     settings_name = "EXTERNAL_API"
     settings_class = ExternalAPISettings
     service_factories = {
@@ -198,7 +198,7 @@ class ProductListView(PlynthServiceMixin, APIView):
 1. Serializer tests:
    validate required fields, defaults, and field-level errors.
 1. Business-layer tests:
-   mock plynth clients and verify filtering, enrichment, and policy behavior.
+   mock plynt clients and verify filtering, enrichment, and policy behavior.
 1. View tests:
    verify serializer integration, HTTP status codes, and response shape.
 

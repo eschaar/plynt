@@ -7,18 +7,18 @@ from typing import Any
 
 import pytest
 
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.models import SalesforceSearchResponse
-from plynth.connectors.salesforce.search import (
+from plynt.connectors.salesforce.models import SalesforceSearchResponse
+from plynt.connectors.salesforce.search import (
     AsyncSalesforceSearchService,
     SalesforceSearchService,
 )
-from plynth.connectors.salesforce.sobject import DEFAULT_API_VERSION
-from plynth.http.client import APIClient, AsyncAPIClient
-from plynth.http.renderer import JSONRenderer
+from plynt.connectors.salesforce.sobject import DEFAULT_API_VERSION
+from plynt.http.client import APIClient, AsyncAPIClient
+from plynt.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 from tests.connectors.salesforce.conftest import DUMMY_INSTANCE_URL
 
@@ -226,7 +226,7 @@ class TestAsyncSalesforceSearchService:
             return "63.0"
 
         monkeypatch.setattr(
-            "plynth.connectors.salesforce.search.resolve_async_api_version",
+            "plynt.connectors.salesforce.search.resolve_async_api_version",
             fake_resolve,
         )
 

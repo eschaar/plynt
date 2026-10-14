@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.http.middleware.auth import (
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.http.middleware.auth import (
     AsyncBearerTokenAuthMiddleware,
     BearerTokenAuthMiddleware,
 )

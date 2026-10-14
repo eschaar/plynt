@@ -1,6 +1,6 @@
 # Settings reference: `SalesforceSettings`
 
-`SalesforceSettings` extends `ApiSettings` (from `plynth.base.settings`) with
+`SalesforceSettings` extends `ApiSettings` (from `plynt.base.settings`) with
 Salesforce-specific configuration fields.
 
 ## Fields
@@ -22,10 +22,12 @@ Use `pydantic-settings` to read credentials from the environment:
 
 ```python
 from pydantic_settings import SettingsConfigDict
-from plynth.connectors.salesforce.settings import SalesforceSettings
+from plynt.connectors.salesforce.settings import SalesforceSettings
+
 
 class MySettings(SalesforceSettings):
     model_config = SettingsConfigDict(env_prefix="SF_", env_file=".env")
+
 
 s = MySettings()
 ```
@@ -46,7 +48,7 @@ With `env_prefix="SF_"`, the environment variable names become:
 ## Pass settings to the auth middleware
 
 ```python
-from plynth.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
+from plynt.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
 
 auth = SalesforceClientCredentialsAuthMiddleware(
     client_id=s.client_id,

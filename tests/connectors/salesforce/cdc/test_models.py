@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from plynth.connectors.salesforce.cdc import (
+from plynt.connectors.salesforce.cdc import (
     SalesforceCDCAuthMetadata,
     SalesforceCDCEnvelope,
     SalesforceCDCEvent,

@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2026-05-13
-**Scope:** `plynth.connectors.salesforce.lookup`, `plynth.connectors.salesforce.identity`, `plynth.connectors.salesforce.query`
+**Scope:** `plynt.connectors.salesforce.lookup`, `plynt.connectors.salesforce.identity`, `plynt.connectors.salesforce.query`
 
 ______________________________________________________________________
 
@@ -28,7 +28,7 @@ that may contain only the `records` field:
 }
 ```
 
-Plynth's `SalesforceQueryResponse` model expects the full envelope
+Plynt's `SalesforceQueryResponse` model expects the full envelope
 (all four fields) for consistent validation and type safety. Services that
 invoke SOQL queries must handle both the standard and minimal cases.
 

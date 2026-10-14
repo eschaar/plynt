@@ -2,8 +2,8 @@ from typing import ClassVar, cast
 
 import pytest
 
-from plynth.base.errors import BaseError
-from plynth.base.mapping import ErrorMapper
+from plynt.base.errors import BaseError
+from plynt.base.mapping import ErrorMapper
 
 
 class DummySourceError(BaseError):

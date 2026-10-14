@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from plynth.connectors.salesforce.lookup import (
+from plynt.connectors.salesforce.lookup import (
     AsyncSalesforceQueueLookupService,
     SalesforceQueueLookupService,
 )

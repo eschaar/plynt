@@ -1,17 +1,17 @@
-"""Tests for plynth.cache.locmem (LocMemCache, LocMemCacheConfig)."""
+"""Tests for plynt.cache.locmem (LocMemCache, LocMemCacheConfig)."""
 
 from __future__ import annotations
 
 import time
 
-from plynth.base.cache import (
+from plynt.base.cache import (
     CacheBackend,
     CacheConfigBase,
     SupportsSizeInfo,
     SupportsStats,
     SupportsTTL,
 )
-from plynth.cache import LocMemCache, LocMemCacheConfig
+from plynt.cache import LocMemCache, LocMemCacheConfig
 
 
 class TestLocMemCache:

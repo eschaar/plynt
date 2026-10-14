@@ -7,7 +7,7 @@ from typing import cast
 
 import pytest
 
-from plynth.grpc import protobuf
+from plynt.grpc import protobuf
 
 
 class _FakeMessage:

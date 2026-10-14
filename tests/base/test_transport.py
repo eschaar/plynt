@@ -16,13 +16,13 @@ from collections.abc import Callable
 
 import pytest
 
-from plynth.base.middleware import NextAsyncHandler
-from plynth.base.policies import RetryPolicy
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.base.transport import BaseAsyncTransport, BaseSyncTransport
-from plynth.http.policies import HttpRetryPolicy
-from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
+from plynt.base.middleware import NextAsyncHandler
+from plynt.base.policies import RetryPolicy
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.base.transport import BaseAsyncTransport, BaseSyncTransport
+from plynt.http.policies import HttpRetryPolicy
+from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
 
 # ---------------------------------------------------------------------------
 # Helpers

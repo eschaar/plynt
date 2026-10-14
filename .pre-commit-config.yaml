@@ -1,5 +1,5 @@
 exclude: >-
-  ^(\.vstack/|\.github/(agents|hooks|instructions|prompts|skills)/|src/plynth/connectors/salesforce/cdc/_proto/)
+  ^(\.vstack/|\.github/(agents|hooks|instructions|prompts|skills)/|src/plynt/connectors/salesforce/cdc/_proto/)
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks

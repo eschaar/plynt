@@ -1,1 +1,1 @@
-# plynth.log tests
+# plynt.log tests

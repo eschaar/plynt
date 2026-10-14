@@ -1,7 +1,7 @@
 import pytest
 from pydantic_settings import SettingsConfigDict
 
-from plynth.base.settings import Settings
+from plynt.base.settings import Settings
 
 
 class TestSettings:

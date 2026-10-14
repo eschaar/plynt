@@ -1,4 +1,4 @@
-"""Tests for ``plynth.adapters.django.transport``."""
+"""Tests for ``plynt.adapters.django.transport``."""
 
 from __future__ import annotations
 
@@ -8,18 +8,18 @@ from typing import cast
 
 import pytest
 
-import plynth.adapters.django.transport as django_transport
-from plynth.adapters.django.transport import (
+import plynt.adapters.django.transport as django_transport
+from plynt.adapters.django.transport import (
     async_transport_from_django_settings,
     transport_from_django_settings,
 )
-from plynth.base.middleware import AsyncMiddleware, NextAsyncHandler, SyncMiddleware
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.http.auth import OAuth2ClientCredentialsConfig
-from plynth.http.settings import HTTPSettings
-from plynth.middleware.cache import AsyncCacheMiddleware, CacheMiddleware
-from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
+from plynt.base.middleware import AsyncMiddleware, NextAsyncHandler, SyncMiddleware
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.settings import HTTPSettings
+from plynt.middleware.cache import AsyncCacheMiddleware, CacheMiddleware
+from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
 
 
 class _DemoHTTPSettings(HTTPSettings):

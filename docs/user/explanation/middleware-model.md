@@ -2,7 +2,7 @@
 
 ## What middleware is
 
-Middleware in Plynth is **transport-level** logic. Each middleware wraps
+Middleware in Plynt is **transport-level** logic. Each middleware wraps
 the next in a chain of responsibility. When a request enters the chain it
 flows inward through every middleware, hits the network, then flows back
 outward through every middleware in reverse.
@@ -106,11 +106,11 @@ sequenceDiagram
 ```python
 transport = HttpxSyncTransport(
     middlewares=[
-        CacheMiddleware(backend),               # outermost
+        CacheMiddleware(backend),  # outermost
         HeaderMiddleware({"User-Agent": "..."}),
         OAuth2ClientCredentialsAuthMiddleware(...),
         RetryMiddleware(RetryPolicy(max_attempts=3)),
-        CircuitBreakerMiddleware(policy),        # innermost above I/O
+        CircuitBreakerMiddleware(policy),  # innermost above I/O
     ]
 )
 ```
@@ -139,10 +139,11 @@ Implement the `SyncMiddleware` protocol:
 
 ```python
 import time
-from plynth.base.middleware import SyncMiddleware
-from plynth.base.request import Request
-from plynth.base.response import Response
+from plynt.base.middleware import SyncMiddleware
+from plynt.base.request import Request
+from plynt.base.response import Response
 from collections.abc import Callable
+
 
 class TimingMiddleware(SyncMiddleware):
     def handle(
@@ -153,7 +154,9 @@ class TimingMiddleware(SyncMiddleware):
         start = time.monotonic()
         response = next_handler(request)
         elapsed = time.monotonic() - start
-        print(f"{request.method} {request.url} → {response.status_code} in {elapsed:.3f}s")
+        print(
+            f"{request.method} {request.url} → {response.status_code} in {elapsed:.3f}s"
+        )
         return response
 ```
 

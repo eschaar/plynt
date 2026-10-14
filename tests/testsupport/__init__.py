@@ -1,1 +1,1 @@
-"""Tests for plynth.testsupport package."""
+"""Tests for plynt.testsupport package."""

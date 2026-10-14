@@ -11,11 +11,11 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from plynth.adapters.django.drf.views import PlynthServiceMixin
-from plynth.base.transport import SyncTransport
-from plynth.http.auth import OAuth2ClientCredentialsConfig
-from plynth.http.client import APIClient
-from plynth.http.settings import HTTPSettings
+from plynt.adapters.django.drf.views import PlyntServiceMixin
+from plynt.base.transport import SyncTransport
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.client import APIClient
+from plynt.http.settings import HTTPSettings
 
 
 class ExternalAPISettings(HTTPSettings):
@@ -83,7 +83,7 @@ class ProductOrchestrator:
         return {"items": items, "total": len(items)}
 
 
-class ProductListView(PlynthServiceMixin, APIView):
+class ProductListView(PlyntServiceMixin, APIView):
     settings_name = "EXTERNAL_API"
     settings_class = ExternalAPISettings
     service_factories: ClassVar = {
@@ -108,4 +108,4 @@ class ProductListView(PlynthServiceMixin, APIView):
 
 1. Keep serializer logic focused on API contract validation and shaping.
 1. Keep filtering and enrichment rules in the orchestrator.
-1. Keep upstream transport/auth/cache concerns in plynth configuration.
+1. Keep upstream transport/auth/cache concerns in plynt configuration.

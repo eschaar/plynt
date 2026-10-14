@@ -9,21 +9,21 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from plynth.connectors.salesforce.constants import DEFAULT_API_VERSION
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.constants import DEFAULT_API_VERSION
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.models import SalesforceQueryResponse
-from plynth.connectors.salesforce.query import (
+from plynt.connectors.salesforce.models import SalesforceQueryResponse
+from plynt.connectors.salesforce.query import (
     AsyncSalesforceObjectQueryService,
     AsyncSalesforceQueryService,
     SalesforceObjectQueryService,
     SalesforceQueryService,
 )
-from plynth.connectors.salesforce.query.service import _validate_timestamp_field
-from plynth.http.client import APIClient, AsyncAPIClient
-from plynth.http.renderer import JSONRenderer
+from plynt.connectors.salesforce.query.service import _validate_timestamp_field
+from plynt.http.client import APIClient, AsyncAPIClient
+from plynt.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 
 BASE_URL = "https://myorg.my.salesforce.com"
@@ -515,7 +515,7 @@ class TestAsyncSalesforceQueryService:
             return "63.0"
 
         monkeypatch.setattr(
-            "plynth.connectors.salesforce.query.service.resolve_async_api_version",
+            "plynt.connectors.salesforce.query.service.resolve_async_api_version",
             fake_resolve,
         )
 
@@ -542,7 +542,7 @@ class TestAsyncSalesforceQueryService:
             return "63.0"
 
         monkeypatch.setattr(
-            "plynth.connectors.salesforce.query.service.resolve_async_api_version",
+            "plynt.connectors.salesforce.query.service.resolve_async_api_version",
             fake_resolve,
         )
 

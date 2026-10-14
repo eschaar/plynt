@@ -3,8 +3,8 @@
 ## Purpose
 
 Build a framework-agnostic integration with Salesforce, located under
-`src/plynth/connectors/salesforce/`. Extraction to a standalone package is
-explicitly deferred until after multiple stable plynth releases are live and
+`src/plynt/connectors/salesforce/`. Extraction to a standalone package is
+explicitly deferred until after multiple stable plynt releases are live and
 multiple connectors exist.
 
 ## Structure
@@ -44,29 +44,29 @@ integration implementations.
 - **Conditional**: only implement when repeated demand appears.
 - **Out of Scope**: intentionally excluded from generic core.
 
-| Capability Domain                          | Typical API Scope                                                     | Plynth Status | Support Policy                     | ADR               | Notes                                                                                                                                                                                                                                                                              |
-| ------------------------------------------ | --------------------------------------------------------------------- | ------------- | ---------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authentication and session handling        | OAuth token endpoint, bearer token usage, externally managed sessions | Done          | Maintain                           | SF-0006           | OAuth client credentials, OAuth password (legacy), JWT bearer, direct token/session injection                                                                                                                                                                                      |
-| API version discovery                      | `GET /services/data/`                                                 | Done          | Maintain                           | —                 | Optional dynamic version selection with cache                                                                                                                                                                                                                                      |
-| SObject data operations                    | `/sobjects/{Object}` and related record endpoints                     | Done          | Maintain                           | —                 | CRUD, upsert, external ID flows, describe, layout, deleted and updated windows                                                                                                                                                                                                     |
-| Query operations                           | `/query`, `/queryAll`, pagination cursors                             | Done          | Maintain                           | SF-0003           | SOQL execution, query_more, query_more_from_id, typed query responses                                                                                                                                                                                                              |
-| Search operations                          | `/search`, `/parameterizedSearch`                                     | Done          | Maintain                           | SF-0004           | SOSL search, quick search, escape helpers                                                                                                                                                                                                                                          |
-| Utility and org introspection              | `/limits`, `/sobjects`, `/tooling/*`                                  | Done          | Maintain                           | —                 | Limits, API usage parsing, object catalog, tooling execute                                                                                                                                                                                                                         |
-| Observability                              | Response headers and usage telemetry (`Sforce-Limit-Info`)            | Done          | Maintain                           | —                 | Typed API usage parsing and exposure via limits context                                                                                                                                                                                                                            |
-| Developer experience (DX)                  | Lookup and helper abstractions for safer usage                        | Done          | Maintain                           | SF-0002           | Enum-based lookup registry, query helpers, escape hatch convenience                                                                                                                                                                                                                |
-| Generic lookup helpers                     | Composite of query and object endpoints                               | Done          | Deferred expansion                 | —                 | RecordType, User, Pricebook, Queue, Profile lookup services via enum-based registry                                                                                                                                                                                                |
-| Apex REST passthrough                      | `/apexrest/*`                                                         | Done          | Maintain                           | —                 | Dedicated sync and async service entry points                                                                                                                                                                                                                                      |
-| Bulk data processing                       | Bulk API v2 ingest and query resources                                | Done          | v2-first                           | SF-0005           | Bulk API v1 remains excluded by default                                                                                                                                                                                                                                            |
-| Metadata deployment (REST)                 | `/metadata/deployRequest` operations                                  | Done          | Maintain                           | SF-0008           | Start deploy, status polling, quick deploy, cancel, wait helpers, sync and async parity                                                                                                                                                                                            |
-| Composite request orchestration            | `/composite/*`, `/composite/tree/*`, `/composite/batch/*`             | Done          | Maintain                           | SF-0007           | Generic composite primitives for request minimization and transactional orchestration                                                                                                                                                                                              |
-| Identity access primitives (generic)       | User, PermissionSetAssignment, PermissionSetGroupAssignment endpoints | Done          | Deferred expansion                 | SF-0009           | Policy-neutral user retrieval/listing, assignment create/delete, and user active toggle                                                                                                                                                                                            |
-| Event streaming (CDC / Pub/Sub)            | Salesforce Pub/Sub API over gRPC                                      | Experimental  | Validate against a real org        | SF-0013, ADR-0030 | Async-only; flow control, bitmap decoding, and checkpoints implemented; replay fidelity remains unverified                                                                                                                                                                         |
-| Upstream rate governance                   | Client-side throttling, quota backpressure, and pacing                | Out of Scope  | Consumer responsibility            | —                 | Salesforce enforces limits server-side (403/503); connector already surfaces `SalesforceApiUsage` and `SalesforceLimitsResponse` for observability; circuit breaking is available via core `CircuitBreakerMiddleware`; active pacing is application-level logic, not library logic |
-| GraphQL API                                | Flexible query interface: `/graphql` POST with queries and mutations  | Conditional   | Implement on repeated demand       | —                 | Alternative to REST; no core plynth changes required; complements SOQL/SOSL queries                                                                                                                                                                                                |
-| Generative AI — Models API                 | `/einstein/platform/v1` chat, text, embeddings inference              | Implemented   | Keep parity and boundary checks    | —                 | Generate Chat, Text, Embeddings with feedback loop; shipped with sync and streaming support                                                                                                                                                                                        |
-| Generative AI — Agent API                  | `/einstein/ai-agent/v1` agent session and message orchestration       | Implemented   | Keep parity and boundary checks    | —                 | Session lifecycle, sync/streaming messaging, feedback; shipped with facade exposure                                                                                                                                                                                                |
-| Metadata retrieval and catalog (SOAP-only) | `retrieve`, `listMetadata`, `describeMetadata` (SOAP Metadata API)    | Out of Scope  | Re-evaluate with SOAP core support | —                 | Not available via REST-only connector scope                                                                                                                                                                                                                                        |
-| Business-specific contrib layers           | Business-specific wrappers on top of generic connector                | Out of Scope  | Keep in consumer layer             | —                 | Protects framework-agnostic, reusable connector core                                                                                                                                                                                                                               |
+| Capability Domain                          | Typical API Scope                                                     | Plynt Status | Support Policy                     | ADR               | Notes                                                                                                                                                                                                                                                                              |
+| ------------------------------------------ | --------------------------------------------------------------------- | ------------ | ---------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication and session handling        | OAuth token endpoint, bearer token usage, externally managed sessions | Done         | Maintain                           | SF-0006           | OAuth client credentials, OAuth password (legacy), JWT bearer, direct token/session injection                                                                                                                                                                                      |
+| API version discovery                      | `GET /services/data/`                                                 | Done         | Maintain                           | —                 | Optional dynamic version selection with cache                                                                                                                                                                                                                                      |
+| SObject data operations                    | `/sobjects/{Object}` and related record endpoints                     | Done         | Maintain                           | —                 | CRUD, upsert, external ID flows, describe, layout, deleted and updated windows                                                                                                                                                                                                     |
+| Query operations                           | `/query`, `/queryAll`, pagination cursors                             | Done         | Maintain                           | SF-0003           | SOQL execution, query_more, query_more_from_id, typed query responses                                                                                                                                                                                                              |
+| Search operations                          | `/search`, `/parameterizedSearch`                                     | Done         | Maintain                           | SF-0004           | SOSL search, quick search, escape helpers                                                                                                                                                                                                                                          |
+| Utility and org introspection              | `/limits`, `/sobjects`, `/tooling/*`                                  | Done         | Maintain                           | —                 | Limits, API usage parsing, object catalog, tooling execute                                                                                                                                                                                                                         |
+| Observability                              | Response headers and usage telemetry (`Sforce-Limit-Info`)            | Done         | Maintain                           | —                 | Typed API usage parsing and exposure via limits context                                                                                                                                                                                                                            |
+| Developer experience (DX)                  | Lookup and helper abstractions for safer usage                        | Done         | Maintain                           | SF-0002           | Enum-based lookup registry, query helpers, escape hatch convenience                                                                                                                                                                                                                |
+| Generic lookup helpers                     | Composite of query and object endpoints                               | Done         | Deferred expansion                 | —                 | RecordType, User, Pricebook, Queue, Profile lookup services via enum-based registry                                                                                                                                                                                                |
+| Apex REST passthrough                      | `/apexrest/*`                                                         | Done         | Maintain                           | —                 | Dedicated sync and async service entry points                                                                                                                                                                                                                                      |
+| Bulk data processing                       | Bulk API v2 ingest and query resources                                | Done         | v2-first                           | SF-0005           | Bulk API v1 remains excluded by default                                                                                                                                                                                                                                            |
+| Metadata deployment (REST)                 | `/metadata/deployRequest` operations                                  | Done         | Maintain                           | SF-0008           | Start deploy, status polling, quick deploy, cancel, wait helpers, sync and async parity                                                                                                                                                                                            |
+| Composite request orchestration            | `/composite/*`, `/composite/tree/*`, `/composite/batch/*`             | Done         | Maintain                           | SF-0007           | Generic composite primitives for request minimization and transactional orchestration                                                                                                                                                                                              |
+| Identity access primitives (generic)       | User, PermissionSetAssignment, PermissionSetGroupAssignment endpoints | Done         | Deferred expansion                 | SF-0009           | Policy-neutral user retrieval/listing, assignment create/delete, and user active toggle                                                                                                                                                                                            |
+| Event streaming (CDC / Pub/Sub)            | Salesforce Pub/Sub API over gRPC                                      | Experimental | Validate against a real org        | SF-0013, ADR-0030 | Async-only; flow control, bitmap decoding, and checkpoints implemented; replay fidelity remains unverified                                                                                                                                                                         |
+| Upstream rate governance                   | Client-side throttling, quota backpressure, and pacing                | Out of Scope | Consumer responsibility            | —                 | Salesforce enforces limits server-side (403/503); connector already surfaces `SalesforceApiUsage` and `SalesforceLimitsResponse` for observability; circuit breaking is available via core `CircuitBreakerMiddleware`; active pacing is application-level logic, not library logic |
+| GraphQL API                                | Flexible query interface: `/graphql` POST with queries and mutations  | Conditional  | Implement on repeated demand       | —                 | Alternative to REST; no core plynt changes required; complements SOQL/SOSL queries                                                                                                                                                                                                 |
+| Generative AI — Models API                 | `/einstein/platform/v1` chat, text, embeddings inference              | Implemented  | Keep parity and boundary checks    | —                 | Generate Chat, Text, Embeddings with feedback loop; shipped with sync and streaming support                                                                                                                                                                                        |
+| Generative AI — Agent API                  | `/einstein/ai-agent/v1` agent session and message orchestration       | Implemented  | Keep parity and boundary checks    | —                 | Session lifecycle, sync/streaming messaging, feedback; shipped with facade exposure                                                                                                                                                                                                |
+| Metadata retrieval and catalog (SOAP-only) | `retrieve`, `listMetadata`, `describeMetadata` (SOAP Metadata API)    | Out of Scope | Re-evaluate with SOAP core support | —                 | Not available via REST-only connector scope                                                                                                                                                                                                                                        |
+| Business-specific contrib layers           | Business-specific wrappers on top of generic connector                | Out of Scope | Keep in consumer layer             | —                 | Protects framework-agnostic, reusable connector core                                                                                                                                                                                                                               |
 
 ### ADR Coverage Notes
 
@@ -80,7 +80,7 @@ scope boundaries rather than a dedicated Salesforce capability ADR.
 - CDC / Pub/Sub: implemented under accepted
   [SF-0013](../architecture/adr/sf-0013-salesforce-eventing-architecture.md)
   and [ADR-0030](../../../architecture/adr/0030-grpc-protocol-boundary.md).
-  Install with `plynth[grpc,salesforce]`; see the
+  Install with `plynt[grpc,salesforce]`; see the
   [CDC deployment guide](../user/how-to/deploy-cdc.md).
   Real-org authentication, schema decoding, long-running operation, and
   opaque replay-ID fidelity still require validation.
@@ -91,7 +91,7 @@ scope boundaries rather than a dedicated Salesforce capability ADR.
   `CircuitBreakerMiddleware`. Quota observability is already available via
   `SalesforceApiUsage` (from `Sforce-Limit-Info` headers) and
   `SalesforceLimitsResponse` (from `GET /limits`).
-- GraphQL API: no core plynth changes required; standard HTTP POST + JSON
+- GraphQL API: no core plynt changes required; standard HTTP POST + JSON
   response handling suffice. Implement only on repeated demand to avoid
   over-engineering before consumer needs are clear.
 - Generative AI (Models + Agent API): both now build on **ADR-0017 streaming
@@ -106,7 +106,7 @@ scope boundaries rather than a dedicated Salesforce capability ADR.
 
 1. **Salesforce product direction:** Agentforce is central to Salesforce's AI
    narrative. Models and Agent APIs are the programmatic entry points. Supporting
-   them positions plynth as a natural choice for Salesforce AI workloads.
+   them positions plynt as a natural choice for Salesforce AI workloads.
 
 1. **Streaming foundation:** Both APIs achieve their best UX with streaming
    support (ADR-0017). That dependency is now satisfied, so Models and Agent API
@@ -115,7 +115,7 @@ scope boundaries rather than a dedicated Salesforce capability ADR.
 1. **Scope boundary:** Models and Agent APIs are Salesforce-specific orchestration
    layers, not generic connectors. They belong here, not in a future LLM adapter.
    Generic LLM support (OpenAI, etc.) remains a separate concern in the core
-   `plynth.connectors.llm` module.
+   `plynt.connectors.llm` module.
 
 **Implication:** The shipped Salesforce AI services now validate the connector
 boundary and streaming foundation needed for later generic AI work.
@@ -127,7 +127,7 @@ boundary and streaming foundation needed for later generic AI work.
 - Do not make either connector depend on the other; only share neutral core
   streaming and transport capabilities.
 - Salesforce-specific AI orchestration stays in the Salesforce connector,
-  while generic provider-agnostic AI abstractions belong in `plynth.connectors.llm`.
+  while generic provider-agnostic AI abstractions belong in `plynt.connectors.llm`.
 
 ## Priorities
 
@@ -146,7 +146,7 @@ Activation criteria for deferred expansion:
 
 ## Scope Boundaries
 
-- Plynth Salesforce connector remains **REST-first**.
+- Plynt Salesforce connector remains **REST-first**.
 - SOAP metadata capabilities stay outside scope until core SOAP transport
   exists.
 - Business-specific logic remains outside generic connector core.
@@ -195,7 +195,7 @@ Architecture notes:
 
 ### Metadata REST Deploy Scope
 
-Plynth supports the REST deploy pipeline through
+Plynt supports the REST deploy pipeline through
 `/metadata/deployRequest` operations:
 
 - `POST /metadata/deployRequest` to start a deploy from a ZIP package.
@@ -222,24 +222,24 @@ See [SF-0008](../architecture/adr/sf-0008-metadata-rest-deploy.md) for the decis
 
 #### Circuit breaking
 
-Plynth ships a generic `CircuitBreakerMiddleware` (and async variant) in
-`plynth.middleware`. Configure it on the `SalesforceAPIClient` to protect
+Plynt ships a generic `CircuitBreakerMiddleware` (and async variant) in
+`plynt.middleware`. Configure it on the `SalesforceAPIClient` to protect
 against transient Salesforce downtime (500, 503).
 
 Recommended policy for Salesforce:
 
 ```python
-from plynth.middleware.circuit_breaker import CircuitBreakerMiddleware
-from plynth.base.policies import CircuitBreakerPolicy
-from plynth.connectors.salesforce import SalesforceAPIClient, SalesforceSettings
+from plynt.middleware.circuit_breaker import CircuitBreakerMiddleware
+from plynt.base.policies import CircuitBreakerPolicy
+from plynt.connectors.salesforce import SalesforceAPIClient, SalesforceSettings
 
 client = SalesforceAPIClient(
     settings=SalesforceSettings(),
     middleware=[
         CircuitBreakerMiddleware(
             CircuitBreakerPolicy(
-                failure_threshold=5,       # open after 5 failures
-                recovery_timeout=30.0,     # try again after 30 s
+                failure_threshold=5,  # open after 5 failures
+                recovery_timeout=30.0,  # try again after 30 s
                 failure_status_codes={500, 503},
             )
         ),
@@ -294,7 +294,7 @@ application-level quota guards.
 
 ### Composite REST Primitives
 
-Plynth exposes the Salesforce composite REST primitives without embedding
+Plynt exposes the Salesforce composite REST primitives without embedding
 business workflows in the connector.
 
 Supported building blocks:
@@ -331,7 +331,7 @@ This integration is intentionally kept extractable, but extraction is not
 planned for the first live versions.
 Execution starts only when both conditions are met:
 
-- multiple stable plynth versions are live in production
+- multiple stable plynt versions are live in production
 - multiple connectors are shipped and maintained in-repo
 
 See [SF-0012](../architecture/adr/sf-0012-extraction-strategy.md)
@@ -340,10 +340,10 @@ SF-0012 remains Proposed; extraction is not approved.
 
 ## Principles
 
-- All code under `src/plynth/connectors/salesforce/`
+- All code under `src/plynt/connectors/salesforce/`
 - No business-specific or org-specific logic in the core package
 - Extractable architecture, with package extraction deferred to later versions
-- Use Plynth core abstractions (Service, Transport, Middleware)
+- Use Plynt core abstractions (Service, Transport, Middleware)
 - Focus on testability and extensibility
 - Framework-agnostic: no Django/FastAPI/Flask imports in this module
 - No business- or org-specific convenience services in the generic connector;

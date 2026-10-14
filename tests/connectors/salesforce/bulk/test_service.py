@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from plynth.base.response import Response
-from plynth.connectors.salesforce.bulk import (
+from plynt.base.response import Response
+from plynt.connectors.salesforce.bulk import (
     AsyncSalesforceBulkService,
     BulkIngestResult,
     BulkJobInfo,
@@ -20,16 +20,16 @@ from plynth.connectors.salesforce.bulk import (
     _poll_delay,
     _records_to_csv,
 )
-from plynth.connectors.salesforce.constants import DEFAULT_API_VERSION
-from plynth.connectors.salesforce.errors import (
+from plynt.connectors.salesforce.constants import DEFAULT_API_VERSION
+from plynt.connectors.salesforce.errors import (
     BulkJobTimeoutError,
     SalesforceBulkJobError,
 )
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.http.client import APIClient, AsyncAPIClient
+from plynt.http.client import APIClient, AsyncAPIClient
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 
 BASE_URL = "https://myorg.my.salesforce.com"
@@ -260,7 +260,7 @@ class TestSalesforceBulkJobError:
 
     def test_is_subclass_of_salesforce_api_error(self) -> None:
         """Inherits from SalesforceAPIError for unified exception handling."""
-        from plynth.connectors.salesforce.errors import SalesforceAPIError
+        from plynt.connectors.salesforce.errors import SalesforceAPIError
 
         exc = SalesforceBulkJobError(job_id="x", message="y")
         assert isinstance(exc, SalesforceAPIError)
@@ -550,14 +550,14 @@ class TestSalesforceBulkService:
     def test_wait_for_job_returns_when_complete(self) -> None:
         """Returns the job info when state reaches JobComplete."""
         service = self._service_with_states("InProgress", "JobComplete")
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             job = service.wait_for_job(JOB_ID, is_query=False)
         assert job.state is BulkJobState.job_complete
 
     def test_wait_for_job_raises_on_failed_state(self) -> None:
         """Raises SalesforceBulkJobError when job ends in Failed state."""
         service = self._service_with_states("InProgress", "Failed")
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             with pytest.raises(SalesforceBulkJobError) as exc_info:
                 service.wait_for_job(JOB_ID, is_query=False)
         assert exc_info.value.job_id == JOB_ID
@@ -565,7 +565,7 @@ class TestSalesforceBulkService:
     def test_wait_for_job_raises_on_aborted_state(self) -> None:
         """Raises SalesforceBulkJobError when job ends in Aborted state."""
         service = self._service_with_states("Aborted")
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             with pytest.raises(SalesforceBulkJobError):
                 service.wait_for_job(JOB_ID, is_query=False)
 
@@ -573,9 +573,9 @@ class TestSalesforceBulkService:
         """Raises BulkJobTimeoutError when max_wait seconds elapse."""
         service = self._service_with_states("InProgress", "InProgress", "InProgress")
         with (
-            patch("plynth.connectors.salesforce.bulk.service.time.sleep"),
+            patch("plynt.connectors.salesforce.bulk.service.time.sleep"),
             patch(
-                "plynth.connectors.salesforce.bulk.service.time.monotonic",
+                "plynt.connectors.salesforce.bulk.service.time.monotonic",
                 side_effect=[0.0, 0.1, 100.0],
             ),
         ):
@@ -679,7 +679,7 @@ class TestSalesforceBulkService:
         client = APIClient(base_url=BASE_URL, transport=transport)
         service = SalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             result = service.ingest("Account", BulkOperation.insert, [{"Name": "Acme"}])
 
         assert isinstance(result, BulkIngestResult)
@@ -704,7 +704,7 @@ class TestSalesforceBulkService:
         client = APIClient(base_url=BASE_URL, transport=transport)
         service = SalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             with pytest.raises(RuntimeError):
                 service.ingest("Account", BulkOperation.insert, [{"Name": "Acme"}])
 
@@ -729,7 +729,7 @@ class TestSalesforceBulkService:
         client = APIClient(base_url=BASE_URL, transport=transport)
         service = SalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             with pytest.raises(SalesforceBulkJobError):
                 service.ingest("Account", BulkOperation.insert, [{"Name": "Acme"}])
 
@@ -751,7 +751,7 @@ class TestSalesforceBulkService:
         client = APIClient(base_url=BASE_URL, transport=transport)
         service = SalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             with pytest.raises(RuntimeError):
                 service.ingest("Account", BulkOperation.insert, [{"Name": "Acme"}])
 
@@ -782,7 +782,7 @@ class TestSalesforceBulkService:
         client = APIClient(base_url=BASE_URL, transport=transport)
         service = SalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             records = service.query("SELECT Id, Name FROM Account")
 
         assert records == [{"Id": "AAA", "Name": "Acme"}]
@@ -810,7 +810,7 @@ class TestSalesforceBulkService:
         client = APIClient(base_url=BASE_URL, transport=transport)
         service = SalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             with pytest.raises(SalesforceBulkJobError):
                 service.query("SELECT Id FROM Account")
 
@@ -839,7 +839,7 @@ class TestSalesforceBulkService:
         client = APIClient(base_url=BASE_URL, transport=transport)
         service = SalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             with pytest.raises(RuntimeError):
                 service.query("SELECT Id FROM Account")
 
@@ -862,7 +862,7 @@ class TestSalesforceBulkService:
         client = APIClient(base_url=BASE_URL, transport=transport)
         service = SalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.time.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             with pytest.raises(RuntimeError, match="original error"):
                 service.query("SELECT Id FROM Account")
 
@@ -1048,7 +1048,7 @@ class TestAsyncSalesforceBulkService:
     async def test_wait_for_job_returns_when_complete(self) -> None:
         """Returns the job info when state reaches JobComplete."""
         service = self._async_service_with_states("InProgress", "JobComplete")
-        with patch("plynth.connectors.salesforce.bulk.service.asyncio.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
             job = await service.wait_for_job(JOB_ID, is_query=False)
         assert job.state is BulkJobState.job_complete
 
@@ -1056,7 +1056,7 @@ class TestAsyncSalesforceBulkService:
     async def test_wait_for_job_raises_on_failed_state(self) -> None:
         """Raises SalesforceBulkJobError when job ends in Failed state."""
         service = self._async_service_with_states("Failed")
-        with patch("plynth.connectors.salesforce.bulk.service.asyncio.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
             with pytest.raises(SalesforceBulkJobError) as exc_info:
                 await service.wait_for_job(JOB_ID, is_query=False)
         assert exc_info.value.job_id == JOB_ID
@@ -1068,9 +1068,9 @@ class TestAsyncSalesforceBulkService:
             "InProgress", "InProgress", "InProgress"
         )
         with (
-            patch("plynth.connectors.salesforce.bulk.service.asyncio.sleep"),
+            patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"),
             patch(
-                "plynth.connectors.salesforce.bulk.service.time.monotonic",
+                "plynt.connectors.salesforce.bulk.service.time.monotonic",
                 side_effect=[0.0, 0.1, 100.0],
             ),
         ):
@@ -1103,7 +1103,7 @@ class TestAsyncSalesforceBulkService:
         client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
         service = AsyncSalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.asyncio.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
             result = await service.ingest(
                 "Account", BulkOperation.insert, [{"Name": "Acme"}]
             )
@@ -1140,7 +1140,7 @@ class TestAsyncSalesforceBulkService:
         client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
         service = AsyncSalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.asyncio.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
             with pytest.raises(RuntimeError):
                 await service.ingest(
                     "Account", BulkOperation.insert, [{"Name": "Acme"}]
@@ -1165,7 +1165,7 @@ class TestAsyncSalesforceBulkService:
         client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
         service = AsyncSalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.asyncio.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
             with pytest.raises(RuntimeError, match="original error"):
                 await service.ingest(
                     "Account", BulkOperation.insert, [{"Name": "Acme"}]
@@ -1203,7 +1203,7 @@ class TestAsyncSalesforceBulkService:
         client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
         service = AsyncSalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.asyncio.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
             with pytest.raises(RuntimeError):
                 await service.query("SELECT Id FROM Account")
 
@@ -1229,7 +1229,7 @@ class TestAsyncSalesforceBulkService:
         client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
         service = AsyncSalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.asyncio.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
             with pytest.raises(RuntimeError, match="original error"):
                 await service.query("SELECT Id FROM Account")
 
@@ -1254,7 +1254,7 @@ class TestAsyncSalesforceBulkService:
         client = AsyncAPIClient(base_url=BASE_URL, transport=transport)
         service = AsyncSalesforceBulkService(client, api_version=API_VERSION)
 
-        with patch("plynth.connectors.salesforce.bulk.service.asyncio.sleep"):
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
             records = await service.query("SELECT Id, Name FROM Account")
 
         assert records == [{"Id": "AAA", "Name": "Acme"}]

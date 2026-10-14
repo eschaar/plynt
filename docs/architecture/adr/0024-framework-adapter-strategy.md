@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth's product roadmap includes optional integrations for Django, FastAPI,
+Plynt's product roadmap includes optional integrations for Django, FastAPI,
 and Flask. These integrations do not belong in the core packages because
 ADR-0001, ADR-0002, and ADR-0003 require the core to remain
 framework-agnostic and keep optional dependencies isolated behind extras.
@@ -19,7 +19,7 @@ same pace.
 
 There is also a terminology question: whether these integrations should be
 treated as "frameworks" in naming and directory structure, or as
-"framework adapters" that translate between plynth's public interfaces and a
+"framework adapters" that translate between plynt's public interfaces and a
 host framework's lifecycle, configuration, and dependency model.
 
 Finally, a first implementation target is needed so the repository can move
@@ -27,8 +27,8 @@ from idea-stage notes to an executable framework integration plan.
 
 ## Decision
 
-Plynth will treat these integrations as **framework adapters** and keep them
-under the `plynth.adapters` boundary.
+Plynt will treat these integrations as **framework adapters** and keep them
+under the `plynt.adapters` boundary.
 
 The strategy is:
 
@@ -38,7 +38,7 @@ The strategy is:
    `frameworks` namespace.
 1. Track Django, FastAPI, and Flask as separate roadmap items so each can be
    planned, shipped, or deferred independently.
-1. Implement Django first as `plynth[django]`.
+1. Implement Django first as `plynt[django]`.
 1. Treat FastAPI as the next candidate after Django validation.
 1. Keep Flask conditional on demonstrated demand because the zero-adapter path
    already works well for its common sync use cases.
@@ -55,7 +55,7 @@ The strategy is:
 **Cons:**
 
 - Blurs the architectural role of these modules.
-- Suggests plynth owns framework runtimes rather than thin integration
+- Suggests plynt owns framework runtimes rather than thin integration
   boundaries.
 - Conflicts with the existing connector-versus-adapter terminology used across
   the repository.
@@ -93,21 +93,21 @@ bucket of unrelated optional integrations.
 - Requires small documentation updates now.
 - Adds an explicit prioritization decision.
 
-**Why chosen:** This is the clearest match for plynth's architecture and gives
+**Why chosen:** This is the clearest match for plynt's architecture and gives
 the most usable roadmap structure.
 
 ## Rationale
 
 "Adapter" is the right term because these modules do not define new core
 abstractions and do not represent framework-specific business domains. Their
-job is to translate plynth's existing public interfaces into framework
+job is to translate plynt's existing public interfaces into framework
 conventions such as Django settings and cache aliases, FastAPI lifespan and
 dependency injection, or Flask extension wiring.
 
 Keeping the namespace as `adapters` also protects the architecture boundary.
 It makes it obvious that these modules depend on the core through public
 interfaces only and that no framework-specific assumptions should flow back
-into `plynth.base`, `plynth.http`, or `plynth.middleware`.
+into `plynt.base`, `plynt.http`, or `plynt.middleware`.
 
 Django is the best first adapter because its value proposition is concrete and
 bounded: configuration bridging and cache integration. That makes it a strong
@@ -123,7 +123,7 @@ its common usage already works well without additional library code.
 
 - Terminology becomes consistent across roadmap, architecture docs, and code.
 - Framework work can be planned and shipped one adapter at a time.
-- The first implementation target is explicit: `plynth[django]`.
+- The first implementation target is explicit: `plynt[django]`.
 - Future ADRs for FastAPI and Flask can stay focused on framework-specific
   lifecycle and API concerns.
 

@@ -1,6 +1,6 @@
 # Installation and extras
 
-Plynth uses optional extras to keep the core dependency surface minimal.
+Plynt uses optional extras to keep the core dependency surface minimal.
 Supported environments are Linux with Python 3.12, 3.13, 3.14, and 3.15.
 Python 3.14 is the development default; Python 3.15 remains fully tested.
 Other combinations are outside the tested contract.
@@ -26,21 +26,21 @@ transport. The LLM connector uses the HTTP installation profile.
 
 ```bash
 # Core only: use a caller-supplied transport
-pip install plynth
+pip install plynt
 
 # HTTP and LLM provider adapters
-pip install "plynth[httpx]"
+pip install "plynt[httpx]"
 
 # Salesforce REST, Bulk, and AI
-pip install "plynth[salesforce]"
+pip install "plynt[salesforce]"
 
 # Experimental Salesforce CDC, including Avro decoding
-pip install "plynth[grpc,salesforce]"
+pip install "plynt[grpc,salesforce]"
 
 # Framework adapters
-pip install "plynth[django]"
-pip install "plynth[drf]"
-pip install "plynth[fastapi]"
+pip install "plynt[django]"
+pip install "plynt[drf]"
+pip install "plynt[fastapi]"
 ```
 
 Core-only installations preserve package imports. Constructing the built-in
@@ -84,7 +84,7 @@ The generator is pinned to `grpcio-tools==1.84.0` under
 consumers do not need that development-only package.
 
 Keep the installer itself current. The development and distribution gates
-bootstrap `pip>=26.2,<27`; this is tooling, not a Plynth runtime dependency:
+bootstrap `pip>=26.2,<27`; this is tooling, not a Plynt runtime dependency:
 
 ```bash
 python -m pip install --upgrade "pip>=26.2,<27"

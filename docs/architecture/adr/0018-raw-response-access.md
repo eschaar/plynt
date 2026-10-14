@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth's `APIClient` and `AsyncAPIClient` (ADR-0008) return raw `Response`
+Plynt's `APIClient` and `AsyncAPIClient` (ADR-0008) return raw `Response`
 objects on successful responses, but they always raise typed exceptions for
 4xx/5xx responses. This makes non-success raw-response inspection possible
 only by catching exceptions and extracting the attached response object.
@@ -46,8 +46,7 @@ def request(
     headers: dict[str, str] | None = None,
     params: dict[str, Any] | None = None,
     content: bytes | None = None,
-) -> Response:
-    ...
+) -> Response: ...
 ```
 
 When `raw=True`:
@@ -110,7 +109,7 @@ that services rely on.
 
 ## Impact
 
-### Client layer (`plynth.http.client`)
+### Client layer (`plynt.http.client`)
 
 - `APIClient.request()` and `AsyncAPIClient.request()` gain `raw: bool = False`.
 - All existing callers pass no argument and see no behaviour change.

@@ -119,7 +119,7 @@ jobs:
             fi
             "smoke-$profile/bin/python" -m pip install "$wheel$extras" pytest
             "smoke-$profile/bin/python" -m pip check
-            PLYNTH_WHEEL_PROFILE="$profile" \
+            PLYNT_WHEEL_PROFILE="$profile" \
               "smoke-$profile/bin/python" -m pytest \
               tests/distribution/test_installed.py \
               --noconftest --import-mode=importlib -c /dev/null \

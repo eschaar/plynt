@@ -1,6 +1,6 @@
-"""Tests for plynth.http.request (Request)."""
+"""Tests for plynt.http.request (Request)."""
 
-from plynth.base.request import Request
+from plynt.base.request import Request
 
 
 class TestRequest:
@@ -31,9 +31,9 @@ class TestRequest:
         req = Request(
             method="GET",
             url="https://example.com/search",
-            params={"q": "plynth", "page": 1},
+            params={"q": "plynt", "page": 1},
         )
-        assert req.params["q"] == "plynth"
+        assert req.params["q"] == "plynt"
         assert req.params["page"] == 1
 
     def test_timeout_defaults_to_none(self) -> None:

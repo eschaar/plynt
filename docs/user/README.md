@@ -1,6 +1,6 @@
-# Plynth user documentation
+# Plynt user documentation
 
-Plynth is a framework-agnostic Python HTTP client library. It provides a
+Plynt is a framework-agnostic Python HTTP client library. It provides a
 layered architecture — transport, middleware, client, and service — that
 makes it easy to integrate with external APIs and to add cross-cutting
 concerns (caching, retries, circuit breaking, authentication, logging) in a
@@ -35,7 +35,7 @@ Documentation follows the [Diátaxis](https://diataxis.fr/) framework:
 
 | Section                              | Purpose                      | Start here when...                                       |
 | ------------------------------------ | ---------------------------- | -------------------------------------------------------- |
-| [Tutorials](tutorials/README.md)     | Step-by-step learning guides | You are new to Plynth                                    |
+| [Tutorials](tutorials/README.md)     | Step-by-step learning guides | You are new to Plynt                                     |
 | [How-to guides](how-to/README.md)    | Task-oriented recipes        | You need to accomplish a specific goal                   |
 | [Reference](reference/README.md)     | Technical API descriptions   | You need to look up a class, setting, or error           |
 | [Explanation](explanation/README.md) | Conceptual background        | You want to understand *why* things work the way they do |
@@ -43,12 +43,12 @@ Documentation follows the [Diátaxis](https://diataxis.fr/) framework:
 ## Quick start
 
 ```bash
-pip install "plynth[httpx]"
+pip install "plynt[httpx]"
 ```
 
 ```python
-from plynth.http.transport import HttpxSyncTransport
-from plynth.http.client import APIClient
+from plynt.http.transport import HttpxSyncTransport
+from plynt.http.client import APIClient
 
 transport = HttpxSyncTransport()
 client = APIClient(base_url="https://api.example.com", transport=transport)
@@ -61,7 +61,7 @@ full walkthrough.
 
 ## Connectors
 
-Plynth ships with Salesforce and generic LLM connectors. Connector-specific
+Plynt ships with Salesforce and generic LLM connectors. Connector-specific
 documentation lives alongside each connector:
 
 - [Generic LLM connector](../connectors/llm/README.md)
@@ -78,9 +78,9 @@ and basic service behavior end-to-end.
 
 ## Installation extras
 
-Install `plynth[httpx]` for built-in HTTP transports or
-`plynth[salesforce]` for Salesforce REST, Bulk, and AI services.
-Experimental Salesforce CDC composes `plynth[grpc,salesforce]`,
+Install `plynt[httpx]` for built-in HTTP transports or
+`plynt[salesforce]` for Salesforce REST, Bulk, and AI services.
+Experimental Salesforce CDC composes `plynt[grpc,salesforce]`,
 including the Avro decoder.
 
 Framework adapters use the `django`, `drf`, and `fastapi` extras. OAuth2

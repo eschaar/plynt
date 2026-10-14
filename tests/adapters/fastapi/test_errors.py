@@ -11,13 +11,13 @@ import pytest
 fastapi = pytest.importorskip("fastapi")
 fastapi_testclient = pytest.importorskip("fastapi.testclient")
 
-from plynth.adapters.fastapi.errors import (  # noqa: E402
+from plynt.adapters.fastapi.errors import (  # noqa: E402
     build_error_payload,
-    install_plynth_exception_handlers,
+    install_plynt_exception_handlers,
     map_exception_to_fastapi_response,
 )
-from plynth.base.errors import BaseError, InvalidInputError  # noqa: E402
-from plynth.http.errors import NotFoundError  # noqa: E402
+from plynt.base.errors import BaseError, InvalidInputError  # noqa: E402
+from plynt.http.errors import NotFoundError  # noqa: E402
 
 FastAPI = fastapi.FastAPI
 TestClient = fastapi_testclient.TestClient
@@ -49,7 +49,7 @@ class TestFastAPIErrorHelpers:
         assert payload["details"] == {"field": "name"}
 
     def test_build_error_payload_for_generic_exception(self) -> None:
-        """Return safe generic payload for non-plynth exceptions."""
+        """Return safe generic payload for non-plynt exceptions."""
         payload = build_error_payload(RuntimeError("boom"))
         assert payload == {
             "message": "Internal server error",
@@ -57,9 +57,9 @@ class TestFastAPIErrorHelpers:
         }
 
     def test_install_exception_handlers_on_fastapi_app(self) -> None:
-        """Install plynth handlers and map exceptions into JSON responses."""
+        """Install plynt handlers and map exceptions into JSON responses."""
         app = FastAPI()
-        install_plynth_exception_handlers(app, include_details=True)
+        install_plynt_exception_handlers(app, include_details=True)
 
         @app.get("/boom")  # type: ignore
         async def boom() -> dict[str, str]:
@@ -88,4 +88,4 @@ class TestFastAPIErrorHelpers:
     def test_install_handlers_requires_add_exception_handler(self) -> None:
         """Raise clear error for app-like objects without handler API."""
         with pytest.raises(RuntimeError, match="add_exception_handler"):
-            install_plynth_exception_handlers(object())
+            install_plynt_exception_handlers(object())

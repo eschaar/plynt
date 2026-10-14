@@ -1,12 +1,12 @@
-# Sync and async in Plynth
+# Sync and async in Plynt
 
-Plynth supports both sync and async execution models without duplicating
+Plynt supports both sync and async execution models without duplicating
 business logic. This article explains how the models are separated and when
 to choose each.
 
 ## The separation
 
-Plynth separates execution model from business logic across three layers:
+Plynt separates execution model from business logic across three layers:
 
 | Layer            | Sync                         | Async                                  |
 | ---------------- | ---------------------------- | -------------------------------------- |
@@ -23,7 +23,7 @@ Only the transport and client classes differ.
 
 A single client that wraps both sync and async would require either
 `asyncio.run()` wrappers (blocks in async contexts) or thread-pool
-executors (added complexity and overhead). Instead, Plynth provides
+executors (added complexity and overhead). Instead, Plynt provides
 dedicated classes so you pick the model that matches your stack — with no
 adapters and no surprises.
 
@@ -60,9 +60,10 @@ library from async code, use `asyncio.to_thread()`:
 
 ```python
 import asyncio
-from plynth.http.transport import HttpxSyncTransport
+from plynt.http.transport import HttpxSyncTransport
 
 transport = HttpxSyncTransport()
+
 
 async def fetch():
     result = await asyncio.to_thread(transport.send, request)
