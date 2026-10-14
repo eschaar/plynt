@@ -6,14 +6,14 @@ Accepted
 
 ## Context
 
-Plynth's current `Response` model is a fully-buffered data carrier:
+Plynt's current `Response` model is a fully-buffered data carrier:
 
 ```python
 @dataclass
 class Response:
     status_code: int
     headers: dict[str, str]
-    content: bytes = b""   # entire body in memory before the caller sees it
+    content: bytes = b""  # entire body in memory before the caller sees it
 ```
 
 `_send_once()` in `HttpxSyncTransport` and `HttpxAsyncTransport` calls
@@ -39,7 +39,7 @@ examples being:
 httpx2 already supports streaming natively via its `client.stream()` context
 manager, which keeps the connection open and exposes `iter_lines()`,
 `iter_bytes()`, and `aiter_lines()` / `aiter_bytes()`. The gap is entirely
-inside plynth — the `Response` contract and the middleware chain assume a
+inside plynt — the `Response` contract and the middleware chain assume a
 complete buffered body.
 
 ### Why the middleware chain does not need to be fundamentally changed
@@ -48,8 +48,7 @@ The transport middleware chain follows a chain-of-responsibility pattern
 (ADR-0013):
 
 ```python
-def handle(self, request: Request, next_handler: NextHandler) -> Response:
-    ...
+def handle(self, request: Request, next_handler: NextHandler) -> Response: ...
 ```
 
 All middleware fires during `handle()`. By the time a `Response` is returned
@@ -84,7 +83,7 @@ request = Request("GET", url, stream=True)
 
 ### 2. `StreamingResponse` — a `Response` subclass
 
-Introduce `StreamingResponse` in `plynth.base.response`. It satisfies
+Introduce `StreamingResponse` in `plynt.base.response`. It satisfies
 `ResponseProtocol` with `content = b""` and adds iteration:
 
 ```python
@@ -125,8 +124,8 @@ delegate iteration to httpx2's own streaming primitives.
 ```python
 def _send_once(self, request: Request) -> Response:
     if request.stream:
-        return self._send_stream(request)   # uses client.stream()
-    ...                                     # existing path unchanged
+        return self._send_stream(request)  # uses client.stream()
+    ...  # existing path unchanged
 ```
 
 `_send_stream()` opens the httpx2 stream context, reads headers, and wraps the
@@ -164,10 +163,10 @@ async with transport.send(Request("GET", url, stream=True)) as response:
 ### 6. Module location
 
 - `StreamingResponse` / `AsyncStreamingResponse` live in
-  `plynth.base.response`, exported from `plynth.base`.
+  `plynt.base.response`, exported from `plynt.base`.
 - `_send_stream()` is a private method on `HttpxSyncTransport` /
   `HttpxAsyncTransport`.
-- No new public classes in `plynth.http` — streaming is exposed through the
+- No new public classes in `plynt.http` — streaming is exposed through the
   same `transport.send()` entry point.
 
 ### 7. No new runtime dependencies
@@ -245,21 +244,21 @@ This mirrors non-streaming exactly — the client already absorbs
 Streaming extends that contract: the client also absorbs raw transport
 iterator exceptions, and the service absorbs embedded application errors.
 
-A `StreamService` / `AsyncStreamService` base class in `plynth.http` remains a
+A `StreamService` / `AsyncStreamService` base class in `plynt.http` remains a
 possible future enhancement for reducing integration boilerplate.
 
 ### Implemented follow-up
 
 The original proposal listed two follow-ups that are now implemented:
 
-- `StreamInterruptedError` exists in `plynth.base.errors`.
+- `StreamInterruptedError` exists in `plynt.base.errors`.
 - Client-layer `stream()` methods are available on `HTTPClient`,
   `AsyncHTTPClient`, `APIClient`, and `AsyncAPIClient` with close-before-raise
   behavior on 4xx/5xx responses.
 
 ### Still out of scope
 
-- `StreamService` / `AsyncStreamService` base classes in `plynth.http`.
+- `StreamService` / `AsyncStreamService` base classes in `plynt.http`.
 - **WebSockets** — full-duplex persistent connections. Different protocol
   model; the middleware chain contract does not apply. Requires a separate ADR
   and likely a dedicated transport.
@@ -267,5 +266,5 @@ The original proposal listed two follow-ups that are now implemented:
   anticipated this via direct `SyncTransport` / `AsyncTransport` subclassing.
   Requires a dedicated `GrpcAsyncTransport` ADR.
 - **Service-layer streaming helpers** — SSE parsing, event model, typed token
-  models. These belong in integration modules (e.g. `plynth[openai]`), not
+  models. These belong in integration modules (e.g. `plynt[openai]`), not
   in the transport base.

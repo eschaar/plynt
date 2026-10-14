@@ -13,7 +13,7 @@ Current experimental candidate evidence is recorded in
 [the October hardening report](../releases/2026-10-13-experimental-rc-hardening-evidence.md).
 The August evidence is historical, not acceptance evidence for current code.
 
-Prepare plynth as a public package with clear API contracts, predictable
+Prepare plynt as a public package with clear API contracts, predictable
 versioning, release gates, and operational expectations. Salesforce eventing is
 an important workstream in this release track, but it is one part of package
 readiness rather than the primary scope.
@@ -32,7 +32,7 @@ AS-IS (original planning baseline, not current implementation status)
 
 TO-BE
 
-1. Plynth has a public-ready package baseline with explicit compatibility,
+1. Plynt has a public-ready package baseline with explicit compatibility,
    support, and deprecation rules.
 1. Release acceptance is driven by a single readiness checklist and evidence.
 1. Documentation and examples align with supported installation extras and
@@ -42,10 +42,10 @@ TO-BE
 
 Phase-1 implementation slice added here
 
-1. Generic Salesforce CDC models now live in `src/plynth/connectors/salesforce/cdc/models.py`.
+1. Generic Salesforce CDC models now live in `src/plynt/connectors/salesforce/cdc/models.py`.
 1. The async CDC subscriber contract and subscribe orchestration now live in
-   `src/plynth/connectors/salesforce/cdc/service.py`.
-1. The Salesforce connector package exports the CDC surface from `src/plynth/connectors/salesforce/__init__.py`.
+   `src/plynt/connectors/salesforce/cdc/service.py`.
+1. The Salesforce connector package exports the CDC surface from `src/plynt/connectors/salesforce/__init__.py`.
 1. Shadow-store consumers remain out of package and out of connector scope.
 1. No tenant-, customer-, or instance-specific CDC logic is introduced in the generic CDC package boundary.
 1. The phase-1 envelope is aligned to the generic Salesforce CDC/Pub/Sub
@@ -54,7 +54,7 @@ Phase-1 implementation slice added here
    Quick-Start-aligned subscribe flow with schema fetch and injected payload
    decoding.
 1. Shadow-store materialization remains external and is not implemented in
-   plynth or the Salesforce connector.
+   plynt or the Salesforce connector.
 
 ### Current Hardening Status (2026-10-14)
 
@@ -128,7 +128,7 @@ Day 61-90
 Spike goal
 
 Define the smallest package-safe path to add Salesforce eventing as a
-capability workstream in plynth without weakening existing sync/async
+capability workstream in plynt without weakening existing sync/async
 principles, public API stability, or optional-install boundaries.
 
 Async-first framing
@@ -149,7 +149,7 @@ Async-first framing
 
 Hypotheses to test
 
-1. A small generic async gRPC base in plynth can support eventing behind an
+1. A small generic async gRPC base in plynt can support eventing behind an
    optional extra without turning CDC semantics into immediate core contracts.
 1. Salesforce event payload handling can reuse neutral core models and error
    conventions while keeping transport-specific streaming concerns in an
@@ -165,7 +165,7 @@ Hypotheses to test
 Scope
 
 1. Evaluate one async-first architecture for Salesforce Pub/Sub and CDC as a
-   plynth capability workstream.
+   plynt capability workstream.
 1. Identify the minimum abstractions, optional extra boundary, and ADR topics
    required before implementation.
 1. Prove or reject a first implementation slice focused on subscribe,
@@ -192,7 +192,7 @@ Non-goals
 Success criteria
 
 1. One recommended async-first architecture is documented with explicit fit to
-   plynth package boundaries.
+   plynt package boundaries.
 1. The spike ends with a go or no-go recommendation for a first eventing ADR
    and implementation slice.
 1. Required rollback assumptions are explicit: if the transport abstraction is
@@ -272,8 +272,8 @@ Implemented updates
   `README-pypi.md` for supported extras: `httpx`, `django`, `drf`,
   `fastapi`, `salesforce`.
 - Added a concise public API surface summary in `README.md` and
-  `README-pypi.md` with emphasis on package exports in `plynth.base` and
-  `plynth.http`, including ADR reference to
+  `README-pypi.md` with emphasis on package exports in `plynt.base` and
+  `plynt.http`, including ADR reference to
   `docs/architecture/adr/0027-public-api-compatibility-and-deprecation-policy.md`.
 - Normalized `Prerequisites` and added a short `Validation checklist` section
   across `examples/django/README.md`, `examples/drf/README.md`,
@@ -333,9 +333,9 @@ This direction is now captured in the durable product roadmap in
 Preferred option
 
 1. Choose a phased direction: phase 1 is a small generic async gRPC base in
-   plynth plus connector-scoped Salesforce CDC semantics.
-1. Keep the first CDC slice inside `plynth.connectors.salesforce`, installed
-   via `plynth[grpc,salesforce]`, with no broader eventing core contract unless
+   plynt plus connector-scoped Salesforce CDC semantics.
+1. Keep the first CDC slice inside `plynt.connectors.salesforce`, installed
+   via `plynt[grpc,salesforce]`, with no broader eventing core contract unless
    a dedicated ADR later promotes proven generic behavior.
 1. Promote only validated generic concerns into a core or protocol layer after
    evidence shows reuse beyond the CDC slice.
@@ -396,15 +396,15 @@ Escalation triggers
 
 1. Packaging split between generic gRPC and Salesforce eventing installs
 
-   - Accepted decision: keep `plynth[grpc]` as the small generic async gRPC
-     transport extra, keep `plynth[salesforce]` as the connector extra, and
-     use `plynth[grpc,salesforce]` as the phase-1 eventing install surface.
+   - Accepted decision: keep `plynt[grpc]` as the small generic async gRPC
+     transport extra, keep `plynt[salesforce]` as the connector extra, and
+     use `plynt[grpc,salesforce]` as the phase-1 eventing install surface.
    - Short rationale: this keeps the package-first boundary explicit without
      adding a new eventing-specific extra. The generic gRPC base stays
      reusable and small, while Salesforce eventing remains the first
      connector-scoped semantic surface.
-   - Impact on ADR-0030 or SF-0013: ADR-0030 treats `plynth[grpc]` as
-     protocol-only scope. SF-0013 treats `plynth[grpc,salesforce]` as the
+   - Impact on ADR-0030 or SF-0013: ADR-0030 treats `plynt[grpc]` as
+     protocol-only scope. SF-0013 treats `plynt[grpc,salesforce]` as the
      canonical phase-1 install path.
 
 1. Ack in the first public subscription contract
@@ -449,8 +449,8 @@ Escalation triggers
 ### ADR-0030 Acceptance Checklist
 
 - Confirm the phase-1 namespace and packaging boundary: generic gRPC lives in
-  `plynth` under its own sibling protocol namespace, with runtime dependencies
-  isolated behind `plynth[grpc]`.
+  `plynt` under its own sibling protocol namespace, with runtime dependencies
+  isolated behind `plynt[grpc]`.
 - Confirm that phase 1 stays async-first only and does not imply a sync gRPC
   or sync eventing promise.
 - Confirm that Salesforce semantics remain out of core scope: no CDC,
@@ -460,8 +460,8 @@ Escalation triggers
 
 Accepted baseline
 
-- Treat `plynth[grpc]` as the protocol-only extra, `plynth[salesforce]` as the
-  connector extra, and `plynth[grpc,salesforce]` as the phase-1 eventing
+- Treat `plynt[grpc]` as the protocol-only extra, `plynt[salesforce]` as the
+  connector extra, and `plynt[grpc,salesforce]` as the phase-1 eventing
   install surface.
 - Keep gRPC interceptor or hook shape as follow-up design work, not an
   acceptance blocker for ADR-0030.
@@ -476,7 +476,7 @@ Status
   sibling-namespace, optional-install constraints.
 - Confirm the connector boundary for phase 1: CDC envelope mapping,
   replay/checkpoint semantics, and subscription-facing behavior stay in
-  `plynth.connectors.salesforce`.
+  `plynt.connectors.salesforce`.
 - Confirm the intended public contract surface for phase 1 at a decision
   level: subscribe lifecycle, shutdown, replay/checkpoint input, and ack
   remains connector-specific rather than part of the exposed interface.
@@ -488,9 +488,9 @@ Status
 
 Accepted baseline
 
-- Use the composed install surface `plynth[grpc,salesforce]` for the phase-1
-  connector contract, while preserving `plynth[grpc]` and
-  `plynth[salesforce]` as the underlying generic and connector extras.
+- Use the composed install surface `plynt[grpc,salesforce]` for the phase-1
+  connector contract, while preserving `plynt[grpc]` and
+  `plynt[salesforce]` as the underlying generic and connector extras.
 - Keep ack internal in phase 1.
 - Make phase 1 explicitly at-least-once, require consumer idempotency, preserve
   ordering only within a live subscription segment, and use bounded automatic
@@ -510,52 +510,52 @@ Status
 
 ### Proposed package and module layout
 
-1. `src/plynth/grpc/__init__.py`: export `AsyncGrpcClient`,
+1. `src/plynt/grpc/__init__.py`: export `AsyncGrpcClient`,
    `GrpcClientSettings`, and `GrpcInterceptor`.
-1. `src/plynth/grpc/client.py`: own async channel setup, stream startup,
+1. `src/plynt/grpc/client.py`: own async channel setup, stream startup,
    shutdown, and bounded reconnect without CDC semantics.
-1. `src/plynth/grpc/settings.py`: hold target, TLS, timeout, metadata, and
+1. `src/plynt/grpc/settings.py`: hold target, TLS, timeout, metadata, and
    reconnect settings.
-1. `src/plynth/grpc/errors.py`: define generic connect, stream, and
+1. `src/plynt/grpc/errors.py`: define generic connect, stream, and
    reconnect-exhausted errors.
-1. `src/plynth/grpc/interceptor.py`: define async lifecycle hook protocols and
+1. `src/plynt/grpc/interceptor.py`: define async lifecycle hook protocols and
    context objects.
-1. `src/plynth/connectors/salesforce/cdc/__init__.py`: export
+1. `src/plynt/connectors/salesforce/cdc/__init__.py`: export
    `AsyncSalesforceCDCSubscriber`, `SalesforceCDCSubscribeRequest`, and
    `SalesforceCDCEvent`.
-1. `src/plynth/connectors/salesforce/cdc/service.py`: expose the public async
+1. `src/plynt/connectors/salesforce/cdc/service.py`: expose the public async
    subscribe surface for phase 1.
-1. `src/plynth/connectors/salesforce/cdc/models.py`: hold typed CDC event,
+1. `src/plynt/connectors/salesforce/cdc/models.py`: hold typed CDC event,
    replay input, and cursor models.
 1. Keep Salesforce CDC implementation in this package generic across orgs and
    instances. Put tenant-, customer-, or instance-specific behavior in
    consumer or integration-specific adapters outside this package boundary.
-1. `src/plynth/connectors/salesforce/cdc/settings.py`: hold the minimal
+1. `src/plynt/connectors/salesforce/cdc/settings.py`: hold the minimal
    CDC config layered on existing Salesforce auth settings.
-1. `src/plynth/connectors/salesforce/cdc/_mapping.py`,
-   `src/plynth/connectors/salesforce/cdc/_subscribe.py`, and
-   `src/plynth/connectors/salesforce/cdc/_ack.py`: keep protobuf decode,
+1. `src/plynt/connectors/salesforce/cdc/_mapping.py`,
+   `src/plynt/connectors/salesforce/cdc/_subscribe.py`, and
+   `src/plynt/connectors/salesforce/cdc/_ack.py`: keep protobuf decode,
    subscribe-loop state, and ack dispatch internal in phase 1.
 
 ### Primary public entry points for phase 1
 
-1. `plynth.grpc.AsyncGrpcClient`: minimal async-first transport entry point for
+1. `plynt.grpc.AsyncGrpcClient`: minimal async-first transport entry point for
    connector-owned gRPC stubs and streams.
-1. `plynth.grpc.GrpcClientSettings`: stable config object for endpoint, TLS,
+1. `plynt.grpc.GrpcClientSettings`: stable config object for endpoint, TLS,
    metadata, timeout, and bounded reconnect behavior.
-1. `plynth.connectors.salesforce.cdc.AsyncSalesforceCDCSubscriber`:
+1. `plynt.connectors.salesforce.cdc.AsyncSalesforceCDCSubscriber`:
    connector entry point that exposes `subscribe(request)` as an async iterator
    of typed CDC events.
-1. `plynth.connectors.salesforce.cdc.SalesforceCDCSubscribeRequest`:
+1. `plynt.connectors.salesforce.cdc.SalesforceCDCSubscribeRequest`:
    public request object carrying topic name, replay input, and flow-control
    options.
-1. `plynth.connectors.salesforce.cdc.SalesforceCDCEvent`: typed phase-1
+1. `plynt.connectors.salesforce.cdc.SalesforceCDCEvent`: typed phase-1
    event envelope returned to consumers.
 
 ### Internal-only pieces for phase 1
 
 1. Generic gRPC channel factory, metadata merge, retry budget, and stream-pump
-   loop stay internal to `plynth.grpc`.
+   loop stay internal to `plynt.grpc`.
 1. Salesforce subscribe request translation, protobuf decode, schema lookup,
    replay cursor normalization, and ack batching stay internal to the
    Salesforce connector.
@@ -595,7 +595,7 @@ Status
 
 ### First implementation order
 
-1. Add the `plynth.grpc` package skeleton with exports, settings, errors, and
+1. Add the `plynt.grpc` package skeleton with exports, settings, errors, and
    interceptor protocols.
 1. Implement the minimal async stream client with fake-stream contract tests
    for connect, subscribe, reconnect budget, and close behavior.
@@ -651,7 +651,7 @@ Completed in this branch
 1. Added cooperative shutdown handling and lightweight observability hooks for
    stream lifecycle, reconnects, schema cache usage, decode skips, gap and
    overflow signals, and checkpoint flushes.
-1. Kept shadow-store consumer and materialization out of plynth and out of
+1. Kept shadow-store consumer and materialization out of plynt and out of
    the connector.
 1. Reran lint, type, test, and strict coverage gates for the active gRPC and
    CDC slices.
@@ -660,12 +660,12 @@ Remaining to reach a production-ready CDC client
 
 1. Replace dict-based Pub/Sub request or response placeholders with generated
    Salesforce Pub/Sub stub and message adapters. Done — `GrpcStubPubSubAdapter`
-   in `src/plynth/connectors/salesforce/cdc/pubsub.py` (added in
+   in `src/plynt/connectors/salesforce/cdc/pubsub.py` (added in
    `e9a86058d729`) already normalizes generated-stub Subscribe/GetSchema
    responses into the CDC dict contract, with test coverage in
    `tests/connectors/salesforce/cdc/test_pubsub.py`. Extended 2026-09-10:
    the generated `eventbus.v1` stub is now vendored directly in
-   `src/plynth/connectors/salesforce/cdc/_proto/` (see SF-0013 addendum),
+   `src/plynt/connectors/salesforce/cdc/_proto/` (see SF-0013 addendum),
    with a `create_vendored_pubsub_adapter(channel)` factory so callers no
    longer need to run `protoc` themselves for the standard case.
 1. Document deployment expectations for Kubernetes, including at-least-once
@@ -697,7 +697,7 @@ Deferred: sandbox validation
 
 Checkpoint and cache backend policy
 
-1. Reuse the existing cache backend pattern from `plynth.cache` instead of
+1. Reuse the existing cache backend pattern from `plynt.cache` instead of
    introducing a separate gRPC-only cache abstraction.
 1. Keep in-memory cache support for local development and tests.
 1. Require durable external checkpoint storage for production CDC workloads;

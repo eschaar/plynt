@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth now includes Salesforce AI services and a generic LLM connector.
+Plynt now includes Salesforce AI services and a generic LLM connector.
 Provider adapters for OpenAI Responses and Anthropic Messages are shipped.
 Without a shared contract boundary, provider integrations would drift toward
 different request and response shapes. That increases adapter complexity and

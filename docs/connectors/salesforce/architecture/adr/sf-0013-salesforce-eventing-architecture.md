@@ -16,27 +16,27 @@ eventing slice:
 - Salesforce CDC semantics must not become premature core contracts
 - HTTP middleware reuse cannot be assumed for gRPC
 
-Plynth therefore needs a narrow eventing baseline that preserves package
+Plynt therefore needs a narrow eventing baseline that preserves package
 boundaries, keeps the core reusable, and avoids locking in abstractions before
 there is evidence from a real connector implementation.
 
 ## Decision
 
 Adopt a phased Salesforce eventing architecture with a small generic async
-gRPC base in `plynth` and connector-scoped Salesforce event semantics in phase
+gRPC base in `plynt` and connector-scoped Salesforce event semantics in phase
 1\.
 
 Phase 1 boundaries:
 
 1. Add a minimal async gRPC foundation under an optional extra such as
-   `plynth[grpc]`.
-1. Use `plynth[grpc,salesforce]` as the canonical phase-1 install path.
-   `plynth[grpc]` remains the generic protocol extra, and
-   `plynth[salesforce]` remains the connector extra.
+   `plynt[grpc]`.
+1. Use `plynt[grpc,salesforce]` as the canonical phase-1 install path.
+   `plynt[grpc]` remains the generic protocol extra, and
+   `plynt[salesforce]` remains the connector extra.
 1. Keep subscribe-loop behavior, reconnect flow, and backpressure handling only
    as generic as required to support one working async streaming path.
 1. Keep Salesforce-specific semantics in
-   `plynth.connectors.salesforce`, including CDC envelope mapping, replay or
+   `plynt.connectors.salesforce`, including CDC envelope mapping, replay or
    checkpoint semantics, and subscription-facing behavior.
 1. Keep Salesforce eventing implementation in this package generic across
    Salesforce orgs and instances.
@@ -75,7 +75,7 @@ Phase 2 guardrail:
    Rejected because it would force unproven abstractions into the core.
 1. Keep all gRPC and streaming behavior fully inside the Salesforce connector.
    Rejected because phase 1 still benefits from a small reusable async gRPC
-   base and optional-install boundary in `plynth`.
+   base and optional-install boundary in `plynt`.
 1. Reuse HTTP middleware directly for gRPC eventing.
    Rejected because transport lifecycle, metadata flow, and streaming control
    differ enough that reuse would be assumption-driven rather than evidence-
@@ -105,10 +105,10 @@ protecting core package stability.
 
 Positive:
 
-- Plynth gains a minimal eventing path without broad new core contracts.
+- Plynt gains a minimal eventing path without broad new core contracts.
 - Salesforce CDC can move forward behind a clear async-only boundary.
 - Optional-install and extraction strategy remain consistent with existing ADRs.
-- The phase-1 public install path is unambiguous: `plynth[grpc,salesforce]`.
+- The phase-1 public install path is unambiguous: `plynt[grpc,salesforce]`.
 - The CDC connector surface remains reusable across orgs and instances.
 
 Negative:
@@ -134,7 +134,7 @@ Negative:
 ## Addendum (2026-09-10): Vendored Pub/Sub stub
 
 Decision: vendor Salesforce's `eventbus.v1` (`pubsub_api.proto`) generated
-stub inside `plynth.connectors.salesforce.cdc._proto`, rather than requiring
+stub inside `plynt.connectors.salesforce.cdc._proto`, rather than requiring
 every caller to generate their own stub.
 
 Rationale:
@@ -153,10 +153,10 @@ Rationale:
    is additive via `create_vendored_pubsub_adapter(channel)`, not a breaking
    change to existing constructors.
 
-This stays scoped to `plynth.connectors.salesforce.cdc` per SF-0013's
+This stays scoped to `plynt.connectors.salesforce.cdc` per SF-0013's
 existing boundary — it is not promoted to a sibling package or to
-`plynth.grpc`, since CDC subscribe/GetSchema remains the only consumer.
+`plynt.grpc`, since CDC subscribe/GetSchema remains the only consumer.
 Regeneration is a deliberate, reviewed action
 (`make salesforce-cdc-proto-generate`), never an automatic build or CI step.
-See `src/plynth/connectors/salesforce/cdc/_proto/README.md` and `SOURCE.md`
+See `src/plynt/connectors/salesforce/cdc/_proto/README.md` and `SOURCE.md`
 for provenance and regeneration instructions.

@@ -7,16 +7,16 @@ last_modified: 2026-07-25
 
 ## Goal and Context
 
-Add first-party FastAPI support as `plynth[fastapi]` so FastAPI services can
-use plynth transports and clients with idiomatic FastAPI lifecycle and
+Add first-party FastAPI support as `plynt[fastapi]` so FastAPI services can
+use plynt transports and clients with idiomatic FastAPI lifecycle and
 dependency injection patterns, without repeating manual wiring.
 
 Primary use case:
 
 1. FastAPI services act as API facades over external backends.
-1. Plynth is used to call upstream SaaS and internal backend APIs.
+1. Plynt is used to call upstream SaaS and internal backend APIs.
 1. FastAPI remains the HTTP edge, validation, and response-shaping layer,
-   while plynth owns outbound API transport, auth, retry, and middleware
+   while plynt owns outbound API transport, auth, retry, and middleware
    composition.
 
 Requested outcome:
@@ -25,11 +25,11 @@ Requested outcome:
    dependency injection.
 1. Keep the adapter async-first and aligned with existing `HttpxAsyncTransport`
    behavior.
-1. Keep core plynth layers framework-agnostic and avoid dependency leaks.
+1. Keep core plynt layers framework-agnostic and avoid dependency leaks.
 
 Explicit non-goals:
 
-1. No FastAPI imports in `plynth.base`, `plynth.http`, or connector modules.
+1. No FastAPI imports in `plynt.base`, `plynt.http`, or connector modules.
 1. No replacement of FastAPI routing, validation, or exception handling.
 1. No sync-first abstraction layer for FastAPI; sync support is optional and
    lower priority.
@@ -37,15 +37,15 @@ Explicit non-goals:
 Constraints and dependencies:
 
 1. Follow ADR-0002, ADR-0003, ADR-0004, and ADR-0024.
-1. Keep FastAPI-specific code under `src/plynth/adapters/fastapi/`.
-1. Introduce the adapter as an optional extra only (`plynth[fastapi]`).
+1. Keep FastAPI-specific code under `src/plynt/adapters/fastapi/`.
+1. Introduce the adapter as an optional extra only (`plynt[fastapi]`).
 1. Keep implementation aligned with ADR-0026.
 
 ## AS-IS
 
 Repository evidence:
 
-1. Django and DRF adapters already exist in `src/plynth/adapters/django/` and
+1. Django and DRF adapters already exist in `src/plynt/adapters/django/` and
    provide the current framework-adapter baseline.
 1. FastAPI scope and ADR context are documented in
    `docs/product/roadmap.md` and
@@ -57,7 +57,7 @@ Repository evidence:
 
 Current behavior summary:
 
-1. Teams can integrate plynth in FastAPI with first-party lifecycle and DI
+1. Teams can integrate plynt in FastAPI with first-party lifecycle and DI
    helpers.
 1. A first-party lifespan helper manages named transports on
    `FastAPI(lifespan=...)`.
@@ -68,20 +68,20 @@ Current behavior summary:
 
 ## TO-BE
 
-Add a dedicated FastAPI adapter package under `src/plynth/adapters/fastapi/`
+Add a dedicated FastAPI adapter package under `src/plynt/adapters/fastapi/`
 with a minimal, composable API.
 
 ### Public adapter surface
 
-1. `PlynthLifespan` (or equivalent factory) to create and close one or more
+1. `PlyntLifespan` (or equivalent factory) to create and close one or more
    named transports during app startup and shutdown.
 1. `get_transport(name)` dependency factory for `Depends` usage.
 1. `get_client(name, client_class, **kwargs)` dependency factory for
    request-scoped client construction on top of app-scoped transport.
 1. `get_service(...)` dependency factory for named service construction with
    optional request-level caching.
-1. Helpers for request-header propagation into outbound plynth requests.
-1. Helpers for mapping plynth exceptions into FastAPI JSON responses.
+1. Helpers for request-header propagation into outbound plynt requests.
+1. Helpers for mapping plynt exceptions into FastAPI JSON responses.
 
 ### Integration focus
 
@@ -90,14 +90,14 @@ with a minimal, composable API.
    clients from `request.app.state`.
 1. Keep usage docs centered on API-facade workloads for external backends,
    including generic SaaS-backend integrations.
-1. Ensure compatibility with plynth sync and async transport usage patterns.
+1. Ensure compatibility with plynt sync and async transport usage patterns.
 
 ### Design boundaries
 
 1. Keep adapter responsibilities limited to lifecycle and DI.
 1. Keep upstream-domain orchestration in services and connectors, not in the
    framework adapter.
-1. Do not duplicate plynth auth, retry, caching, or error-mapping logic in
+1. Do not duplicate plynt auth, retry, caching, or error-mapping logic in
    the adapter layer.
 
 ## Impact (high level)
@@ -110,8 +110,8 @@ Architecture and boundaries:
 API and model implications:
 
 1. Introduces optional adapter entry points only; no breaking change to
-   existing plynth public APIs.
-1. No model changes required in `plynth.base` or connector response models.
+   existing plynt public APIs.
+1. No model changes required in `plynt.base` or connector response models.
 
 Security and privacy implications:
 
@@ -131,7 +131,7 @@ Operational implications:
 
 ## Acceptance Criteria
 
-1. `plynth[fastapi]` installs FastAPI adapter dependencies and exposes public
+1. `plynt[fastapi]` installs FastAPI adapter dependencies and exposes public
    FastAPI adapter symbols.
 1. A FastAPI app can register one or more named transports via a
    first-party lifespan helper.
@@ -153,7 +153,7 @@ Operational implications:
 Happy path:
 
 1. App startup creates named transports; routes resolve dependencies and call
-   an upstream service through plynth.
+   an upstream service through plynt.
 1. App shutdown closes all managed transports cleanly.
 
 Failure path:

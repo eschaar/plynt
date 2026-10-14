@@ -11,7 +11,7 @@ an adapter candidate after Django validation. Django and DRF delivery has now
 validated the adapter packaging boundary, dependency model, and documentation
 approach.
 
-FastAPI is a strong fit for plynth when services act as API facades over
+FastAPI is a strong fit for plynt when services act as API facades over
 external backends. Typical use cases include:
 
 1. exposing SaaS backend operations through a service-owned API contract,
@@ -24,18 +24,18 @@ Without a first-party adapter, teams repeat the same framework wiring:
 1. request-level dependency injection for named transports and clients,
 1. app-state conventions for resolving outbound integration resources.
 
-Plynth already supports both sync and async transports. FastAPI also supports
+Plynt already supports both sync and async transports. FastAPI also supports
 both sync and async handlers. The adapter should preserve that flexibility
 without forcing one execution model into all service routes.
 
 ## Decision
 
-Plynth will provide a thin FastAPI adapter under `plynth.adapters.fastapi`
+Plynt will provide a thin FastAPI adapter under `plynt.adapters.fastapi`
 with framework-native lifecycle and dependency primitives.
 
 The adapter surface is:
 
-1. `PlynthLifespan` for creating named transports at startup and closing them
+1. `PlyntLifespan` for creating named transports at startup and closing them
    on shutdown.
 1. `get_transport(name)` as a `Depends`-compatible dependency factory.
 1. `get_client(name, client_class, **kwargs)` as a dependency factory for
@@ -43,13 +43,13 @@ The adapter surface is:
 1. `get_service(...)` as a named service dependency factory with optional
    request-level caching.
 1. request-header propagation helpers to map inbound FastAPI request headers
-   into outbound plynth header middleware.
-1. plynth exception-mapping helpers for consistent JSON error responses in
+   into outbound plynt header middleware.
+1. plynt exception-mapping helpers for consistent JSON error responses in
    FastAPI handlers.
 
 Execution-model policy:
 
-1. The adapter supports both sync and async plynth transport objects.
+1. The adapter supports both sync and async plynt transport objects.
 1. Lifecycle cleanup supports both `aclose()` and `close()` conventions.
 1. FastAPI route style remains an application decision:
    - async handlers should prefer async clients/transports.
@@ -57,8 +57,8 @@ Execution-model policy:
 
 Boundary policy:
 
-1. FastAPI-specific imports remain inside `plynth.adapters.fastapi` only.
-1. Core packages (`plynth.base`, `plynth.http`, middleware, connectors) remain
+1. FastAPI-specific imports remain inside `plynt.adapters.fastapi` only.
+1. Core packages (`plynt.base`, `plynt.http`, middleware, connectors) remain
    framework-agnostic.
 1. The adapter does not own business orchestration, framework auth policy, or
    framework exception policy.
@@ -91,10 +91,10 @@ standardize with a thin adapter.
 **Cons:**
 
 - Excludes valid sync-handler integrations.
-- Conflicts with plynth's deliberate sync and async support strategy.
+- Conflicts with plynt's deliberate sync and async support strategy.
 - Forces migration pressure where teams still operate mixed sync/async stacks.
 
-**Why rejected:** The adapter should preserve plynth transport flexibility and
+**Why rejected:** The adapter should preserve plynt transport flexibility and
 FastAPI handler flexibility.
 
 ### Option C: Full framework abstraction (routing/auth/error mapping)
@@ -114,11 +114,11 @@ remain explicit.
 
 ## Rationale
 
-The highest-value FastAPI integration work is not in changing plynth core. It
-is in removing repeated framework glue while keeping plynth transport, auth,
+The highest-value FastAPI integration work is not in changing plynt core. It
+is in removing repeated framework glue while keeping plynt transport, auth,
 retry, and middleware behavior untouched.
 
-FastAPI's app lifespan and dependency injection model map cleanly to plynth's
+FastAPI's app lifespan and dependency injection model map cleanly to plynt's
 transport-centric design:
 
 1. one app owns long-lived outbound transport resources,
@@ -126,13 +126,13 @@ transport-centric design:
 1. services keep business logic in explicit orchestration layers.
 
 This model is especially strong for facade-style microservices where FastAPI
-owns inbound contracts and plynth owns outbound backend communication.
+owns inbound contracts and plynt owns outbound backend communication.
 
 ## Consequences
 
 ### Positive
 
-- Standard FastAPI wiring for outbound plynth usage becomes reusable.
+- Standard FastAPI wiring for outbound plynt usage becomes reusable.
 - Sync and async transport usage remains available to service teams.
 - Lifecycle cleanup behavior becomes consistent across FastAPI services.
 - SaaS-backend facade scenarios become easier to implement.

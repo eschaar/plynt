@@ -46,14 +46,18 @@ evaluated once per request (relevant for generated values such as
 `X-Correlation-ID`):
 
 ```python
-from plynth.middleware.header import HeaderMiddleware
+from plynt.middleware.header import HeaderMiddleware
 
-transport = HttpxSyncTransport(middlewares=[
-    HeaderMiddleware({
-        "User-Agent": "my-service/1.0",
-        "X-Correlation-ID": lambda: str(uuid.uuid4()),
-    }),
-])
+transport = HttpxSyncTransport(
+    middlewares=[
+        HeaderMiddleware(
+            {
+                "User-Agent": "my-service/1.0",
+                "X-Correlation-ID": lambda: str(uuid.uuid4()),
+            }
+        ),
+    ]
+)
 ```
 
 ### Non-overwrite semantics
@@ -86,7 +90,7 @@ For use cases that require a **different header value per retry attempt**
 ### Module location
 
 `HeaderMiddleware` and `AsyncHeaderMiddleware` live in
-`plynth.middleware.header` and are exported from `plynth.middleware`.
+`plynt.middleware.header` and are exported from `plynt.middleware`.
 
 No new dependencies are introduced. This is a Tier 1 core addition per the
 middleware extensions plan.

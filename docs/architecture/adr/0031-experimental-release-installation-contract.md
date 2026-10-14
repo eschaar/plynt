@@ -23,7 +23,7 @@ floors must exclude those versions without adding core runtime dependencies.
 
 1. Add `fastavro>=1.13.1,<2` to the existing `salesforce` extra. Do not add
    an eventing extra or dependencies to the core. The CDC installation
-   remains `plynth[grpc,salesforce]`, as defined in SF-0013.
+   remains `plynt[grpc,salesforce]`, as defined in SF-0013.
 1. Align the `grpc` extra with the committed generated code:
    `grpcio>=1.83.1,<2` and `protobuf>=7.35.1,<8`.
 1. Pin the development generator to `grpcio-tools==1.83.1`. Code generation

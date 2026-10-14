@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth already provides local rate limiting through the core middleware layer.
+Plynt already provides local rate limiting through the core middleware layer.
 That covers fixed client-side request shaping, but it does not define
 governance behavior for upstream quota and throttling signals.
 
@@ -16,7 +16,7 @@ different handling for the same signals. This leads to inconsistent behavior
 under load and makes reliability tuning difficult.
 
 The governance model must stay connector-agnostic and reusable across all
-service domains. Plynth is a client library for consuming external APIs, not
+service domains. Plynt is a client library for consuming external APIs, not
 an API provider; governance is therefore upstream-facing only.
 Provider-specific header names and quota details remain adapter-level concerns.
 
@@ -122,7 +122,7 @@ Putting the decision policy in core middleware yields consistent behavior and
 keeps connector implementations focused on protocol and payload mapping.
 Using straightforward naming (ThrottleSignal, ThrottleGovernancePolicy) rather
 than "upstream"-prefixed names keeps the API concise and readable, since
-plynth's only perspective is upstream (consuming external APIs).
+plynt's only perspective is upstream (consuming external APIs).
 
 ## Consequences
 
@@ -154,7 +154,7 @@ Mitigations:
 1. ✅ A normalized `ThrottleSignal` model exists and is connector-agnostic.
    `reset_at_seconds` (from `X-RateLimit-Reset`) is extracted by the middleware
    and honoured as a fallback delay source in `evaluate()`.
-1. ✅ `ThrottleGovernanceMiddleware` (sync and async) in `plynth.middleware.throttle`
+1. ✅ `ThrottleGovernanceMiddleware` (sync and async) in `plynt.middleware.throttle`
    apply policy and raise typed exceptions.
 1. ✅ Retry integration honors governance delay and reject outputs via
    `max(backoff, governance_delay)`.

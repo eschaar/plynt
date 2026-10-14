@@ -29,7 +29,7 @@ response A. This causes stale replay after mutation.
 
 Adopt `vcrpy` as the persistence and matching engine for testsupport.
 
-Expose a thin Plynth adapter in `plynth.testsupport.vcr` with three
+Expose a thin Plynt adapter in `plynt.testsupport.vcr` with three
 interfaces:
 
 1. Context manager: `use_vcr(...)`
@@ -153,12 +153,12 @@ Mitigations:
 
 Recommended rollout:
 
-1. Introduce `plynth.testsupport.vcr` adapter layer.
-1. Migrate existing testsupport usage to `plynth.testsupport.vcr`.
+1. Introduce `plynt.testsupport.vcr` adapter layer.
+1. Migrate existing testsupport usage to `plynt.testsupport.vcr`.
 1. Keep state tracking optional until broadly validated.
 
 No integration-specific logic is part of this ADR.
 
 Implementation and usage guide:
 
-- [VCR Testsupport Guide](../../src/plynth/testsupport/vcr/README.md)
+- [VCR Testsupport Guide](../../src/plynt/testsupport/vcr/README.md)

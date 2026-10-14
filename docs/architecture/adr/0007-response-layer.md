@@ -7,7 +7,7 @@ Accepted
 ## Context
 
 A protocol-agnostic Response abstraction is essential as the counterpart to the
-Request layer in Plynth. The core must support multiple HTTP backends (httpx2,
+Request layer in Plynt. The core must support multiple HTTP backends (httpx2,
 requests, aiohttp) without duplicating their functionality or tightly coupling
 higher layers to any specific library.
 
@@ -30,7 +30,7 @@ The Response Layer uses a two-level design:
 1. __`ResponseProtocol` (structural interface)__ — a `typing.Protocol` that
    defines what a response-like object must look like. Any object with the
    right shape (e.g. `httpx2.Response`, `requests.Response`, or
-   `plynth.Response`) satisfies this protocol automatically, without needing
+   `plynt.Response`) satisfies this protocol automatically, without needing
    to inherit from it. This is Python structural subtyping.
 
 This design avoids reinventing what HTTP libraries already provide, while
@@ -40,7 +40,7 @@ specific library.
 ### Why `typing.Protocol` and not inheritance?
 
 Inheritance would require all response objects (from httpx2, requests, aiohttp)
-to extend a Plynth base class, introducing coupling. With `typing.Protocol`,
+to extend a Plynt base class, introducing coupling. With `typing.Protocol`,
 any object that has the right attributes and methods is automatically compatible.
 This is the standard Python approach for structural interfaces.
 
@@ -50,18 +50,18 @@ Prior art in legacy service wrappers used a `ServiceResponse` wrapper to marshal
 exceptions across thread boundaries. This was necessary because they used
 `threading` to run async work. With modern `asyncio`, exceptions propagate
 naturally through `await` chains. This pattern is therefore not needed in
-Plynth and would add unnecessary complexity.
+Plynt and would add unnecessary complexity.
 
 ### Placement in the Codebase
 
 The Response Layer is split across two files in different namespaces, mirroring
 the split in the Transport Layer (see ADR-0006):
 
-- __`plynth.base.response`__ (`base/response.py`) — defines `Response` (the
+- __`plynt.base.response`__ (`base/response.py`) — defines `Response` (the
   protocol-agnostic data carrier) and `ResponseProtocol` (the structural
   interface). Lives in `base/` because it is framework-agnostic and depended
   upon by all layers including `base/transport.py` (Transport abstractions).
-- __`plynth.http.response`__ (`http/response.py`) — defines `HttpResponse`,
+- __`plynt.http.response`__ (`http/response.py`) — defines `HttpResponse`,
   which extends `Response` with HTTP request context (`method`, `url`) and
   raises `HttpStatusError` from `raise_for_status()`. Lives in `http/` because
   it introduces HTTP-specific concepts.
@@ -78,7 +78,7 @@ The Response Layer is responsible for:
 - Defining a `ResponseProtocol` structural interface that any response-like
   object satisfies, enabling decoupled, testable higher layers.
 - Ensuring that all transports normalize their library-specific response into
-  `plynth.Response` before returning it to higher layers.
+  `plynt.Response` before returning it to higher layers.
 - Providing body-decoding convenience on `HttpResponse` (`.encoding`, `.text`,
   `.json()`) — HTTP-layer only; not on the core `Response`.
 
@@ -96,7 +96,8 @@ __`Response`__ — protocol-agnostic data carrier, raises `StatusError`:
 
 ```python
 from dataclasses import dataclass, field
-from plynth.base.errors import StatusError
+from plynt.base.errors import StatusError
+
 
 @dataclass
 class Response:
@@ -162,6 +163,7 @@ __`ResponseProtocol`__ — structural interface for all higher layers:
 from typing import Protocol, runtime_checkable
 from collections.abc import Mapping
 
+
 @runtime_checkable
 class ResponseProtocol(Protocol):
     status_code: int
@@ -171,13 +173,13 @@ class ResponseProtocol(Protocol):
     def raise_for_status(self) -> None: ...
 ```
 
-Any response object from httpx2, requests, or Plynth itself satisfies this
+Any response object from httpx2, requests, or Plynt itself satisfies this
 protocol without inheritance. Adapters can be provided for libraries that use
 different attribute names (e.g. aiohttp uses `.status` instead of `.status_code`).
 
 ### Error Contract
 
-`raise_for_status()` raises errors from the `plynth.base.errors` hierarchy:
+`raise_for_status()` raises errors from the `plynt.base.errors` hierarchy:
 
 ```text
 BaseError (core)
@@ -202,7 +204,7 @@ and serialisation.
 
 - Higher layers (middleware, client, service) depend on `ResponseProtocol`,
   not on any concrete class or HTTP library.
-- Transports convert library-specific responses to `plynth.Response`; the
+- Transports convert library-specific responses to `plynt.Response`; the
   dataclass is the single source of truth for raw response data in tests.
 - Format-specific parsing (JSON, text) is handled by `HttpResponse` for
   HTTP responses and remains absent from the core `Response` primitive.

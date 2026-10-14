@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth uses a modular package model with optional extras and framework
+Plynt uses a modular package model with optional extras and framework
 adapters. Public release readiness requires explicit support boundaries for
 Python versions, runtime environments, and optional install combinations.
 
@@ -15,7 +15,7 @@ supported, and maintainers cannot apply consistent CI scope or triage rules.
 
 ## Decision
 
-Plynth will publish and enforce a supported-environments and extras policy:
+Plynt will publish and enforce a supported-environments and extras policy:
 
 1. The supported operating system family is Linux only.
 1. The baseline support matrix is concrete: Python 3.11, 3.12, 3.13, and 3.14
@@ -65,7 +65,7 @@ cannot redefine core support boundaries.
 
 - Limits adoption and adapter use cases.
 
-**Why rejected:** Too restrictive for plynth's adapter strategy.
+**Why rejected:** Too restrictive for plynt's adapter strategy.
 
 ### Option C: Make all extras fully tier-1 from day one
 
@@ -81,7 +81,7 @@ cannot redefine core support boundaries.
 
 ## Rationale
 
-Explicit environment and extras boundaries are required to keep plynth stable
+Explicit environment and extras boundaries are required to keep plynt stable
 while preserving modular adoption. The policy aligns user expectations,
 dependency control, and CI investment with package maturity.
 

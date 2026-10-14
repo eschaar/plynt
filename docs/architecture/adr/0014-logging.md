@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth transports execute network I/O and cross-cutting operations (auth,
+Plynt transports execute network I/O and cross-cutting operations (auth,
 retry, caching) that are invisible to callers at runtime. Without structured
 log output, operators cannot:
 
@@ -16,9 +16,9 @@ log output, operators cannot:
 - apply flood protection when an upstream becomes unavailable.
 
 This ADR is the **single source of truth** for all logging decisions in
-Plynth. It covers:
+Plynt. It covers:
 
-1. The `plynth.log` package (filters and formatter) and `plynth.middleware.logging`
+1. The `plynt.log` package (filters and formatter) and `plynt.middleware.logging`
    (HTTP middleware).
 1. The logger hierarchy and which events are logged at which levels.
 1. Opt-in body logging with mandatory credential scrubbing.
@@ -27,17 +27,17 @@ Plynth. It covers:
 
 ### 1. Logger hierarchy
 
-All loggers follow the `plynth.*` namespace so operators can target them
+All loggers follow the `plynt.*` namespace so operators can target them
 with a single handler configuration:
 
-| Module                                                  | Logger name             |
-| ------------------------------------------------------- | ----------------------- |
-| `plynth.base.transport`                                 | `plynth.base.transport` |
-| `plynth.http.transport`                                 | `plynth.http.transport` |
-| `plynth.middleware.logging` (LoggingMiddleware default) | `plynth.http`           |
+| Module                                                 | Logger name            |
+| ------------------------------------------------------ | ---------------------- |
+| `plynt.base.transport`                                 | `plynt.base.transport` |
+| `plynt.http.transport`                                 | `plynt.http.transport` |
+| `plynt.middleware.logging` (LoggingMiddleware default) | `plynt.http`           |
 
-The root logger `plynth` is **not** used directly. Child loggers inherit
-handler configuration from the `plynth` logger when operators set it up.
+The root logger `plynt` is **not** used directly. Child loggers inherit
+handler configuration from the `plynt` logger when operators set it up.
 
 ### 2. Log levels and events (always-on)
 
@@ -54,22 +54,22 @@ Credentials and request/response bodies are **never** logged by default.
 
 ### 3. `LoggingMiddleware` and `AsyncLoggingMiddleware`
 
-All middleware in Plynth operates at the **transport level** via the
+All middleware in Plynt operates at the **transport level** via the
 `handle(request, next_handler)` chain-of-responsibility contract (ADR-0013).
 Middleware fires exactly once per logical HTTP call, outside the retry loop.
 
-Plynth does not emit `INFO` records from the transport internals. `INFO`-level
+Plynt does not emit `INFO` records from the transport internals. `INFO`-level
 call visibility is a **service-layer concern**: the service implementor opts
 in by injecting `LoggingMiddleware` when constructing the transport.
 
 ```python
-from plynth.middleware.logging import LoggingMiddleware
-from plynth.http.transport import HttpxSyncTransport
+from plynt.middleware.logging import LoggingMiddleware
+from plynt.http.transport import HttpxSyncTransport
 
 transport = HttpxSyncTransport(middlewares=[LoggingMiddleware()])
 ```
 
-This emits two records per logical call via the `plynth.middleware.logging`
+This emits two records per logical call via the `plynt.middleware.logging`
 logger (fires once, regardless of the number of retry attempts):
 
 | Level  | Event                                                         |
@@ -96,14 +96,14 @@ or add extra fields. The `start` float must be threaded through both.
 
 ### Arrow convention
 
-All Plynth log lines that represent an outgoing request or incoming response
+All Plynt log lines that represent an outgoing request or incoming response
 use the same directional prefix regardless of where in the stack they
 originate (transport internals, auth middleware, logging middleware):
 
-| Prefix | Meaning                                  |
-| ------ | ---------------------------------------- |
-| `-->`  | Call is leaving Plynth toward the remote |
-| `<--`  | Response has arrived back into Plynth    |
+| Prefix | Meaning                                 |
+| ------ | --------------------------------------- |
+| `-->`  | Call is leaving Plynt toward the remote |
+| `<--`  | Response has arrived back into Plynt    |
 
 This makes it possible to read a mixed-logger DEBUG trace in sequence
 without needing to understand which subsystem emitted each line.
@@ -147,7 +147,7 @@ Scrubbing is case-insensitive. The original `Request` and `Response`
 objects are never mutated — scrubbing is applied to a copy created solely
 for the log record.
 
-### 6. `ThrottleLogs` filter — `plynth.log.filters`
+### 6. `ThrottleLogs` filter — `plynt.log.filters`
 
 Suppresses repeated log records once a per-window count limit is reached.
 
@@ -163,7 +163,7 @@ class ThrottleLogs(logging.Filter):
     ) -> None: ...
 ```
 
-- `name` — logger name prefix to target (e.g. `"plynth.http"`). `None`
+- `name` — logger name prefix to target (e.g. `"plynt.http"`). `None`
   targets all loggers.
 - `limit` — maximum matching records per window before suppression. `0`
   suppresses from the very first record.
@@ -171,7 +171,7 @@ class ThrottleLogs(logging.Filter):
 - `window` — rolling window in seconds (default: 3600).
 - Thread-safe. Non-targeted records always pass through.
 
-### 7. `ExceptionInfoFilter` filter — `plynth.log.filters`
+### 7. `ExceptionInfoFilter` filter — `plynt.log.filters`
 
 Injects active exception context into records that were emitted without
 `exc_info`, so formatters and Sentry see the full traceback.
@@ -185,26 +185,26 @@ class ExceptionInfoFilter(logging.Filter):
 - Checks `sys.exc_info()` and attaches it when an exception is active.
 - Records that already carry `exc_info` are left untouched.
 
-### 8. `PlynthHTTPFilter` filter — `plynth.log.filters`
+### 8. `PlyntHTTPFilter` filter — `plynt.log.filters`
 
 Convenience subclass of `ThrottleLogs`, pre-configured for the
-`plynth.http` logger namespace with sensible defaults.
+`plynt.http` logger namespace with sensible defaults.
 
 ```python
-class PlynthHTTPFilter(ThrottleLogs):
+class PlyntHTTPFilter(ThrottleLogs):
     def __init__(self, *, limit: int = 60, window: int = 3600) -> None:
-        super().__init__(name="plynth.http", limit=limit, window=window)
+        super().__init__(name="plynt.http", limit=limit, window=window)
 ```
 
 Operators can attach it to any handler with zero extra configuration:
 
 ```python
-from plynth.log import PlynthHTTPFilter
+from plynt.log import PlyntHTTPFilter
 
-handler.addFilter(PlynthHTTPFilter())
+handler.addFilter(PlyntHTTPFilter())
 ```
 
-### 9. `StructuredFormatter` formatter — `plynth.log.formatter`
+### 9. `StructuredFormatter` formatter — `plynt.log.formatter`
 
 Renders each log record as a single-line JSON object. Fields:
 
@@ -231,7 +231,7 @@ their original key names.
 
 #### ECS-aligned extra fields
 
-Plynth uses [Elastic Common Schema (ECS)](https://www.elastic.co/guide/en/ecs/current/index.html)
+Plynt uses [Elastic Common Schema (ECS)](https://www.elastic.co/guide/en/ecs/current/index.html)
 field names for HTTP events. The following fields are emitted on every
 request/response log record from `LoggingMiddleware` and the transport:
 
@@ -256,34 +256,34 @@ for log-aggregation queries.
 LOGGING = {
     "version": 1,
     "formatters": {
-        "json": {"()": "plynth.log.StructuredFormatter"},
+        "json": {"()": "plynt.log.StructuredFormatter"},
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "json",
-            "filters": ["plynth_http"],
+            "filters": ["plynt_http"],
         },
     },
     "filters": {
-        "plynth_http": {"()": "plynth.log.PlynthHTTPFilter"},
+        "plynt_http": {"()": "plynt.log.PlyntHTTPFilter"},
     },
     "loggers": {
-        "plynth": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
+        "plynt": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
     },
 }
 ```
 
 ## Consequences
 
-- All logging decisions for Plynth are documented in a single ADR.
-- Operators have a single `plynth.*` namespace to configure verbosity.
+- All logging decisions for Plynt are documented in a single ADR.
+- Operators have a single `plynt.*` namespace to configure verbosity.
 - Retry events and auth refreshes are observable without patching internals.
-- `PlynthHTTPFilter` eliminates boilerplate for flood protection.
+- `PlyntHTTPFilter` eliminates boilerplate for flood protection.
 - `StructuredFormatter` provides JSON output with no extra dependencies.
 - `LoggingMiddleware` and `AsyncLoggingMiddleware` provide opt-in `INFO`-level
   call logging including elapsed time, without touching the transport internals.
-- All Plynth log lines use the `-->` / `<--` arrow convention consistently
+- All Plynt log lines use the `-->` / `<--` arrow convention consistently
   across the transport and middleware layers.
 - Subclassing `_log_request` / `_log_response` allows services to filter by
   status code, change the log level, or add extra fields without forking.
@@ -297,17 +297,17 @@ LOGGING = {
 
 ## Explicitly out of scope
 
-- **`TracingMiddleware` (`plynth[otel]`)**: a dedicated plynth middleware for
+- **`TracingMiddleware` (`plynt[otel]`)**: a dedicated plynt middleware for
   OpenTelemetry tracing is not needed. `opentelemetry-instrumentation-httpx`
   instruments httpx2 automatically and covers the common tracing use case
-  (spans, HTTP semantic conventions) without any plynth-specific code. A
-  plynth middleware would only add value for chain-position-aware span
+  (spans, HTTP semantic conventions) without any plynt-specific code. A
+  plynt middleware would only add value for chain-position-aware span
   boundaries (latency measured after auth + retry, not raw httpx2 latency).
   No demonstrated demand exists; no ADR will be written unless that changes.
-- **`MetricsMiddleware` (`plynth[prometheus]`)**: a dedicated prometheus
+- **`MetricsMiddleware` (`plynt[prometheus]`)**: a dedicated prometheus
   metrics middleware is not needed. `opentelemetry-instrumentation-httpx`
   combined with an OTel Prometheus exporter already provides request counts
-  and latency histograms. A plynth middleware would only add value for
+  and latency histograms. A plynt middleware would only add value for
   callers who need Prometheus metrics independent of OTel. No demonstrated
   demand exists; no ADR will be written unless that changes.
 

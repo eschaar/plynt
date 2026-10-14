@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2026-03-18
-**Scope:** `plynth.connectors.salesforce`
+**Scope:** `plynt.connectors.salesforce`
 
 ______________________________________________________________________
 
@@ -24,7 +24,7 @@ response body, independent of the HTTP status code:
 The `errorCode` field identifies the specific failure. The Salesforce API
 defines over 590 codes (documented in the Metadata WSDL `StatusCode` enum).
 
-The generic HTTP error layer in `plynth.http.errors` maps HTTP status codes
+The generic HTTP error layer in `plynt.http.errors` maps HTTP status codes
 to typed `HttpStatusError` subclasses. That level of detail is insufficient
 for Salesforce callers: a `400 Bad Request` may indicate a validation error,
 a duplicate record, or a malformed ID — each requiring different handling.

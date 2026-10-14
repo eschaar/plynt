@@ -16,9 +16,9 @@ and testable.
 
 ### Guiding Philosophy
 
-The five core principles that guide every design decision in Plynth:
+The five core principles that guide every design decision in Plynt:
 
-- **Foundation, not framework** — Plynth sits at the bottom of your stack,
+- **Foundation, not framework** — Plynt sits at the bottom of your stack,
   not as a full-featured framework.
 - **Framework-agnostic** — works with FastAPI, Flask, Django, or plain
   ASGI/WSGI, and is independently testable without any of them.

@@ -42,14 +42,14 @@ unified.
 
 Settings are split across three layers:
 
-**Layer 1 — Core base** (`plynth.base.settings.Settings`):
+**Layer 1 — Core base** (`plynt.base.settings.Settings`):
 
 - Minimal `BaseSettings` subclass.
 - Provides `.env` file support and UTF-8 encoding.
 - Defines only `debug: bool = False`.
 - All service settings must inherit from this class.
 
-**Layer 2 — HTTP transport** (`plynth.http.settings.HTTPSettings`):
+**Layer 2 — HTTP transport** (`plynt.http.settings.HTTPSettings`):
 
 - Extends `Settings` with all fields needed to build and configure an
   `HttpxSyncTransport` or `HttpxAsyncTransport`.
@@ -92,7 +92,7 @@ Response and token caches are configured via typed `CacheConfig` objects
 returned from the `caches`, `default_cache`, and `default_auth_cache`
 properties. See ADR-0010.
 
-**Layer 3 — REST API** (`plynth.http.settings.ApiSettings`):
+**Layer 3 — REST API** (`plynt.http.settings.ApiSettings`):
 
 - Extends `HTTPSettings` with no additional fields at present.
 - Reserved for future REST-specific settings (e.g. content negotiation).
@@ -104,15 +104,17 @@ properties. See ADR-0010.
 Use `pydantic-settings` as the only settings dependency in the core.
 
 ```python
-from plynth.http.settings import ApiSettings
-from plynth.http.transport import HttpxSyncTransport
+from plynt.http.settings import ApiSettings
+from plynt.http.transport import HttpxSyncTransport
 from pydantic_settings import SettingsConfigDict
+
 
 class CustomerServiceSettings(ApiSettings):
     model_config = SettingsConfigDict(
         env_prefix="CUSTOMER_",
         env_file=".env",
     )
+
 
 settings = CustomerServiceSettings()
 transport = HttpxSyncTransport.from_settings(settings)
@@ -126,15 +128,15 @@ object. Setting any field to `None` disables that phase's timeout. Each phase
 can be tuned independently.
 
 ```text
-PLYNTH_PROXY=http://proxy.corp:8080
-PLYNTH_VERIFY=/etc/ssl/certs/ca-bundle.crt
-PLYNTH_TIMEOUT_CONNECT=5.0
-PLYNTH_TIMEOUT_READ=30.0
-PLYNTH_TIMEOUT_WRITE=10.0
-PLYNTH_TIMEOUT_POOL=10.0
+PLYNT_PROXY=http://proxy.corp:8080
+PLYNT_VERIFY=/etc/ssl/certs/ca-bundle.crt
+PLYNT_TIMEOUT_CONNECT=5.0
+PLYNT_TIMEOUT_READ=30.0
+PLYNT_TIMEOUT_WRITE=10.0
+PLYNT_TIMEOUT_POOL=10.0
 ```
 
-The cert field (`PLYNTH_CERT`) accepts a path or a `(cert, key)` tuple.
+The cert field (`PLYNT_CERT`) accepts a path or a `(cert, key)` tuple.
 
 Transport configuration is wired inside each transport's `from_settings()`
 factory. `HTTPSettings` must **not** grow transport-aware methods
@@ -200,7 +202,7 @@ cold start, 169× faster warm/cached loads).
 **Why not chosen:**
 
 1. **Performance advantage is real but irrelevant for this use case.**
-   Plynth is an HTTP integration library. Every request involves network I/O
+   Plynt is an HTTP integration library. Every request involves network I/O
    that dominates total latency by two to three orders of magnitude:
 
    ```text
@@ -216,7 +218,7 @@ cold start, 169× faster warm/cached loads).
    ```
 
 1. **Framework adapter compatibility.** FastAPI is built on pydantic natively.
-   A `plynth[fastapi]` adapter on msgspec structs would create a permanent
+   A `plynt[fastapi]` adapter on msgspec structs would create a permanent
    impedance mismatch — connector response models would need conversion to
    pydantic models for OpenAPI schema generation and request/response binding.
    Django REST Framework has established pydantic integration tooling; msgspec
@@ -228,7 +230,7 @@ cold start, 169× faster warm/cached loads).
    For a library dependency that ships to downstream users this level of
    immaturity is not acceptable.
 
-1. **MessagePack is unused in the target API domain.** All APIs Plynth
+1. **MessagePack is unused in the target API domain.** All APIs Plynt
    targets (Salesforce REST, OpenAI/LLM APIs, REST APIs in general) use JSON
    as their wire format. gRPC uses Protocol Buffers, not MessagePack.
    msgspec's MessagePack support provides no benefit in this context.

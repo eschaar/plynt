@@ -30,10 +30,11 @@ across all transports and services.
 
 ### Interface
 
-`RateLimitPolicy` (`plynth.base.policies`) controls rate limiting behavior:
+`RateLimitPolicy` (`plynt.base.policies`) controls rate limiting behavior:
 
 ```python
 from dataclasses import dataclass
+
 
 @dataclass
 class RateLimitPolicy:
@@ -45,12 +46,14 @@ class RateLimitPolicy:
 and enforce request throttling:
 
 ```python
-from plynth.middleware.rate_limit import RateLimitMiddleware
-from plynth.base.policies import RateLimitPolicy
+from plynt.middleware.rate_limit import RateLimitMiddleware
+from plynt.base.policies import RateLimitPolicy
 
-transport = HttpxSyncTransport(middlewares=[
-    RateLimitMiddleware(RateLimitPolicy(max_requests=100, window_seconds=60.0))
-])
+transport = HttpxSyncTransport(
+    middlewares=[
+        RateLimitMiddleware(RateLimitPolicy(max_requests=100, window_seconds=60.0))
+    ]
+)
 ```
 
 ### Algorithm: Sliding-window counter
@@ -76,10 +79,10 @@ to adjust the policy dynamically.
 ### Module location
 
 `RateLimitMiddleware`, `AsyncRateLimitMiddleware`, and `RateLimitExceededError`
-live in `plynth.middleware.rate_limit` and are exported from
-`plynth.middleware`.
+live in `plynt.middleware.rate_limit` and are exported from
+`plynt.middleware`.
 
-`RateLimitPolicy` lives in `plynth.base.policies`.
+`RateLimitPolicy` lives in `plynt.base.policies`.
 
 No new dependencies are introduced. This is a Tier 1 core addition.
 

@@ -25,7 +25,7 @@ A file's layer membership is evident from its **name** (e.g., `transport.py`,
 ### Directory structure
 
 ```text
-src/plynth/
+src/plynt/
   base/              ← protocol-agnostic primitives; no framework dependencies
     cache.py         — CacheBackend protocol + SupportsTTL/Stats/SizeInfo
                        + CacheConfigBase marker
@@ -90,7 +90,7 @@ Future protocol namespaces follow the same pattern as `http/`:
 
 Each protocol namespace (`http/`, `grpc/`, ...) is self-contained. Protocol
 namespaces import from `base/` and `middleware/`, but never from each other.
-This keeps imports ergonomic (`from plynth.http.transport import HttpxSyncTransport`)
+This keeps imports ergonomic (`from plynt.http.transport import HttpxSyncTransport`)
 and makes each namespace independently installable via
 extras.
 
@@ -117,7 +117,7 @@ implementation, concrete auth middleware, HTTP-specific retry policy,
 response type, error hierarchy, and the client/service/settings types. The
 `http/middleware/` subdirectory groups the HTTP-specific middleware
 implementations separately from the transport and client code. HTTP settings
-reference cache config types from `cache/` via `plynth.cache`.
+reference cache config types from `cache/` via `plynt.cache`.
 
 **`connectors/`** contains business-specific SaaS connector packages (e.g. `salesforce/`).
 These import from `base/`, `middleware/`, and a single protocol namespace

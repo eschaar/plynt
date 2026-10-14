@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth must support both synchronous and asynchronous HTTP communication
+Plynt must support both synchronous and asynchronous HTTP communication
 without duplicating business logic. The transport layer is the lowest-level
 abstraction responsible for sending HTTP requests and returning raw responses.
 
@@ -23,11 +23,11 @@ It must be:
 
 The Transport Layer is split across two files that live in different namespaces:
 
-- __`plynth.base.transport`__ (`base/transport.py`) — defines the abstract
+- __`plynt.base.transport`__ (`base/transport.py`) — defines the abstract
   contracts `SyncTransport` and `AsyncTransport`. Lives in `base/` because it is a
   framework-agnostic primitive that higher layers depend on, and because
   placing it there avoids a circular import with `base/request.py`.
-- __`plynth.http.transport`__ (`http/transport.py`) — provides the concrete
+- __`plynt.http.transport`__ (`http/transport.py`) — provides the concrete
   httpx2-backed implementations `HttpxSyncTransport` and `HttpxAsyncTransport`.
   Lives in `http/` because it introduces an `httpx2` dependency and is
   HTTP-specific.
@@ -53,7 +53,7 @@ responsible for:
 - Response parsing or error mapping.
 
 These cross-cutting concerns are handled by `BaseSyncTransport` /
-`BaseAsyncTransport` — abstract bases in `plynth.base.transport` that introduce
+`BaseAsyncTransport` — abstract bases in `plynt.base.transport` that introduce
 a fixed `send()` implementation orchestrating cache → auth → retry →
 `_send_once()` → reactive re-auth (401) → cache store. Concrete transports
 extend these bases and implement only `_send_once()` with the actual network
@@ -61,17 +61,18 @@ I/O. See ADR-0013 for the full design.
 
 ### Abstract Interface
 
-Plynth defines its own `Request` and `Response` types in `plynth.base.request`
-and `plynth.base.response` respectively. These are library-agnostic data carriers
+Plynt defines its own `Request` and `Response` types in `plynt.base.request`
+and `plynt.base.response` respectively. These are library-agnostic data carriers
 that do not depend on `requests`, `httpx2`, or any other HTTP library.
 
 Two separate abstract base classes define the sync and async contracts
-(`plynth.base.transport`):
+(`plynt.base.transport`):
 
 ```python
 from abc import ABC, abstractmethod
-from plynth.base.request import Request
-from plynth.base.response import Response
+from plynt.base.request import Request
+from plynt.base.response import Response
+
 
 class SyncTransport(ABC):
     """Contract for synchronous transports."""
@@ -80,6 +81,7 @@ class SyncTransport(ABC):
     def send(self, request: Request) -> Response:
         """Send a request and return a raw response."""
         ...
+
 
 class AsyncTransport(ABC):
     """Contract for asynchronous transports."""
@@ -92,21 +94,21 @@ class AsyncTransport(ABC):
 
 ### Concrete Implementation
 
-`HttpxSyncTransport` and `HttpxAsyncTransport` in `plynth.http.transport`
+`HttpxSyncTransport` and `HttpxAsyncTransport` in `plynt.http.transport`
 implement these contracts using `httpx2`. Both return `HttpResponse` (from
-`plynth.http.response`), which satisfies `ResponseProtocol` and carries the
+`plynt.http.response`), which satisfies `ResponseProtocol` and carries the
 originating request's method and URL for richer error messages.
 
 Concrete transports do not implement cross-cutting concerns (auth, retry,
 caching) themselves. These are handled by `BaseSyncTransport` /
-`BaseAsyncTransport` — abstract base classes in `plynth.base.transport` that
+`BaseAsyncTransport` — abstract base classes in `plynt.base.transport` that
 sit between `SyncTransport`/`AsyncTransport` and the concrete implementations.
 See ADR-0013 for the full transport base class design.
 
 `httpx2` is an optional dependency and must be installed via:
 
 ```bash
-pip install plynth[httpx]
+pip install plynt[httpx]
 ```
 
 ## Consequences
@@ -118,5 +120,5 @@ pip install plynth[httpx]
 - The abstract contracts in `base/transport.py` remain dependency-free and usable
   without installing `httpx2`.
 - Cross-cutting concerns (auth, retry, cache) are handled once in
-  `BaseSyncTransport` / `BaseAsyncTransport` (`plynth.base.transport`) and
+  `BaseSyncTransport` / `BaseAsyncTransport` (`plynt.base.transport`) and
   inherited by all concrete transports — see ADR-0013.

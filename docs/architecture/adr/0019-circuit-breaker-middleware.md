@@ -29,11 +29,12 @@ and services.
 
 ### Interface
 
-`CircuitBreakerPolicy` (`plynth.base.policies`) controls circuit breaker
+`CircuitBreakerPolicy` (`plynt.base.policies`) controls circuit breaker
 behavior:
 
 ```python
 from dataclasses import dataclass
+
 
 @dataclass
 class CircuitBreakerPolicy:
@@ -51,12 +52,12 @@ class CircuitBreakerPolicy:
 `CircuitBreakerPolicy` and manage the circuit state machine:
 
 ```python
-from plynth.middleware.circuit_breaker import CircuitBreakerMiddleware
-from plynth.base.policies import CircuitBreakerPolicy
+from plynt.middleware.circuit_breaker import CircuitBreakerMiddleware
+from plynt.base.policies import CircuitBreakerPolicy
 
-transport = HttpxSyncTransport(middlewares=[
-    CircuitBreakerMiddleware(CircuitBreakerPolicy(failure_threshold=3))
-])
+transport = HttpxSyncTransport(
+    middlewares=[CircuitBreakerMiddleware(CircuitBreakerPolicy(failure_threshold=3))]
+)
 ```
 
 ### State machine
@@ -94,10 +95,10 @@ trigger the circuit. Override to add HTTP status codes (e.g. `{503, 429}`).
 ### Module location
 
 `CircuitBreakerMiddleware`, `AsyncCircuitBreakerMiddleware`, and
-`CircuitBreakerOpenError` live in `plynth.middleware.circuit_breaker`
-and are exported from `plynth.middleware`.
+`CircuitBreakerOpenError` live in `plynt.middleware.circuit_breaker`
+and are exported from `plynt.middleware`.
 
-`CircuitBreakerPolicy` lives in `plynth.base.policies`.
+`CircuitBreakerPolicy` lives in `plynt.base.policies`.
 
 No new dependencies are introduced. This is a Tier 1 core addition.
 

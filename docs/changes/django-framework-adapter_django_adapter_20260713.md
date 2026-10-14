@@ -7,19 +7,19 @@ last_modified: 2026-07-15
 
 ## Goal and Context
 
-Add first-party Django support as `plynth[django]` so Django services can use
-plynth transports, auth, and caching with Django-native configuration and
+Add first-party Django support as `plynt[django]` so Django services can use
+plynt transports, auth, and caching with Django-native configuration and
 cache infrastructure instead of hand-written bridging code.
 
 The implementation should make Django integration feel natural in the same
-way plynth already feels natural in plain Python: explicit, typed, and thin.
+way plynt already feels natural in plain Python: explicit, typed, and thin.
 The adapter must help with the places where Django projects repeatedly do
 manual work today:
 
 1. reading API client config from Django settings,
 1. reusing `django.core.cache` for response and OAuth2 token caching,
-1. building a transport without rewriting plynth's middleware wiring by hand,
-1. documenting how plynth logging should fit into Django's `LOGGING` config.
+1. building a transport without rewriting plynt's middleware wiring by hand,
+1. documenting how plynt logging should fit into Django's `LOGGING` config.
 
 Primary use case:
 
@@ -27,14 +27,14 @@ Primary use case:
 1. The main target is Django and DRF projects that act as API façades over
    external systems, where request validation, auth, permissions, and response
    shaping live in Django/DRF while upstream business data comes from external
-   APIs reached through plynth.
+   APIs reached through plynt.
 1. This means the adapter family should optimize for external-backend service
    orchestration, not for database-model convenience or generic requests-style
    HTTP usage.
 
 Support model:
 
-1. `plynth[django]` is the first slice and covers Django-core integration.
+1. `plynt[django]` is the first slice and covers Django-core integration.
 1. DRF support should be implemented as a second slice on top of the Django
    adapter family, not mixed into the first Django-core release.
 1. DRF is therefore not a separate top-level framework adapter peer to
@@ -56,7 +56,7 @@ Constraints and dependencies:
 
 ## AS-IS
 
-Repository evidence in plynth:
+Repository evidence in plynt:
 
 1. `HttpxSyncTransport.from_settings()` and `HttpxAsyncTransport.from_settings()`
    already wire auth and cache behavior from `HTTPSettings`, so framework work
@@ -70,7 +70,7 @@ Repository evidence in plynth:
    framework adapter and [ADR-0024](../architecture/adr/0024-framework-adapter-strategy.md)
    makes that ordering explicit.
 1. Cache backend documentation already promises guidance for wrapping
-   framework-native caches behind plynth's cache protocol.
+   framework-native caches behind plynt's cache protocol.
 
 Observed Django service patterns:
 
@@ -86,9 +86,9 @@ Observed Django service patterns:
 
 Current behavior summary:
 
-1. Plynth already works in Django if a consumer writes the wiring manually.
+1. Plynt already works in Django if a consumer writes the wiring manually.
 1. There is no first-party Django settings bridge.
-1. There is no first-party adapter from `django.core.cache` to plynth's cache
+1. There is no first-party adapter from `django.core.cache` to plynt's cache
    protocol.
 1. There is no first-party helper for building a sync transport from Django
    settings plus Django cache aliases.
@@ -97,25 +97,25 @@ Current behavior summary:
 1. Request-context and request-id propagation are useful patterns in the
    reference repos, but they are still application-level concerns rather than
    proven generic adapter requirements.
-1. Many Django API projects also use DRF, but plynth does not yet define a
+1. Many Django API projects also use DRF, but plynt does not yet define a
    first-party DRF integration surface.
-1. Plynth is strongest in Django and DRF when those frameworks front external
+1. Plynt is strongest in Django and DRF when those frameworks front external
    backends rather than when they simply wrap Django ORM models.
 
 ## TO-BE
 
 The Django implementation will add a small, cohesive adapter package under
-`src/plynth/adapters/django/`.
+`src/plynt/adapters/django/`.
 
 ### Django versus DRF support
 
 The implementation should be split into two layers:
 
-1. `plynth[django]` for Django-core integration.
-1. `plynth[drf]` for DRF-specific integration built on top of the Django-core
+1. `plynt[django]` for Django-core integration.
+1. `plynt[drf]` for DRF-specific integration built on top of the Django-core
    layer.
 
-The DRF layer should live under `src/plynth/adapters/django/drf/`, because it
+The DRF layer should live under `src/plynt/adapters/django/drf/`, because it
 depends on Django support and should reuse the Django adapter primitives.
 It should not be treated as a separate top-level framework adapter.
 
@@ -124,14 +124,14 @@ It should not be treated as a separate top-level framework adapter.
 Phase 1 should expose these public entry points:
 
 1. `from_django_settings(name, settings_class, *, settings_obj=None)`
-   in `plynth.adapters.django.settings`.
+   in `plynt.adapters.django.settings`.
 1. `DjangoCacheBackend(alias="default")`
-   in `plynth.adapters.django.cache`.
+   in `plynt.adapters.django.cache`.
 1. `transport_from_django_settings(name, settings_class, *, settings_obj=None,`
    `response_cache_alias=None, auth_cache_alias=None, middlewares=None)`
-   in `plynth.adapters.django.transport`.
+   in `plynt.adapters.django.transport`.
 
-The package `src/plynth/adapters/django/__init__.py` should re-export these
+The package `src/plynt/adapters/django/__init__.py` should re-export these
 public names.
 
 ### Planned DRF adapter surface
@@ -139,12 +139,12 @@ public names.
 Phase 2 should expose a small DRF-specific surface on top of the Django-core
 adapter:
 
-1. `PlynthServiceMixin` in `plynth.adapters.django.drf.views` for `APIView`
-   and `ViewSet` classes that need one or more plynth transports or service
+1. `PlyntServiceMixin` in `plynt.adapters.django.drf.views` for `APIView`
+   and `ViewSet` classes that need one or more plynt transports or service
    factories.
 1. `build_request_header_middleware(request, headers=None)` in
-   `plynth.adapters.django.drf.headers` to propagate selected inbound headers
-   such as `X-Request-Id` into outbound plynth requests.
+   `plynt.adapters.django.drf.headers` to propagate selected inbound headers
+   such as `X-Request-Id` into outbound plynt requests.
 1. DRF-focused docs showing integration with `APIView` and `ViewSet`.
 
 The first DRF slice should stay small. It should help with request-aware
@@ -161,12 +161,12 @@ The first async slice should expose these public entry points:
 
 1. `async_transport_from_django_settings(name, settings_class, *,`
    `settings_obj=None, response_cache_alias=None, auth_cache_alias=None,`
-   `middlewares=None)` in `plynth.adapters.django.transport`.
-1. `AsyncPlynthServiceMixin` in `plynth.adapters.django.drf.views` for async
-   `APIView` handlers that need one or more async plynth transports or service
+   `middlewares=None)` in `plynt.adapters.django.transport`.
+1. `AsyncPlyntServiceMixin` in `plynt.adapters.django.drf.views` for async
+   `APIView` handlers that need one or more async plynt transports or service
    factories.
 1. `build_async_request_header_middleware(request, headers=None, *,`
-   `deny_headers=None)` in `plynth.adapters.django.drf.headers` to build
+   `deny_headers=None)` in `plynt.adapters.django.drf.headers` to build
    `AsyncHeaderMiddleware` with the same denylist and mapping semantics as the
    sync helper.
 
@@ -186,7 +186,7 @@ The first async DRF slice should be intentionally narrow.
 In scope:
 
 1. async `APIView` method handlers such as `async def get(...)`
-1. async plynth service factories returning clients or services backed by
+1. async plynt service factories returning clients or services backed by
    `HttpxAsyncTransport`
 1. async request-header propagation using `AsyncHeaderMiddleware`
 1. smoke tests that prove one async request path works with adapter-managed
@@ -198,7 +198,7 @@ Out of scope for the first async slice:
 1. async support claims for DRF mixins and viewsets
 1. sync-to-async bridge wrappers as the main integration strategy
 1. adapter-level abstraction that hides whether a consumer is using sync or
-   async plynth services
+   async plynt services
 
 ### External-backend API layer support
 
@@ -208,13 +208,13 @@ over external backends" pattern.
 This means Phase 1 and Phase 2 should make these workflows easy:
 
 1. validate and normalize inbound request data with Django or DRF,
-1. build a typed plynth settings object from framework config,
-1. call one or more external APIs through plynth services or transports,
+1. build a typed plynt settings object from framework config,
+1. call one or more external APIs through plynt services or transports,
 1. propagate correlation headers into outbound calls when needed,
 1. shape the final response in Django or DRF without introducing framework
-   concerns into plynth core layers.
+   concerns into plynt core layers.
 
-The adapter family should not try to turn plynth into a replacement for
+The adapter family should not try to turn plynt into a replacement for
 `requests` usage inside Django internals. It should focus on higher-level,
 typed external-service access from Django and DRF applications.
 
@@ -226,9 +226,9 @@ typed external-service access from Django and DRF applications.
    object,
 1. require that value to be a mapping,
 1. normalize common Django-style uppercase keys to the lowercase field names
-   expected by plynth settings classes,
+   expected by plynt settings classes,
 1. instantiate the requested `HTTPSettings` or `ApiSettings` subclass,
-1. return a typed settings instance ready for plynth transport construction.
+1. return a typed settings instance ready for plynt transport construction.
 
 This keeps Django knowledge out of core settings subclasses while allowing a
 Django project to keep service configuration inside `settings.py`.
@@ -236,7 +236,7 @@ Django project to keep service configuration inside `settings.py`.
 ### Cache bridge
 
 `DjangoCacheBackend` will wrap `django.core.cache.caches[alias]` and satisfy
-the plynth `CacheBackend` protocol:
+the plynt `CacheBackend` protocol:
 
 1. `get()` reads one cache key and returns a deserialized neutral value.
 1. `set(..., ttl=...)` writes through to Django's cache backend using
@@ -253,13 +253,13 @@ must stay explicit, versionable, and safe across deploys.
 `transport_from_django_settings(...)` will provide the missing high-level
 Django integration step:
 
-1. load a typed plynth settings object through `from_django_settings(...)`,
+1. load a typed plynt settings object through `from_django_settings(...)`,
 1. construct a sync `HttpxSyncTransport`,
 1. wire auth exactly the same way as `HttpxSyncTransport.from_settings()`,
 1. resolve `response_cache_alias` and `auth_cache_alias` to
    `DjangoCacheBackend` instances,
 1. attach those backends to the same middleware and token-cache positions that
-   plynth uses for its built-in cache backends.
+   plynt uses for its built-in cache backends.
 
 This helper is necessary because Django cache aliases are runtime objects, not
 static `CacheConfig` dataclasses.
@@ -268,7 +268,7 @@ static `CacheConfig` dataclasses.
 
 To avoid duplicating too much of `HttpxSyncTransport.from_settings()` inside
 the Django adapter, the implementation may extract a small internal helper in
-`plynth.http.transport` for middleware assembly from a typed settings object.
+`plynt.http.transport` for middleware assembly from a typed settings object.
 That refactor must remain behavior-preserving and must not add Django imports
 to the core.
 
@@ -276,10 +276,10 @@ to the core.
 
 Phase 1 documentation will add a Django-focused guide that shows:
 
-1. how to keep plynth service config in Django settings,
+1. how to keep plynt service config in Django settings,
 1. how to build a settings object via `from_django_settings(...)`,
 1. how to build a transport with Django response and token caches,
-1. how to use plynth's existing logging filters in Django `LOGGING`.
+1. how to use plynt's existing logging filters in Django `LOGGING`.
 
 ### Work packages
 
@@ -287,14 +287,14 @@ Implementation should be executed as these work packages:
 
 #### WP1. Django packaging and public boundary
 
-1. Add the `plynth[django]` optional extra.
-1. Create `src/plynth/adapters/django/` with stable public re-exports.
+1. Add the `plynt[django]` optional extra.
+1. Create `src/plynt/adapters/django/` with stable public re-exports.
 1. Add import-boundary tests proving Django imports do not leak into core.
 
 #### WP2. Django settings bridge
 
 1. Implement `from_django_settings(...)`.
-1. Normalize Django-style setting keys into plynth settings field names.
+1. Normalize Django-style setting keys into plynt settings field names.
 1. Add focused tests for valid payloads, missing setting names, and invalid
    mapping shapes.
 
@@ -308,8 +308,8 @@ Implementation should be executed as these work packages:
 #### WP4. Django transport helper
 
 1. Implement `transport_from_django_settings(...)`.
-1. Reuse the same auth and cache semantics as plynth settings-driven wiring.
-1. Extract a small internal helper in `plynth.http.transport` only if that is
+1. Reuse the same auth and cache semantics as plynt settings-driven wiring.
+1. Extract a small internal helper in `plynt.http.transport` only if that is
    the cleanest way to avoid logic duplication.
 1. Add focused tests for response-cache alias wiring and auth-token cache
    alias wiring.
@@ -322,22 +322,22 @@ Implementation should be executed as these work packages:
 
 #### WP6. DRF packaging and request-aware integration
 
-1. Add the `plynth[drf]` optional extra on top of `plynth[django]`.
-1. Implement `PlynthServiceMixin` for `APIView` and `ViewSet` classes.
+1. Add the `plynt[drf]` optional extra on top of `plynt[django]`.
+1. Implement `PlyntServiceMixin` for `APIView` and `ViewSet` classes.
 1. Implement request-header propagation helpers for correlation and tracing
    headers.
 1. Add DRF-focused docs for request validation plus outbound external-backend
-   calls through plynth.
+   calls through plynt.
 
 #### WP7. DRF ergonomics follow-up
 
-1. Evaluate exception translation from plynth errors to DRF `APIException`.
+1. Evaluate exception translation from plynt errors to DRF `APIException`.
 1. Add test helpers for DRF view tests that rely on adapter-backed services.
 
 #### WP8. Async Django transport helper
 
 1. Add `async_transport_from_django_settings(...)` next to the existing sync
-   helper in `plynth.adapters.django.transport`.
+   helper in `plynt.adapters.django.transport`.
 1. Mirror the existing settings parsing and cache alias semantics.
 1. Build `HttpxAsyncTransport` and wire `async_auth_from_config(...)`,
    `AsyncCacheMiddleware`, and `AsyncRetryMiddleware` in the same canonical
@@ -348,8 +348,8 @@ Implementation should be executed as these work packages:
 
 #### WP9. Async DRF APIView integration
 
-1. Add `AsyncPlynthServiceMixin` in `plynth.adapters.django.drf.views`.
-1. Keep class-level configuration names aligned with `PlynthServiceMixin`:
+1. Add `AsyncPlyntServiceMixin` in `plynt.adapters.django.drf.views`.
+1. Keep class-level configuration names aligned with `PlyntServiceMixin`:
    `settings_name`, `settings_class`, `cache_aliases`, `middlewares`,
    `service_factories`, and `request_headers`.
 1. Provide explicit async methods such as `get_transport()`,
@@ -382,30 +382,30 @@ Implement the async follow-up in this order:
 ### Other Django and DRF adapter opportunities
 
 These are not part of the first committed scope, but they are realistic and
-interesting extensions if plynth adoption in Django APIs grows:
+interesting extensions if plynt adoption in Django APIs grows:
 
 1. Request-scoped service registry:
-   a helper that exposes lazily built plynth services on the current Django or
+   a helper that exposes lazily built plynt services on the current Django or
    DRF request to avoid repeated transport construction in one request cycle.
 1. Header propagation adapter:
    configurable middleware or helper for forwarding correlation and tracing
    headers such as `X-Request-Id`, `X-Correlation-Id`, and W3C trace headers.
 1. External-backend endpoint toolkit for DRF:
    small helpers for the recurring pattern "validate with serializer, call one
-   or more plynth services, map upstream errors, return serializer-shaped
+   or more plynt services, map upstream errors, return serializer-shaped
    response".
 1. Exception translation for DRF:
-   a small exception handler that maps plynth errors to DRF `APIException`
+   a small exception handler that maps plynt errors to DRF `APIException`
    responses when a project wants first-party response shaping.
 1. Dependency-style service injection for DRF views:
-   a helper that attaches typed plynth services to `APIView` or `ViewSet`
+   a helper that attaches typed plynt services to `APIView` or `ViewSet`
    instances using declarative configuration instead of manual setup in each
    view.
 1. Test helpers for Django and DRF:
    fixtures or factories for building adapter-backed transports with dummy
    caches and request headers in unit tests.
 1. Admin and health integration:
-   optional helpers that surface plynth cache and upstream connectivity state
+   optional helpers that surface plynt cache and upstream connectivity state
    in Django admin pages or health endpoints.
 1. Request-context accessor:
    a thin helper for projects that already rely on thread-local request
@@ -429,7 +429,7 @@ additions are:
 
 1. Async Django transport and async DRF `APIView` integration under the
    approved ADR-0025 scope.
-1. DRF integration under `plynth[drf]`, including `PlynthServiceMixin` and
+1. DRF integration under `plynt[drf]`, including `PlyntServiceMixin` and
    request-header propagation helpers.
 1. `RequestContextAccessor` for projects that already install thread-local
    middleware,
@@ -442,10 +442,10 @@ Architecture and boundaries:
 
 1. Adds a new optional framework-adapter surface without changing core layer
    contracts.
-1. Keeps Django imports isolated behind the `plynth[django]` extra.
-1. Keeps DRF imports isolated behind a separate `plynth[drf]` extra layered on
+1. Keeps Django imports isolated behind the `plynt[django]` extra.
+1. Keeps DRF imports isolated behind a separate `plynt[drf]` extra layered on
    top of the Django adapter package.
-1. May require a small internal refactor in `plynth.http.transport` to reuse
+1. May require a small internal refactor in `plynt.http.transport` to reuse
    existing settings-to-middleware assembly without copying logic.
 1. Leaves request-context and DRF-specific concerns out of Phase 1.
 
@@ -460,7 +460,7 @@ API and model implications:
 1. Reserves a second adapter surface for DRF-specific view integration rather
    than overloading the Django-core API.
 1. Establishes Django and DRF as a first-class façade layer for external API
-   integrations built on plynth.
+   integrations built on plynt.
 
 Security and privacy implications:
 
@@ -468,12 +468,12 @@ Security and privacy implications:
 1. Django settings bridge must avoid logging secret values during validation
    failures.
 1. Cache serialization must avoid persisting internal-only objects beyond the
-   response fields needed for plynth cache semantics.
+   response fields needed for plynt cache semantics.
 
 Operational implications:
 
 1. Django projects can reuse existing `CACHES` aliases instead of duplicating
-   Redis configuration in plynth-specific settings subclasses.
+   Redis configuration in plynt-specific settings subclasses.
 1. Django projects can use one adapter helper instead of duplicating transport,
    auth, and cache wiring logic per service.
 1. Logging integration remains documentation-first in Phase 1, which keeps the
@@ -489,12 +489,12 @@ Operational implications:
 
 1. A Django optional extra exists and installs the Django dependency required
    by the adapter package.
-1. Django consumers can load a plynth settings subclass from a named Django
+1. Django consumers can load a plynt settings subclass from a named Django
    settings object without hand-copying values.
 1. Django consumers can use a `django.core.cache` alias as the response cache
-   and as the OAuth2 token cache through plynth's existing cache hooks.
+   and as the OAuth2 token cache through plynt's existing cache hooks.
 1. Django consumers can build a sync transport from Django settings and cache
-   aliases without reimplementing plynth's middleware assembly manually.
+   aliases without reimplementing plynt's middleware assembly manually.
 1. The Django-core implementation does not require DRF to be installed.
 1. The DRF implementation can later be added without redesigning the
    Django-core adapter API.
@@ -512,7 +512,7 @@ Happy path:
 1. `DjangoCacheBackend` stores and restores a cached response with headers,
    body, status, and TTL.
 1. `transport_from_django_settings()` builds a sync transport with the same
-   auth and middleware behavior expected from plynth settings-driven wiring.
+   auth and middleware behavior expected from plynt settings-driven wiring.
 1. OAuth2 token caching works when `default_auth_cache` points at a
    Django cache alias resolved by the adapter helper.
 

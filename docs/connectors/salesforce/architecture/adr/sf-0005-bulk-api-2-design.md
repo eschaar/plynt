@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2026-05-04
-**Scope:** `plynth.connectors.salesforce`
+**Scope:** `plynt.connectors.salesforce`
 
 ______________________________________________________________________
 
@@ -34,7 +34,7 @@ that encapsulates the full Bulk API 2.0 job lifecycle.
 The service is registered on the facade:
 
 ```python
-facade.bulk()        # → SalesforceBulkService
+facade.bulk()  # → SalesforceBulkService
 async_facade.bulk()  # → AsyncSalesforceBulkService
 ```
 
@@ -55,7 +55,7 @@ High-level:
 result: BulkIngestResult = bulk.ingest(
     sobject="Account",
     operation=BulkOperation.insert,
-    records=[{"Name": "Acme"}, ...],      # list[dict] or CSV str
+    records=[{"Name": "Acme"}, ...],  # list[dict] or CSV str
 )
 ```
 
@@ -65,7 +65,7 @@ Low-level primitives:
 job: BulkJobInfo = bulk.create_ingest_job(sobject, operation, ...)
 bulk.upload_records(job.id, records)
 bulk.close_job(job.id)
-job = bulk.wait_for_job(job.id)           # polls until terminal state
+job = bulk.wait_for_job(job.id)  # polls until terminal state
 result = bulk.get_ingest_results(job.id)  # successful + failed + unprocessed
 bulk.abort_job(job.id)
 bulk.delete_job(job.id)
@@ -91,7 +91,7 @@ bulk.delete_job(job.id)
 
 ### 3. Typed models
 
-Introduce typed models in `plynth.connectors.salesforce.bulk`:
+Introduce typed models in `plynt.connectors.salesforce.bulk`:
 
 | Model              | Description                                                                      |
 | ------------------ | -------------------------------------------------------------------------------- |
@@ -277,8 +277,8 @@ ______________________________________________________________________
 
 ## Consequences
 
-- `SalesforceBulkService` lives in `plynth.connectors.salesforce.bulk`.
-- Two new exception types are added to `plynth.connectors.salesforce.errors`:
+- `SalesforceBulkService` lives in `plynt.connectors.salesforce.bulk`.
+- Two new exception types are added to `plynt.connectors.salesforce.errors`:
   `SalesforceBulkJobError` and `BulkJobTimeoutError`.
 - The facade gains a `bulk()` / `async_bulk()` accessor.
 - No changes to the transport, base request/response layer, or any existing

@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Plynth needs objective release decisions for public-package readiness.
+Plynt needs objective release decisions for public-package readiness.
 
 Existing quality checks and architecture decisions are distributed across
 multiple documents and workflows. There is no single model that defines which
@@ -18,7 +18,7 @@ quality across releases.
 
 ## Decision
 
-Plynth will adopt a release acceptance model with explicit gates and evidence:
+Plynt will adopt a release acceptance model with explicit gates and evidence:
 
 1. A release is approved only when all blocking gates pass or have a recorded
    exception.

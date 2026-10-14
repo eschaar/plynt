@@ -6,31 +6,31 @@ Accepted
 
 ## Implementation Notes
 
-**Implemented:** The `CacheBackend` Protocol (`plynth.base.cache`).
+**Implemented:** The `CacheBackend` Protocol (`plynt.base.cache`).
 
 **Superseded:** The `cache=` constructor parameter on `BaseSyncTransport` /
 `BaseAsyncTransport` (original proposal, ADR-0013) has been replaced by
-`CacheMiddleware` / `AsyncCacheMiddleware` in `plynth.middleware.cache`.
+`CacheMiddleware` / `AsyncCacheMiddleware` in `plynt.middleware.cache`.
 Consumers pass the middleware in the `middlewares` list:
 
 ```python
-from plynth.middleware.cache import CacheMiddleware
+from plynt.middleware.cache import CacheMiddleware
 
 transport = HttpxSyncTransport(middlewares=[CacheMiddleware(my_cache)])
 ```
 
-**Implemented:** Concrete built-in backends in `plynth.cache`. `DummyCache`,
+**Implemented:** Concrete built-in backends in `plynt.cache`. `DummyCache`,
 `LocMemCache`, `CachetoolsCache` (requires `[cache]` extra), and `RedisCache`
 (requires `[cache]` extra) are available.
 
 **Implemented:** Typed cache configuration (`DummyCacheConfig`,
 `LocMemCacheConfig`, `RedisCacheConfig`, `CacheConfig`, `cache_from_config()`)
-in `plynth.cache`. The typed config pattern replaces the earlier URI-string
+in `plynt.cache`. The typed config pattern replaces the earlier URI-string
 approach.
 
 ## Context
 
-Some consumers of Plynth need to cache HTTP responses to avoid redundant
+Some consumers of Plynt need to cache HTTP responses to avoid redundant
 network calls — for example when polling a slow or rate-limited API. Caching
 behaviour is not universally desired, so it must not be part of the core
 package (ADR-0003).
@@ -60,12 +60,12 @@ fields on `HTTPSettings` whose values were location URIs
 Caching support is shipped as an optional install extra:
 
 ```text
-pip install plynth[cache]
+pip install plynt[cache]
 ```
 
 ### Abstract Cache Interface
 
-A `CacheBackend` protocol is defined in `plynth.base.cache`. It describes the
+A `CacheBackend` protocol is defined in `plynt.base.cache`. It describes the
 minimal key/value interface that any backend must implement:
 
 ```python
@@ -82,11 +82,11 @@ Protocol without inheriting from any base class.
 
 With the chain-of-responsibility middleware contract (ADR-0013), caching is
 implemented as `CacheMiddleware` / `AsyncCacheMiddleware` in
-`plynth.middleware.cache`. Only `GET` requests are cached by default.
+`plynt.middleware.cache`. Only `GET` requests are cached by default.
 
 ```python
-from plynth.middleware.cache import CacheMiddleware
-from plynth.http.transport import HttpxSyncTransport
+from plynt.middleware.cache import CacheMiddleware
+from plynt.http.transport import HttpxSyncTransport
 
 transport = HttpxSyncTransport(
     middlewares=[CacheMiddleware(my_cache)],
@@ -130,9 +130,11 @@ constructs the appropriate backend instance from a config object.
 def caches(self) -> dict[str, CacheConfig] | None:
     return None  # override in subclass to enable caching
 
+
 @property
 def default_cache(self) -> str | None:
     return None  # key in caches to use for response caching
+
 
 @property
 def default_auth_cache(self) -> str | None:
@@ -144,7 +146,8 @@ The old string fields `cache_backend` and `auth_cache_backend` are removed.
 ### Subclass Usage
 
 ```python
-from plynth.cache import RedisCacheConfig
+from plynt.cache import RedisCacheConfig
+
 
 class SalesforceSettings(HTTPSettings):
     redis_url: str = ""  # SF_REDIS_URL=redis://...
@@ -189,8 +192,7 @@ response_cache = (
 )
 auth_cache = (
     cache_from_config(caches[settings.default_auth_cache])
-    if caches and settings.default_auth_cache
-        and settings.default_auth_cache in caches
+    if caches and settings.default_auth_cache and settings.default_auth_cache in caches
     else None
 )
 ```
@@ -202,21 +204,21 @@ directly or configure the `caches` property — both require explicit code.
 
 ### Scope Boundaries
 
-| Concern                                          | Location                       |
-| ------------------------------------------------ | ------------------------------ |
-| `CacheBackend` Protocol                          | `plynth.base.cache`            |
-| `CacheMiddleware` / `AsyncCacheMiddleware`       | `plynth.middleware.cache`      |
-| `CacheConfig` type alias + `cache_from_config()` | `plynth.cache`                 |
-| `DummyCache` + `DummyCacheConfig`                | `plynth.cache.dummy`           |
-| `LocMemCache` + `LocMemCacheConfig`              | `plynth.cache.locmem`          |
-| `RedisCache` + `RedisCacheConfig`                | `plynth.cache.redis`           |
-| `CachetoolsCache`                                | `plynth.cache.cachetools`      |
-| Django cache adapter                             | `plynth.django.cache` (future) |
+| Concern                                          | Location                      |
+| ------------------------------------------------ | ----------------------------- |
+| `CacheBackend` Protocol                          | `plynt.base.cache`            |
+| `CacheMiddleware` / `AsyncCacheMiddleware`       | `plynt.middleware.cache`      |
+| `CacheConfig` type alias + `cache_from_config()` | `plynt.cache`                 |
+| `DummyCache` + `DummyCacheConfig`                | `plynt.cache.dummy`           |
+| `LocMemCache` + `LocMemCacheConfig`              | `plynt.cache.locmem`          |
+| `RedisCache` + `RedisCacheConfig`                | `plynt.cache.redis`           |
+| `CachetoolsCache`                                | `plynt.cache.cachetools`      |
+| Django cache adapter                             | `plynt.django.cache` (future) |
 
-The public import path is `plynth.cache`:
+The public import path is `plynt.cache`:
 
 ```python
-from plynth.cache import RedisCacheConfig, cache_from_config
+from plynt.cache import RedisCacheConfig, cache_from_config
 ```
 
 ## Consequences
