@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.11.0](https://github.com/eschaar/plynt/compare/0.10.0...0.11.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* Rename distribution and import package to plynt.
+
+### Features
+
+* rebrand project and package as Plynt ([d28e9ac](https://github.com/eschaar/plynt/commit/d28e9ac7278a917455c7a3026e1dca54b814d726))
+
+
+### Fixes
+
+* **privacy:** sanitize recordings and omit author email ([d204686](https://github.com/eschaar/plynt/commit/d2046867e156bdf40d46d604accb67ec4a319ad1))
+* **privacy:** sanitize recordings and omit author email ([59176e8](https://github.com/eschaar/plynt/commit/59176e84d9b33c7b8a282a12716bf82ad7a12304))
+
+
+### Documentation
+
+* **adr:** merge rebrand decisions ([62d0f18](https://github.com/eschaar/plynt/commit/62d0f18ecca3b063fe52790ce2c2548a7ea30e19))
+* align historical docs with Plynt ([b68bff4](https://github.com/eschaar/plynt/commit/b68bff42c1fb7e0e99b6ea316d536767e4deca30))
+
 ## [0.10.0](https://github.com/eschaar/plynt/compare/0.9.5...0.10.0) (2026-10-14)
 
 
