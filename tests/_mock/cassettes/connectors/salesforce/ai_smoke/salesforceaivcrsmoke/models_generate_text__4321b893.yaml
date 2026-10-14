@@ -229,7 +229,7 @@ interactions:
       Set-Cookie:
       - CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure
       - LSKey-c$CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure
-      - BrowserId=lgY3Ak_pEfGu_iXZJK99UQ; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure; SameSite=None
+      - BrowserId=REDACTED_BROWSER_ID; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure; SameSite=None
       X-Content-Type-Options:
       - nosniff
       Strict-Transport-Security:
@@ -273,7 +273,7 @@ interactions:
       vary:
       - Accept-Encoding
       set-cookie:
-      - CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure, LSKey-c$CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure, BrowserId=lgY3Ak_pEfGu_iXZJK99UQ; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure; SameSite=None
+      - CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure, LSKey-c$CookieConsentPolicy=0:0; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure, BrowserId=REDACTED_BROWSER_ID; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:48 GMT; Max-Age=31536000; secure; SameSite=None
       x-content-type-options:
       - nosniff
       strict-transport-security:
@@ -343,7 +343,7 @@ interactions:
       Set-Cookie:
       - CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure
       - LSKey-c$CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure
-      - BrowserId=lpJxjE_pEfG8pyekmwDAHg; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure; SameSite=None
+      - BrowserId=REDACTED_BROWSER_ID; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure; SameSite=None
       Strict-Transport-Security:
       - max-age=63072000; includeSubDomains
       Server:
@@ -385,7 +385,7 @@ interactions:
       cache-control:
       - must-revalidate,no-cache,no-store
       set-cookie:
-      - CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure, LSKey-c$CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure, BrowserId=lpJxjE_pEfG8pyekmwDAHg; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure; SameSite=None
+      - CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure, LSKey-c$CookieConsentPolicy=0:1; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure, BrowserId=REDACTED_BROWSER_ID; domain=.salesforce.com; path=/; expires=Fri, 14-May-2027 23:06:49 GMT; Max-Age=31536000; secure; SameSite=None
       strict-transport-security:
       - max-age=63072000; includeSubDomains
       server:

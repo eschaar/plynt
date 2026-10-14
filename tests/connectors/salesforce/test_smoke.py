@@ -20,7 +20,9 @@ replayed without any real HTTP calls.  This works in CI out of the box.
 Before recording, set real credentials through ``RECORD_*`` environment
 variables. VCR will make live HTTP calls and overwrite the cassettes.
 After recording, anonymise sensitive values in the recorded cassette files
-and clear those environment variables before committing.
+including browser cookies, record IDs, and matching record URLs. Preserve
+consistent synthetic IDs across responses and clear those environment
+variables before committing.
 
 Cassette layout
 ---------------
@@ -41,6 +43,7 @@ This matches the default ``DeterministicCassettePathResolver`` root
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -234,3 +237,41 @@ class TestSalesforceVCRSmoke:
         assert result.total_size >= 1
         assert isinstance(result.records[0]["Id"], str)
         assert isinstance(result.records[0]["Name"], str)
+
+
+class TestSalesforceCassettePrivacy:
+    """Check committed Salesforce recordings use synthetic identifiers"""
+
+    @pytest.mark.parametrize(
+        "cassette_path",
+        sorted(Path("tests/_mock/cassettes/connectors/salesforce").rglob("*.yaml")),
+        ids=lambda path: path.name,
+    )
+    def test_browser_ids_are_redacted(self, cassette_path: Path) -> None:
+        contents = cassette_path.read_text(encoding="utf-8")
+
+        assert all(
+            value == "REDACTED_BROWSER_ID"
+            for value in re.findall(r"BrowserId=([^;\s]+)", contents)
+        )
+
+    @pytest.mark.parametrize(
+        "cassette_name",
+        ["query_accounts__58b98669.yaml", "quick_search__1101ee82.yaml"],
+    )
+    def test_record_ids_and_urls_use_synthetic_ids(self, cassette_name: str) -> None:
+        cassette_path = (
+            Path("tests/_mock/cassettes/connectors/salesforce/smoke/salesforcevcrsmoke")
+            / cassette_name
+        )
+        contents = cassette_path.read_text(encoding="utf-8")
+        record_ids = re.findall(r'"Id": "([^"]+)"', contents)
+        url_ids = re.findall(r"/sobjects/[^/\" ]+/([A-Za-z0-9]+)", contents)
+
+        assert record_ids
+        assert url_ids
+        assert set(record_ids) == set(url_ids)
+        assert all(
+            re.fullmatch(r"(?:001|00O|0PL)0{11}[1-5](?:AAA|EAA|GAA)", record_id)
+            for record_id in record_ids
+        )
