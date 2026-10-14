@@ -1,12 +1,14 @@
 # Commit workflow.
 # Purpose: enforce commit policy and quality checks (format/lint/typecheck).
-# Runs on branch pushes and merge queue refs so policy stays merge-blocking.
+# Runs on branch pushes, pull requests, and merge queue refs.
 # Unit tests are split into check.yml (single-version) and verify.yml (matrix).
 name: Commit
 
 on:
+  pull_request:
+    branches: [main]
   push:
-    # Mainline and release-please refs are covered by other workflows.
+    # Automated branches receive these checks through pull_request instead.
     branches-ignore:
       - main
       - master

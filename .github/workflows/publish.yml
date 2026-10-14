@@ -20,13 +20,14 @@ permissions:
 env:
   PYTHON_VERSION: "3.14"
   TRUSTED_RELEASE_ACTORS: "prime-releasebot[bot],github-actions[bot],eschaar"
-  ENABLE_PYPI_PUBLISH: "false"
+  ENABLE_PYPI_PUBLISH: "true"
 
 jobs:
   publish:
     name: Build and Publish to PyPI
     if: "${{ github.event.release.prerelease == false }}"
     runs-on: ubuntu-latest
+    environment: pypi
 
     steps:
       - name: Validate release tag format
