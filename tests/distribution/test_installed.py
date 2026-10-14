@@ -72,6 +72,29 @@ class TestInstalledDistribution:
             for requirement in requirements
         )
 
+    def test_declared_python_support_matches_contract(self) -> None:
+        package = metadata.metadata("plynth")
+
+        assert package["Requires-Python"] == ">=3.12"
+        classifiers = set(package.get_all("Classifier") or [])
+        assert {
+            f"Programming Language :: Python :: {version}"
+            for version in ("3.12", "3.13", "3.14", "3.15")
+        } <= classifiers
+        assert "Programming Language :: Python :: 3.11" not in classifiers
+
+    @pytest.mark.parametrize("extra", ("django", "drf"))
+    def test_django_extras_require_supported_django(self, extra: str) -> None:
+        requirements = metadata.requires("plynth") or []
+
+        assert any(
+            requirement.startswith("django")
+            and ">=6.1.2" in requirement
+            and "<7" in requirement
+            and f'extra == "{extra}"' in requirement
+            for requirement in requirements
+        )
+
     def test_sync_http_client_uses_caller_supplied_transport(self) -> None:
         from plynth.base import Request, Response, SyncTransport
         from plynth.http import HTTPClient

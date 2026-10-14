@@ -45,8 +45,8 @@ This index lists architecture decision records (ADRs) for plynth.
 | [ADR-0030](0030-grpc-protocol-boundary.md)                          | Generic gRPC Protocol Boundary and Scope          | Accepted |
 | [ADR-0031](0031-experimental-release-installation-contract.md)      | Experimental Release Installation Contract        | Accepted |
 | [ADR-0032](0032-grpc-codegen-version-refresh.md)                    | gRPC Code Generation Version Refresh              | Accepted |
-| [ADR-0033](0033-python-315-support-and-local-pyenv.md)              | Python 3.15 Support and Local pyenv Bootstrap     | Accepted |
-| [ADR-0034](0034-python-default-and-local-environment.md)            | Python Default and Local Environment              | Accepted |
+| [ADR-0033](0033-python-315-support-and-local-pyenv.md)              | Python Support and Local pyenv Bootstrap          | Accepted |
+| [ADR-0034](0034-django-6-support.md)                                | Django 6.x Support and Python 3.12 Minimum        | Accepted |
 
 <!-- markdownlint-enable MD060 -->
 

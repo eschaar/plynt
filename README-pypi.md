@@ -12,7 +12,7 @@ Plynth focuses on a stable integration foundation:
 
 ## Installation
 
-Supports **Python 3.11-3.15 on Linux**.
+Supports **Python 3.12-3.15 on Linux**. Django/DRF extras require Django 6.1.
 
 ```bash
 pip install plynth

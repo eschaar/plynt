@@ -215,6 +215,10 @@ limitations are unchanged.
 
 ### Python 3.15 Support Follow-up
 
+This subsection records the initial five-version follow-up. The later
+Python default and Django 6.1 follow-up below replaces its support matrix
+and contributor environment examples.
+
 [ADR-0033](../architecture/adr/0033-python-315-support-and-local-pyenv.md)
 extends the required Linux matrix to standard CPython 3.11-3.15 and documents
 an explicit local pyenv bootstrap. The original four-version results above
@@ -249,6 +253,47 @@ installation or shell startup configuration is changed by this verification.
 
 These local results do not replace remote Check, Verify, and Distribution
 gates for the final revision. Salesforce provider acceptance remains open.
+
+### Python Default and Django 6.1 Follow-up
+
+The maintainer approved Python 3.14 as the development default, removal of
+Python 3.11, and a full move to Django 6.1. Python decisions are consolidated
+in [ADR-0033](../architecture/adr/0033-python-315-support-and-local-pyenv.md),
+which retains the original decision as history.
+[ADR-0034](../architecture/adr/0034-django-6-support.md) separately records
+Django 6.x support and the Python 3.12 package minimum.
+These are breaking installation-contract changes, not a patch-compatible
+dependency refresh. Versions and tags remain owned by CI/CD.
+
+The final supported matrix is Python 3.12-3.15. Full installed-wheel tox
+suites pass on 3.12.15, 3.13.16, 3.14.8, and 3.15.0 with Django 6.1.2,
+DRF 3.18.3, and httpx2 2.13.1. Each version passes 2,144 tests with
+7,124 measured statements, zero misses, and 100% statement coverage.
+Three new metadata tests verify the Python minimum/classifiers and Django
+requirements in both Django and DRF extras. The three external tests remain
+deselected; no full-suite tests are skipped. Targeted Django, DRF, and
+distribution regression tests pass: 129 tests.
+
+All 16 isolated wheel profiles pass on Python 3.12 and 3.15, including
+Django/DRF and exact CDC minima. Non-CDC profiles retain the existing empty
+CDC parametrization skip; CDC profiles execute it. Installer dry runs
+reject Python 3.11 and an explicit Django 5.2.18 constraint.
+Wheel-from-sdist build, twine, `make check`, Ruff, mypy, formatting hooks,
+dependency consistency, and pinned gRPC regeneration pass.
+The installed dependency audit finds no known vulnerabilities; it skips
+the unpublished Plynth development build.
+
+The default and single-version CI jobs use Python 3.14. Local instructions
+consistently use `.venv`; changing `.python-version` does not replace it.
+Session-local pyenv selection confirms Python 3.14.8 as the default and
+exposes all four supported interpreters. The skip-existing and rehash
+bootstrap path passes. Interpreters are prebuilt for local compatibility
+testing; source compilation and permanent host pyenv installation are not
+performed. The existing development environment remains on Python 3.14.4
+and passes its full local gate with the updated dependencies.
+
+These results are local evidence, not remote CI acceptance. Salesforce
+provider validation and release review remain required.
 
 ### Acceptance Checklist
 

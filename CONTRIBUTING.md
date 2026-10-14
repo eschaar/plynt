@@ -98,7 +98,7 @@ convention are rejected before the commit is created.
 
 ## Local Python Bootstrap
 
-The supported matrix is Python 3.11-3.15 on Linux using CPython, the standard
+The supported matrix is Python 3.12-3.15 on Linux using CPython, the standard
 Python implementation. Other implementations, such as PyPy, are not tested.
 `.python-version` lists exact local versions, with 3.14.8 as the default.
 Python 3.15 remains supported but is not the development default.
@@ -127,7 +127,7 @@ Add the environment and initialization lines to your shell startup file
 following pyenv's instructions; use your shell name instead of `bash`
 when appropriate. Repository tooling never edits that file automatically.
 
-`make python-install` installs all five listed interpreters, skips installed
+`make python-install` installs all four listed interpreters, skips installed
 versions, and refreshes shims. The multi-version selection exposes each
 `python3.x` executable to tox; `python` selects the first available version.
 Confirm 3.14.8 is selected rather than relying on fallback to another version.
@@ -150,8 +150,8 @@ running `make install` so it can be restored if needed.
 CI uses `actions/setup-python` for the same minor-version matrix, not pyenv.
 Poetry is not part of this repository's bootstrap or test workflow.
 See [ADR-0033](docs/architecture/adr/0033-python-315-support-and-local-pyenv.md).
-The default and local environment convention are updated by
-[ADR-0034](docs/architecture/adr/0034-python-default-and-local-environment.md).
+Python 3.11 removal and Django 6.1 requirements are recorded in
+[ADR-0034](docs/architecture/adr/0034-django-6-support.md).
 
 ## Distribution and CDC code generation
 

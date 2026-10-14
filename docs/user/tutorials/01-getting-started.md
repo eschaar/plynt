@@ -6,7 +6,7 @@ JSON REST API. No external accounts or credentials are needed.
 
 ## Prerequisites
 
-- Python 3.11-3.15 on Linux
+- Python 3.12-3.15 on Linux
 - `pip` (or another package installer)
 
 ## Step 1 — Install
