@@ -20,7 +20,7 @@ permissions:
 env:
   PYTHON_VERSION: "3.14"
   TRUSTED_RELEASE_ACTORS: "prime-releasebot[bot],github-actions[bot],eschaar"
-  ENABLE_PYPI_PUBLISH: "false"
+  ENABLE_PYPI_PUBLISH: "true"
 
 jobs:
   publish:
