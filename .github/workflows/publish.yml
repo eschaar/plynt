@@ -27,6 +27,7 @@ jobs:
     name: Build and Publish to PyPI
     if: "${{ github.event.release.prerelease == false }}"
     runs-on: ubuntu-latest
+    environment: pypi
 
     steps:
       - name: Validate release tag format
