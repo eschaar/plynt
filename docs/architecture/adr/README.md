@@ -4,7 +4,7 @@ This index lists architecture decision records (ADRs) for plynth.
 
 ## Status Summary
 
-- Accepted: 34
+- Accepted: 35
 - Proposed: 0
 
 ## ADR List
@@ -47,6 +47,7 @@ This index lists architecture decision records (ADRs) for plynth.
 | [ADR-0032](0032-grpc-codegen-version-refresh.md)                    | gRPC Code Generation Version Refresh              | Accepted |
 | [ADR-0033](0033-python-315-support-and-local-pyenv.md)              | Python Support and Local pyenv Bootstrap          | Accepted |
 | [ADR-0034](0034-django-6-support.md)                                | Django 6.x Support and Python 3.12 Minimum        | Accepted |
+| [ADR-0035](0035-pre-1-versioning-policy.md)                         | Pre-1.0 Versioning Policy                         | Accepted |
 
 <!-- markdownlint-enable MD060 -->
 
@@ -60,4 +61,4 @@ Add an ADR for changes that affect:
 - middleware execution semantics,
 - installation extras or optional-framework strategy.
 
-Use the next sequential number (currently: `0035`).
+Use the next sequential number (currently: `0036`).

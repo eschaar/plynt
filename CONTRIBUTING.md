@@ -18,23 +18,26 @@ and generate the changelog.
 
 ### Types
 
-| Type       | When to use                             | Version bump |
-| ---------- | --------------------------------------- | ------------ |
-| `feat`     | New functionality                       | minor        |
-| `feat!`    | New functionality with breaking change  | major        |
-| `fix`      | Bug fix                                 | patch        |
-| `fix!`     | Bug fix with breaking change            | major        |
-| `perf`     | Measurable performance improvement      | patch        |
-| `refactor` | Code restructuring, no behaviour change | patch        |
-| `docs`     | Documentation, ADRs, comments           | patch        |
-| `test`     | Tests only                              | patch        |
-| `chore`    | Tooling, dependencies, CI               | patch        |
-| `ci`       | CI/CD workflow changes                  | patch        |
-| `style`    | Formatting, no logic change             | patch        |
-| `revert`   | Revert a previous commit                | patch        |
+| Type       | When to use                             | Version bump  |
+| ---------- | --------------------------------------- | ------------- |
+| `feat`     | New functionality                       | minor         |
+| `feat!`    | New functionality with breaking change  | minor / major |
+| `fix`      | Bug fix                                 | patch         |
+| `fix!`     | Bug fix with breaking change            | minor / major |
+| `perf`     | Measurable performance improvement      | patch         |
+| `refactor` | Code restructuring, no behaviour change | patch         |
+| `docs`     | Documentation, ADRs, comments           | patch         |
+| `test`     | Tests only                              | patch         |
+| `chore`    | Tooling, dependencies, CI               | patch         |
+| `ci`       | CI/CD workflow changes                  | patch         |
+| `style`    | Formatting, no logic change             | patch         |
+| `revert`   | Revert a previous commit                | patch         |
 
-Every commit type produces at least a patch bump. Only `feat`, `fix`, and
-their `!` variants affect the minor and major version.
+Features produce a minor bump; other listed types normally produce a patch.
+A breaking change on any type produces a minor bump while the current
+version is below 1.0.0, and a major bump from 1.0.0 onward.
+This uses release-please's `bump-minor-pre-major` option under
+[ADR-0035](docs/architecture/adr/0035-pre-1-versioning-policy.md).
 
 ### Breaking changes
 
@@ -53,6 +56,11 @@ feat!: remove timeout_seconds, replace with structured timeout fields
 
 BREAKING CHANGE: Set PLYNTH_TIMEOUT_READ instead of PLYNTH_TIMEOUT_SECONDS.
 ```
+
+Keep breaking markers and migration details even during 0.x development.
+For example, a breaking change from 0.9.5 produces 0.10.0 rather than 1.0.0;
+the same change from 1.0.0 produces 2.0.0.
+These are policy examples, not manually selected release versions.
 
 ### Scopes
 
