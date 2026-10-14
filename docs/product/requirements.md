@@ -57,10 +57,12 @@ ______________________________________________________________________
 1. No manual tagging for normal release flow.
 1. Publish workflow must use OIDC (no static PyPI token in workflow).
 1. PyPI publish remains explicitly controlled by CI guard flag.
-1. Require the complete test profile on supported Linux Python 3.11-3.15
+1. Require the complete test profile on supported Linux Python 3.12-3.15
    and isolated installed-wheel checks under ADR-0031.
 1. Include Python 3.15 and local pyenv bootstrap under ADR-0033; CI continues
    to provision interpreters through setup-python.
+1. Use Python 3.14 as the default under ADR-0033. Require Python 3.12 and
+   Django 6.1.2 or newer under ADR-0034; Django remains below 7.
 1. Enforce 100% statement coverage within the configured source scope;
    do not equate coverage with branch coverage or external-provider validation.
 1. Verify pinned CDC code generation and declared runtime minima.

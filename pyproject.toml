@@ -14,7 +14,7 @@ dynamic = ["version"]
 description = "Framework-agnostic Python library for building external HTTP API clients and service integrations"
 readme = "README-pypi.md"
 authors = [{ name = "Erik Schaareman", email = "erik@schaareman.org" }]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "MIT"
 keywords = [
   "api",
@@ -47,7 +47,6 @@ classifiers = [
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
@@ -65,8 +64,8 @@ Changelog = "https://github.com/eschaar/plynth/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 httpx = ["httpx2>=2.13.1"]
 grpc = ["grpcio>=1.84.0,<2", "protobuf>=7.35.1,<8"]
-django = ["django>=5.2.17,<6", "httpx2>=2.13.1"]
-drf = ["django>=5.2.17,<6", "djangorestframework>=3.18.3,<4", "httpx2>=2.13.1"]
+django = ["django>=6.1.2,<7", "httpx2>=2.13.1"]
+drf = ["django>=6.1.2,<7", "djangorestframework>=3.18.3,<4", "httpx2>=2.13.1"]
 fastapi = ["fastapi>=0.141.1,<1", "httpx2>=2.13.1"]
 salesforce = [
   "httpx2>=2.13.1",
@@ -136,7 +135,7 @@ exclude_lines = ["pragma: no cover", "if __name__ == '__main__':"]
 # ---------------------------------------------------------------------------
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 88
 exclude = [
   ".git",
@@ -169,6 +168,10 @@ select = [
   "RUF", # ruff-specific
 ]
 ignore = [
+  # Preserve existing generic APIs; PEP 695 migration is a separate refactor.
+  "UP040",
+  "UP046",
+  "UP047",
   "D100", # Missing docstring in public module
   "D104", # Missing docstring in public package
   "D107", # Missing docstring in __init__
@@ -199,7 +202,7 @@ per-file-ignores = { "tests/*" = [
 keep-runtime-typing = false
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 warn_unused_ignores = true
 warn_return_any = true
@@ -236,7 +239,7 @@ warn_unused_ignores = false
 
 [tool.tox]
 requires = ["tox>=4"]
-env_list = ["3.11", "3.12", "3.13", "3.14", "3.15"]
+env_list = ["3.12", "3.13", "3.14", "3.15"]
 
 [tool.tox.env_run_base]
 description = "Run test suite under {env_name}"
@@ -249,7 +252,7 @@ commands = [["pytest", "--tb=short", "-q"]]
 # ---------------------------------------------------------------------------
 
 [tool.pyright]
-pythonVersion = "3.11"
+pythonVersion = "3.12"
 typeCheckingMode = "basic"
 
 [tool.pylint.main]

@@ -1,7 +1,8 @@
 # Installation and extras
 
 Plynth uses optional extras to keep the core dependency surface minimal.
-Supported environments are Linux with Python 3.11, 3.12, 3.13, 3.14, and 3.15.
+Supported environments are Linux with Python 3.12, 3.13, 3.14, and 3.15.
+Python 3.14 is the development default; Python 3.15 remains fully tested.
 Other combinations are outside the tested contract.
 
 ## Extras
@@ -47,8 +48,21 @@ HTTP transport without `httpx2` raises an actionable dependency error.
 
 The HTTP extras require `httpx2>=2.13.1`. The Salesforce extra requires
 `pydantic>=2.14.1` and `cryptography>=50.0.2`; the DRF extra requires
-`djangorestframework>=3.18.3,<4`. Django remains on the supported 5.2 line,
-with `django>=5.2.17,<6`; this refresh does not enable Django 6.
+`djangorestframework>=3.18.3,<4`. Both Django and DRF extras require
+`django>=6.1.2,<7`. httpx2 2.13.1 is the latest release verified in this refresh.
+
+### Migration from Python 3.11 and Django 5.2
+
+This is a breaking installation-contract change under
+[ADR-0034](../../architecture/adr/0034-django-6-support.md).
+Python 3.11 and Django versions below 6.1.2 are no longer supported.
+Upgrade the interpreter first, preferably to Python 3.14, and recreate the
+development `.venv` rather than reusing an environment with an older Python.
+Applications using the Django or DRF extra must follow Django's
+[6.0 release notes](https://docs.djangoproject.com/en/6.0/releases/6.0/)
+and [6.1 release notes](https://docs.djangoproject.com/en/6.1/releases/6.1/)
+for application-level migrations before upgrading the extra.
+Other extras retain their existing dependency boundaries.
 
 ## CDC runtime compatibility
 
@@ -103,7 +117,7 @@ The canonical development command deliberately composes runtime extras.
 The Distribution workflow builds a wheel from the source distribution and
 installs it in fresh environments for core, HTTP, gRPC, CDC, Django, DRF,
 and FastAPI. It also checks the CDC runtime minima. The full test matrix
-exercises all implemented runtime extras on Linux Python 3.11-3.15.
+exercises all implemented runtime extras on Linux Python 3.12-3.15.
 
 CDC still needs real Salesforce-org validation, including replay cursor
 fidelity. A local distribution passing these checks is not a production
