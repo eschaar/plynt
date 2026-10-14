@@ -203,6 +203,20 @@ published package versions.
 
 No manual version bumping or tagging is needed.
 
+### Merge and publication safeguards
+
+The `main` ruleset requires a pull request, resolved review threads, and the
+current CI checks, including Python 3.12-3.15 and isolated distribution
+installations. No second-person approval is required for the solo-maintainer
+workflow. Force pushes and deletion of `main` remain blocked.
+
+GitHub secret scanning and push protection are enabled. The `pypi`
+environment permits tags matching `*.*.*`, not branches. The Publish workflow
+also validates plain SemVer release tags before building or uploading.
+Configure the PyPI trusted publisher for `eschaar/plynt`, workflow
+`publish.yml`, and environment `pypi`. Publication remains disabled until
+release acceptance is approved and `ENABLE_PYPI_PUBLISH` is enabled.
+
 ### Release naming policy
 
 - Git tags use plain SemVer: `X.Y.Z` (no `v` prefix).
