@@ -295,6 +295,26 @@ and passes its full local gate with the updated dependencies.
 These results are local evidence, not remote CI acceptance. Salesforce
 provider validation and release review remain required.
 
+### Pre-1.0 Version Selection Follow-up
+
+[ADR-0035](../architecture/adr/0035-pre-1-versioning-policy.md) approves
+minor releases for breaking changes during 0.x development.
+The root release-please configuration enables `bump-minor-pre-major`.
+Breaking markers and migration documentation remain unchanged; neither
+the release manifest nor existing tags are edited.
+
+Local pytest verification runs the actual release-please 17.11.2 parser
+and version strategy, from the 17.x line used by release-please-action v5.
+All 11 checks pass: official configuration-schema validation, breaking
+headers and footers before and after 1.0, normal feature/fix increments,
+and the complete Django upgrade commit message.
+With the current manifest at 0.9.5, that commit selects 0.10.0.
+A breaking change at 1.0.0 selects 2.0.0, confirming the exception ends
+automatically at the stable-version boundary.
+
+These checks do not contact GitHub or create a release. Remote release PR
+generation remains the acceptance check for the merged configuration.
+
 ### Acceptance Checklist
 
 1. Review the dependency-refresh follow-up, then obtain successful Check,
