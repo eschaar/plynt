@@ -2,6 +2,56 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.10.0](https://github.com/eschaar/plynth/compare/0.9.5...0.10.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** Python 3.11 and Django versions below 6.1.2 are no longer supported. Upgrade to Python 3.12+ and migrate Django applications first.
+
+### Features
+
+* **grpc:** add experimental Salesforce CDC and harden release gates ([68f912c](https://github.com/eschaar/plynth/commit/68f912ce253ac2d23470b4075797f93fc7613421))
+* **salesforce-cdc:** vendor Salesforce Pub/Sub proto stub ([e03561f](https://github.com/eschaar/plynth/commit/e03561f391944766aca2b9e826f9897d454dbf98))
+
+
+### Fixes
+
+* **ci:** use active Python for Salesforce proto drift check ([dd3fe93](https://github.com/eschaar/plynth/commit/dd3fe9336e10c47c6fa31cbd4c52e216a8056bca))
+* **connectors:** harden Salesforce CDC flow control and bitmap decoding ([74bef3b](https://github.com/eschaar/plynth/commit/74bef3bdeeae281ce0549505338fcfb039c81aed))
+* **salesforce-cdc:** base CDC errors on plynth's BaseError contract ([181623e](https://github.com/eschaar/plynth/commit/181623e278e61cfc7ff71e59a6958d365b43e8ac))
+* **salesforce-cdc:** reconnect and classify real grpc errors correctly ([42d6f2f](https://github.com/eschaar/plynth/commit/42d6f2fa37cce8d8b141b43b1ee62312c360ad6e))
+* **salesforce-cdc:** serialize real requests in vendored pubsub adapter ([cce7205](https://github.com/eschaar/plynth/commit/cce72058fddd8c55e908952391848ffc86fa2190))
+
+
+### Refactoring
+
+* **salesforce-cdc:** move error types to a dedicated errors module ([5acb4c1](https://github.com/eschaar/plynth/commit/5acb4c1fae50c10f0edc500ff92b45e5a181f447))
+
+
+### Documentation
+
+* align architecture and roadmap with experimental hardening ([14596d9](https://github.com/eschaar/plynth/commit/14596d97980dfbcbe06b6459405fe7336cf61737))
+* **salesforce-cdc:** add example to vendored pubsub factory docstring ([4510fcd](https://github.com/eschaar/plynth/commit/4510fcd119849d46560e84804fa07a788a1882d7))
+* **salesforce-cdc:** add k8s deploy guide and rename checkpoint store ([3d63d81](https://github.com/eschaar/plynth/commit/3d63d81c54ca0bab4407cbacd6a9d03945fd2542))
+* **salesforce:** align CDC guides and hardening evidence ([de00000](https://github.com/eschaar/plynth/commit/de00000c0f5bcc5d857c62da173f32edf85297f9))
+
+
+### Maintenance
+
+* **deps:** consolidate Dependabot patch updates ([8d281a1](https://github.com/eschaar/plynth/commit/8d281a17ff3959798af1c452ea74f62a796eab5d))
+* **deps:** refresh compatible runtimes and verification tooling ([5cbc2d6](https://github.com/eschaar/plynth/commit/5cbc2d69c86eeedeead583b940fc541a1c7a092a))
+* **deps:** require Python 3.12 and upgrade Django to 6.1 ([b008423](https://github.com/eschaar/plynth/commit/b0084236a1466f42091c1523080bd360b20f605c))
+* **deps:** upgrade cryptography to 50.0.1 ([5559708](https://github.com/eschaar/plynth/commit/5559708f1db9d24246505bc3741f1abf5176c24d))
+* **deps:** upgrade httpx2 to 2.12.0 ([90858ca](https://github.com/eschaar/plynth/commit/90858ca22a1faa33d97b769c00574702cb99ac60))
+* **deps:** upgrade pydantic to 2.13.5 ([6fcea9b](https://github.com/eschaar/plynth/commit/6fcea9b4cdd0806f982d74ee2bcde876f7d09516))
+* **grpc:** refresh pinned codegen and align runtime minimum ([82cffbd](https://github.com/eschaar/plynth/commit/82cffbdf5610674ade0eb0c5f939d1db01db766d))
+* harden release installations and enforce full coverage ([f78247e](https://github.com/eschaar/plynth/commit/f78247e2918ded6d37f2be0fe42a78e3411985f8))
+* merge main and resolve dependency conflicts ([97f121c](https://github.com/eschaar/plynth/commit/97f121cfe910a3c2b749830df7e4343f85b94ee5))
+* **python:** default to Python 3.14 and standardize local environments ([3153d62](https://github.com/eschaar/plynth/commit/3153d62951897dd2af40f7e8de0fd7ed7b284ac9))
+* **python:** support Python 3.15 and document local pyenv bootstrap ([8c3b2e1](https://github.com/eschaar/plynth/commit/8c3b2e13bf8bf393cd3cc7458394ba21716d70e4))
+* **release:** use minor bumps for pre-1.0 breaking changes ([943a66f](https://github.com/eschaar/plynth/commit/943a66f215c39c135c2a83a7e3cbd5ab571cfa19))
+
 ## [0.9.5](https://github.com/eschaar/plynth/compare/0.9.4...0.9.5) (2026-08-23)
 
 
