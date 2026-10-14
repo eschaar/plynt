@@ -9,8 +9,8 @@ middleware proposals.
 | `Request.timeout` per-request override                       | ADR-0005-A1                                                           | Implemented                                                                 |
 | `CircuitBreakerMiddleware` / `AsyncCircuitBreakerMiddleware` | [ADR-0019](../../architecture/adr/0019-circuit-breaker-middleware.md) | Implemented                                                                 |
 | `RateLimitMiddleware` / `AsyncRateLimitMiddleware`           | [ADR-0020](../../architecture/adr/0020-rate-limit-middleware.md)      | Implemented                                                                 |
-| `TracingMiddleware` (`plynth[otel]`)                         | [ADR-0014](../../architecture/adr/0014-logging.md)                    | Out of scope — `opentelemetry-instrumentation-httpx` covers the common case |
-| `MetricsMiddleware` (`plynth[prometheus]`)                   | [ADR-0014](../../architecture/adr/0014-logging.md)                    | Out of scope — OTel + Prometheus exporter covers the common case            |
+| `TracingMiddleware` (`plynt[otel]`)                          | [ADR-0014](../../architecture/adr/0014-logging.md)                    | Out of scope — `opentelemetry-instrumentation-httpx` covers the common case |
+| `MetricsMiddleware` (`plynt[prometheus]`)                    | [ADR-0014](../../architecture/adr/0014-logging.md)                    | Out of scope — OTel + Prometheus exporter covers the common case            |
 
 Convert remaining idea-stage items to ADRs when the approach is agreed and
 implementation is about to begin.
@@ -26,7 +26,7 @@ installed via the `middlewares=` argument on the transport.
 
 Items are grouped into three tiers based on dependency impact:
 
-- **Tier 1 — Core (no new dependencies):** can be added to `plynth.middleware`
+- **Tier 1 — Core (no new dependencies):** can be added to `plynt.middleware`
   directly.
 - **Tier 3 — Test/dev only:** not for production use.
 
@@ -46,7 +46,7 @@ ______________________________________________________________________
 
 ### `MockMiddleware`
 
-**Problem:** Tests that use plynth today must either mock httpx2 at the
+**Problem:** Tests that use plynt today must either mock httpx2 at the
 transport level or spin up a real server. A `MockMiddleware` that intercepts
 requests and returns pre-configured responses would make unit tests simpler
 and faster.
@@ -54,7 +54,7 @@ and faster.
 **Interface sketch:**
 
 ```python
-from plynth.middleware.mock import MockMiddleware
+from plynt.middleware.mock import MockMiddleware
 
 mock = MockMiddleware()
 mock.register("GET", "/users/1", status=200, json={"id": 1})
@@ -76,7 +76,7 @@ ______________________________________________________________________
 
 ## Relation to existing architecture
 
-All Tier 1 items extend `plynth.middleware` directly and follow the
+All Tier 1 items extend `plynt.middleware` directly and follow the
 `SyncMiddleware` / `AsyncMiddleware` Protocols from ADR-0013. None requires
 changes to `BaseSyncTransport` / `BaseAsyncTransport` or any existing
 abstraction.

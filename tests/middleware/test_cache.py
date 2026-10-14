@@ -1,4 +1,4 @@
-"""Tests for plynth.base.cache and plynth.middleware.cache.
+"""Tests for plynt.base.cache and plynt.middleware.cache.
 
 Cache protocol, CacheMiddleware, CacheBackend._cache_key.
 
@@ -13,16 +13,16 @@ from typing import Any
 
 import pytest
 
-from plynth.base.cache import (
+from plynt.base.cache import (
     CacheBackend,
     SupportsSizeInfo,
     SupportsStats,
     SupportsTTL,
 )
-from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.request import Request
-from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
-from plynth.middleware.cache import (
+from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.request import Request
+from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
+from plynt.middleware.cache import (
     AsyncCacheMiddleware,
     CacheMiddleware,
 )

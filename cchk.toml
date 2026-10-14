@@ -1,4 +1,4 @@
-# Commit and branch naming policy for plynth.
+# Commit and branch naming policy for plynt.
 # Consumed by commit-check-action in the commit quality workflow.
 # See: https://github.com/commit-check/commit-check-action
 

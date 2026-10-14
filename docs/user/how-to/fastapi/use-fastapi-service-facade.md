@@ -1,6 +1,6 @@
-# How to build a FastAPI facade with Plynth
+# How to build a FastAPI facade with Plynt
 
-Use FastAPI for your inbound API contract and plynth for outbound backend
+Use FastAPI for your inbound API contract and plynt for outbound backend
 calls. This pattern is a strong fit for integration services that expose a
 stable service API while orchestrating one or more external systems.
 
@@ -15,7 +15,7 @@ Typical examples:
 Install FastAPI support plus the transport and connector extras you need.
 
 ```bash
-pip install "plynth[fastapi,httpx]"
+pip install "plynt[fastapi,httpx]"
 ```
 
 Add connector-specific extras only when you need connector-specific services.
@@ -28,8 +28,8 @@ policy explicit and testable.
 ```python
 from pydantic_settings import SettingsConfigDict
 
-from plynth.http.auth import OAuth2ClientCredentialsConfig
-from plynth.http.settings import HTTPSettings
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.settings import HTTPSettings
 
 
 class SaaSBackendASettings(HTTPSettings):
@@ -54,15 +54,15 @@ class SaaSBackendBSettings(HTTPSettings):
     model_config = SettingsConfigDict(env_prefix="BACKEND_B_", env_file=".env")
 ```
 
-## Register named transports with `PlynthLifespan`
+## Register named transports with `PlyntLifespan`
 
 Create one named transport per upstream and let FastAPI own the lifecycle.
 
 ```python
 from fastapi import FastAPI
 
-from plynth.adapters.fastapi import PlynthLifespan
-from plynth.http.transport import HttpxAsyncTransport
+from plynt.adapters.fastapi import PlyntLifespan
+from plynt.http.transport import HttpxAsyncTransport
 
 
 def build_backend_a_transport() -> HttpxAsyncTransport:
@@ -74,7 +74,7 @@ def build_backend_b_transport() -> HttpxAsyncTransport:
 
 
 app = FastAPI(
-    lifespan=PlynthLifespan(
+    lifespan=PlyntLifespan(
         {
             "backend_a": build_backend_a_transport,
             "backend_b": build_backend_b_transport,
@@ -83,7 +83,7 @@ app = FastAPI(
 )
 ```
 
-`PlynthLifespan` closes resources using `aclose()` or `close()`, so both async
+`PlyntLifespan` closes resources using `aclose()` or `close()`, so both async
 and sync transport objects can be managed safely.
 
 ## Resolve outbound dependencies with `Depends`
@@ -94,8 +94,8 @@ construction.
 ```python
 from fastapi import Depends
 
-from plynth.adapters.fastapi import get_transport
-from plynth.http.client import AsyncAPIClient
+from plynt.adapters.fastapi import get_transport
+from plynt.http.client import AsyncAPIClient
 
 
 @app.get("/tickets")
@@ -117,8 +117,8 @@ keyword and you only need lightweight dependency wiring.
 ```python
 from fastapi import Depends
 
-from plynth.adapters.fastapi import get_client
-from plynth.http.client import AsyncAPIClient
+from plynt.adapters.fastapi import get_client
+from plynt.http.client import AsyncAPIClient
 
 
 @app.get("/products")
@@ -142,8 +142,8 @@ request-level caching.
 ```python
 from fastapi import Depends
 
-from plynth.adapters.fastapi import get_service
-from plynth.http.client import AsyncAPIClient
+from plynt.adapters.fastapi import get_service
+from plynt.http.client import AsyncAPIClient
 
 
 def build_orders_service(transport: object) -> AsyncAPIClient:
@@ -174,8 +174,8 @@ dependencies on the same transport.
 ```python
 from fastapi import APIRouter, Depends
 
-from plynth.adapters.fastapi import build_service_dependencies
-from plynth.http.client import AsyncAPIClient
+from plynt.adapters.fastapi import build_service_dependencies
+from plynt.http.client import AsyncAPIClient
 
 router = APIRouter(prefix="/orders")
 
@@ -219,7 +219,7 @@ async def get_order_view(
 ## Propagate selected inbound headers
 
 Use header helpers to forward correlation and trace headers from inbound
-FastAPI requests into outbound plynth calls.
+FastAPI requests into outbound plynt calls.
 
 Note: the scoped-transport example below uses protected
 `HttpxAsyncTransport` attributes (`_client`, `_middlewares`) to reuse the
@@ -230,9 +230,9 @@ it can be updated easily if adapter internals evolve.
 ```python
 from fastapi import Depends, Request
 
-from plynth.adapters.fastapi import build_async_request_header_middleware
-from plynth.http.client import AsyncAPIClient
-from plynth.http.transport import HttpxAsyncTransport
+from plynt.adapters.fastapi import build_async_request_header_middleware
+from plynt.http.client import AsyncAPIClient
+from plynt.http.transport import HttpxAsyncTransport
 
 
 def build_scoped_client(
@@ -260,24 +260,24 @@ header_mw = build_async_request_header_middleware(
 )
 ```
 
-## Map plynth exceptions to FastAPI JSON responses
+## Map plynt exceptions to FastAPI JSON responses
 
-Install plynth exception handlers once during app setup.
+Install plynt exception handlers once during app setup.
 
 ```python
 from fastapi import FastAPI
 
-from plynth.adapters.fastapi import install_plynth_exception_handlers
+from plynt.adapters.fastapi import install_plynt_exception_handlers
 
 
 app = FastAPI(lifespan=...)
-install_plynth_exception_handlers(app, include_details=False)
+install_plynt_exception_handlers(app, include_details=False)
 ```
 
 This maps:
 
 1. `HttpStatusError` to its HTTP status code.
-1. plynth `BaseError` subclasses to stable API status codes.
+1. plynt `BaseError` subclasses to stable API status codes.
 1. all mapped errors to safe JSON payloads with `message` and `code`.
 
 ## Build one orchestration endpoint over multiple backends
@@ -287,8 +287,8 @@ Use multiple named transports when one route combines upstream calls.
 ```python
 from fastapi import Depends
 
-from plynth.adapters.fastapi import get_transport
-from plynth.http.client import AsyncAPIClient
+from plynt.adapters.fastapi import get_transport
+from plynt.http.client import AsyncAPIClient
 
 
 @app.get("/orders/{order_id}")
@@ -321,7 +321,7 @@ async def get_order_view(
     }
 ```
 
-This keeps FastAPI responsible for inbound HTTP behavior while plynth handles
+This keeps FastAPI responsible for inbound HTTP behavior while plynt handles
 outbound transport and middleware semantics.
 
 If you use a connector-specific facade, apply the
@@ -330,7 +330,7 @@ same wiring pattern and swap `AsyncAPIClient` for the connector facade layer.
 ## Sync and async guidance
 
 FastAPI supports both sync and async route handlers. Choose the matching
-plynth client type:
+plynt client type:
 
 1. Async route handlers (`async def`) should use async transports and clients.
 1. Sync route handlers (`def`) should use sync transports and clients.
@@ -342,8 +342,8 @@ plynth client type:
 ```python
 from fastapi import Depends
 
-from plynth.adapters.fastapi import get_client
-from plynth.http.client import AsyncAPIClient
+from plynt.adapters.fastapi import get_client
+from plynt.http.client import AsyncAPIClient
 
 
 @app.get("/accounts")
@@ -366,8 +366,8 @@ async def list_accounts(
 ```python
 from fastapi import Depends
 
-from plynth.adapters.fastapi import get_client
-from plynth.http.client import SyncAPIClient
+from plynt.adapters.fastapi import get_client
+from plynt.http.client import SyncAPIClient
 
 
 @app.get("/health/upstream")
@@ -399,7 +399,7 @@ Use this matrix as the current support boundary for framework adapters.
 
 For SaaS-backend facade services:
 
-1. Keep plynth settings, clients, and service factories in one module.
+1. Keep plynt settings, clients, and service factories in one module.
 1. Keep route handlers thin: validate input, call orchestration service,
    return mapped response.
 1. Keep business mapping logic outside route functions for testability.

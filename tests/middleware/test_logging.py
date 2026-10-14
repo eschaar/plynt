@@ -1,4 +1,4 @@
-"""Tests for plynth.middleware.logging (LoggingMiddleware, AsyncLoggingMiddleware)."""
+"""Tests for plynt.middleware.logging (LoggingMiddleware, AsyncLoggingMiddleware)."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ import logging
 
 import pytest
 
-from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.request import Request
-from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
-from plynth.middleware.logging import AsyncLoggingMiddleware, LoggingMiddleware
+from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.request import Request
+from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
+from plynt.middleware.logging import AsyncLoggingMiddleware, LoggingMiddleware
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -66,7 +66,7 @@ class TestLoggingMiddleware:
 
     def test_logs_request_at_info_level(self, caplog: pytest.LogCaptureFixture) -> None:
         """Validate logs request at info level."""
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             LoggingMiddleware().handle(_REQUEST, _noop)
 
         request_records = [r for r in caplog.records if "-->" in r.message]
@@ -78,7 +78,7 @@ class TestLoggingMiddleware:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Validate logs response at info level."""
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             LoggingMiddleware().handle(_REQUEST, _noop)
 
         response_records = [r for r in caplog.records if "<--" in r.message]
@@ -89,7 +89,7 @@ class TestLoggingMiddleware:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Validate response log includes elapsed time."""
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             LoggingMiddleware().handle(_REQUEST, _noop)
 
         response_message = next(r.message for r in caplog.records if "<--" in r.message)
@@ -99,7 +99,7 @@ class TestLoggingMiddleware:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Validate request record has ecs extra fields."""
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             LoggingMiddleware().handle(_REQUEST, _noop)
 
         rec = next(r for r in caplog.records if "-->" in r.message)
@@ -116,7 +116,7 @@ class TestLoggingMiddleware:
             url="https://example.com/api?q=ok&access_token=secret",
         )
 
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             LoggingMiddleware().handle(request, _noop)
 
         request_record = next(r for r in caplog.records if "-->" in r.message)
@@ -131,7 +131,7 @@ class TestLoggingMiddleware:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Validate response record has ecs extra fields."""
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             LoggingMiddleware().handle(_REQUEST, _noop)
 
         rec = next(r for r in caplog.records if "<--" in r.message)
@@ -166,7 +166,7 @@ class TestLoggingMiddleware:
 
     def test_custom_level_is_used(self, caplog: pytest.LogCaptureFixture) -> None:
         """Validate custom level is used."""
-        with caplog.at_level(logging.DEBUG, logger="plynth.http"):
+        with caplog.at_level(logging.DEBUG, logger="plynt.http"):
             LoggingMiddleware(level=logging.DEBUG).handle(_REQUEST, _noop)
 
         assert all(r.levelno == logging.DEBUG for r in caplog.records)
@@ -175,7 +175,7 @@ class TestLoggingMiddleware:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Validate request logged before response."""
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             LoggingMiddleware().handle(_REQUEST, _noop)
 
         messages = [r.message for r in caplog.records]
@@ -189,7 +189,7 @@ class TestLoggingMiddleware:
         """Validate streaming responses are explicitly marked in logs."""
         streaming_response = StreamingResponse(status_code=200, _raw=object())
 
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             LoggingMiddleware().handle(_REQUEST, lambda _r: streaming_response)
 
         response_record = next(r for r in caplog.records if "<--" in r.message)
@@ -244,7 +244,7 @@ class TestAsyncLoggingMiddleware:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Validate logs request and response."""
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             await AsyncLoggingMiddleware().handle(_REQUEST, _async_noop)
 
         assert any("-->" in r.message for r in caplog.records)
@@ -255,7 +255,7 @@ class TestAsyncLoggingMiddleware:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Validate response log includes elapsed time."""
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             await AsyncLoggingMiddleware().handle(_REQUEST, _async_noop)
 
         response_message = next(r.message for r in caplog.records if "<--" in r.message)
@@ -271,7 +271,7 @@ class TestAsyncLoggingMiddleware:
             url="https://example.com/api?q=ok&token=secret",
         )
 
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             await AsyncLoggingMiddleware().handle(request, _async_noop)
 
         request_record = next(r for r in caplog.records if "-->" in r.message)
@@ -318,7 +318,7 @@ class TestAsyncLoggingMiddleware:
             """Return streaming response for async middleware test."""
             return streaming_response
 
-        with caplog.at_level(logging.INFO, logger="plynth.http"):
+        with caplog.at_level(logging.INFO, logger="plynt.http"):
             await AsyncLoggingMiddleware().handle(_REQUEST, _return_streaming)
 
         response_record = next(r for r in caplog.records if "<--" in r.message)

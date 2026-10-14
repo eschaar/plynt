@@ -10,7 +10,7 @@ from typing import Any
 import fastavro
 import pytest
 
-from plynth.connectors.salesforce.cdc import avro
+from plynt.connectors.salesforce.cdc import avro
 
 
 class _FakeFastAvroRuntime:

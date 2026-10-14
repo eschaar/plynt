@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import pytest
 
-from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.policies import CircuitBreakerPolicy
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.middleware.circuit_breaker import (
+from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.policies import CircuitBreakerPolicy
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.middleware.circuit_breaker import (
     AsyncCircuitBreakerMiddleware,
     CircuitBreakerMiddleware,
     CircuitBreakerOpenError,
@@ -50,7 +50,7 @@ class TestCircuitBreakerMiddleware:
         """Validate breaker opens after configured consecutive failures."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 
@@ -71,7 +71,7 @@ class TestCircuitBreakerMiddleware:
         """Validate half-open probe closes breaker after successful call."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 
@@ -101,7 +101,7 @@ class TestCircuitBreakerMiddleware:
         """Validate configured failure status code opens breaker."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 
@@ -180,7 +180,7 @@ class TestCircuitBreakerMiddleware:
         """Validate a failing probe in half-open transitions circuit back to open."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 
@@ -206,7 +206,7 @@ class TestCircuitBreakerMiddleware:
         """Validate half-open state rejects calls beyond max_calls limit."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 
@@ -244,7 +244,7 @@ class TestAsyncCircuitBreakerMiddleware:
         """Validate async breaker opens after configured failures."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 
@@ -269,7 +269,7 @@ class TestAsyncCircuitBreakerMiddleware:
         """Validate async half-open probe closes breaker on success."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 
@@ -294,7 +294,7 @@ class TestAsyncCircuitBreakerMiddleware:
         """Validate async breaker opens on configured failure status."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 
@@ -318,7 +318,7 @@ class TestAsyncCircuitBreakerMiddleware:
         """Validate a failing async probe in half-open transitions circuit to open."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 
@@ -348,7 +348,7 @@ class TestAsyncCircuitBreakerMiddleware:
         """Validate async half-open state rejects calls beyond max_calls limit."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.circuit_breaker.time.monotonic",
+            "plynt.middleware.circuit_breaker.time.monotonic",
             clock.monotonic,
         )
 

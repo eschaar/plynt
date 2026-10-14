@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from plynth.http.client import APIClient, AsyncAPIClient
+from plynt.http.client import APIClient, AsyncAPIClient
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 from tests.connectors.salesforce.conftest import DUMMY_INSTANCE_URL
 

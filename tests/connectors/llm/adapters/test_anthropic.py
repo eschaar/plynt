@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-from plynth.base.response import StreamingResponse
-from plynth.connectors.llm.adapters.anthropic import (
+from plynt.base.response import StreamingResponse
+from plynt.connectors.llm.adapters.anthropic import (
     AnthropicMessagesCompletionAdapter,
     AnthropicMessagesRequestAdapter,
     AnthropicMessagesStreamAdapter,
@@ -19,14 +19,14 @@ from plynth.connectors.llm.adapters.anthropic import (
     _AnthropicStreamChunkFactory,
     build_anthropic_messages_adapter_set,
 )
-from plynth.connectors.llm.models import (
+from plynt.connectors.llm.models import (
     LLMExecutionOptions,
     LLMGenerateRequest,
     LLMMessage,
     LLMToolDefinition,
 )
-from plynth.connectors.llm.service import AsyncLLMService, LLMService
-from plynth.http.client import APIClient, AsyncAPIClient
+from plynt.connectors.llm.service import AsyncLLMService, LLMService
+from plynt.http.client import APIClient, AsyncAPIClient
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 
 _DUMMY_BASE_URL = "https://llm.example.com"

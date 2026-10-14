@@ -7,8 +7,8 @@ that wraps a group of related Salesforce REST API endpoints.
 ## Accessing services
 
 ```python
-from plynth.connectors.salesforce.client import SalesforceAPIClient
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.connectors.salesforce.client import SalesforceAPIClient
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
 
 client = SalesforceAPIClient(auth=auth, transport=transport)
 sf = SalesforceAPIFacade(client)
@@ -221,7 +221,7 @@ Pre-built lookup services for common internal object types. Create via the
 factory:
 
 ```python
-from plynth.connectors.salesforce.lookup.types import LookupType
+from plynt.connectors.salesforce.lookup.types import LookupType
 
 user_svc = sf.lookup(LookupType.USER)
 ```

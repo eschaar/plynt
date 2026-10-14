@@ -9,22 +9,22 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.models import (
+from plynt.connectors.salesforce.models import (
     SObjectCreateResult,
     SObjectPayload,
 )
-from plynth.connectors.salesforce.renderer import SalesforceRenderer
-from plynth.connectors.salesforce.sobject import (
+from plynt.connectors.salesforce.renderer import SalesforceRenderer
+from plynt.connectors.salesforce.sobject import (
     DEFAULT_API_VERSION,
     AsyncSalesforceObjectService,
     SalesforceObjectService,
 )
-from plynth.http.client import APIClient, AsyncAPIClient
-from plynth.http.renderer import JSONRenderer
+from plynt.http.client import APIClient, AsyncAPIClient
+from plynt.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 
 BASE_URL = "https://myorg.my.salesforce.com"

@@ -19,13 +19,13 @@ from pathlib import Path
 from _demo import run_demo
 from pydantic_settings import SettingsConfigDict
 
-from plynth.connectors.salesforce.auth import (
+from plynt.connectors.salesforce.auth import (
     SalesforceClientCredentialsAuthMiddleware,
 )
-from plynth.connectors.salesforce.client import SalesforceAPIClient
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
-from plynth.connectors.salesforce.settings import SalesforceSettings
-from plynth.http.transport import HttpxSyncTransport
+from plynt.connectors.salesforce.client import SalesforceAPIClient
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.connectors.salesforce.settings import SalesforceSettings
+from plynt.http.transport import HttpxSyncTransport
 
 
 class _Settings(SalesforceSettings):

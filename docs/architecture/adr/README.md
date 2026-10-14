@@ -1,10 +1,10 @@
 # Architecture ADR Index
 
-This index lists architecture decision records (ADRs) for plynth.
+This index lists architecture decision records (ADRs) for Plynt.
 
 ## Status Summary
 
-- Accepted: 35
+- Accepted: 36
 - Proposed: 0
 
 ## ADR List
@@ -48,6 +48,7 @@ This index lists architecture decision records (ADRs) for plynth.
 | [ADR-0033](0033-python-315-support-and-local-pyenv.md)              | Python Support and Local pyenv Bootstrap          | Accepted |
 | [ADR-0034](0034-django-6-support.md)                                | Django 6.x Support and Python 3.12 Minimum        | Accepted |
 | [ADR-0035](0035-pre-1-versioning-policy.md)                         | Pre-1.0 Versioning Policy                         | Accepted |
+| [ADR-0036](0036-project-and-package-rebrand-to-plynt.md)            | Rebrand the Project and Python Package to Plynt   | Accepted |
 
 <!-- markdownlint-enable MD060 -->
 
@@ -61,4 +62,4 @@ Add an ADR for changes that affect:
 - middleware execution semantics,
 - installation extras or optional-framework strategy.
 
-Use the next sequential number (currently: `0036`).
+Use the next sequential number (currently: `0037`).

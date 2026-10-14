@@ -2,7 +2,7 @@
 
 This tutorial builds a complete connector for a fictional Issue Tracker API
 from scratch: settings, auth middleware, service class, and a facade.
-By the end you will have a reusable package that follows Plynth's connector
+By the end you will have a reusable package that follows Plynt's connector
 conventions.
 
 ## What we're building
@@ -20,8 +20,8 @@ environment.
 
 ```python
 # connector/settings.py
-from plynth.http.settings import ApiSettings
-from plynth.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.settings import ApiSettings
+from plynt.http.auth import OAuth2ClientCredentialsConfig
 from pydantic_settings import SettingsConfigDict
 
 
@@ -56,7 +56,7 @@ class IssueTrackerSettings(ApiSettings):
         )
 ```
 
-`ApiSettings` (from `plynth.http.settings`) provides `base_url`, timeout,
+`ApiSettings` (from `plynt.http.settings`) provides `base_url`, timeout,
 and proxy fields out of the box. Override `auth` to enable authentication.
 
 ## Step 2 — Define domain models
@@ -80,7 +80,7 @@ Keep models as plain dataclasses or Pydantic models — no HTTP logic here.
 
 ```python
 # connector/service.py
-from plynth.http.service import APIService
+from plynt.http.service import APIService
 from connector.models import Issue
 
 
@@ -123,7 +123,7 @@ convenient when a connector has many services.
 
 ```python
 # connector/facade.py
-from plynth.http.client import APIClient
+from plynt.http.client import APIClient
 from connector.service import IssueService
 
 
@@ -141,8 +141,8 @@ class IssueTrackerFacade:
 
 ```python
 # main.py
-from plynth.http.transport import HttpxSyncTransport
-from plynth.http.client import APIClient
+from plynt.http.transport import HttpxSyncTransport
+from plynt.http.client import APIClient
 from connector.settings import IssueTrackerSettings
 from connector.facade import IssueTrackerFacade
 

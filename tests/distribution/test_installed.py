@@ -1,7 +1,7 @@
 """Smoke-test installed distributions without importing repository fixtures
 
 CI runs this file with ``--noconftest --import-mode=importlib -c /dev/null``.
-``PLYNTH_WHEEL_PROFILE`` selects a clean installation profile; when absent,
+``PLYNT_WHEEL_PROFILE`` selects a clean installation profile; when absent,
 the normal full suite exercises every implemented optional integration.
 """
 
@@ -17,15 +17,15 @@ from pathlib import Path
 
 import pytest
 
-_PROFILE: str = os.environ.get("PLYNTH_WHEEL_PROFILE", "full")
+_PROFILE: str = os.environ.get("PLYNT_WHEEL_PROFILE", "full")
 _MODULES: dict[str, tuple[str, ...]] = {
-    "core": ("plynth.base", "plynth.http", "plynth.middleware", "plynth.cache"),
-    "httpx": ("plynth.http.transport", "plynth.connectors.llm"),
-    "grpc": ("plynth.grpc",),
-    "cdc": ("plynth.connectors.salesforce.cdc",),
-    "django": ("plynth.adapters.django",),
-    "drf": ("plynth.adapters.django.drf",),
-    "fastapi": ("plynth.adapters.fastapi",),
+    "core": ("plynt.base", "plynt.http", "plynt.middleware", "plynt.cache"),
+    "httpx": ("plynt.http.transport", "plynt.connectors.llm"),
+    "grpc": ("plynt.grpc",),
+    "cdc": ("plynt.connectors.salesforce.cdc",),
+    "django": ("plynt.adapters.django",),
+    "drf": ("plynt.adapters.django.drf",),
+    "fastapi": ("plynt.adapters.fastapi",),
 }
 _SELECTED = (
     tuple(_MODULES)
@@ -43,7 +43,7 @@ class TestInstalledDistribution:
     def test_public_modules_import(self, profile: str) -> None:
         for name in _MODULES[profile]:
             module = importlib.import_module(name)
-            if "PLYNTH_WHEEL_PROFILE" in os.environ:
+            if "PLYNT_WHEEL_PROFILE" in os.environ:
                 assert module.__file__ is not None
                 assert (
                     Path(module.__file__)
@@ -52,7 +52,7 @@ class TestInstalledDistribution:
                 ), f"{name} was imported from the checkout rather than the wheel"
 
     def test_core_models_work(self) -> None:
-        from plynth.base import Request, Response
+        from plynt.base import Request, Response
 
         request = Request(method="GET", url="https://example.invalid/items")
         response = Response(status_code=200, content=b'{"ok":true}')
@@ -61,11 +61,11 @@ class TestInstalledDistribution:
         assert response.content == b'{"ok":true}'
 
     def test_declared_extras_are_complete(self) -> None:
-        package = metadata.metadata("plynth")
+        package = metadata.metadata("plynt")
         extras = set(package.get_all("Provides-Extra") or [])
 
         assert {"httpx", "grpc", "salesforce", "django", "drf", "fastapi"} <= extras
-        requirements = metadata.requires("plynth") or []
+        requirements = metadata.requires("plynt") or []
         assert any(
             requirement.startswith("fastavro")
             and 'extra == "salesforce"' in requirement
@@ -73,7 +73,7 @@ class TestInstalledDistribution:
         )
 
     def test_declared_python_support_matches_contract(self) -> None:
-        package = metadata.metadata("plynth")
+        package = metadata.metadata("plynt")
 
         assert package["Requires-Python"] == ">=3.12"
         classifiers = set(package.get_all("Classifier") or [])
@@ -85,7 +85,7 @@ class TestInstalledDistribution:
 
     @pytest.mark.parametrize("extra", ("django", "drf"))
     def test_django_extras_require_supported_django(self, extra: str) -> None:
-        requirements = metadata.requires("plynth") or []
+        requirements = metadata.requires("plynt") or []
 
         assert any(
             requirement.startswith("django")
@@ -96,8 +96,8 @@ class TestInstalledDistribution:
         )
 
     def test_sync_http_client_uses_caller_supplied_transport(self) -> None:
-        from plynth.base import Request, Response, SyncTransport
-        from plynth.http import HTTPClient
+        from plynt.base import Request, Response, SyncTransport
+        from plynt.http import HTTPClient
 
         class CustomTransport(SyncTransport):
             def send(self, request: Request) -> Response:
@@ -107,8 +107,8 @@ class TestInstalledDistribution:
         assert client.get("/items").content == b"https://example.invalid/items"
 
     def test_async_http_client_uses_caller_supplied_transport(self) -> None:
-        from plynth.base import AsyncTransport, Request, Response
-        from plynth.http import AsyncHTTPClient
+        from plynt.base import AsyncTransport, Request, Response
+        from plynt.http import AsyncHTTPClient
 
         class CustomTransport(AsyncTransport):
             async def send(self, request: Request) -> Response:
@@ -119,7 +119,7 @@ class TestInstalledDistribution:
         assert response.content == b"https://example.invalid/items"
 
     def test_isolated_dependencies_match_profile(self) -> None:
-        if "PLYNTH_WHEEL_PROFILE" in os.environ:
+        if "PLYNT_WHEEL_PROFILE" in os.environ:
             assert find_spec("grpc_tools") is None
             assert find_spec("setuptools") is None
         if _PROFILE == "core":
@@ -136,14 +136,14 @@ class TestInstalledDistribution:
             assert _PROFILE in _MODULES or _PROFILE == "full"
 
     def test_http_backend_construction_boundary(self) -> None:
-        from plynth.http import HttpxAsyncTransport, HttpxSyncTransport
-        from plynth.http.settings import HTTPSettings
+        from plynt.http import HttpxAsyncTransport, HttpxSyncTransport
+        from plynt.http.settings import HTTPSettings
 
         if find_spec("httpx2") is None:
             for transport_type in (HttpxSyncTransport, HttpxAsyncTransport):
-                with pytest.raises(ImportError, match=r"plynth\[httpx\]"):
+                with pytest.raises(ImportError, match=r"plynt\[httpx\]"):
                     transport_type()
-                with pytest.raises(ImportError, match=r"plynth\[httpx\]"):
+                with pytest.raises(ImportError, match=r"plynt\[httpx\]"):
                     transport_type.from_settings(HTTPSettings())
         else:
             with HttpxSyncTransport.from_settings(HTTPSettings()) as transport:
@@ -152,8 +152,8 @@ class TestInstalledDistribution:
 
     @pytest.mark.parametrize("profile", ("cdc",) if _PROFILE in {"cdc", "full"} else ())
     def test_cdc_messages_and_real_avro_decoder_work(self, profile: str) -> None:
-        from plynth.connectors.salesforce.cdc import AvroPayloadDecoder
-        from plynth.connectors.salesforce.cdc._proto import pubsub_api_pb2
+        from plynt.connectors.salesforce.cdc import AvroPayloadDecoder
+        from plynt.connectors.salesforce.cdc._proto import pubsub_api_pb2
 
         request = pubsub_api_pb2.FetchRequest(
             topic_name="/data/AccountChangeEvent", num_requested=1
@@ -165,7 +165,7 @@ class TestInstalledDistribution:
             '"fields":[{"name":"Name","type":"string"}]}'
         )
         assert AvroPayloadDecoder().decode(schema, b"\x06Ada") == {"Name": "Ada"}
-        proto = resources.files("plynth.connectors.salesforce.cdc._proto")
+        proto = resources.files("plynt.connectors.salesforce.cdc._proto")
         assert "service PubSub" in proto.joinpath("pubsub_api.proto").read_text()
         assert proto.joinpath("SOURCE.md").is_file()
 
@@ -173,8 +173,8 @@ class TestInstalledDistribution:
 
     @staticmethod
     async def _construct_and_close_async_transport() -> None:
-        from plynth.http import HttpxAsyncTransport
-        from plynth.http.settings import HTTPSettings
+        from plynt.http import HttpxAsyncTransport
+        from plynt.http.settings import HTTPSettings
 
         async with HttpxAsyncTransport.from_settings(HTTPSettings()) as transport:
             assert isinstance(transport, HttpxAsyncTransport)
@@ -183,7 +183,7 @@ class TestInstalledDistribution:
     async def _build_adapter() -> None:
         import grpc
 
-        from plynth.connectors.salesforce.cdc import create_vendored_pubsub_adapter
+        from plynt.connectors.salesforce.cdc import create_vendored_pubsub_adapter
 
         channel = grpc.aio.insecure_channel("127.0.0.1:1")
         try:

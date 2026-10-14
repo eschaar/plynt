@@ -10,13 +10,13 @@ Run this from a Django-aware runtime (for example `manage.py shell`) so
 ```python
 from __future__ import annotations
 
-from plynth.adapters.django.transport import (
+from plynt.adapters.django.transport import (
     async_transport_from_django_settings,
     transport_from_django_settings,
 )
-from plynth.http.auth import OAuth2ClientCredentialsConfig
-from plynth.http.settings import HTTPSettings
-from plynth.middleware.logging import AsyncLoggingMiddleware, LoggingMiddleware
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.settings import HTTPSettings
+from plynt.middleware.logging import AsyncLoggingMiddleware, LoggingMiddleware
 
 
 class ExternalAPISettings(HTTPSettings):
@@ -43,8 +43,8 @@ def build_transport() -> object:
     return transport_from_django_settings(
         "EXTERNAL_API",
         ExternalAPISettings,
-        response_cache_alias="plynth_responses",
-        auth_cache_alias="plynth_tokens",
+        response_cache_alias="plynt_responses",
+        auth_cache_alias="plynt_tokens",
         middlewares=[LoggingMiddleware()],
     )
 
@@ -54,8 +54,8 @@ def build_async_transport() -> object:
     return async_transport_from_django_settings(
         "EXTERNAL_API",
         ExternalAPISettings,
-        response_cache_alias="plynth_responses",
-        auth_cache_alias="plynth_tokens",
+        response_cache_alias="plynt_responses",
+        auth_cache_alias="plynt_tokens",
         middlewares=[AsyncLoggingMiddleware()],
     )
 ```

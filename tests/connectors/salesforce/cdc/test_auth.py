@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from plynth.connectors.salesforce.cdc.auth import AsyncSalesforceCDCAuthMetadataProvider
+from plynt.connectors.salesforce.cdc.auth import AsyncSalesforceCDCAuthMetadataProvider
 
 
 class _FakeAsyncOAuthAuth:

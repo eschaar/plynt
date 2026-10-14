@@ -1,19 +1,19 @@
 # DRF exception handler setup example
 
 Use this snippet to enable safe, consistent DRF error responses for unhandled
-plynth exceptions.
+plynt exceptions.
 
 ```python
 # settings.py
 REST_FRAMEWORK = {
-    "EXCEPTION_HANDLER": "plynth.adapters.django.drf.errors.plynth_exception_handler",
+    "EXCEPTION_HANDLER": "plynt.adapters.django.drf.errors.plynt_exception_handler",
 }
 ```
 
 Optional view-level include-details toggle example:
 
 ```python
-from plynth.adapters.django.drf.errors import map_exception_to_drf_response
+from plynt.adapters.django.drf.errors import map_exception_to_drf_response
 
 
 def custom_exception_handler(exc, context):

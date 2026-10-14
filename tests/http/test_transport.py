@@ -13,23 +13,23 @@ from typing import Any
 import httpx2 as httpx
 import pytest
 
-import plynth.http.transport as transport_module
-from plynth.base.middleware import (
+import plynt.http.transport as transport_module
+from plynt.base.middleware import (
     AsyncMiddleware,
     NextAsyncHandler,
     NextSyncHandler,
     SyncMiddleware,
 )
-from plynth.base.request import Request
-from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
-from plynth.base.transport import BaseAsyncTransport, BaseSyncTransport
-from plynth.cache import DummyCache, DummyCacheConfig, LocMemCache, LocMemCacheConfig
-from plynth.http.auth import (
+from plynt.base.request import Request
+from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
+from plynt.base.transport import BaseAsyncTransport, BaseSyncTransport
+from plynt.cache import DummyCache, DummyCacheConfig, LocMemCache, LocMemCacheConfig
+from plynt.http.auth import (
     BasicAuthConfig,
     BearerAuthConfig,
     OAuth2ClientCredentialsConfig,
 )
-from plynth.http.middleware.auth import (
+from plynt.http.middleware.auth import (
     AsyncBasicAuthMiddleware,
     AsyncBearerTokenAuthMiddleware,
     AsyncOAuth2ClientCredentialsMiddleware,
@@ -37,12 +37,12 @@ from plynth.http.middleware.auth import (
     BearerTokenAuthMiddleware,
     OAuth2AuthMiddleware,
 )
-from plynth.http.policies import HttpRetryPolicy
-from plynth.http.response import HttpResponse
-from plynth.http.settings import HTTPSettings
-from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport, scrub_headers
-from plynth.middleware.cache import AsyncCacheMiddleware, CacheMiddleware
-from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
+from plynt.http.policies import HttpRetryPolicy
+from plynt.http.response import HttpResponse
+from plynt.http.settings import HTTPSettings
+from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport, scrub_headers
+from plynt.middleware.cache import AsyncCacheMiddleware, CacheMiddleware
+from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
 from tests.http.conftest import (
     DUMMY_BASIC_PASSWORD,
     DUMMY_BASIC_USERNAME,
@@ -133,7 +133,7 @@ class TestHttpxSyncTransport:
         error = ModuleNotFoundError("No module named 'httpx2'", name="httpx2")
         monkeypatch.setattr(transport_module, "_HTTPX_IMPORT_ERROR", error)
 
-        with pytest.raises(ImportError, match=r"plynth\[httpx\]") as raised:
+        with pytest.raises(ImportError, match=r"plynt\[httpx\]") as raised:
             transport_type()
 
         assert raised.value.__cause__ is error
@@ -1066,7 +1066,7 @@ class TestSyncTransportLogBodies:
         client = _make_sync_client(_mock_response(200, b'{"ok": true}'))
         transport = HttpxSyncTransport(client=client, log_bodies=False)
 
-        with caplog.at_level("DEBUG", logger="plynth.http.transport"):
+        with caplog.at_level("DEBUG", logger="plynt.http.transport"):
             transport.send(Request(method="GET", url="https://example.com"))
 
         body_records = [r for r in caplog.records if "body" in r.message.lower()]
@@ -1079,7 +1079,7 @@ class TestSyncTransportLogBodies:
         client = _make_sync_client(_mock_response(200, b'{"ok": true}'))
         transport = HttpxSyncTransport(client=client, log_bodies=True)
 
-        with caplog.at_level("DEBUG", logger="plynth.http.transport"):
+        with caplog.at_level("DEBUG", logger="plynt.http.transport"):
             transport.send(
                 Request(method="POST", url="https://example.com", content=b"hello")
             )
@@ -1095,7 +1095,7 @@ class TestSyncTransportLogBodies:
         client = _make_sync_client(_mock_response(200, b"{}"))
         transport = HttpxSyncTransport(client=client, log_bodies=True)
 
-        with caplog.at_level("DEBUG", logger="plynth.http.transport"):
+        with caplog.at_level("DEBUG", logger="plynt.http.transport"):
             transport.send(
                 Request(
                     method="POST",
@@ -1119,7 +1119,7 @@ class TestSyncTransportLogBodies:
         client = _make_sync_client(_mock_response(200, b"{}"))
         transport = HttpxSyncTransport(client=client, log_bodies=True)
 
-        with caplog.at_level("DEBUG", logger="plynth.http.transport"):
+        with caplog.at_level("DEBUG", logger="plynt.http.transport"):
             transport.send(
                 Request(
                     method="GET",
@@ -1136,7 +1136,7 @@ class TestSyncTransportLogBodies:
         client = _make_sync_client(_mock_response(200, b"{}"))
         transport = HttpxSyncTransport(client=client, log_bodies=True)
 
-        with caplog.at_level("DEBUG", logger="plynth.http.transport"):
+        with caplog.at_level("DEBUG", logger="plynt.http.transport"):
             transport.send(Request(method="GET", url="https://example.com"))
 
         body_records = [r for r in caplog.records if getattr(r, "body_logging", False)]
@@ -1183,7 +1183,7 @@ class TestAsyncTransportLogBodies:
         client = _make_async_client(_mock_response(200, b'{"ok": true}'))
         transport = HttpxAsyncTransport(client=client, log_bodies=False)
 
-        with caplog.at_level("DEBUG", logger="plynth.http.transport"):
+        with caplog.at_level("DEBUG", logger="plynt.http.transport"):
             await transport.send(Request(method="GET", url="https://example.com"))
 
         body_records = [r for r in caplog.records if "body" in r.message.lower()]
@@ -1196,7 +1196,7 @@ class TestAsyncTransportLogBodies:
         client = _make_async_client(_mock_response(200, b'{"ok": true}'))
         transport = HttpxAsyncTransport(client=client, log_bodies=True)
 
-        with caplog.at_level("DEBUG", logger="plynth.http.transport"):
+        with caplog.at_level("DEBUG", logger="plynt.http.transport"):
             await transport.send(
                 Request(method="POST", url="https://example.com", content=b"hello")
             )
@@ -1212,7 +1212,7 @@ class TestAsyncTransportLogBodies:
         client = _make_async_client(_mock_response(200, b"{}"))
         transport = HttpxAsyncTransport(client=client, log_bodies=True)
 
-        with caplog.at_level("DEBUG", logger="plynth.http.transport"):
+        with caplog.at_level("DEBUG", logger="plynt.http.transport"):
             await transport.send(
                 Request(
                     method="POST",
@@ -1236,7 +1236,7 @@ class TestAsyncTransportLogBodies:
         client = _make_async_client(_mock_response(200, b"{}"))
         transport = HttpxAsyncTransport(client=client, log_bodies=True)
 
-        with caplog.at_level("DEBUG", logger="plynth.http.transport"):
+        with caplog.at_level("DEBUG", logger="plynt.http.transport"):
             await transport.send(
                 Request(
                     method="GET",

@@ -8,11 +8,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.settings import SalesforceSettings
+from plynt.connectors.salesforce.settings import SalesforceSettings
 
 
 def configure_logging() -> None:

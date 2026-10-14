@@ -1,18 +1,18 @@
-# Plynth
+# Plynt
 
-Plynth is a modular, framework-agnostic Python library for building external API clients and services.
+Plynt is a modular, framework-agnostic Python library for building external API clients and services.
 
-The name *plynth* is inspired by a **plinth** in architecture:
+The name *plynt* is inspired by a **plinth** in architecture:
 
 > the solid base a structure stands on.
 
-Plynth aims to be exactly that - a stable, minimal layer for long-lived, maintainable integrations with external HTTP APIs.
+Plynt aims to be exactly that - a stable, minimal layer for long-lived, maintainable integrations with external HTTP APIs.
 
 ______________________________________________________________________
 
 ## Project Goal
 
-Plynth provides a reusable foundation for creating Python clients and services
+Plynt provides a reusable foundation for creating Python clients and services
 that communicate with external HTTP APIs. It is designed to be:
 
 - **Framework-agnostic** (works with FastAPI, Django, Starlette, or stand-alone)
@@ -28,30 +28,30 @@ for the conceptual layers.
 
 ______________________________________________________________________
 
-## What Plynth Is
+## What Plynt Is
 
-Plynth provides core building blocks for API clients and service layers, focusing on:
+Plynt provides core building blocks for API clients and service layers, focusing on:
 
 - clear structure
 - predictable behavior
 - minimal magic
 - explicit configuration
 
-Plynth is not a web framework and does not replace tools like FastAPI, Flask,
+Plynt is not a web framework and does not replace tools like FastAPI, Flask,
 or Django. Instead, it complements them as a foundation for external service integration.
 
 ______________________________________________________________________
 
-## What Plynth Is Not
+## What Plynt Is Not
 
-Plynth intentionally avoids:
+Plynt intentionally avoids:
 
 - tight coupling to any web framework
 - heavy abstractions
 - hidden lifecycle behavior
 - opinionated application structure
 
-If you want a batteries-included framework, Plynth is probably not what you’re looking for.
+If you want a batteries-included framework, Plynt is probably not what you’re looking for.
 
 ______________________________________________________________________
 
@@ -83,7 +83,7 @@ ______________________________________________________________________
 
 ## Project Status
 
-Plynth is in the 0.x release line. Documented public APIs follow the
+Plynt is in the 0.x release line. Documented public APIs follow the
 compatibility and deprecation policy in
 [ADR-0027](docs/architecture/adr/0027-public-api-compatibility-and-deprecation-policy.md).
 Experimental capabilities are explicitly identified; Salesforce CDC still
@@ -98,14 +98,14 @@ Other environments are outside the
 current tested support contract.
 
 ```bash
-pip install plynth
+pip install plynt
 ```
 
 Optional extras:
 
 ```bash
-pip install "plynth[httpx]"       # httpx2 transport backend
-pip install "plynth[salesforce]"  # Salesforce REST connector
+pip install "plynt[httpx]"       # httpx2 transport backend
+pip install "plynt[salesforce]"  # Salesforce REST connector
 ```
 
 ### Canonical extras matrix
@@ -116,11 +116,11 @@ pip install "plynth[salesforce]"  # Salesforce REST connector
 | `grpc`       | gRPC and protobuf runtimes              | Async gRPC clients and transports                 |
 | `django`     | Django adapter support + `httpx2`       | Django integration helpers and cache adapters     |
 | `drf`        | DRF adapter support + Django + `httpx2` | DRF service mixins and exception mapping patterns |
-| `fastapi`    | FastAPI adapter support + `httpx2`      | FastAPI dependency wiring for plynth clients      |
+| `fastapi`    | FastAPI adapter support + `httpx2`      | FastAPI dependency wiring for plynt clients       |
 | `salesforce` | HTTP, signing, validation, Avro         | REST, bulk, AI; combine with `grpc` for CDC       |
 
 ```bash
-pip install "plynth[grpc,salesforce]"  # Experimental Salesforce CDC
+pip install "plynt[grpc,salesforce]"  # Experimental Salesforce CDC
 ```
 
 OAuth2 configuration and lifecycle helpers are included in the package.
@@ -129,7 +129,7 @@ There is no separate `oauth` extra. See the
 
 ### Public API surface
 
-Plynth treats package exports in `plynth.base` and `plynth.http` as the main
+Plynt treats package exports in `plynt.base` and `plynt.http` as the main
 public contract boundaries for core usage.
 
 - Prefer importing from these package roots instead of internal submodules.
@@ -140,7 +140,7 @@ ______________________________________________________________________
 
 ## Authentication
 
-Plynth supports typed auth configuration via `settings.auth`.
+Plynt supports typed auth configuration via `settings.auth`.
 
 Supported config types:
 
@@ -159,8 +159,8 @@ JWT Bearer in core is dependency-light:
 Example using typed settings + JWT Bearer:
 
 ```python
-from plynth.http.auth import AuthConfig, OAuth2JWTBearerConfig
-from plynth.http.settings import HTTPSettings
+from plynt.http.auth import AuthConfig, OAuth2JWTBearerConfig
+from plynt.http.settings import HTTPSettings
 
 
 def build_assertion() -> str:
@@ -194,21 +194,21 @@ is implemented, what is planned, and what is explicitly out of scope.
 High-level planned areas:
 
 - Flask adapter, conditional on demonstrated demand
-- SOAP transport (`plynth[soap]`) as long-term extension
+- SOAP transport (`plynt[soap]`) as long-term extension
 
 Shipped connector highlights:
 
 - Django, DRF, and FastAPI framework adapters are implemented.
 - Async gRPC primitives and experimental Salesforce Pub/Sub CDC are
   implemented; real-org CDC validation remains open.
-- Generic AI / LLM connector (`plynth.connectors.llm`) with neutral request,
+- Generic AI / LLM connector (`plynt.connectors.llm`) with neutral request,
   completion, and streaming chunk contract models.
 
 ______________________________________________________________________
 
 ## Philosophy
 
-Plynth follows a simple rule:
+Plynt follows a simple rule:
 
 > If it’s not essential for the foundation, it doesn’t belong here.
 

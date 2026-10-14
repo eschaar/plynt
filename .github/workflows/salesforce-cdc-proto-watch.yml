@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 env:
-  PROTO_DIR: src/plynth/connectors/salesforce/cdc/_proto
+  PROTO_DIR: src/plynt/connectors/salesforce/cdc/_proto
   UPSTREAM_PROTO_URL: https://raw.githubusercontent.com/forcedotcom/pub-sub-api/main/pubsub_api.proto
 
 jobs:

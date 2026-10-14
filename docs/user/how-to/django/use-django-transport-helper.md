@@ -2,13 +2,13 @@
 
 Use `transport_from_django_settings(...)` or
 `async_transport_from_django_settings(...)` when your service keeps external
-API config in Django `settings.py` and you want first-party plynth wiring for
+API config in Django `settings.py` and you want first-party plynt wiring for
 auth, response caching, and retry behavior.
 
 ## Install extras
 
 ```bash
-pip install "plynth[django,httpx]"
+pip install "plynt[django,httpx]"
 ```
 
 ## Configure Django settings blocks
@@ -32,24 +32,24 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "django-default",
     },
-    "plynth_responses": {
+    "plynt_responses": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/2",
     },
-    "plynth_tokens": {
+    "plynt_tokens": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/3",
     },
 }
 ```
 
-## Define typed plynth settings
+## Define typed plynt settings
 
 Create a typed `HTTPSettings` subclass for your Django settings block.
 
 ```python
-from plynth.http.auth import OAuth2ClientCredentialsConfig
-from plynth.http.settings import HTTPSettings
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.settings import HTTPSettings
 
 
 class ExternalAPISettings(HTTPSettings):
@@ -71,14 +71,14 @@ class ExternalAPISettings(HTTPSettings):
 ## Build sync transport from Django settings
 
 ```python
-from plynth.adapters.django.transport import transport_from_django_settings
-from plynth.middleware.logging import LoggingMiddleware
+from plynt.adapters.django.transport import transport_from_django_settings
+from plynt.middleware.logging import LoggingMiddleware
 
 transport = transport_from_django_settings(
     "EXTERNAL_API",
     ExternalAPISettings,
-    response_cache_alias="plynth_responses",
-    auth_cache_alias="plynth_tokens",
+    response_cache_alias="plynt_responses",
+    auth_cache_alias="plynt_tokens",
     middlewares=[LoggingMiddleware()],
 )
 ```
@@ -92,18 +92,18 @@ Middleware order in the helper is:
 
 ## Build async transport from Django settings
 
-Use the async helper for ASGI-native Django flows that call async plynth
+Use the async helper for ASGI-native Django flows that call async plynt
 clients or services.
 
 ```python
-from plynth.adapters.django.transport import async_transport_from_django_settings
-from plynth.middleware.logging import AsyncLoggingMiddleware
+from plynt.adapters.django.transport import async_transport_from_django_settings
+from plynt.middleware.logging import AsyncLoggingMiddleware
 
 transport = async_transport_from_django_settings(
     "EXTERNAL_API",
     ExternalAPISettings,
-    response_cache_alias="plynth_responses",
-    auth_cache_alias="plynth_tokens",
+    response_cache_alias="plynt_responses",
+    auth_cache_alias="plynt_tokens",
     middlewares=[AsyncLoggingMiddleware()],
 )
 ```
@@ -118,7 +118,7 @@ Middleware order in the async helper is:
 ## Use with APIClient
 
 ```python
-from plynth.http.client import APIClient
+from plynt.http.client import APIClient
 
 client = APIClient(base_url="https://api.example.com", transport=transport)
 response = client.get("/products")
@@ -128,7 +128,7 @@ response.raise_for_status()
 For async flows:
 
 ```python
-from plynth.http.client import AsyncAPIClient
+from plynt.http.client import AsyncAPIClient
 
 client = AsyncAPIClient(base_url="https://api.example.com", transport=transport)
 response = await client.get("/products")
@@ -137,7 +137,7 @@ response.raise_for_status()
 
 ## Logging with Django LOGGING
 
-Plynth uses Python logging, so standard Django `LOGGING` config applies.
+Plynt uses Python logging, so standard Django `LOGGING` config applies.
 
 ```python
 # settings.py
@@ -150,11 +150,11 @@ LOGGING = {
         },
     },
     "loggers": {
-        "plynth": {
+        "plynt": {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "plynth.http.transport": {
+        "plynt.http.transport": {
             "handlers": ["console"],
             "level": "DEBUG",
             "propagate": False,
@@ -170,7 +170,7 @@ throttling, and exception filters.
 
 When running behind ingress or reverse proxies, Django middleware and settings
 determine trusted scheme and host values. Keep these aligned with outbound
-plynth behavior:
+plynt behavior:
 
 1. Configure trusted proxy headers in Django (for example
    `SECURE_PROXY_SSL_HEADER`) so request scheme is accurate.

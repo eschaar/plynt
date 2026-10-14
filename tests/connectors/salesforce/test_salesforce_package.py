@@ -1,17 +1,17 @@
-"""Tests for public package exports in ``plynth.connectors.salesforce``."""
+"""Tests for public package exports in ``plynt.connectors.salesforce``."""
 
 import importlib
 
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.helpers import (
+from plynt.connectors.salesforce.helpers import (
     build_select_soql,
     validate_salesforce_id,
 )
-from plynth.connectors.salesforce.models import SalesforceGlobalDescribeResponse
-from plynth.connectors.salesforce.query import (
+from plynt.connectors.salesforce.models import SalesforceGlobalDescribeResponse
+from plynt.connectors.salesforce.query import (
     AsyncSalesforceQueryService,
     SalesforceQueryService,
 )
@@ -22,7 +22,7 @@ class TestSalesforcePackage:
 
     def test_package_exports_critical_stable_names(self) -> None:
         """Verify critical public names are exported by the package."""
-        module = importlib.import_module("plynth.connectors.salesforce")
+        module = importlib.import_module("plynt.connectors.salesforce")
 
         expected_critical_exports = {
             "AsyncSalesforceAPIFacade",
@@ -38,7 +38,7 @@ class TestSalesforcePackage:
 
     def test_package_reexports_critical_objects(self) -> None:
         """Verify critical package-level re-exports for stable entry points."""
-        module = importlib.import_module("plynth.connectors.salesforce")
+        module = importlib.import_module("plynt.connectors.salesforce")
 
         assert module.AsyncSalesforceAPIFacade is AsyncSalesforceAPIFacade
         assert module.AsyncSalesforceQueryService is AsyncSalesforceQueryService

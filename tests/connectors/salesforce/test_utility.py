@@ -7,25 +7,25 @@ from typing import Any
 
 import pytest
 
-from plynth.base.response import Response
-from plynth.connectors.salesforce.errors import SalesforceQueryResponseError
-from plynth.connectors.salesforce.facade import (
+from plynt.base.response import Response
+from plynt.connectors.salesforce.errors import SalesforceQueryResponseError
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.models import (
+from plynt.connectors.salesforce.models import (
     SalesforceApiUsage,
     SalesforceApiVersion,
     SalesforceGlobalDescribeResponse,
     SalesforceLimitsResponse,
 )
-from plynth.connectors.salesforce.sobject import DEFAULT_API_VERSION
-from plynth.connectors.salesforce.utility import (
+from plynt.connectors.salesforce.sobject import DEFAULT_API_VERSION
+from plynt.connectors.salesforce.utility import (
     AsyncSalesforceUtilityService,
     SalesforceUtilityService,
 )
-from plynth.http.client import APIClient, AsyncAPIClient
-from plynth.http.renderer import JSONRenderer
+from plynt.http.client import APIClient, AsyncAPIClient
+from plynt.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 from tests.connectors.salesforce.conftest import DUMMY_INSTANCE_URL
 

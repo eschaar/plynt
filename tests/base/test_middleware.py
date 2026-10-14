@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from plynth.base.middleware import (
+from plynt.base.middleware import (
     AsyncMiddleware,
     NextAsyncHandler,
     NextSyncHandler,
     SyncMiddleware,
 )
-from plynth.base.request import Request
-from plynth.base.response import Response
+from plynt.base.request import Request
+from plynt.base.response import Response
 
 # ---------------------------------------------------------------------------
 # Helpers

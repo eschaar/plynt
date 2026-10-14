@@ -2,20 +2,20 @@ from typing import Any
 
 import pytest
 
-from plynth.base.errors import (
+from plynt.base.errors import (
     BaseError,
     DependencyUnavailableError,
     FeatureDisabledError,
     InvalidInputError,
     OperationFailedError,
 )
-from plynth.http.errors import (
+from plynt.http.errors import (
     BadRequestError,
     HttpStatusError,
     InternalServerError,
     ServiceUnavailableError,
 )
-from plynth.http.mapping import APIErrorMapper
+from plynt.http.mapping import APIErrorMapper
 
 
 class DummyError(BaseError):

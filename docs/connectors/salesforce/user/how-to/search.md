@@ -8,7 +8,7 @@ using `SalesforceSearchService` and the SOSL query language.
 A configured `SalesforceAPIFacade`:
 
 ```python
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
 
 sf = SalesforceAPIFacade(client)
 svc = sf.search()
@@ -21,7 +21,9 @@ ______________________________________________________________________
 Pass a full SOSL string to `search()`:
 
 ```python
-response = svc.search("FIND {Acme} IN ALL FIELDS RETURNING Account(Id, Name), Contact(Id, Name)")
+response = svc.search(
+    "FIND {Acme} IN ALL FIELDS RETURNING Account(Id, Name), Contact(Id, Name)"
+)
 for record in response.search_records:
     print(record["Id"], record["Name"])
 ```
@@ -81,7 +83,7 @@ ______________________________________________________________________
 ## Async
 
 ```python
-from plynth.connectors.salesforce.facade import AsyncSalesforceAPIFacade
+from plynt.connectors.salesforce.facade import AsyncSalesforceAPIFacade
 
 sf = AsyncSalesforceAPIFacade(async_client)
 svc = sf.search()

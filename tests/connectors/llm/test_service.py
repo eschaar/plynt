@@ -10,17 +10,17 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from plynth.base.response import AsyncStreamingResponse, StreamingResponse
-from plynth.connectors.llm import (
+from plynt.base.response import AsyncStreamingResponse, StreamingResponse
+from plynt.connectors.llm import (
     AsyncLLMService,
     LLMGenerateRequest,
     LLMService,
     LLMStreamChunk,
     LLMStreamParseError,
 )
-from plynth.connectors.llm.adapters import LLMAdapterSet, build_default_adapter_set
-from plynth.http.client import APIClient, AsyncAPIClient
-from plynth.http.renderer import JSONRenderer
+from plynt.connectors.llm.adapters import LLMAdapterSet, build_default_adapter_set
+from plynt.http.client import APIClient, AsyncAPIClient
+from plynt.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 
 _JSON_RENDERER = JSONRenderer()

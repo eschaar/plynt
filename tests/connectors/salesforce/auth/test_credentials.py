@@ -10,9 +10,9 @@ from urllib.parse import parse_qs
 
 import pytest
 
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.base.transport import AsyncTransport, SyncTransport
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.base.transport import AsyncTransport, SyncTransport
 from tests.connectors.salesforce.auth.helpers import make_oauth_auth
 from tests.connectors.salesforce.conftest import (
     DUMMY_ACCESS_TOKEN,

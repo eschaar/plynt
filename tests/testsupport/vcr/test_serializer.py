@@ -6,8 +6,8 @@ import importlib
 
 import yaml
 
-from plynth.testsupport.vcr import serializer as serializer_module
-from plynth.testsupport.vcr.serializer import READABLE_YAML_SERIALIZER
+from plynt.testsupport.vcr import serializer as serializer_module
+from plynt.testsupport.vcr.serializer import READABLE_YAML_SERIALIZER
 
 
 class TestReadableYamlSerializer:

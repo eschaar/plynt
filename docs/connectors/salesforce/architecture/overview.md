@@ -1,15 +1,15 @@
 # Salesforce Connector Architecture Overview
 
-This document describes the architecture of the Salesforce connector in plynth.
+This document describes the architecture of the Salesforce connector in plynt.
 
 ## Purpose
 
-The connector validates plynth core abstractions against a complex real-world
+The connector validates plynt core abstractions against a complex real-world
 API surface while staying framework-agnostic and extractable.
 
 ## Architectural Position
 
-The REST connector sits above `plynth.http` and reuses core layers:
+The REST connector sits above `plynt.http` and reuses core layers:
 
 1. service layer for Salesforce endpoint operations,
 1. API client layer for HTTP request dispatch and typed errors,
@@ -26,7 +26,7 @@ It does not dispatch through the REST client or reuse HTTP auth middleware.
 
 ## Module Structure
 
-Current package focus under `src/plynth/connectors/salesforce/`:
+Current package focus under `src/plynt/connectors/salesforce/`:
 
 - `auth/` for Salesforce-specific auth middleware wrappers,
 - `bulk/` for Bulk API 2.0 flows,
@@ -56,7 +56,7 @@ Consumers own idempotency, durable event handling, snapshot reconciliation,
 and checkpoint backend durability. Flow control, replay, and decoding remain
 connector-local rather than generic gRPC contracts.
 
-Install `plynth[grpc,salesforce]`: protocol runtimes belong to `grpc`, while
+Install `plynt[grpc,salesforce]`: protocol runtimes belong to `grpc`, while
 Avro belongs to `salesforce`, as defined in
 [ADR-0031](../../../architecture/adr/0031-experimental-release-installation-contract.md).
 See the [CDC deployment guide](../user/how-to/deploy-cdc.md) for wiring and

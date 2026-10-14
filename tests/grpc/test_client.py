@@ -6,10 +6,10 @@ from typing import Any
 
 import pytest
 
-from plynth.grpc.client import AsyncGrpcClient, AsyncGrpcTransport
-from plynth.grpc.handler import GrpcCall, NextGrpcHandler
-from plynth.grpc.interceptor import AsyncGrpcInterceptor
-from plynth.grpc.settings import GrpcSettings
+from plynt.grpc.client import AsyncGrpcClient, AsyncGrpcTransport
+from plynt.grpc.handler import GrpcCall, NextGrpcHandler
+from plynt.grpc.interceptor import AsyncGrpcInterceptor
+from plynt.grpc.settings import GrpcSettings
 
 
 def _instantiate(cls: type[Any]) -> Any:

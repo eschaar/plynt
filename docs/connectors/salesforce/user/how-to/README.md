@@ -9,7 +9,7 @@
 - [Authenticate with Username/Password](authenticate.md#usernamepassword-flow-legacy)
   — legacy flow for older orgs
 - [Inject a session token](authenticate.md#session-token-edge-case)
-  — when token management happens outside Plynth
+  — when token management happens outside Plynt
 
 ## Data operations
 

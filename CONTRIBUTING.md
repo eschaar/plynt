@@ -1,8 +1,8 @@
-# Contributing to Plynth
+# Contributing to Plynt
 
 ## Commit Convention
 
-Plynth uses [Conventional Commits](https://www.conventionalcommits.org/).
+Plynt uses [Conventional Commits](https://www.conventionalcommits.org/).
 Commit messages are used to automatically determine the next version number
 and generate the changelog.
 
@@ -54,7 +54,7 @@ only useful when you want to document migration details explicitly:
 ```text
 feat!: remove timeout_seconds, replace with structured timeout fields
 
-BREAKING CHANGE: Set PLYNTH_TIMEOUT_READ instead of PLYNTH_TIMEOUT_SECONDS.
+BREAKING CHANGE: Set PLYNT_TIMEOUT_READ instead of PLYNT_TIMEOUT_SECONDS.
 ```
 
 Keep breaking markers and migration details even during 0.x development.
@@ -66,16 +66,16 @@ These are policy examples, not manually selected release versions.
 
 Use the module namespace as scope. Omit scope for cross-cutting changes.
 
-| Scope        | Area                        |
-| ------------ | --------------------------- |
-| `base`       | `plynth.base.*`             |
-| `middleware` | `plynth.middleware.*`       |
-| `http`       | `plynth.http.*`             |
-| `connectors` | `plynth.connectors.*`       |
-| `django`     | `plynth.django.*` (future)  |
-| `fastapi`    | `plynth.fastapi.*` (future) |
-| `ci`         | GitHub Actions workflows    |
-| `deps`       | Dependency updates          |
+| Scope        | Area                       |
+| ------------ | -------------------------- |
+| `base`       | `plynt.base.*`             |
+| `middleware` | `plynt.middleware.*`       |
+| `http`       | `plynt.http.*`             |
+| `connectors` | `plynt.connectors.*`       |
+| `django`     | `plynt.django.*` (future)  |
+| `fastapi`    | `plynt.fastapi.*` (future) |
+| `ci`         | GitHub Actions workflows   |
+| `deps`       | Dependency updates         |
 
 ### Examples
 

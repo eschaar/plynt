@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from plynth.testsupport.vcr.matchers import (
+from plynt.testsupport.vcr.matchers import (
     NormalizedJSONBodyMatcher,
     ProxyAwarePathMatcher,
     VCRMatcherLibrary,

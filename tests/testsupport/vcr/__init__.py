@@ -1,1 +1,1 @@
-"""Tests for plynth.testsupport.vcr package."""
+"""Tests for plynt.testsupport.vcr package."""

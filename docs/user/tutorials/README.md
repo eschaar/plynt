@@ -3,11 +3,11 @@
 Tutorials are **learning-oriented**. They take you through a complete task
 from scratch so that you build confidence and understanding along the way.
 
-Follow the tutorials in order if you are new to Plynth.
+Follow the tutorials in order if you are new to Plynt.
 
 ## Core tutorials
 
-1. [Getting started](01-getting-started.md) — install Plynth, make your
+1. [Getting started](01-getting-started.md) — install Plynt, make your
    first HTTP request, and wrap the client in a service class.
 1. [Build your own connector](02-build-a-connector.md) — add settings,
    auth, a service class, and a facade for a real API.

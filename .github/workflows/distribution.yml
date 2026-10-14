@@ -80,10 +80,10 @@ jobs:
           wheel-env/bin/python -m pip check
       - name: Run installed-wheel smoke tests
         env:
-          PLYNTH_WHEEL_PROFILE: ${{ matrix.profile }}
+          PLYNT_WHEEL_PROFILE: ${{ matrix.profile }}
         run: |
-          if [ "$PLYNTH_WHEEL_PROFILE" = "cdc-minimum" ]; then
-            export PLYNTH_WHEEL_PROFILE=cdc
+          if [ "$PLYNT_WHEEL_PROFILE" = "cdc-minimum" ]; then
+            export PLYNT_WHEEL_PROFILE=cdc
           fi
           wheel-env/bin/python -m pytest tests/distribution/test_installed.py \
             --noconftest --import-mode=importlib -c /dev/null \

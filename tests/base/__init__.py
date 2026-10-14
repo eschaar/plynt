@@ -1,1 +1,1 @@
-# Plynth package root
+# Plynt package root

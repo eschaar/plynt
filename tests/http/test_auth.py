@@ -1,8 +1,8 @@
-"""Tests for plynth.http.auth — typed auth config dataclasses and factories."""
+"""Tests for plynt.http.auth — typed auth config dataclasses and factories."""
 
 from __future__ import annotations
 
-from plynth.http.auth import (
+from plynt.http.auth import (
     BasicAuthConfig,
     BearerAuthConfig,
     OAuth2ClientCredentialsConfig,
@@ -11,7 +11,7 @@ from plynth.http.auth import (
     async_auth_from_config,
     auth_from_config,
 )
-from plynth.http.middleware.auth import (
+from plynt.http.middleware.auth import (
     AsyncBasicAuthMiddleware,
     AsyncBearerTokenAuthMiddleware,
     AsyncOAuth2ClientCredentialsMiddleware,
@@ -97,7 +97,7 @@ class TestOAuth2ClientCredentialsConfig:
 
     def test_custom_token_retry_policy(self) -> None:
         """Validate custom token retry policy."""
-        from plynth.http.policies import HttpRetryPolicy
+        from plynt.http.policies import HttpRetryPolicy
 
         policy = HttpRetryPolicy(max_attempts=5)
         cfg = OAuth2ClientCredentialsConfig(
@@ -134,7 +134,7 @@ class TestOAuth2ClientCredentialsConfig:
         """Validate auth from config passes options."""
         from http import HTTPStatus
 
-        from plynth.http.policies import HttpRetryPolicy
+        from plynt.http.policies import HttpRetryPolicy
 
         policy = HttpRetryPolicy(
             max_attempts=4,
@@ -152,8 +152,8 @@ class TestOAuth2ClientCredentialsConfig:
         assert mw._token_url == _TOKEN_URL
         assert mw._ttl_leeway == 45
         # token_retry_policy is wired into the internal transport.
-        from plynth.http.transport import HttpxSyncTransport
-        from plynth.middleware.retry import RetryMiddleware
+        from plynt.http.transport import HttpxSyncTransport
+        from plynt.middleware.retry import RetryMiddleware
 
         assert isinstance(mw._transport, HttpxSyncTransport)
         retry_mw = next(
@@ -267,7 +267,7 @@ class TestAuthFromConfigWithTokenCache:
 
     def test_token_cache_passed_to_oauth2_cc_middleware(self) -> None:
         """Validate token cache passed to oauth2 cc middleware."""
-        from plynth.cache import LocMemCache
+        from plynt.cache import LocMemCache
 
         cache = LocMemCache()
         cfg = OAuth2ClientCredentialsConfig(
@@ -281,7 +281,7 @@ class TestAuthFromConfigWithTokenCache:
 
     def test_token_cache_passed_to_async_oauth2_cc_middleware(self) -> None:
         """Validate token cache passed to async oauth2 cc middleware."""
-        from plynth.cache import LocMemCache
+        from plynt.cache import LocMemCache
 
         cache = LocMemCache()
         cfg = OAuth2ClientCredentialsConfig(
@@ -295,14 +295,14 @@ class TestAuthFromConfigWithTokenCache:
 
     def test_token_cache_none_by_default_bearer(self) -> None:
         """token_cache param is accepted but unused for bearer auth."""
-        from plynth.cache import LocMemCache
+        from plynt.cache import LocMemCache
 
         mw = auth_from_config(BearerAuthConfig(token=_TOKEN), token_cache=LocMemCache())
         assert isinstance(mw, BearerTokenAuthMiddleware)
 
     def test_token_cache_ignored_for_basic_auth(self) -> None:
         """token_cache param is accepted but unused for Basic auth."""
-        from plynth.cache import LocMemCache
+        from plynt.cache import LocMemCache
 
         mw = auth_from_config(
             BasicAuthConfig(username=_USER, password=_PASS),

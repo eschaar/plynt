@@ -1,29 +1,29 @@
 # Architecture Overview
 
-This document describes the current architecture of plynth at a high level and
+This document describes the current architecture of plynt at a high level and
 links to the ADR set for decision-level detail.
 
 ## Purpose
 
-Plynth is a framework-agnostic API client foundation. It separates generic
+Plynt is a framework-agnostic API client foundation. It separates generic
 transport and middleware concerns from protocol-specific implementations and
 domain connectors.
 
 ## Layer Model
 
-Plynth uses a layered model where responsibility is explicit and composable:
+Plynt uses a layered model where responsibility is explicit and composable:
 
-1. Request layer (`plynth.base.request`)
-1. Transport layer (`plynth.base.transport`, `plynth.http.transport`)
-1. Response layer (`plynth.base.response`, `plynth.http.response`)
-1. Client layer (`plynth.http.client`)
-1. Service layer (`plynth.http.service` and connector services)
+1. Request layer (`plynt.base.request`)
+1. Transport layer (`plynt.base.transport`, `plynt.http.transport`)
+1. Response layer (`plynt.base.response`, `plynt.http.response`)
+1. Client layer (`plynt.http.client`)
+1. Service layer (`plynt.http.service` and connector services)
 
-Core abstractions live in `plynth.base` and are protocol-agnostic.
-HTTP-specific implementations live in `plynth.http`.
-Business connectors (for example Salesforce) live in `plynth.connectors.*`.
+Core abstractions live in `plynt.base` and are protocol-agnostic.
+HTTP-specific implementations live in `plynt.http`.
+Business connectors (for example Salesforce) live in `plynt.connectors.*`.
 
-`plynth.grpc` is a sibling protocol namespace with async transport, client,
+`plynt.grpc` is a sibling protocol namespace with async transport, client,
 settings, errors, interceptors, and protobuf helpers. It does not define
 Salesforce replay, checkpoints, Avro decoding, or subscription flow control.
 See [ADR-0030](adr/0030-grpc-protocol-boundary.md).
@@ -34,7 +34,7 @@ Use these terms consistently:
 
 - **Connector**: domain-facing integration surface for an external platform.
   A connector owns domain models and service orchestration for that platform.
-  Examples: `plynth.connectors.salesforce`, `plynth.connectors.llm`.
+  Examples: `plynt.connectors.salesforce`, `plynt.connectors.llm`.
 - **Adapter**: interface translation component between two boundaries.
   Adapters translate payloads, framework contracts, or transport concerns.
 
@@ -50,7 +50,7 @@ Current FastAPI adapter capabilities include:
 1. dependency factories for transport/client/service resolution,
 1. bundled service-dependency helpers for router setup,
 1. request-header propagation helpers,
-1. plynth exception-to-JSON response mapping helpers.
+1. plynt exception-to-JSON response mapping helpers.
 
 ## Framework Adapter Capability Matrix
 
@@ -104,7 +104,7 @@ No framework-specific configuration logic is allowed in the core package.
 
 ## Experimental Release Boundary
 
-Salesforce CDC composes `plynth[grpc,salesforce]`: gRPC and protobuf stay in
+Salesforce CDC composes `plynt[grpc,salesforce]`: gRPC and protobuf stay in
 the protocol extra, while Avro decoding belongs to the Salesforce extra.
 The core remains free of those runtime dependencies.
 

@@ -1,6 +1,6 @@
 # Salesforce Connector — User Documentation
 
-This section covers everything you need to use the Plynth Salesforce connector.
+This section covers everything you need to use the Plynt Salesforce connector.
 
 ## Structure
 
@@ -41,7 +41,7 @@ The Salesforce connector implements the Salesforce Platform REST API:
 
 It also provides experimental, async-only CDC over Salesforce Pub/Sub gRPC:
 bounded flow control, Avro decoding, changed/nulled/diff field names, and
-replay checkpoints. Install `plynth[grpc,salesforce]` and follow the
+replay checkpoints. Install `plynt[grpc,salesforce]` and follow the
 [CDC deployment guide](how-to/deploy-cdc.md). Validate authentication,
 real schemas, and replay behavior against a real org before production use.
 

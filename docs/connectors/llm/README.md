@@ -1,7 +1,7 @@
 # Generic LLM Connector Guide
 
 This guide documents the generic, provider-agnostic LLM connector in
-`plynth.connectors.llm`.
+`plynt.connectors.llm`.
 
 The connector provides:
 
@@ -16,7 +16,7 @@ does not depend on Salesforce connector internals.
 
 ## Terminology and scope
 
-- `plynth.connectors.llm` is a **connector**: it defines a neutral LLM domain
+- `plynt.connectors.llm` is a **connector**: it defines a neutral LLM domain
   contract and orchestration surface.
 - Provider-specific mapping components are **adapters** under this connector.
 
@@ -38,9 +38,9 @@ Additional providers can reuse the same adapter contracts.
 ## Quickstart (sync)
 
 ```python
-from plynth.connectors.llm import LLMGenerateRequest, LLMService
-from plynth.http.client import APIClient
-from plynth.http.transport import HttpxSyncTransport
+from plynt.connectors.llm import LLMGenerateRequest, LLMService
+from plynt.http.client import APIClient
+from plynt.http.transport import HttpxSyncTransport
 
 transport = HttpxSyncTransport()
 client = APIClient(base_url="https://provider.example.com", transport=transport)
@@ -105,9 +105,9 @@ metrics.increment("llm.stream.event", tags={"event_kind": event_kind})
 ## Async
 
 ```python
-from plynth.connectors.llm import AsyncLLMService
-from plynth.http.client import AsyncAPIClient
-from plynth.http.transport import HttpxAsyncTransport
+from plynt.connectors.llm import AsyncLLMService
+from plynt.http.client import AsyncAPIClient
+from plynt.http.transport import HttpxAsyncTransport
 
 transport = HttpxAsyncTransport()
 client = AsyncAPIClient(base_url="https://provider.example.com", transport=transport)

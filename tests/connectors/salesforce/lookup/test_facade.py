@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     LookupType,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.lookup import (
+from plynt.connectors.salesforce.lookup import (
     AsyncSalesforcePricebookLookupService,
     AsyncSalesforceProfileLookupService,
     AsyncSalesforceQueueLookupService,

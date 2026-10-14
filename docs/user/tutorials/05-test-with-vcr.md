@@ -1,13 +1,13 @@
 # Test your connector with VCR
 
-This tutorial shows how to use Plynth's VCR support to record real HTTP
+This tutorial shows how to use Plynt's VCR support to record real HTTP
 interactions and replay them in tests. By the end you will have a test suite
 that runs without network access.
 
 ## What is VCR testing?
 
 VCR (Video Cassette Recorder) testing records HTTP requests and responses
-to YAML files called *cassettes*. On subsequent test runs, Plynth replays
+to YAML files called *cassettes*. On subsequent test runs, Plynt replays
 the cassette instead of making real network calls. This gives you:
 
 - Fast, deterministic tests.
@@ -17,12 +17,12 @@ the cassette instead of making real network calls. This gives you:
 ## Prerequisites
 
 ```bash
-pip install "plynth[httpx]" vcrpy pytest
+pip install "plynt[httpx]" vcrpy pytest
 ```
 
-## How it works in Plynth
+## How it works in Plynt
 
-Plynth's VCR support is a transport middleware (`VCRMiddleware`). It
+Plynt's VCR support is a transport middleware (`VCRMiddleware`). It
 intercepts requests and either records the response to a cassette file or
 replays a previously recorded response — depending on the configured
 `VCRMode`.
@@ -38,8 +38,8 @@ Using the connector from [Tutorial 2](02-build-a-connector.md):
 ```python
 # tests/test_issue_service.py
 import pytest
-from plynth.http.transport import HttpxSyncTransport
-from plynth.http.client import APIClient
+from plynt.http.transport import HttpxSyncTransport
+from plynt.http.client import APIClient
 from connector.service import IssueService
 
 
@@ -64,10 +64,10 @@ This test hits the real network. Next, we make it use a cassette.
 # tests/test_issue_service.py
 import pytest
 from pathlib import Path
-from plynth.http.transport import HttpxSyncTransport
-from plynth.http.client import APIClient
-from plynth.testsupport.vcr.middleware import VCRMiddleware
-from plynth.testsupport.vcr.config import VCRSettings, VCRMode
+from plynt.http.transport import HttpxSyncTransport
+from plynt.http.client import APIClient
+from plynt.testsupport.vcr.middleware import VCRMiddleware
+from plynt.testsupport.vcr.config import VCRSettings, VCRMode
 from connector.service import IssueService
 
 CASSETTE_DIR = Path(__file__).parent / "_cassettes"
@@ -99,7 +99,7 @@ Run the test once with network access:
 pytest tests/test_issue_service.py -v
 ```
 
-Plynth records the response to a YAML file under `tests/_cassettes/`.
+Plynt records the response to a YAML file under `tests/_cassettes/`.
 The cassette path is derived deterministically from the pytest node ID.
 
 ## Step 4 — Verify replay
@@ -133,7 +133,7 @@ Strip secrets from cassettes before committing them:
 settings = VCRSettings(
     mode=VCRMode.ONCE,
     filter_headers=(
-        ("Authorization", None),   # remove the header entirely
+        ("Authorization", None),  # remove the header entirely
         ("X-Api-Key", "REDACTED"),  # replace with a placeholder
     ),
 )
@@ -144,8 +144,8 @@ settings = VCRSettings(
 For complex scenarios you can manage the VCR session directly:
 
 ```python
-from plynth.testsupport.vcr.session import vcr_session
-from plynth.testsupport.vcr.config import VCRSettings, VCRMode
+from plynt.testsupport.vcr.session import vcr_session
+from plynt.testsupport.vcr.config import VCRSettings, VCRMode
 
 with vcr_session(
     cassette_path=str(CASSETTE_DIR / "my_cassette.yaml"),

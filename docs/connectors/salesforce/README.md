@@ -1,6 +1,6 @@
 # Salesforce Integration Guide
 
-This guide describes how to use the Salesforce integration in Plynth.
+This guide describes how to use the Salesforce integration in Plynt.
 It is intentionally self-contained to simplify a future extraction into a
 standalone package.
 
@@ -33,7 +33,7 @@ Implemented capabilities include:
 - Experimental CDC event streaming with bounded flow control, replay
   checkpoints, and schema-based changed/nulled/diff field decoding
 
-Install `plynth[grpc,salesforce]` for CDC. See the
+Install `plynt[grpc,salesforce]` for CDC. See the
 [CDC deployment guide](user/how-to/deploy-cdc.md) for wiring, processing,
 and recovery guidance. Real-org authentication, schemas, and replay fidelity
 still need validation; local tests do not establish production readiness.
@@ -65,14 +65,14 @@ still need validation; local tests do not establish production readiness.
 The Salesforce connector is organized as focused subpackages for long-term
 maintainability:
 
-- `plynth.connectors.salesforce.auth`
-- `plynth.connectors.salesforce.bulk`
-- `plynth.connectors.salesforce.cdc`
-- `plynth.connectors.salesforce.identity`
-- `plynth.connectors.salesforce.lookup`
-- `plynth.connectors.salesforce.models`
-- `plynth.connectors.salesforce.query`
-- `plynth.connectors.salesforce.sobject`
+- `plynt.connectors.salesforce.auth`
+- `plynt.connectors.salesforce.bulk`
+- `plynt.connectors.salesforce.cdc`
+- `plynt.connectors.salesforce.identity`
+- `plynt.connectors.salesforce.lookup`
+- `plynt.connectors.salesforce.models`
+- `plynt.connectors.salesforce.query`
+- `plynt.connectors.salesforce.sobject`
 
 Test structure mirrors this package layout under
 `tests/connectors/salesforce/` (for example `lookup/`, `bulk/`, `query/`,
@@ -81,12 +81,12 @@ Test structure mirrors this package layout under
 ## Sync Quickstart (Facade)
 
 ```python
-from plynth.http.transport import HttpxSyncTransport
-from plynth.connectors.salesforce.auth import (
+from plynt.http.transport import HttpxSyncTransport
+from plynt.connectors.salesforce.auth import (
     SalesforceClientCredentialsAuthMiddleware,
 )
-from plynth.connectors.salesforce.client import SalesforceAPIClient
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.connectors.salesforce.client import SalesforceAPIClient
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
 
 auth = SalesforceClientCredentialsAuthMiddleware(
     client_id="...",
@@ -107,12 +107,12 @@ account.update(created.id, {"Phone": "+31201234567"})
 ## Async Quickstart (Facade)
 
 ```python
-from plynth.http.transport import HttpxAsyncTransport
-from plynth.connectors.salesforce.auth import (
+from plynt.http.transport import HttpxAsyncTransport
+from plynt.connectors.salesforce.auth import (
     AsyncSalesforceClientCredentialsAuthMiddleware,
 )
-from plynth.connectors.salesforce.client import AsyncSalesforceAPIClient
-from plynth.connectors.salesforce.facade import AsyncSalesforceAPIFacade
+from plynt.connectors.salesforce.client import AsyncSalesforceAPIClient
+from plynt.connectors.salesforce.facade import AsyncSalesforceAPIFacade
 
 auth = AsyncSalesforceClientCredentialsAuthMiddleware(
     client_id="...",
@@ -145,9 +145,9 @@ Compliance policy in your organization can still require CA-signed material.
 ```python
 import os
 
-from plynth.http.transport import HttpxSyncTransport
-from plynth.connectors.salesforce.auth import SalesforceJWTBearerAuthMiddleware
-from plynth.connectors.salesforce.client import SalesforceAPIClient
+from plynt.http.transport import HttpxSyncTransport
+from plynt.connectors.salesforce.auth import SalesforceJWTBearerAuthMiddleware
+from plynt.connectors.salesforce.client import SalesforceAPIClient
 
 auth = SalesforceJWTBearerAuthMiddleware(
     client_id=os.environ["SF_CLIENT_ID"],
@@ -167,22 +167,22 @@ token_url = "https://test.salesforce.com/services/oauth2/token"
 
 ## Direct Session Token Injection (Edge Case)
 
-Plynth supports a direct session token mode via:
+Plynt supports a direct session token mode via:
 
 - SalesforceSessionAuthMiddleware (sync)
 - AsyncSalesforceSessionAuthMiddleware (async)
 
 This mode is intentionally narrow and should only be used when token
-management is already handled outside Plynth.
+management is already handled outside Plynt.
 
 ### What this mode does
 
-In direct session mode, Plynth does only two things:
+In direct session mode, Plynt does only two things:
 
 - injects Authorization: Bearer token-value on outgoing requests
 - uses the provided Salesforce instance_url for request routing
 
-Plynth does not do token endpoint calls, token refresh, token expiry handling,
+Plynt does not do token endpoint calls, token refresh, token expiry handling,
 or token cache lifecycle in this mode.
 
 ### Why this exists
@@ -194,7 +194,7 @@ owns Salesforce token lifecycle, for example:
 - internal token broker service that fetches and refreshes Salesforce tokens
 - short-lived jobs (batch/serverless) that receive a pre-fetched token
 
-In these cases, duplicating OAuth lifecycle logic inside Plynth can create
+In these cases, duplicating OAuth lifecycle logic inside Plynt can create
 conflicting responsibilities and stale-token race behavior.
 
 ### Important clarification
@@ -206,15 +206,15 @@ Even in this mode, the access token is typically still Salesforce-issued.
 
 Use OAuth/JWT auth middleware when:
 
-- Plynth must fetch tokens itself
-- Plynth must refresh tokens itself
-- Plynth should own token caching and retry behavior
+- Plynt must fetch tokens itself
+- Plynt must refresh tokens itself
+- Plynt should own token caching and retry behavior
 
 Use direct session middleware when:
 
 - your application already has a valid Salesforce access token
 - token refresh is handled by another trusted component
-- you want Plynth to remain stateless with respect to token lifecycle
+- you want Plynt to remain stateless with respect to token lifecycle
 
 ### Risks and guardrails
 
@@ -224,18 +224,18 @@ Direct session mode is an advanced path. Make sure:
 - token rotation is synchronized with request execution paths
 - instance_url belongs to the same org/context as the provided token
 
-If these conditions are not guaranteed, prefer OAuth/JWT middleware in Plynth.
+If these conditions are not guaranteed, prefer OAuth/JWT middleware in Plynt.
 
 ### Minimal direct-session example
 
 ```python
-from plynth.http.transport import HttpxSyncTransport
-from plynth.connectors.salesforce.auth import SalesforceSessionAuthMiddleware
-from plynth.connectors.salesforce.client import SalesforceAPIClient
+from plynt.http.transport import HttpxSyncTransport
+from plynt.connectors.salesforce.auth import SalesforceSessionAuthMiddleware
+from plynt.connectors.salesforce.client import SalesforceAPIClient
 
 auth = SalesforceSessionAuthMiddleware(
-  access_token="<salesforce_access_token>",
-  instance_url="https://myorg.my.salesforce.com",
+    access_token="<salesforce_access_token>",
+    instance_url="https://myorg.my.salesforce.com",
 )
 transport = HttpxSyncTransport(middlewares=[auth])
 client = SalesforceAPIClient(auth=auth, transport=transport)
@@ -277,33 +277,33 @@ Supported building blocks:
 Example:
 
 ```python
-from plynth.connectors.salesforce.composite import CompositeSubrequest
+from plynt.connectors.salesforce.composite import CompositeSubrequest
 
 composite = facade.composite()
 
 result = composite.composite(
-  [
-    CompositeSubrequest.model_validate(
-      {
-        "method": "POST",
-        "url": "/services/data/v59.0/sobjects/Account",
-        "referenceId": "NewAccount",
-        "body": {"Name": "Acme"},
-      }
-    ),
-    CompositeSubrequest.model_validate(
-      {
-        "method": "POST",
-        "url": "/services/data/v59.0/sobjects/Contact",
-        "referenceId": "NewContact",
-        "body": {
-          "LastName": "Doe",
-          "AccountId": "@{NewAccount.id}",
-        },
-      }
-    ),
-  ],
-  all_or_none=True,
+    [
+        CompositeSubrequest.model_validate(
+            {
+                "method": "POST",
+                "url": "/services/data/v59.0/sobjects/Account",
+                "referenceId": "NewAccount",
+                "body": {"Name": "Acme"},
+            }
+        ),
+        CompositeSubrequest.model_validate(
+            {
+                "method": "POST",
+                "url": "/services/data/v59.0/sobjects/Contact",
+                "referenceId": "NewContact",
+                "body": {
+                    "LastName": "Doe",
+                    "AccountId": "@{NewAccount.id}",
+                },
+            }
+        ),
+    ],
+    all_or_none=True,
 )
 ```
 
@@ -325,7 +325,7 @@ Rule for adding new lookup conveniences:
 - keep lookup services thin wrappers over generic query/client layers
 - do not add business logic or domain policies to lookup services
 
-Current lookup conveniences live in `plynth.connectors.salesforce.lookup`:
+Current lookup conveniences live in `plynt.connectors.salesforce.lookup`:
 
 - `SalesforceRecordTypeLookupService` / `AsyncSalesforceRecordTypeLookupService`
 - `SalesforceUserLookupService` / `AsyncSalesforceUserLookupService`
@@ -345,7 +345,7 @@ Facade entry points:
 Example:
 
 ```python
-from plynth.connectors.salesforce.facade import LookupType
+from plynt.connectors.salesforce.facade import LookupType
 
 lookup = facade.lookup(LookupType.RECORD_TYPE)
 record_type = lookup.get_by_developer_name("Account", "Business")
@@ -368,14 +368,12 @@ profile = profile_lookup.get_by_name("System Administrator")
 Use the dedicated search service for SOSL queries.
 
 ```python
-from plynth.connectors.salesforce.helpers import escape_sosl
+from plynt.connectors.salesforce.helpers import escape_sosl
 
 search = facade.search()
 
 # Full SOSL expression
-result = search.search(
-    "FIND {Acme Inc} IN NAME FIELDS RETURNING Account(Id, Name)"
-)
+result = search.search("FIND {Acme Inc} IN NAME FIELDS RETURNING Account(Id, Name)")
 
 # Convenience wrapper that wraps the term in FIND {…} automatically
 result = search.quick_search("Acme")
@@ -386,11 +384,11 @@ for record in result.search_records:
 
 ## Query and Search Helpers
 
-The `plynth.connectors.salesforce.helpers` module provides safe formatting
+The `plynt.connectors.salesforce.helpers` module provides safe formatting
 utilities for SOQL and SOSL expressions.
 
 ```python
-from plynth.connectors.salesforce.helpers import (
+from plynt.connectors.salesforce.helpers import (
     escape_sosl,
     format_soql,
     is_salesforce_id,
@@ -409,7 +407,7 @@ soql = format_soql(
 
 # Validate Salesforce record IDs (15 or 18 characters)
 is_salesforce_id("001xx000003GYWJAA4")  # True
-validate_salesforce_id("not-an-id")    # raises ValueError
+validate_salesforce_id("not-an-id")  # raises ValueError
 ```
 
 ## Query Service Usage
@@ -430,9 +428,7 @@ deleted_page = query_svc.query(
     include_deleted=True,
 )
 
-result = query_svc.query_all(
-    "SELECT Id, Name FROM Account ORDER BY CreatedDate DESC"
-)
+result = query_svc.query_all("SELECT Id, Name FROM Account ORDER BY CreatedDate DESC")
 
 result_with_deleted = query_svc.query_all(
     "SELECT Id, IsDeleted FROM Account ORDER BY LastModifiedDate DESC",
@@ -444,9 +440,7 @@ result_with_deleted = query_svc.query_all(
 
 ```python
 next_page = query_svc.query_more(page.next_records_url)
-next_page_by_id = query_svc.query_more_from_id(
-    page.next_records_url.rsplit("/", 1)[-1]
-)
+next_page_by_id = query_svc.query_more_from_id(page.next_records_url.rsplit("/", 1)[-1])
 
 for page in query_svc.query_all_iter("SELECT Id, Name FROM Lead"):
     for record in page.records:
@@ -541,4 +535,4 @@ For feature planning, ideas, and extraction sequencing, see:
 - [Salesforce Roadmap](product/roadmap.md)
 - [Salesforce Extraction Strategy](architecture/adr/sf-0012-extraction-strategy.md)
 - [Project Roadmap](../../product/roadmap.md)
-- [VCR Testsupport Guide](../../../src/plynth/testsupport/vcr/README.md)
+- [VCR Testsupport Guide](../../../src/plynt/testsupport/vcr/README.md)

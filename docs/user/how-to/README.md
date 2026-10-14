@@ -3,7 +3,7 @@
 How-to guides are **task-oriented**. Each guide helps you complete one
 specific goal. They assume you are already familiar with the basics.
 
-## Core Plynth
+## Core Plynt
 
 - [Add authentication](add-authentication.md) — Bearer tokens, Basic auth,
   OAuth2 client credentials, JWT Bearer, and ROPC flows
@@ -22,14 +22,14 @@ specific goal. They assume you are already familiar with the basics.
 - [Use Django cache backend](django/use-django-cache-backend.md) — reuse Django
   `CACHES` aliases with `DjangoCacheBackend`
 - [Use Django transport helper](django/use-django-transport-helper.md) — build
-  a typed plynth transport from Django settings and cache aliases
+  a typed plynt transport from Django settings and cache aliases
 - [Django middleware interoperability](django/django-middleware-interoperability.md)
   — contract for tracing, auth context, cache boundaries, exception mapping,
   and logging alignment
 
 ## DRF how-to guides
 
-- [Use DRF service mixin](drf/use-drf-plynth-service-mixin.md) — build plynth
+- [Use DRF service mixin](drf/use-drf-plynt-service-mixin.md) — build plynt
   services lazily inside APIView and ViewSet classes, with optional request
   header propagation and exception mapping
 - [DRF serializer and business-layer patterns](drf/drf-serializer-business-patterns.md)

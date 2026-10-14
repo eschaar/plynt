@@ -7,11 +7,11 @@ infrastructure incidents. Use `CircuitBreakerMiddleware` to stop hammering
 a failing service and give it time to recover.
 
 ```python
-from plynth.middleware.circuit_breaker import CircuitBreakerMiddleware
-from plynth.base.policies import CircuitBreakerPolicy
-from plynth.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
-from plynth.connectors.salesforce.client import SalesforceAPIClient
-from plynth.http.transport import HttpxSyncTransport
+from plynt.middleware.circuit_breaker import CircuitBreakerMiddleware
+from plynt.base.policies import CircuitBreakerPolicy
+from plynt.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
+from plynt.connectors.salesforce.client import SalesforceAPIClient
+from plynt.http.transport import HttpxSyncTransport
 
 auth = SalesforceClientCredentialsAuthMiddleware(
     client_id=settings.client_id,
@@ -22,8 +22,8 @@ transport = HttpxSyncTransport(
     middlewares=[
         CircuitBreakerMiddleware(
             CircuitBreakerPolicy(
-                failure_threshold=5,        # open after 5 consecutive failures
-                recovery_timeout=30.0,      # probe again after 30 seconds
+                failure_threshold=5,  # open after 5 consecutive failures
+                recovery_timeout=30.0,  # probe again after 30 seconds
                 failure_status_codes={500, 503},
             )
         ),
@@ -42,7 +42,7 @@ When the circuit is open, `CircuitBreakerOpenError` is raised immediately
 without making a network call:
 
 ```python
-from plynth.middleware.circuit_breaker import CircuitBreakerOpenError
+from plynt.middleware.circuit_breaker import CircuitBreakerOpenError
 
 try:
     result = sf.query().query(soql)
@@ -98,18 +98,22 @@ outside (first in the list) and `RetryMiddleware` inside, so the breaker
 counts only the final failure after all retry attempts are exhausted:
 
 ```python
-from plynth.middleware.retry import RetryMiddleware
-from plynth.http.policies import HttpRetryPolicy
+from plynt.middleware.retry import RetryMiddleware
+from plynt.http.policies import HttpRetryPolicy
 
 transport = HttpxSyncTransport(
     middlewares=[
         CircuitBreakerMiddleware(
-            CircuitBreakerPolicy(failure_threshold=5, recovery_timeout=30.0,
-                                 failure_status_codes={500, 503})
+            CircuitBreakerPolicy(
+                failure_threshold=5,
+                recovery_timeout=30.0,
+                failure_status_codes={500, 503},
+            )
         ),
         RetryMiddleware(
-            HttpRetryPolicy(max_attempts=3, retryable_status_codes={500, 503},
-                            backoff_initial=0.5)
+            HttpRetryPolicy(
+                max_attempts=3, retryable_status_codes={500, 503}, backoff_initial=0.5
+            )
         ),
         auth,
     ]
@@ -119,14 +123,17 @@ transport = HttpxSyncTransport(
 ## Async
 
 ```python
-from plynth.middleware.circuit_breaker import AsyncCircuitBreakerMiddleware
-from plynth.http.transport import HttpxAsyncTransport
+from plynt.middleware.circuit_breaker import AsyncCircuitBreakerMiddleware
+from plynt.http.transport import HttpxAsyncTransport
 
 transport = HttpxAsyncTransport(
     middlewares=[
         AsyncCircuitBreakerMiddleware(
-            CircuitBreakerPolicy(failure_threshold=5, recovery_timeout=30.0,
-                                 failure_status_codes={500, 503})
+            CircuitBreakerPolicy(
+                failure_threshold=5,
+                recovery_timeout=30.0,
+                failure_status_codes={500, 503},
+            )
         ),
         async_auth,
     ]

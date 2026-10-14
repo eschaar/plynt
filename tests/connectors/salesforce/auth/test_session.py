@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.connectors.salesforce.auth import (
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.connectors.salesforce.auth import (
     AsyncSalesforceSessionAuthMiddleware,
     SalesforceSessionAuthMiddleware,
 )

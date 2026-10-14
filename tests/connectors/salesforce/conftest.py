@@ -7,16 +7,16 @@ from typing import Any, TypeAlias
 
 import pytest
 
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.base.transport import AsyncTransport, SyncTransport
-from plynth.connectors.salesforce.auth import (
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.base.transport import AsyncTransport, SyncTransport
+from plynt.connectors.salesforce.auth import (
     AsyncSalesforceClientCredentialsAuthMiddleware,
     AsyncSalesforcePasswordAuthMiddleware,
     SalesforceClientCredentialsAuthMiddleware,
     SalesforcePasswordAuthMiddleware,
 )
-from plynth.http.renderer import JSONRenderer
+from plynt.http.renderer import JSONRenderer
 
 DUMMY_CLIENT_ID = "sf-client-id"
 DUMMY_CLIENT_SECRET = "sf-client-secret"

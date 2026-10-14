@@ -1,4 +1,4 @@
-# Makefile for plynth
+# Makefile for plynt
 #
 # Targets:
 #   make              - show help
@@ -104,7 +104,7 @@ install:
 # do not run this as part of every build/CI cycle.
 # ---------------------------------------------------------------------------
 
-PROTO_DIR := src/plynth/connectors/salesforce/cdc/_proto
+PROTO_DIR := src/plynt/connectors/salesforce/cdc/_proto
 
 .PHONY: salesforce-cdc-proto-generate
 salesforce-cdc-proto-generate:
@@ -223,7 +223,7 @@ unittests: .venv
 
 .PHONY: coverage
 coverage: .venv
-	$(PYTEST) --cov=src/plynth --cov-report=html --cov-report=term-missing
+	$(PYTEST) --cov=src/plynt --cov-report=html --cov-report=term-missing
 	@echo ""
 	@echo "Coverage report: htmlcov/index.html"
 

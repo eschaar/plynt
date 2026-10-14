@@ -9,8 +9,8 @@ import json
 import pytest
 from pydantic import Field
 
-from plynth.connectors.salesforce.models import SObjectPayload
-from plynth.connectors.salesforce.renderer import SalesforceRenderer
+from plynt.connectors.salesforce.models import SObjectPayload
+from plynt.connectors.salesforce.renderer import SalesforceRenderer
 
 
 class TestSalesforceRendererWithDict:
@@ -118,6 +118,6 @@ class TestSalesforceRendererProtocol:
 
     def test_satisfies_renderer_protocol(self) -> None:
         """Validate satisfies renderer protocol."""
-        from plynth.http.renderer import Renderer
+        from plynt.http.renderer import Renderer
 
         assert isinstance(SalesforceRenderer(), Renderer)

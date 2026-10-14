@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from plynth.base.request import Request
-from plynth.base.response import Response
+from plynt.base.request import Request
+from plynt.base.response import Response
 
 
 def req(method: str, url: str, content: bytes | None = None) -> Request:

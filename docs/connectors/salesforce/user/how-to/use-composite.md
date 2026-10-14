@@ -9,7 +9,7 @@ when you need to create or query several records together.
 A configured `SalesforceAPIFacade`:
 
 ```python
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
 
 sf = SalesforceAPIFacade(client)
 comp = sf.composite()
@@ -23,7 +23,7 @@ ______________________________________________________________________
 reference the response of earlier ones via `reference_id`:
 
 ```python
-from plynth.connectors.salesforce.composite import CompositeSubrequest
+from plynt.connectors.salesforce.composite import CompositeSubrequest
 
 response = comp.composite(
     requests=[
@@ -71,7 +71,7 @@ ______________________________________________________________________
 batch requests cannot reference each other's results:
 
 ```python
-from plynth.connectors.salesforce.composite import CompositeBatchSubrequest
+from plynt.connectors.salesforce.composite import CompositeBatchSubrequest
 
 response = comp.batch(
     requests=[
@@ -148,7 +148,7 @@ ______________________________________________________________________
 ## Async
 
 ```python
-from plynth.connectors.salesforce.facade import AsyncSalesforceAPIFacade
+from plynt.connectors.salesforce.facade import AsyncSalesforceAPIFacade
 
 sf = AsyncSalesforceAPIFacade(async_client)
 comp = sf.composite()

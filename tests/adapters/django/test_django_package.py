@@ -1,8 +1,8 @@
-"""Tests for public package exports in ``plynth.adapters.django``."""
+"""Tests for public package exports in ``plynt.adapters.django``."""
 
 import importlib
 
-from plynth.adapters.django import (
+from plynt.adapters.django import (
     async_transport_from_django_settings,
     from_django_settings,
 )
@@ -13,7 +13,7 @@ class TestDjangoAdapterPackage:
 
     def test_package_exports_public_names(self) -> None:
         """Verify the stable public names exported by the package."""
-        module = importlib.import_module("plynth.adapters.django")
+        module = importlib.import_module("plynt.adapters.django")
 
         assert module.__all__ == [
             "DjangoCacheBackend",
@@ -24,7 +24,7 @@ class TestDjangoAdapterPackage:
 
     def test_package_reexports_public_objects(self) -> None:
         """Verify package-level re-exports for core adapter entry points."""
-        module = importlib.import_module("plynth.adapters.django")
+        module = importlib.import_module("plynt.adapters.django")
 
         assert module.from_django_settings is from_django_settings
         assert (
@@ -37,6 +37,6 @@ class TestDjangoAdapterPackage:
 
     def test_submodules_import_without_django_installed(self) -> None:
         """Verify import-time behavior does not require Django installed."""
-        importlib.import_module("plynth.adapters.django.cache")
-        importlib.import_module("plynth.adapters.django.settings")
-        importlib.import_module("plynth.adapters.django.transport")
+        importlib.import_module("plynt.adapters.django.cache")
+        importlib.import_module("plynt.adapters.django.settings")
+        importlib.import_module("plynt.adapters.django.transport")

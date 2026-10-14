@@ -70,7 +70,7 @@ to override.
 Build safe queries without manual string formatting:
 
 ```python
-from plynth.connectors.salesforce.helpers import (
+from plynt.connectors.salesforce.helpers import (
     build_select_soql,
     escape_sosl,
     format_soql,

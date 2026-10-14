@@ -6,7 +6,7 @@ from typing import cast
 
 import pytest
 
-from plynth.testsupport.vcr import (
+from plynt.testsupport.vcr import (
     VCRMode,
     VCRSettings,
     get_active_vcr_session,

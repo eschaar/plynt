@@ -20,10 +20,10 @@ In Salesforce Setup:
 1. Enable **Client Credentials Flow** under OAuth policies.
 1. Note your `Consumer Key` (client ID) and `Consumer Secret`.
 
-## Step 2 — Install Plynth
+## Step 2 — Install Plynt
 
 ```bash
-pip install "plynth[salesforce]"
+pip install "plynt[salesforce]"
 ```
 
 ## Step 3 — Create a `.env` file
@@ -41,10 +41,12 @@ Add `.env` to `.gitignore`. Never commit credentials.
 
 ```python
 from pydantic_settings import SettingsConfigDict
-from plynth.connectors.salesforce.settings import SalesforceSettings
+from plynt.connectors.salesforce.settings import SalesforceSettings
+
 
 class MySettings(SalesforceSettings):
     model_config = SettingsConfigDict(env_prefix="SF_", env_file=".env")
+
 
 settings = MySettings()
 ```
@@ -52,10 +54,10 @@ settings = MySettings()
 ## Step 5 — Build the client
 
 ```python
-from plynth.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
-from plynth.connectors.salesforce.client import SalesforceAPIClient
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
-from plynth.http.transport import HttpxSyncTransport
+from plynt.connectors.salesforce.auth import SalesforceClientCredentialsAuthMiddleware
+from plynt.connectors.salesforce.client import SalesforceAPIClient
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.http.transport import HttpxSyncTransport
 
 auth = SalesforceClientCredentialsAuthMiddleware(
     client_id=settings.client_id,

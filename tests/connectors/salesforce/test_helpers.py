@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from plynth.connectors.salesforce.helpers import (
+from plynt.connectors.salesforce.helpers import (
     build_select_soql,
     escape_sosl,
     format_soql,
@@ -241,7 +241,7 @@ class TestIsSalesforceId:
     def test_valid_18_char_id_with_correct_checksum(self) -> None:
         # Build a valid 18-char ID from a known 15-char ID.
         """An 18-character ID with a matching checksum is recognised as valid."""
-        from plynth.connectors.salesforce.helpers import _compute_id18_checksum
+        from plynt.connectors.salesforce.helpers import _compute_id18_checksum
 
         id15 = "001000000000000"
         checksum = _compute_id18_checksum(id15)
@@ -250,7 +250,7 @@ class TestIsSalesforceId:
     def test_valid_18_char_id_with_uppercase_letters_in_base(self) -> None:
         # Exercises the isupper() == True branch inside _compute_id18_checksum.
         """The checksum algorithm handles uppercase letters in the base segment."""
-        from plynth.connectors.salesforce.helpers import _compute_id18_checksum
+        from plynt.connectors.salesforce.helpers import _compute_id18_checksum
 
         id15 = "001BcDeFgHiJkLm"
         checksum = _compute_id18_checksum(id15)

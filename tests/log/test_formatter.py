@@ -1,4 +1,4 @@
-"""Tests for plynth.log.StructuredFormatter."""
+"""Tests for plynt.log.StructuredFormatter."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import json
 import logging
 import sys
 
-from plynth.log import StructuredFormatter
+from plynt.log import StructuredFormatter
 
 
 class TestStructuredFormatter:
@@ -15,7 +15,7 @@ class TestStructuredFormatter:
     def _make_record(self, msg: str = "hello") -> logging.LogRecord:
         """Handle make record."""
         return logging.LogRecord(
-            name="plynth.http",
+            name="plynt.http",
             level=logging.INFO,
             pathname="",
             lineno=0,
@@ -31,7 +31,7 @@ class TestStructuredFormatter:
         parsed = json.loads(output)
         assert parsed["message"] == "hello"
         assert parsed["level"] == "INFO"
-        assert parsed["logger"] == "plynth.http"
+        assert parsed["logger"] == "plynt.http"
         assert "time" in parsed
 
     def test_format_omits_exc_info_when_none(self) -> None:
@@ -55,7 +55,7 @@ class TestStructuredFormatter:
 
     def test_extra_fields_are_included_in_json(self) -> None:
         """Validate extra fields are included in json."""
-        logger = logging.getLogger("plynth.test.extra")
+        logger = logging.getLogger("plynt.test.extra")
         records: list[logging.LogRecord] = []
 
         class _Capture(logging.Handler):

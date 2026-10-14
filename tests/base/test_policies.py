@@ -1,10 +1,10 @@
-"""Tests for plynth.base.policies.CircuitBreakerPolicy and RateLimitPolicy."""
+"""Tests for plynt.base.policies.CircuitBreakerPolicy and RateLimitPolicy."""
 
 from __future__ import annotations
 
 import pytest
 
-from plynth.base.policies import CircuitBreakerPolicy, RateLimitPolicy
+from plynt.base.policies import CircuitBreakerPolicy, RateLimitPolicy
 
 
 class TestCircuitBreakerPolicy:

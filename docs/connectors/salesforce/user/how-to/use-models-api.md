@@ -9,7 +9,7 @@ feedback — all without managing a session.
 A configured `SalesforceAPIFacade`:
 
 ```python
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
 
 sf = SalesforceAPIFacade(client)
 models = sf.models()
@@ -22,12 +22,12 @@ ______________________________________________________________________
 Send a list of messages and receive a single completion:
 
 ```python
-from plynth.connectors.salesforce.models import ChatMessage
+from plynt.connectors.salesforce.models import ChatMessage
 
 response = models.generate_chat(
     messages=[
         ChatMessage(role="system", content="You are a helpful assistant."),
-        ChatMessage(role="user",   content="Summarise this account in two sentences."),
+        ChatMessage(role="user", content="Summarise this account in two sentences."),
     ],
 )
 print(response.generation.generated_text)
@@ -39,7 +39,7 @@ You can also pass raw dicts instead of `ChatMessage` objects:
 response = models.generate_chat(
     messages=[
         {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user",   "content": "What is the capital of France?"},
+        {"role": "user", "content": "What is the capital of France?"},
     ],
     temperature=0.3,
     max_tokens=256,
@@ -63,7 +63,9 @@ Set `stream=True` to receive the response incrementally. A
 
 ```python
 stream = models.generate_chat(
-    messages=[{"role": "user", "content": "Explain circuit breakers in one paragraph."}],
+    messages=[
+        {"role": "user", "content": "Explain circuit breakers in one paragraph."}
+    ],
     stream=True,
 )
 for chunk in stream:
@@ -114,11 +116,13 @@ print(f"Dimension: {len(vector)}")
 Batch multiple inputs in a single call:
 
 ```python
-response = models.generate_embeddings([
-    "Account closed — no further action",
-    "Follow-up call scheduled for next week",
-    "Contract renewed for two years",
-])
+response = models.generate_embeddings(
+    [
+        "Account closed — no further action",
+        "Follow-up call scheduled for next week",
+        "Contract renewed for two years",
+    ]
+)
 for emb in response.embeddings:
     print(len(emb.embedding))
 ```
@@ -139,7 +143,7 @@ Rate a model response to improve future quality:
 ```python
 models.submit_feedback(
     request_id=response.request_id,
-    rating=4,                  # 1–5
+    rating=4,  # 1–5
     comment="Good summary but slightly too long",
 )
 ```
@@ -160,7 +164,7 @@ ______________________________________________________________________
 ## Async
 
 ```python
-from plynth.connectors.salesforce.facade import AsyncSalesforceAPIFacade
+from plynt.connectors.salesforce.facade import AsyncSalesforceAPIFacade
 
 sf = AsyncSalesforceAPIFacade(async_client)
 models = sf.models()

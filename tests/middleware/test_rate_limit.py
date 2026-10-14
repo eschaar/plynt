@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.policies import RateLimitPolicy
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.middleware.rate_limit import (
+from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.policies import RateLimitPolicy
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.middleware.rate_limit import (
     AsyncRateLimitMiddleware,
     RateLimitExceededError,
     RateLimitMiddleware,
@@ -48,7 +48,7 @@ class TestRateLimitMiddleware:
         """Validate sync middleware rejects requests above window limit."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.rate_limit.time.monotonic",
+            "plynt.middleware.rate_limit.time.monotonic",
             clock.monotonic,
         )
 
@@ -75,7 +75,7 @@ class TestRateLimitMiddleware:
         """Validate sync middleware allows requests after window expires."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.rate_limit.time.monotonic",
+            "plynt.middleware.rate_limit.time.monotonic",
             clock.monotonic,
         )
 
@@ -134,7 +134,7 @@ class TestAsyncRateLimitMiddleware:
         """Validate async middleware rejects requests above window limit."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.rate_limit.time.monotonic",
+            "plynt.middleware.rate_limit.time.monotonic",
             clock.monotonic,
         )
 
@@ -158,7 +158,7 @@ class TestAsyncRateLimitMiddleware:
         """Validate async middleware allows requests after window expires."""
         clock = _Clock()
         monkeypatch.setattr(
-            "plynth.middleware.rate_limit.time.monotonic",
+            "plynt.middleware.rate_limit.time.monotonic",
             clock.monotonic,
         )
 

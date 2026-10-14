@@ -1,4 +1,4 @@
-# Plynth — Roadmap
+# Plynt — Roadmap
 
 This document tracks what is implemented, what is planned, and what
 is deferred. It is a living document: update it alongside ADRs when
@@ -15,30 +15,30 @@ ______________________________________________________________________
 
 <!-- markdownlint-disable MD060 -->
 
-| #   | Area                                               | Status           | Notes                                                                               |
-| --- | -------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
-| —   | `plynth.base` — protocol-agnostic abstractions     | **Done**         | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings         |
-| —   | `plynth.http` — transport, clients, auth, settings | **Done**         | httpx2 transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
-| —   | `plynth.middleware` — core middleware suite        | **Done**         | Protocol-agnostic middleware suite                                                  |
-| —   | `plynth.http.middleware` layer                     | **Done**         | HTTP auth middleware and HTTP-only transport concerns                               |
-| 1e  | `TracingMiddleware` `plynth[otel]`                 | **Conditional**  | ADR required; use OTel auto-instrumentation unless plynth spans are needed          |
-| 1f  | `MetricsMiddleware` `plynth[prometheus]`           | **Conditional**  | ADR required; use OTel unless standalone metrics are needed                         |
-| 1g  | `MockMiddleware`                                   | **Planned**      | Test/dev only; Tier 3                                                               |
-| 2   | Salesforce connector — REST + Bulk + AI            | **Done**         | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API      |
-| 2f  | Salesforce Pub/Sub CDC                             | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
-| 2g  | `plynth-salesforce` package extraction             | **Deferred**     | After multi-connector gate                                                          |
-| 2l  | Salesforce GraphQL API                             | **Conditional**  | Implement on repeated demand only                                                   |
-| 3   | Streaming response (SSE / chunked HTTP)            | **Done**         | ADR-0017; enables Salesforce AI and LLM connector                                   |
-| 3b  | Raw response access on `APIClient`                 | **Done**         | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                    |
-| 4a  | Django core adapter `plynth[django]`               | **Done**         | Shipped in v0.8.0; settings bridge, cache backend, transport helpers                |
-| 4b  | DRF integration layer `plynth[drf]`                | **Done**         | Shipped in v0.8.0; mixins, header helpers, sync/async support                       |
-| 4c  | FastAPI framework adapter `plynth[fastapi]`        | **Done**         | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs        |
-| 4d  | Flask framework adapter `plynth[flask]`            | **Conditional**  | Convenience layer only; validate demand before ADR                                  |
-| 5   | Cache backend documentation                        | **Done**         | Redis SSL, framework-native wrapping, and custom backend how-to guides added        |
-| 6   | gRPC transport `plynth[grpc]`                      | **Implemented**  | ADR-0030; async calls and optional runtime                                          |
-| 7   | AI / LLM connector `plynth.connectors.llm`         | **Done**         | Generic contract, sync/async parity, OpenAI and Anthropic adapters                  |
-| 8   | SOAP transport `plynth[soap]`                      | **Planned**      | Long-term; ADR required; after gRPC validated                                       |
-| 9   | Connector package extraction                       | **Planned**      | Policy defined; individual extractions need ADR                                     |
+| #   | Area                                              | Status           | Notes                                                                               |
+| --- | ------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| —   | `plynt.base` — protocol-agnostic abstractions     | **Done**         | Request, Response, Transport ABCs, Middleware protocols, Policies, Settings         |
+| —   | `plynt.http` — transport, clients, auth, settings | **Done**         | httpx2 transport, OAuth2 flows (CC, JWT, Password), typed settings, error hierarchy |
+| —   | `plynt.middleware` — core middleware suite        | **Done**         | Protocol-agnostic middleware suite                                                  |
+| —   | `plynt.http.middleware` layer                     | **Done**         | HTTP auth middleware and HTTP-only transport concerns                               |
+| 1e  | `TracingMiddleware` `plynt[otel]`                 | **Conditional**  | ADR required; use OTel auto-instrumentation unless plynt spans are needed           |
+| 1f  | `MetricsMiddleware` `plynt[prometheus]`           | **Conditional**  | ADR required; use OTel unless standalone metrics are needed                         |
+| 1g  | `MockMiddleware`                                  | **Planned**      | Test/dev only; Tier 3                                                               |
+| 2   | Salesforce connector — REST + Bulk + AI           | **Done**         | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API      |
+| 2f  | Salesforce Pub/Sub CDC                            | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
+| 2g  | `plynt-salesforce` package extraction             | **Deferred**     | After multi-connector gate                                                          |
+| 2l  | Salesforce GraphQL API                            | **Conditional**  | Implement on repeated demand only                                                   |
+| 3   | Streaming response (SSE / chunked HTTP)           | **Done**         | ADR-0017; enables Salesforce AI and LLM connector                                   |
+| 3b  | Raw response access on `APIClient`                | **Done**         | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                    |
+| 4a  | Django core adapter `plynt[django]`               | **Done**         | Shipped in v0.8.0; settings bridge, cache backend, transport helpers                |
+| 4b  | DRF integration layer `plynt[drf]`                | **Done**         | Shipped in v0.8.0; mixins, header helpers, sync/async support                       |
+| 4c  | FastAPI framework adapter `plynt[fastapi]`        | **Done**         | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs        |
+| 4d  | Flask framework adapter `plynt[flask]`            | **Conditional**  | Convenience layer only; validate demand before ADR                                  |
+| 5   | Cache backend documentation                       | **Done**         | Redis SSL, framework-native wrapping, and custom backend how-to guides added        |
+| 6   | gRPC transport `plynt[grpc]`                      | **Implemented**  | ADR-0030; async calls and optional runtime                                          |
+| 7   | AI / LLM connector `plynt.connectors.llm`         | **Done**         | Generic contract, sync/async parity, OpenAI and Anthropic adapters                  |
+| 8   | SOAP transport `plynt[soap]`                      | **Planned**      | Long-term; ADR required; after gRPC validated                                       |
+| 9   | Connector package extraction                      | **Planned**      | Policy defined; individual extractions need ADR                                     |
 
 <!-- markdownlint-enable MD060 -->
 
@@ -90,16 +90,16 @@ has been published in a release.
 ### Terminology baseline
 
 - **Connector**: domain-facing integration package under
-  `plynth.connectors.*`.
+  `plynt.connectors.*`.
 - **Adapter**: boundary translation component (framework, provider, or
   transport mapping).
-- **Framework adapter**: adapter that bridges plynth's public interfaces to a
+- **Framework adapter**: adapter that bridges plynt's public interfaces to a
   host framework's lifecycle, configuration, or dependency model.
 
-For LLM, this means the generic `plynth.connectors.llm` connector is shipped,
+For LLM, this means the generic `plynt.connectors.llm` connector is shipped,
 with provider adapters for OpenAI and Anthropic shipped in the same connector.
 
-### Core abstractions (`plynth.base`)
+### Core abstractions (`plynt.base`)
 
 - `SyncTransport` / `AsyncTransport` ABCs (ADR-0006)
 - `BaseSyncTransport` / `BaseAsyncTransport` — compose a middleware chain
@@ -119,7 +119,7 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
 - `Settings` base class — env-driven, pydantic-settings (ADR-0004)
 - `BaseError` hierarchy (ADR-0007)
 
-### HTTP transport (`plynth.http`)
+### HTTP transport (`plynt.http`)
 
 - `HttpxSyncTransport` / `HttpxAsyncTransport` — httpx-backed transport
   implementations with full middleware wiring (ADR-0013)
@@ -131,11 +131,11 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
   `auth` property (ADR-0011) and typed cache properties (`caches`,
   `default_cache`, `default_auth_cache`) for response and token caches
   (ADR-0004, ADR-0010)
-- `plynth.http.auth` — typed auth configuration dataclasses
+- `plynt.http.auth` — typed auth configuration dataclasses
   (`BearerAuthConfig`, `BasicAuthConfig`, `OAuth2ClientCredentialsConfig`,
   `OAuth2JWTBearerConfig`, `OAuth2PasswordConfig`) plus factory functions
   `auth_from_config()` / `async_auth_from_config()` (ADR-0011)
-- Auth middleware in `plynth.http.middleware.auth/` (ADR-0011):
+- Auth middleware in `plynt.http.middleware.auth/` (ADR-0011):
   - `BearerTokenAuthMiddleware`, `BasicAuthMiddleware` (sync + async)
   - `OAuth2AuthMiddlewareBase` — abstract base for all OAuth2 flows
   - `OAuth2ClientCredentialsMiddleware` / `AsyncOAuth2ClientCredentialsMiddleware`
@@ -163,7 +163,7 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
 - `JSONRenderer` — JSON body serialiser (ADR-0009)
 - `APIErrorMapper` — maps HTTP status codes to typed errors (ADR-0007)
 
-### Middleware (`plynth.middleware`)
+### Middleware (`plynt.middleware`)
 
 - `CacheMiddleware` / `AsyncCacheMiddleware` — opt-in response caching
   (ADR-0010, ADR-0013)
@@ -186,13 +186,13 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
   response logging, once per logical call outside the retry loop (ADR-0014)
 - `HeaderMiddleware` / `AsyncHeaderMiddleware` — inject static or dynamic
   headers on every request (ADR-0015)
-- `ThrottleFilter`, `ExceptionInfoFilter`, `PlynthHTTPFilter` — stdlib
+- `ThrottleFilter`, `ExceptionInfoFilter`, `PlyntHTTPFilter` — stdlib
   logging filters (ADR-0014)
 - `StructuredFormatter` — single-line JSON log output (ADR-0014)
 - Opt-in body logging with mandatory credential scrubbing (`log_bodies=True`)
   (ADR-0014)
 
-### Salesforce integration (`plynth.connectors.salesforce`) — partial
+### Salesforce integration (`plynt.connectors.salesforce`) — partial
 
 - `SalesforceObjectService` / `AsyncSalesforceObjectService` — SObject REST
   operations for sync and async clients, including CRUD, `metadata`,
@@ -234,7 +234,7 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
 - `SObjectPayload`, `SObjectCreateResult`, `SObjectError` — typed request /
   response models
 
-### Retry (`plynth.http`)
+### Retry (`plynt.http`)
 
 - `HttpRetryPolicy` — typed retry configuration with `max_attempts`, `backoff_initial`,
   `backoff_multiplier`, `backoff_max`, `retry_on_network_error`, and
@@ -287,7 +287,7 @@ Forward path:
 1. `1.0.0`: stable public milestone after roadmap and ADR readiness gates
    are met.
 
-### Definition of Done: `v0.9.x` (Plynth Core)
+### Definition of Done: `v0.9.x` (Plynt Core)
 
 - Core API surface frozen for 1.0 preparation.
 - ADR set aligned with shipped behavior.
@@ -331,12 +331,12 @@ ______________________________________________________________________
 See [`docs/product/ideas/middleware-extensions.md`](ideas/middleware-extensions.md)
 for remaining items.
 
-Extend `plynth.middleware` with additional cross-cutting concerns. Ordered by
+Extend `plynt.middleware` with additional cross-cutting concerns. Ordered by
 priority within this item:
 
 #### 1a. `HeaderMiddleware` (Tier 1 — core, no new dependencies) ✓
 
-Implemented in `plynth.middleware.header`. Injects static or callable-generated
+Implemented in `plynt.middleware.header`. Injects static or callable-generated
 headers; non-overwrite guarantee; documented chain position (ADR-0015).
 Covers API key auth use case without a dedicated middleware type.
 
@@ -350,7 +350,7 @@ the override at the call site.
 
 #### 1c. `CircuitBreakerMiddleware` (Tier 1 — core, no new dependencies) ✓
 
-Implemented in `plynth.middleware.circuit_breaker` with sync and async
+Implemented in `plynt.middleware.circuit_breaker` with sync and async
 variants plus typed policy and open-circuit error support (ADR-0019).
 
 Complements `RetryMiddleware` by failing fast when an upstream is
@@ -358,38 +358,38 @@ structurally unavailable while still allowing recovery probing.
 
 #### 1d. `RateLimitMiddleware` (Tier 1 — core, no new dependencies) ✓
 
-Implemented in `plynth.middleware.rate_limit` with sync and async variants
+Implemented in `plynt.middleware.rate_limit` with sync and async variants
 plus typed policy and rate-limit exceeded error support (ADR-0020).
 
 Provides client-side pacing to stay within upstream quotas using a core
 middleware rather than connector-specific throttling logic.
 
-#### 1e. `TracingMiddleware` — `plynth[otel]` (Tier 2)
+#### 1e. `TracingMiddleware` — `plynt[otel]` (Tier 2)
 
 OpenTelemetry span per HTTP call, following HTTP semantic conventions. See
-[idea](ideas/middleware-extensions.md#tracingmiddleware-plynthotel) for
+[idea](ideas/middleware-extensions.md#tracingmiddleware-plyntotel) for
 interface sketch.
 
 **Note:** `opentelemetry-instrumentation-httpx` covers the common tracing
-use case without any plynth middleware. This item is only warranted if
-consumers need spans scoped to plynth's middleware chain (e.g., latency
+use case without any plynt middleware. This item is only warranted if
+consumers need spans scoped to plynt's middleware chain (e.g., latency
 measured after auth and retry). Evaluate real demand before writing an ADR.
 
-**Prerequisite:** New ADR. Must live behind `plynth[otel]` extra per ADR-0003.
+**Prerequisite:** New ADR. Must live behind `plynt[otel]` extra per ADR-0003.
 
-#### 1f. `MetricsMiddleware` — `plynth[prometheus]` (Tier 2)
+#### 1f. `MetricsMiddleware` — `plynt[prometheus]` (Tier 2)
 
 Prometheus counters and latency histograms per HTTP call. See
-[idea](ideas/middleware-extensions.md#metricsmiddleware-plynthprometheus) for
+[idea](ideas/middleware-extensions.md#metricsmiddleware-plyntprometheus) for
 interface sketch.
 
 **Note:** `opentelemetry-instrumentation-httpx` + an OTel Prometheus exporter
-already provides request counts and latency histograms with no plynth-specific
+already provides request counts and latency histograms with no plynt-specific
 code. A dedicated `MetricsMiddleware` is not needed for the common case; it
 would only add value for callers who want Prometheus metrics independent of
 OTel. Low priority — evaluate real demand before writing an ADR.
 
-**Prerequisite:** New ADR. Must live behind `plynth[prometheus]` extra per
+**Prerequisite:** New ADR. Must live behind `plynt[prometheus]` extra per
 ADR-0003.
 
 #### 1g. `MockMiddleware` (Tier 3 — test/dev only)
@@ -405,9 +405,9 @@ ______________________________________________________________________
 **Status:** Partially implemented. See "Implemented" section above for what
 is already in place. The following items remain.
 
-**Purpose:** Validate plynth against a complex, multi-API external service;
+**Purpose:** Validate plynt against a complex, multi-API external service;
 surface gaps in the abstractions; serve as the reference example for writing
-plynth-based clients.
+plynt-based clients.
 
 **Scope priority:** Focus first on the standard Salesforce Platform REST APIs
 (SObject, Query, Bulk, and related standard endpoints). Apex REST remains
@@ -462,7 +462,7 @@ Follow-up query ergonomics now implemented:
 - Ingest and query job types
 
 Implementation: `SalesforceBulkService` and `AsyncSalesforceBulkService` in
-`plynth.connectors.salesforce.bulk` (ADR SF-0005). Sync + async, full job
+`plynt.connectors.salesforce.bulk` (ADR SF-0005). Sync + async, full job
 lifecycle, exponential-backoff polling, auto-abort on failure, CSV helpers,
 `Sforce-Locator` pagination. 69 unit tests.
 
@@ -475,14 +475,14 @@ Implemented under SF-0013 and ADR-0030:
 - Bounded batch flow control, reconnect, checkpoints, and cooperative shutdown.
 - Real local gRPC tests and isolated distribution smoke tests.
 
-Install `plynth[grpc,salesforce]`. Real Salesforce auth, schemas, replay
+Install `plynt[grpc,salesforce]`. Real Salesforce auth, schemas, replay
 cursor fidelity, and long-running operation remain acceptance checks before
 production use. Shadow-database materialization stays outside this library.
 
-#### 2g. Package extraction (`plynth-salesforce`)
+#### 2g. Package extraction (`plynt-salesforce`)
 
 Deferred backlog item. Extraction will be considered only after multiple
-stable plynth versions are live and multiple connectors are maintained.
+stable plynt versions are live and multiple connectors are maintained.
 Bulk stability remains a prerequisite, but not sufficient on its own.
 
 #### 2h. Apex REST (`apexecute`) for custom org endpoints ✓
@@ -558,7 +558,7 @@ Scope note:
   GraphQL query and mutation execution
 - Exposes `query(gql_query, variables=...)` for flexible data retrieval
 - Complements REST API (SOQL/SOSL) with alternative query interface
-- No core plynth changes required; standard HTTP POST + JSON handling
+- No core plynt changes required; standard HTTP POST + JSON handling
 
 **Core enablement:** None required. HTTP + JSON middleware already cover it.
 
@@ -587,7 +587,7 @@ the current response and transport model for sync and streaming calls.
 
 **Scope note:**
 
-- Models API connects plynth to Salesforce's gen-AI strategy (Agentforce).
+- Models API connects plynt to Salesforce's gen-AI strategy (Agentforce).
 - Complements LLM connector (item 7) but specific to Salesforce-hosted models.
 
 #### 2n. Generative AI — Agent API
@@ -627,7 +627,7 @@ Shipped core capabilities:
 
 - `Request.stream: bool` opt-in flag (no impact on existing callers).
 - `StreamingResponse` / `AsyncStreamingResponse` subtypes in
-  `plynth.base.response` exposing `iter_lines()` / `aiter_lines()` and byte
+  `plynt.base.response` exposing `iter_lines()` / `aiter_lines()` and byte
   iteration helpers.
 - `_send_once()` branches on `request.stream` — uses `httpx.stream()` instead
   of `httpx.request()`.
@@ -653,32 +653,32 @@ See
 [ADR-0026](../architecture/adr/0026-fastapi-adapter-lifecycle-and-di.md), and
 [ideas/flask-adapter.md](ideas/flask-adapter.md).
 
-Plynth intentionally uses the term **framework adapter**. These modules adapt
-plynth's public interfaces to framework conventions. They are not separate
-framework layers and should continue to live under `plynth.adapters`.
+Plynt intentionally uses the term **framework adapter**. These modules adapt
+plynt's public interfaces to framework conventions. They are not separate
+framework layers and should continue to live under `plynt.adapters`.
 
 Each framework adapter is tracked as its own roadmap item so progress can be
 accepted, deferred, or shipped independently.
 
-#### 4a. Django core adapter (`plynth[django]`) — [changedoc](../changes/django-framework-adapter_django_adapter_20260713.md)
+#### 4a. Django core adapter (`plynt[django]`) — [changedoc](../changes/django-framework-adapter_django_adapter_20260713.md)
 
 **Status:** Implemented and shipped in v0.8.0. See
 [ADR-0024](../architecture/adr/0024-framework-adapter-strategy.md).
 
-- `from_django_settings()` factory — reads plynth config from `settings.py`
+- `from_django_settings()` factory — reads plynt config from `settings.py`
 - Django cache adapter implementing the `Cache` Protocol over `django.core.cache`
 - `transport_from_django_settings()` helper — builds a sync transport with Django cache aliases
 - Logging: no adapter needed; documented configuration only
 
-#### 4b. DRF integration layer (`plynth[drf]`) — [changedoc](../changes/django-framework-adapter_django_adapter_20260713.md)
+#### 4b. DRF integration layer (`plynt[drf]`) — [changedoc](../changes/django-framework-adapter_django_adapter_20260713.md)
 
 **Status:** Implemented and shipped in v0.8.0.
 
-- `PlynthServiceMixin` for `APIView` and `ViewSet` service wiring
+- `PlyntServiceMixin` for `APIView` and `ViewSet` service wiring
 - request-header propagation helpers for correlation headers such as `X-Request-Id`
 - DRF-focused docs showing integration with `APIView` and `ViewSet`
 
-#### 4c. FastAPI extra (`plynth[fastapi]`) — [changedoc](../changes/fastapi-framework-adapter_fastapi_adapter_20260725.md)
+#### 4c. FastAPI extra (`plynt[fastapi]`) — [changedoc](../changes/fastapi-framework-adapter_fastapi_adapter_20260725.md)
 
 **Status:** Implemented with accepted
 [ADR-0026](../architecture/adr/0026-fastapi-adapter-lifecycle-and-di.md).
@@ -687,9 +687,9 @@ Primary use case:
 
 - FastAPI services as API facades over external backends.
 
-- Plynth as outbound integration layer for SaaS and internal backends.
+- Plynt as outbound integration layer for SaaS and internal backends.
 
-- `PlynthLifespan` — handles transport creation and `close()` / `aclose()` via FastAPI lifespan
+- `PlyntLifespan` — handles transport creation and `close()` / `aclose()` via FastAPI lifespan
 
 - `get_transport()` / `get_client()` / `get_service()` — `Depends`-compatible DI factories
 
@@ -697,16 +697,16 @@ Primary use case:
 
 - request-header propagation helpers for correlation/tracing headers
 
-- plynth exception-mapping helpers for FastAPI JSON responses
+- plynt exception-mapping helpers for FastAPI JSON responses
 
 - Settings: no adapter needed; `HTTPSettings` subclasses work directly
 
-#### 4d. Flask extra (`plynth[flask]`) — [idea](ideas/flask-adapter.md)
+#### 4d. Flask extra (`plynt[flask]`) — [idea](ideas/flask-adapter.md)
 
 **Status:** Conditional. Only proceed on demonstrated demand.
 
 - Low priority — `HttpxSyncTransport.from_settings()` already works without any adapter
-- `PlynthFlask` extension — stores transport in `app.extensions`, `init_app()` pattern
+- `PlyntFlask` extension — stores transport in `app.extensions`, `init_app()` pattern
 - Validate real demand before writing an ADR
 
 **Prerequisite:** Flask still requires a dedicated ADR before
@@ -723,12 +723,12 @@ All cache backends and typed config are implemented and documented.
 Completed guides:
 
 - How-to guide for using `RedisCache` with custom SSL options
-- How to wrap framework-native caches behind plynth's cache protocol
+- How to wrap framework-native caches behind plynt's cache protocol
 - How to implement a custom cache backend cleanly
 
 ______________________________________________________________________
 
-### 6. gRPC transport (`plynth[grpc]`)
+### 6. gRPC transport (`plynt[grpc]`)
 
 **Status:** Implemented under accepted ADR-0030.
 
@@ -743,11 +743,11 @@ distribution checks for the experimental release candidate.
 
 ______________________________________________________________________
 
-### 7. AI / LLM connector (`plynth.connectors.llm`)
+### 7. AI / LLM connector (`plynt.connectors.llm`)
 
 **Status:** Implemented.
 
-Plynth's transport and middleware chain is well-suited for LLM API clients:
+Plynt's transport and middleware chain is well-suited for LLM API clients:
 auth (API key via `BearerTokenAuthMiddleware`), retry, and rate limiting are
 already available, and streaming response support is already shipped.
 
@@ -763,7 +763,7 @@ Shipped in this implementation:
 
 - `LLMService` / `AsyncLLMService` on top of `APIService` and `AsyncAPIService`
 - Typed, provider-agnostic request and response primitives in
-  `plynth.connectors.llm.models`
+  `plynt.connectors.llm.models`
 - Streaming and non-streaming parity with one shared contract model
 - Optional tool-calling workflow in neutral contract types
 - Opaque provider extension fields (`provider_extensions`) for provider-local
@@ -782,7 +782,7 @@ Shipped in this implementation:
 
 ______________________________________________________________________
 
-### 8. SOAP transport (`plynth[soap]`)
+### 8. SOAP transport (`plynt[soap]`)
 
 **Status:** Not started. Long-term, low priority. Requires ADR before
 implementation.
@@ -795,7 +795,7 @@ abstractions.
 Anticipated scope:
 
 - `SoapSyncTransport` / `SoapAsyncTransport` — wrap a Zeep client; map SOAP
-  operations onto plynth `Request` / `Response` using a SOAP-specific
+  operations onto plynt `Request` / `Response` using a SOAP-specific
   encoding layer (XML envelope, `SOAPAction` header).
 - A parallel `SoapRequest` / `SoapResponse` may be needed to carry SOAP
   operation names and XML payloads cleanly, or the existing `Request` fields
@@ -809,7 +809,7 @@ Anticipated scope:
 
 **Prerequisite:** New ADR before implementation, covering the `Request` /
 `Response` extension model, Zeep integration strategy, and the install extra
-`plynth[soap]` per ADR-0003 dependency policy. Defer until gRPC transport
+`plynt[soap]` per ADR-0003 dependency policy. Defer until gRPC transport
 (item 6) has validated the non-HTTP transport pattern.
 
 ______________________________________________________________________
@@ -819,14 +819,14 @@ ______________________________________________________________________
 **Status:** Not started. Backlog — no ADR required to define the policy, but each
 extraction requires its own ADR.
 
-As connectors in `plynth.connectors.*` mature, they should be extracted into
-standalone packages (`plynth-<name>`) so consumers can install only what they
+As connectors in `plynt.connectors.*` mature, they should be extracted into
+standalone packages (`plynt-<name>`) so consumers can install only what they
 need. This item tracks the policy and the pending extractions.
 
 **Policy:**
 
-- Each connector package declares `plynth[httpx]` as its only plynth dependency.
-- No plynth internals are exposed — public API only.
+- Each connector package declares `plynt[httpx]` as its only plynt dependency.
+- No plynt internals are exposed — public API only.
 - Extraction happens after the connector is stable and fully tested inside the
   monorepo.
 - A connector-specific ADR is required before extraction (packaging, versioning,
@@ -834,9 +834,9 @@ need. This item tracks the policy and the pending extractions.
 
 **Pending extractions (backlog):**
 
-- `plynth.connectors.salesforce` -> `plynth-salesforce`
+- `plynt.connectors.salesforce` -> `plynt-salesforce`
   Prerequisite: Item 2e stable; multi-version + multi-connector gate.
-- `plynth.connectors.llm` (future) -> `plynth-openai` or `plynth-llm`
+- `plynt.connectors.llm` (future) -> `plynt-openai` or `plynt-llm`
   Prerequisite: Item 7 implemented.
 
 ______________________________________________________________________

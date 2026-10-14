@@ -1,4 +1,4 @@
-"""Tests for ``plynth.adapters.django.cache``."""
+"""Tests for ``plynt.adapters.django.cache``."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from types import ModuleType
 
 import pytest
 
-from plynth.adapters.django.cache import DjangoCacheBackend
-from plynth.base.cache import CacheBackend
-from plynth.base.request import Request
-from plynth.base.response import Response
+from plynt.adapters.django.cache import DjangoCacheBackend
+from plynt.base.cache import CacheBackend
+from plynt.base.request import Request
+from plynt.base.response import Response
 
 
 class FakeCache:
@@ -67,7 +67,7 @@ class TestDjangoCacheBackend:
             raise ImportError("django not installed")
 
         monkeypatch.setattr(
-            "plynth.adapters.django.cache.importlib.import_module",
+            "plynt.adapters.django.cache.importlib.import_module",
             _raise_import_error,
         )
 
@@ -87,7 +87,7 @@ class TestDjangoCacheBackend:
         cache_module.__dict__["caches"] = {}
 
         monkeypatch.setattr(
-            "plynth.adapters.django.cache.importlib.import_module",
+            "plynt.adapters.django.cache.importlib.import_module",
             lambda _: cache_module,
         )
 
@@ -110,7 +110,7 @@ class TestDjangoCacheBackend:
         )
 
         monkeypatch.setattr(
-            "plynth.adapters.django.cache.importlib.import_module",
+            "plynt.adapters.django.cache.importlib.import_module",
             lambda _: cache_module,
         )
 
@@ -166,7 +166,7 @@ class TestDjangoCacheBackend:
         backend, fake_cache = _build_backend_with_cache(monkeypatch)
         fake_cache.store["broken"] = {
             "schema_version": 1,
-            "kind": "plynth.response",
+            "kind": "plynt.response",
             "status_code": 200,
             "headers": {},
             "content_b64": "not-base64",
@@ -186,7 +186,7 @@ class TestDjangoCacheBackend:
         backend, fake_cache = _build_backend_with_cache(monkeypatch)
         fake_cache.store["broken"] = {
             "schema_version": 99,
-            "kind": "plynth.response",
+            "kind": "plynt.response",
             "status_code": 200,
             "headers": {},
             "content_b64": "cGF5bG9hZA==",
@@ -206,7 +206,7 @@ class TestDjangoCacheBackend:
         backend, fake_cache = _build_backend_with_cache(monkeypatch)
         fake_cache.store["broken"] = {
             "schema_version": 1,
-            "kind": "plynth.response",
+            "kind": "plynt.response",
             "status_code": "200",
             "headers": {},
             "content_b64": "cGF5bG9hZA==",
@@ -226,7 +226,7 @@ class TestDjangoCacheBackend:
         backend, fake_cache = _build_backend_with_cache(monkeypatch)
         fake_cache.store["broken"] = {
             "schema_version": 1,
-            "kind": "plynth.response",
+            "kind": "plynt.response",
             "status_code": 200,
             "headers": ["bad"],
             "content_b64": "cGF5bG9hZA==",
@@ -246,7 +246,7 @@ class TestDjangoCacheBackend:
         backend, fake_cache = _build_backend_with_cache(monkeypatch)
         fake_cache.store["broken"] = {
             "schema_version": 1,
-            "kind": "plynth.response",
+            "kind": "plynt.response",
             "status_code": 200,
             "headers": {},
             "content_b64": 123,
@@ -266,7 +266,7 @@ class TestDjangoCacheBackend:
         backend, fake_cache = _build_backend_with_cache(monkeypatch)
         fake_cache.store["broken"] = {
             "schema_version": 1,
-            "kind": "plynth.response",
+            "kind": "plynt.response",
             "status_code": 200,
             "headers": {"x": 1},
             "content_b64": "cGF5bG9hZA==",
@@ -391,14 +391,14 @@ class TestDjangoCacheBackend:
         """
         django_cache_backend = pytest.importorskip("django.core.cache.backends.locmem")
         locmem_cache = django_cache_backend.LocMemCache(
-            "plynth-test-locmem",
+            "plynt-test-locmem",
             {},
         )
         cache_module = ModuleType("django.core.cache")
         cache_module.__dict__["caches"] = {"default": locmem_cache}
 
         monkeypatch.setattr(
-            "plynth.adapters.django.cache.importlib.import_module",
+            "plynt.adapters.django.cache.importlib.import_module",
             lambda _: cache_module,
         )
 
@@ -449,7 +449,7 @@ def _build_backend_with_cache(
     cache_module.__dict__["caches"] = {"default": fake_cache}
 
     monkeypatch.setattr(
-        "plynth.adapters.django.cache.importlib.import_module",
+        "plynt.adapters.django.cache.importlib.import_module",
         lambda _: cache_module,
     )
 

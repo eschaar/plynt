@@ -9,15 +9,15 @@ from unittest.mock import patch
 
 import pytest
 
-from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.policies import (
+from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.policies import (
     ThrottleGovernanceAction,
     ThrottleGovernancePolicy,
     ThrottleSignal,
 )
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.middleware.throttle import (
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.middleware.throttle import (
     AsyncThrottleGovernanceMiddleware,
     ThrottleGovernanceMiddleware,
     ThrottleGovernedError,
@@ -29,7 +29,7 @@ from plynth.middleware.throttle import (
 
 def test_throttle_module_exports_error_class() -> None:
     """Throttle module __all__ includes the governed-error export."""
-    import plynth.middleware.throttle as throttle_module
+    import plynt.middleware.throttle as throttle_module
 
     assert "ThrottleGovernedError" in throttle_module.__all__
 
@@ -176,7 +176,7 @@ class TestThrottleGovernancePolicy:
         policy = ThrottleGovernancePolicy(min_delay_seconds=1.0)
         signal = ThrottleSignal(detected=True, reset_at_seconds=reset_at)
 
-        with patch("plynth.base.policies.time.time", return_value=fixed_now):
+        with patch("plynt.base.policies.time.time", return_value=fixed_now):
             decision = policy.evaluate(signal)
 
         assert decision.action == ThrottleGovernanceAction.DELAY
@@ -193,7 +193,7 @@ class TestThrottleGovernancePolicy:
             reset_at_seconds=fixed_now + 60.0,
         )
 
-        with patch("plynth.base.policies.time.time", return_value=fixed_now):
+        with patch("plynt.base.policies.time.time", return_value=fixed_now):
             decision = policy.evaluate(signal)
 
         assert decision.delay_seconds == 10.0
@@ -205,7 +205,7 @@ class TestThrottleGovernancePolicy:
         policy = ThrottleGovernancePolicy(min_delay_seconds=2.0)
         signal = ThrottleSignal(detected=True, reset_at_seconds=fixed_now - 10.0)
 
-        with patch("plynth.base.policies.time.time", return_value=fixed_now):
+        with patch("plynt.base.policies.time.time", return_value=fixed_now):
             decision = policy.evaluate(signal)
 
         assert decision.delay_seconds == 2.0
@@ -491,7 +491,7 @@ class TestParseRetryAfter:
         date_str = fixed_future.strftime("%a, %d %b %Y %H:%M:%S GMT")
 
         response = Response(status_code=429, headers={"retry-after": date_str})
-        with patch("plynth.middleware.throttle.datetime") as mock_dt:
+        with patch("plynt.middleware.throttle.datetime") as mock_dt:
             mock_dt.now.return_value = fixed_now
             result = _parse_retry_after(response)
 

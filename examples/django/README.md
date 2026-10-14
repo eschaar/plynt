@@ -1,6 +1,6 @@
 # Django examples
 
-Runnable snippets and integration patterns for using Plynth inside Django
+Runnable snippets and integration patterns for using Plynt inside Django
 applications.
 
 ## Available examples
@@ -10,7 +10,7 @@ applications.
 - [Django transport from settings](transport_from_settings.md) — build
   `HttpxSyncTransport` or `HttpxAsyncTransport` via Django adapter helpers
 - [Django middleware profile](middleware_profile.md) — align inbound Django
-  middleware context with outbound plynth behavior
+  middleware context with outbound plynt behavior
 
 For DRF-specific examples, see
 [../drf/README.md](../drf/README.md).
@@ -20,7 +20,7 @@ For DRF-specific examples, see
 1. Install required extras:
 
 ```bash
-pip install "plynth[django,httpx]"
+pip install "plynt[django,httpx]"
 ```
 
 1. Configure at least one cache alias in `settings.CACHES`.

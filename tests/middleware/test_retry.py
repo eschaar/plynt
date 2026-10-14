@@ -1,4 +1,4 @@
-"""Tests for plynth.middleware.retry (RetryMiddleware, AsyncRetryMiddleware).
+"""Tests for plynt.middleware.retry (RetryMiddleware, AsyncRetryMiddleware).
 
 Behaviour coverage (backoff, retryable status codes, network errors) is
 provided by the transport integration tests in tests/base/test_transport.py.
@@ -12,12 +12,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.policies import RetryPolicy
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
-from plynth.middleware.throttle import ThrottleGovernedError
+from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.policies import RetryPolicy
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
+from plynt.middleware.throttle import ThrottleGovernedError
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -160,7 +160,7 @@ class TestRetryMiddlewareGovernanceIntegration:
             retryable_status_codes=frozenset([503]),
         )
         mw = RetryMiddleware(policy)
-        with patch("plynth.middleware.retry.time.sleep") as mock_sleep:
+        with patch("plynt.middleware.retry.time.sleep") as mock_sleep:
             result = mw.handle(_REQUEST, handler)
 
         assert result.status_code == 200
@@ -193,7 +193,7 @@ class TestRetryMiddlewareGovernanceIntegration:
             retryable_status_codes=frozenset([503]),
         )
         mw = RetryMiddleware(policy)
-        with patch("plynth.middleware.retry.time.sleep") as mock_sleep:
+        with patch("plynt.middleware.retry.time.sleep") as mock_sleep:
             result = mw.handle(_REQUEST, handler)
 
         assert result.status_code == 200
@@ -228,7 +228,7 @@ class TestRetryMiddlewareGovernanceIntegration:
             retryable_status_codes=frozenset([503]),
         )
         mw = RetryMiddleware(policy)
-        with patch("plynth.middleware.retry.time.sleep") as mock_sleep:
+        with patch("plynt.middleware.retry.time.sleep") as mock_sleep:
             result = mw.handle(_REQUEST, handler)
 
         assert result.status_code == 200
@@ -291,7 +291,7 @@ class TestRetryMiddlewareGovernanceIntegration:
         )
         mw = AsyncRetryMiddleware(policy)
         with patch(
-            "plynth.middleware.retry.asyncio.sleep", new_callable=AsyncMock
+            "plynt.middleware.retry.asyncio.sleep", new_callable=AsyncMock
         ) as mock_sleep:
             result = await mw.handle(_REQUEST, handler)
 

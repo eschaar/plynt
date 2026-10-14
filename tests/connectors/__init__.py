@@ -1,1 +1,1 @@
-# plynth connectors tests
+# plynt connectors tests

@@ -1,4 +1,4 @@
-"""Tests for plynth.cache (CacheConfigBase protocol and cache_from_config factory)."""
+"""Tests for plynt.cache (CacheConfigBase protocol and cache_from_config factory)."""
 
 from __future__ import annotations
 
@@ -8,14 +8,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from plynth.base.cache import (
+from plynt.base.cache import (
     CacheBackend,
     CacheConfigBase,
     SupportsSizeInfo,
     SupportsStats,
     SupportsTTL,
 )
-from plynth.cache import (
+from plynt.cache import (
     DummyCache,
     DummyCacheConfig,
     LocMemCache,

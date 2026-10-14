@@ -3,7 +3,7 @@
 Authentication is configured via typed dataclasses and passed to
 `auth_from_config()` (sync) or `async_auth_from_config()` (async).
 
-Both functions are in `plynth.http.auth`.
+Both functions are in `plynt.http.auth`.
 
 ______________________________________________________________________
 
@@ -16,7 +16,7 @@ Static token. Sends `Authorization: Bearer <token>` on every request.
 | `token` | `str` | yes      | The bearer token or API key |
 
 ```python
-from plynth.http.auth import BearerAuthConfig, auth_from_config
+from plynt.http.auth import BearerAuthConfig, auth_from_config
 
 auth = auth_from_config(BearerAuthConfig(token="my-api-key"))
 ```
@@ -34,7 +34,7 @@ HTTP Basic authentication. Encodes `username:password` in the
 | `password` | `str` | yes      | Password    |
 
 ```python
-from plynth.http.auth import BasicAuthConfig, auth_from_config
+from plynt.http.auth import BasicAuthConfig, auth_from_config
 
 auth = auth_from_config(BasicAuthConfig(username="alice", password="hunter2"))
 ```
@@ -57,7 +57,7 @@ automatically on expiry.
 | `extra_params`  | `dict[str, str]` | no       | Extra form fields sent with the token request          |
 
 ```python
-from plynth.http.auth import OAuth2ClientCredentialsConfig, auth_from_config
+from plynt.http.auth import OAuth2ClientCredentialsConfig, auth_from_config
 
 auth = auth_from_config(
     OAuth2ClientCredentialsConfig(
@@ -75,7 +75,7 @@ ______________________________________________________________________
 ## OAuth2JWTBearerConfig
 
 OAuth2 JWT Bearer Token flow (RFC 7523). You provide a factory that
-generates a signed JWT assertion. Plynth exchanges it for an access token.
+generates a signed JWT assertion. Plynt exchanges it for an access token.
 
 | Field                | Type                | Required | Description                                              |
 | -------------------- | ------------------- | -------- | -------------------------------------------------------- |
@@ -85,11 +85,13 @@ generates a signed JWT assertion. Plynth exchanges it for an access token.
 | `ttl_leeway`         | `int`               | no       | Seconds before expiry to force a refresh (default: 60)   |
 
 ```python
-from plynth.http.auth import OAuth2JWTBearerConfig, auth_from_config
+from plynt.http.auth import OAuth2JWTBearerConfig, auth_from_config
+
 
 def build_assertion() -> str:
     # Build and sign your JWT here
     return "<signed-jwt>"
+
 
 auth = auth_from_config(
     OAuth2JWTBearerConfig(
@@ -127,8 +129,8 @@ OAuth2 flows cache tokens in memory by default. Provide a
 
 ```python
 import redis
-from plynth.cache import RedisCache
-from plynth.http.auth import OAuth2ClientCredentialsConfig, auth_from_config
+from plynt.cache import RedisCache
+from plynt.http.auth import OAuth2ClientCredentialsConfig, auth_from_config
 
 cache = RedisCache(redis.Redis(host="localhost"), prefix="tokens:")
 
@@ -149,7 +151,7 @@ ______________________________________________________________________
 Use `async_auth_from_config()` with `HttpxAsyncTransport`:
 
 ```python
-from plynth.http.auth import async_auth_from_config
+from plynt.http.auth import async_auth_from_config
 
 auth = async_auth_from_config(OAuth2ClientCredentialsConfig(...))
 ```

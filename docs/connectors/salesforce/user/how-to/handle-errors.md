@@ -24,7 +24,7 @@ SalesforceMetadataDeployError          # deploy completed with failures
 ## Catch a specific error
 
 ```python
-from plynth.connectors.salesforce.errors import (
+from plynt.connectors.salesforce.errors import (
     SalesforceNotFoundError,
     SalesforceValidationError,
 )
@@ -58,7 +58,7 @@ All `SalesforceAPIError` subclasses expose:
 ## Catch all Salesforce API errors
 
 ```python
-from plynth.connectors.salesforce.errors import SalesforceAPIError
+from plynt.connectors.salesforce.errors import SalesforceAPIError
 
 try:
     result = sf.query().query(soql)
@@ -74,7 +74,7 @@ externally. The auth middleware will refresh automatically on the next
 attempt if the token is expired by TTL — but not if it was manually revoked.
 
 ```python
-from plynth.connectors.salesforce.errors import SalesforceSessionExpiredError
+from plynt.connectors.salesforce.errors import SalesforceSessionExpiredError
 
 try:
     sf.sobject("Account").get(record_id)
@@ -88,7 +88,7 @@ except SalesforceSessionExpiredError:
 These are raised by middleware *before* a request reaches Salesforce:
 
 ```python
-from plynth.middleware.circuit_breaker import CircuitBreakerOpenError
+from plynt.middleware.circuit_breaker import CircuitBreakerOpenError
 
 try:
     result = sf.query().query(soql)

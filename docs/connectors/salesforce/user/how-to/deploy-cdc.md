@@ -10,20 +10,20 @@ at-least-once delivery already implies.
 Install the protocol and connector extras together:
 
 ```bash
-pip install "plynth[grpc,salesforce]"
+pip install "plynt[grpc,salesforce]"
 ```
 
 This includes the real Avro decoder. CDC is experimental: authenticate,
 decode real schemas, and verify replay behavior against a Salesforce org
 before using this deployment guidance in production.
 
-Plynth vendors the generated Salesforce `eventbus.v1` Pub/Sub stub, so you
+Plynt vendors the generated Salesforce `eventbus.v1` Pub/Sub stub, so you
 do not need to run `protoc` yourself. Build a gRPC channel and pass it to
 `create_vendored_pubsub_adapter`:
 
 ```python
 import grpc
-from plynth.connectors.salesforce.cdc import (
+from plynt.connectors.salesforce.cdc import (
     AsyncSalesforceCDCSubscriber,
     AvroPayloadDecoder,
     create_vendored_pubsub_adapter,
@@ -89,7 +89,7 @@ A supplied or stored `replay_id` selects `CUSTOM` for retained events.
 `SalesforceCDCSubscribeRequest` does not expose a `replay_preset` field.
 Building a shadow database also requires an initial snapshot and recovery
 from gaps larger than Salesforce's retention window. These strategies are
-application-specific; Plynth exposes typed events and errors, not an
+application-specific; Plynt exposes typed events and errors, not an
 atomic snapshot-and-stream handoff.
 
 ### Initial load
@@ -101,7 +101,7 @@ atomic snapshot-and-stream handoff.
    Do not pause the subscription for a long bulk load: slow consumption
    can exceed the flow-control timeout.
 1. Perform the initial snapshot with the Salesforce Bulk API or SOQL
-   (`plynth.connectors.salesforce`, not the CDC module — CDC has no
+   (`plynt.connectors.salesforce`, not the CDC module — CDC has no
    "give me everything" mode).
 1. Reconcile the snapshot and buffered events using application-specific
    ordering and duplicate handling. Handle deletes as well as updates;
@@ -129,7 +129,7 @@ outside the retention window (or otherwise invalid) fails the `Subscribe`
 call itself with a gRPC `INVALID_ARGUMENT` status
 (`sfdc.platform.eventbus.grpc.subscription.fetch.replayid.corrupted`).
 `AsyncSalesforceCDCSubscriber` raises this as
-`plynth.connectors.salesforce.cdc.SalesforceCDCReplayInvalidError` — a
+`plynt.connectors.salesforce.cdc.SalesforceCDCReplayInvalidError` — a
 non-retryable error, since resuming from the same cursor will fail
 identically every time.
 
@@ -167,8 +167,8 @@ before the previous batch was processed), unrelated to missed changes.
 - Use a **durable external checkpoint store** in Kubernetes:
   `CacheSalesforceCDCCheckpointStore` wrapping a `CacheBackend`
   implementation (Redis, memcached, or another external key-value store) that
-  satisfies `plynth.base.cache.CacheBackend`. `InMemorySalesforceCDCCheckpointStore`
-  is for local development and tests only. Plynth's `RedisCache` can wrap
+  satisfies `plynt.base.cache.CacheBackend`. `InMemorySalesforceCDCCheckpointStore`
+  is for local development and tests only. Plynt's `RedisCache` can wrap
   an externally configured Redis client; install `redis` separately and
   configure persistence, authentication, and network isolation. The backend
   adapter alone does not guarantee checkpoint durability.
@@ -177,12 +177,12 @@ before the previous batch was processed), unrelated to missed changes.
   `InMemorySalesforceCDCCheckpointStore`.
 
 ```python
-from plynth.connectors.salesforce.cdc import (
+from plynt.connectors.salesforce.cdc import (
     AsyncSalesforceCDCSubscriber,
     AvroPayloadDecoder,
     create_vendored_pubsub_adapter,
 )
-from plynth.connectors.salesforce.cdc.checkpoint import (
+from plynt.connectors.salesforce.cdc.checkpoint import (
     CacheSalesforceCDCCheckpointStore,
 )
 
@@ -224,6 +224,7 @@ spec:
 ```python
 import asyncio
 import signal
+
 
 async def run() -> None:
     stop = asyncio.Event()

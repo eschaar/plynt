@@ -6,11 +6,11 @@ import json
 
 import pytest
 
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.base.transport import AsyncTransport, SyncTransport
-from plynth.http.auth import OAuth2ClientCredentialsConfig
-from plynth.http.settings import HTTPSettings
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.base.transport import AsyncTransport, SyncTransport
+from plynt.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.settings import HTTPSettings
 
 __all__: list[str] = ["_OAuthTestSettings"]
 

@@ -1,6 +1,6 @@
 # How to handle errors
 
-Plynth maps HTTP status codes to typed Python exceptions. Catch the most
+Plynt maps HTTP status codes to typed Python exceptions. Catch the most
 specific exception you need and let the rest propagate.
 
 ## Core exception hierarchy
@@ -8,9 +8,9 @@ specific exception you need and let the rest propagate.
 ```bash
 Exception
 └── RuntimeError
-    ├── TransportError                   (plynth.base.errors)
-    │   └── StatusError                  (plynth.base.errors)
-    │       └── HttpStatusError          (plynth.http.errors)
+    ├── TransportError                   (plynt.base.errors)
+    │   └── StatusError                  (plynt.base.errors)
+    │       └── HttpStatusError          (plynt.http.errors)
     │           ├── BadRequestError      (400)
     │           ├── UnauthorizedError    (401)
     │           ├── ForbiddenError       (403)
@@ -24,8 +24,8 @@ Exception
     │           ├── OperationFailedError (500)
     │           ├── ServiceUnavailableError (503)
     │           └── FeatureOfflineError  (503)
-    ├── CircuitBreakerOpenError          (plynth.middleware.circuit_breaker)
-    └── RateLimitExceededError           (plynth.middleware.rate_limit)
+    ├── CircuitBreakerOpenError          (plynt.middleware.circuit_breaker)
+    └── RateLimitExceededError           (plynt.middleware.rate_limit)
 ```
 
 ## Catch HTTP status errors
@@ -33,7 +33,7 @@ Exception
 `APIClient` raises `HttpStatusError` (or a subclass) for `4xx` and `5xx` responses.
 
 ```python
-from plynth.http.errors import NotFoundError, HttpStatusError
+from plynt.http.errors import NotFoundError, HttpStatusError
 
 try:
     response = client.get("/items/42")
@@ -82,7 +82,7 @@ needed when using `APIClient` or `AsyncAPIClient`.
 Use `match_error` to get the most specific subclass for a known status code:
 
 ```python
-from plynth.http.errors import match_error
+from plynt.http.errors import match_error
 
 err = match_error(404, method="GET", url="/items/1")
 # err is a NotFoundError instance
@@ -91,7 +91,7 @@ err = match_error(404, method="GET", url="/items/1")
 ## Catch circuit breaker errors
 
 ```python
-from plynth.middleware.circuit_breaker import CircuitBreakerOpenError
+from plynt.middleware.circuit_breaker import CircuitBreakerOpenError
 
 try:
     response = client.get("/items")
@@ -102,7 +102,7 @@ except CircuitBreakerOpenError as exc:
 ## Catch rate limit errors
 
 ```python
-from plynth.middleware.rate_limit import RateLimitExceededError
+from plynt.middleware.rate_limit import RateLimitExceededError
 
 try:
     response = client.post("/items", json={"name": "x"})

@@ -1,4 +1,4 @@
-"""Tests for plynth.cache.redis (RedisCache, RedisCacheConfig)."""
+"""Tests for plynt.cache.redis (RedisCache, RedisCacheConfig)."""
 
 from __future__ import annotations
 
@@ -8,13 +8,13 @@ from unittest.mock import patch
 import fakeredis
 import pytest
 
-from plynth.base.cache import (
+from plynt.base.cache import (
     CacheBackend,
     CacheConfigBase,
     SupportsStats,
     SupportsTTL,
 )
-from plynth.cache import RedisCache, RedisCacheConfig
+from plynt.cache import RedisCache, RedisCacheConfig
 
 
 class TestRedisCache:
@@ -58,7 +58,7 @@ class TestRedisCache:
     def test_clear_removes_only_prefixed_keys(self) -> None:
         """Validate clear removes only prefixed keys."""
         fake = fakeredis.FakeRedis(host="127.0.0.1")
-        backend = RedisCache(fake, prefix="plynth:")
+        backend = RedisCache(fake, prefix="plynt:")
         backend.set("a", 1)
         backend.set("b", 2)
         # Store a key outside our prefix directly via the Redis client.
@@ -157,7 +157,7 @@ class TestRedisCacheConfig:
     def test_default_key_prefix(self) -> None:
         """Validate default key prefix."""
         config = RedisCacheConfig(location="redis://localhost:6379/0")
-        assert config.key_prefix == "plynth:"
+        assert config.key_prefix == "plynt:"
 
     def test_custom_key_prefix(self) -> None:
         """Validate custom key prefix."""

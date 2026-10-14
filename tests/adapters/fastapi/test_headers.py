@@ -8,7 +8,7 @@ import pytest
 
 pytest.importorskip("fastapi")
 
-from plynth.adapters.fastapi.headers import (
+from plynt.adapters.fastapi.headers import (
     build_async_request_header_middleware,
     build_request_header_middleware,
 )

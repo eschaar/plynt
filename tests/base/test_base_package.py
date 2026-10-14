@@ -1,14 +1,14 @@
-"""Tests for public package exports in ``plynth.base``."""
+"""Tests for public package exports in ``plynt.base``."""
 
 import importlib
 
-from plynth.base.cache import CacheBackend
-from plynth.base.errors import BaseError, ConfigurationError
-from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.base.settings import Settings
-from plynth.base.transport import AsyncTransport, SyncTransport
+from plynt.base.cache import CacheBackend
+from plynt.base.errors import BaseError, ConfigurationError
+from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.base.settings import Settings
+from plynt.base.transport import AsyncTransport, SyncTransport
 
 
 class TestBasePackage:
@@ -16,7 +16,7 @@ class TestBasePackage:
 
     def test_package_exports_public_names(self) -> None:
         """Verify the stable public names exported by the package."""
-        module = importlib.import_module("plynth.base")
+        module = importlib.import_module("plynt.base")
 
         assert module.__all__ == [
             "AsyncMiddleware",
@@ -51,7 +51,7 @@ class TestBasePackage:
 
     def test_package_reexports_public_objects(self) -> None:
         """Verify package-level re-exports for base layer entry points."""
-        module = importlib.import_module("plynth.base")
+        module = importlib.import_module("plynt.base")
 
         assert module.AsyncMiddleware is AsyncMiddleware
         assert module.AsyncTransport is AsyncTransport

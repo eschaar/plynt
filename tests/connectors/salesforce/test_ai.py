@@ -10,16 +10,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from plynth.base.response import AsyncStreamingResponse, StreamingResponse
-from plynth.connectors.salesforce.ai import (
+from plynt.base.response import AsyncStreamingResponse, StreamingResponse
+from plynt.connectors.salesforce.ai import (
     AsyncSalesforceModelsService,
     SalesforceModelsService,
 )
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.models import (
+from plynt.connectors.salesforce.models import (
     ChatCompletionResponse,
     ChatMessage,
     EmbeddingResponse,
@@ -30,14 +30,14 @@ from plynth.connectors.salesforce.models import (
     ModelsTextGenerationRequest,
     TextGenerationResponse,
 )
-from plynth.http.client import APIClient, AsyncAPIClient
-from plynth.http.renderer import JSONRenderer
+from plynt.http.client import APIClient, AsyncAPIClient
+from plynt.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 from tests.connectors.salesforce.conftest import DUMMY_INSTANCE_URL
 
 _JSON_RENDERER = JSONRenderer()
 REPO_ROOT = Path(__file__).resolve().parents[3]
-CONNECTORS_ROOT = REPO_ROOT / "src" / "plynth" / "connectors"
+CONNECTORS_ROOT = REPO_ROOT / "src" / "plynt" / "connectors"
 SALESFORCE_ROOT = CONNECTORS_ROOT / "salesforce"
 LLM_ROOT = CONNECTORS_ROOT / "llm"
 
@@ -322,16 +322,16 @@ class TestAIConnectorBoundaries:
 
     def test_salesforce_connector_does_not_import_llm_connector(self) -> None:
         """Keep Salesforce AI services independent from a generic LLM connector."""
-        violations = _imports_connector(SALESFORCE_ROOT, "plynth.connectors.llm")
+        violations = _imports_connector(SALESFORCE_ROOT, "plynt.connectors.llm")
 
         assert violations == []
 
     def test_llm_connector_does_not_import_salesforce_connector(self) -> None:
         """Keep a future generic LLM connector independent from Salesforce."""
         if not LLM_ROOT.exists():
-            pytest.skip("plynth.connectors.llm does not exist yet")
+            pytest.skip("plynt.connectors.llm does not exist yet")
 
-        violations = _imports_connector(LLM_ROOT, "plynth.connectors.salesforce")
+        violations = _imports_connector(LLM_ROOT, "plynt.connectors.salesforce")
 
         assert violations == []
 

@@ -1,6 +1,6 @@
 import pytest
 
-from plynth.base.errors import (
+from plynt.base.errors import (
     BaseError,
     DependencyUnavailableError,
     FeatureDisabledError,

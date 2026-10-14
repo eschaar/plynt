@@ -22,7 +22,7 @@ path in this repository:
 1. Install required extras:
 
 ```bash
-pip install "plynth[httpx]"
+pip install "plynt[httpx]"
 ```
 
 1. Set provider credentials in `examples/llm/.env`.

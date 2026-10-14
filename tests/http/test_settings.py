@@ -1,4 +1,4 @@
-"""Tests for plynth.http.settings.HTTPSettings."""
+"""Tests for plynt.http.settings.HTTPSettings."""
 
 from __future__ import annotations
 
@@ -7,16 +7,16 @@ from typing import Any
 import pytest
 from pydantic_settings import SettingsConfigDict
 
-from plynth.base.settings import Settings
-from plynth.cache import LocMemCacheConfig, RedisCacheConfig
-from plynth.http.auth import (
+from plynt.base.settings import Settings
+from plynt.cache import LocMemCacheConfig, RedisCacheConfig
+from plynt.http.auth import (
     BasicAuthConfig,
     BearerAuthConfig,
     OAuth2ClientCredentialsConfig,
 )
-from plynth.http.settings import ApiSettings, HTTPSettings
-from plynth.http.transport import HttpxSyncTransport
-from plynth.middleware.retry import RetryMiddleware
+from plynt.http.settings import ApiSettings, HTTPSettings
+from plynt.http.transport import HttpxSyncTransport
+from plynt.middleware.retry import RetryMiddleware
 
 
 class TestHTTPSettings:
@@ -54,18 +54,18 @@ class TestHTTPSettings:
 
     def test_loads_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Validate loads from env."""
-        monkeypatch.setenv("PLYNTH_BASE_URL", "https://api.example.com")
-        monkeypatch.setenv("PLYNTH_TIMEOUT_CONNECT", "3.0")
-        monkeypatch.setenv("PLYNTH_TIMEOUT_READ", "60.0")
-        monkeypatch.setenv("PLYNTH_TIMEOUT_WRITE", "20.0")
-        monkeypatch.setenv("PLYNTH_TIMEOUT_POOL", "15.0")
-        monkeypatch.setenv("PLYNTH_MAX_ATTEMPTS", "5")
-        monkeypatch.setenv("PLYNTH_HTTP2", "true")
-        monkeypatch.setenv("PLYNTH_TRUST_ENV", "false")
-        monkeypatch.setenv("PLYNTH_MAX_REDIRECTS", "8")
-        monkeypatch.setenv("PLYNTH_MAX_CONNECTIONS", "50")
-        monkeypatch.setenv("PLYNTH_MAX_KEEPALIVE_CONNECTIONS", "15")
-        monkeypatch.setenv("PLYNTH_KEEPALIVE_EXPIRY", "30.0")
+        monkeypatch.setenv("PLYNT_BASE_URL", "https://api.example.com")
+        monkeypatch.setenv("PLYNT_TIMEOUT_CONNECT", "3.0")
+        monkeypatch.setenv("PLYNT_TIMEOUT_READ", "60.0")
+        monkeypatch.setenv("PLYNT_TIMEOUT_WRITE", "20.0")
+        monkeypatch.setenv("PLYNT_TIMEOUT_POOL", "15.0")
+        monkeypatch.setenv("PLYNT_MAX_ATTEMPTS", "5")
+        monkeypatch.setenv("PLYNT_HTTP2", "true")
+        monkeypatch.setenv("PLYNT_TRUST_ENV", "false")
+        monkeypatch.setenv("PLYNT_MAX_REDIRECTS", "8")
+        monkeypatch.setenv("PLYNT_MAX_CONNECTIONS", "50")
+        monkeypatch.setenv("PLYNT_MAX_KEEPALIVE_CONNECTIONS", "15")
+        monkeypatch.setenv("PLYNT_KEEPALIVE_EXPIRY", "30.0")
         s = HTTPSettings()
         assert s.base_url == "https://api.example.com"
         assert s.timeout_connect == 3.0
@@ -113,8 +113,8 @@ class TestHTTPSettings:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Old string fields were removed; env vars no longer configure caches."""
-        monkeypatch.setenv("PLYNTH_CACHE_BACKEND", "locmem://default")
-        monkeypatch.setenv("PLYNTH_AUTH_CACHE_BACKEND", "redis://localhost:6379/0")
+        monkeypatch.setenv("PLYNT_CACHE_BACKEND", "locmem://default")
+        monkeypatch.setenv("PLYNT_AUTH_CACHE_BACKEND", "redis://localhost:6379/0")
         s = HTTPSettings()
         # Properties return None — env vars have no effect on typed config.
         assert s.caches is None
@@ -330,9 +330,9 @@ class TestApiSettings:
 
     def test_loads_fields_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Validate loads fields from env."""
-        monkeypatch.setenv("PLYNTH_BASE_URL", "https://api.example.com")
-        monkeypatch.setenv("PLYNTH_TIMEOUT_READ", "60.0")
-        monkeypatch.setenv("PLYNTH_DEBUG", "true")
+        monkeypatch.setenv("PLYNT_BASE_URL", "https://api.example.com")
+        monkeypatch.setenv("PLYNT_TIMEOUT_READ", "60.0")
+        monkeypatch.setenv("PLYNT_DEBUG", "true")
         s = ApiSettings()
         assert s.base_url == "https://api.example.com"
         assert s.timeout_read == 60.0
@@ -372,7 +372,7 @@ class TestHTTPSettingsRetryProperty:
 
     def test_retry_can_be_overridden(self) -> None:
         """Validate retry can be overridden."""
-        from plynth.http.policies import HttpRetryPolicy
+        from plynt.http.policies import HttpRetryPolicy
 
         class _RetrySettings(HTTPSettings):
             """Represent RetrySettings."""

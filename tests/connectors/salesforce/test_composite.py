@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from plynth.connectors.salesforce.composite import (
+from plynt.connectors.salesforce.composite import (
     AsyncSalesforceCompositeService,
     CompositeBatchResponse,
     CompositeBatchSubrequest,
@@ -16,13 +16,13 @@ from plynth.connectors.salesforce.composite import (
     CompositeTreeResponse,
     SalesforceCompositeService,
 )
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.models import SObjectError
-from plynth.connectors.salesforce.sobject import DEFAULT_API_VERSION
-from plynth.http.client import APIClient, AsyncAPIClient
+from plynt.connectors.salesforce.models import SObjectError
+from plynt.connectors.salesforce.sobject import DEFAULT_API_VERSION
+from plynt.http.client import APIClient, AsyncAPIClient
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 from tests.connectors.salesforce.conftest import DUMMY_INSTANCE_URL, render_json_bytes
 

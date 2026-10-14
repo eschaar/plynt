@@ -1,6 +1,6 @@
-# Plynth Product Vision
+# Plynt Product Vision
 
-Plynth is the stable foundation layer for external API integrations in Python.
+Plynt is the stable foundation layer for external API integrations in Python.
 
 The product vision is to provide a long-lived, framework-agnostic client
 architecture that teams can adopt once and evolve safely over time.

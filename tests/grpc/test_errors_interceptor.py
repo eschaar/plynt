@@ -6,9 +6,9 @@ from typing import cast
 
 import pytest
 
-from plynth.grpc.errors import GrpcStatusError
-from plynth.grpc.handler import GrpcCall
-from plynth.grpc.interceptor import AsyncGrpcInterceptor
+from plynt.grpc.errors import GrpcStatusError
+from plynt.grpc.handler import GrpcCall
+from plynt.grpc.interceptor import AsyncGrpcInterceptor
 
 
 class TestGrpcErrorContract:

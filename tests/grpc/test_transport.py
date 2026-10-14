@@ -2,7 +2,7 @@
 
 The real transport depends on ``grpcio`` and runtime channel objects. These
 tests keep that dependency boundary explicit by using small fake channels and
-runtime shims that exercise the plynth contract without opening network
+runtime shims that exercise the plynt contract without opening network
 connections.
 """
 
@@ -13,10 +13,10 @@ from typing import Any
 
 import pytest
 
-from plynth.grpc import transport as grpc_transport
-from plynth.grpc.errors import GrpcStatusError, GrpcTransportError
-from plynth.grpc.settings import GrpcSettings
-from plynth.grpc.transport import GrpcAioTransport
+from plynt.grpc import transport as grpc_transport
+from plynt.grpc.errors import GrpcStatusError, GrpcTransportError
+from plynt.grpc.settings import GrpcSettings
+from plynt.grpc.transport import GrpcAioTransport
 
 
 @dataclass
@@ -328,7 +328,7 @@ class TestGrpcAioTransport:
 
     @pytest.mark.asyncio
     async def test_maps_grpc_status_errors(self) -> None:
-        """Map grpc status failures into the plynth status error contract."""
+        """Map grpc status failures into the plynt status error contract."""
         channel = _FakeChannel()
         channel.error = _FakeRpcError(
             _FakeStatusCode("UNAVAILABLE", (14, "unavailable")),

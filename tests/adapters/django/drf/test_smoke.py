@@ -7,9 +7,9 @@ from typing import ClassVar, cast
 
 import pytest
 
-from plynth.adapters.django.drf.views import AsyncPlynthServiceMixin, PlynthServiceMixin
-from plynth.http.settings import HTTPSettings
-from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
+from plynt.adapters.django.drf.views import AsyncPlyntServiceMixin, PlyntServiceMixin
+from plynt.http.settings import HTTPSettings
+from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport
 
 django = pytest.importorskip("django")
 
@@ -34,7 +34,7 @@ class _SmokeSettings(HTTPSettings):
     """Minimal HTTP settings model for DRF mixin smoke checks."""
 
 
-class _SmokeView(PlynthServiceMixin):
+class _SmokeView(PlyntServiceMixin):
     """Concrete mixin config that can be combined with DRF APIView."""
 
     settings_name = "SERVICE"
@@ -44,7 +44,7 @@ class _SmokeView(PlynthServiceMixin):
     }
 
 
-class _AsyncSmokeView(AsyncPlynthServiceMixin):
+class _AsyncSmokeView(AsyncPlyntServiceMixin):
     """Concrete async mixin config that can be combined with DRF APIView."""
 
     settings_name = "SERVICE"
@@ -54,16 +54,16 @@ class _AsyncSmokeView(AsyncPlynthServiceMixin):
     }
 
 
-def _build_view() -> PlynthServiceMixin:
-    """Create a concrete DRF APIView + PlynthServiceMixin instance."""
+def _build_view() -> PlyntServiceMixin:
+    """Create a concrete DRF APIView + PlyntServiceMixin instance."""
     smoke_api_view_cls = type("_SmokeAPIView", (_SmokeView, APIView), {})
-    return cast(PlynthServiceMixin, smoke_api_view_cls())
+    return cast(PlyntServiceMixin, smoke_api_view_cls())
 
 
-def _build_async_view() -> AsyncPlynthServiceMixin:
-    """Create a concrete DRF APIView + AsyncPlynthServiceMixin instance."""
+def _build_async_view() -> AsyncPlyntServiceMixin:
+    """Create a concrete DRF APIView + AsyncPlyntServiceMixin instance."""
     smoke_api_view_cls = type("_AsyncSmokeAPIView", (_AsyncSmokeView, APIView), {})
-    return cast(AsyncPlynthServiceMixin, smoke_api_view_cls())
+    return cast(AsyncPlyntServiceMixin, smoke_api_view_cls())
 
 
 class TestDjangoDRFAdapterSmoke:

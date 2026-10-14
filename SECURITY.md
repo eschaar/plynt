@@ -10,7 +10,7 @@
 
 Please **do not** open a public GitHub issue for security vulnerabilities.
 
-Report vulnerabilities privately via [GitHub Security Advisories](https://github.com/eschaar/plynth/security/advisories/new).
+Report vulnerabilities privately via [GitHub Security Advisories](https://github.com/eschaar/plynt/security/advisories/new).
 
 Include:
 

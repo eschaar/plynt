@@ -2,7 +2,7 @@
 
 This article explains how Salesforce enforces API call limits, why a
 sliding-window rate limiter is the wrong tool for Salesforce integrations,
-and how to observe your quota usage with Plynth.
+and how to observe your quota usage with Plynt.
 
 ## Salesforce's 24-hour rolling window
 
@@ -32,7 +32,7 @@ with the `REQUEST_LIMIT_EXCEEDED` error code.
 
 ## Why `RateLimitMiddleware` does not help
 
-Plynth's `RateLimitMiddleware` implements a **sliding window** algorithm
+Plynt's `RateLimitMiddleware` implements a **sliding window** algorithm
 measured in seconds. It is designed to prevent your application from making
 more than N requests within a short time window — for example, 10 requests
 per second to a downstream API that enforces per-second limits.
@@ -50,7 +50,7 @@ unnecessary latency and still not protect against quota exhaustion.
 ## The correct approach: observability and circuit breaking
 
 Rather than trying to govern the rate client-side, use the observability
-tools Plynth provides:
+tools Plynt provides:
 
 1. **Observe quota per call** using the `Sforce-Limit-Info` response header,
    which is parsed into `SalesforceApiUsage`:

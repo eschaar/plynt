@@ -10,7 +10,7 @@ A configured `SalesforceAPIFacade` with a client that has access to the
 Agentforce API endpoints:
 
 ```python
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
 
 sf = SalesforceAPIFacade(client)
 agent = sf.agent()
@@ -130,9 +130,9 @@ Rate an agent response to improve future behaviour:
 ```python
 agent.submit_feedback(
     session_id=session.session_id,
-    rating=5,                           # 1–5
-    message_id=response.messages[0].id, # optional — tie to a specific message
-    comment="Very helpful answer",      # optional
+    rating=5,  # 1–5
+    message_id=response.messages[0].id,  # optional — tie to a specific message
+    comment="Very helpful answer",  # optional
 )
 ```
 
@@ -141,7 +141,7 @@ ______________________________________________________________________
 ## Async
 
 ```python
-from plynth.connectors.salesforce.facade import AsyncSalesforceAPIFacade
+from plynt.connectors.salesforce.facade import AsyncSalesforceAPIFacade
 
 sf = AsyncSalesforceAPIFacade(async_client)
 agent = sf.agent()

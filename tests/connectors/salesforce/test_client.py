@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from plynth.base.request import Request
-from plynth.connectors.salesforce.auth import (
+from plynt.base.request import Request
+from plynt.connectors.salesforce.auth import (
     AsyncSalesforceClientCredentialsAuthMiddleware,
     AsyncSalesforcePasswordAuthMiddleware,
     AsyncSalesforceSessionAuthMiddleware,
@@ -18,19 +18,19 @@ from plynth.connectors.salesforce.auth import (
     SalesforcePasswordAuthMiddleware,
     SalesforceSessionAuthMiddleware,
 )
-from plynth.connectors.salesforce.client import (
+from plynt.connectors.salesforce.client import (
     AsyncSalesforceAPIClient,
     SalesforceAPIClient,
 )
-from plynth.connectors.salesforce.constants import DEFAULT_API_VERSION
-from plynth.connectors.salesforce.errors import (
+from plynt.connectors.salesforce.constants import DEFAULT_API_VERSION
+from plynt.connectors.salesforce.errors import (
     SalesforceAPIError,
     SalesforceDuplicateError,
     SalesforceValidationError,
 )
-from plynth.http.client import APIClient, AsyncAPIClient
-from plynth.http.errors import NotFoundError, UnauthorizedError
-from plynth.http.renderer import JSONRenderer
+from plynt.http.client import APIClient, AsyncAPIClient
+from plynt.http.errors import NotFoundError, UnauthorizedError
+from plynt.http.renderer import JSONRenderer
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 
 # ---------------------------------------------------------------------------

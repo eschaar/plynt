@@ -1,6 +1,6 @@
-# Getting started with Plynth
+# Getting started with Plynt
 
-This tutorial walks you through installing Plynth, making your first HTTP
+This tutorial walks you through installing Plynt, making your first HTTP
 request, and progressively building up to a service class that wraps a
 JSON REST API. No external accounts or credentials are needed.
 
@@ -12,7 +12,7 @@ JSON REST API. No external accounts or credentials are needed.
 ## Step 1 — Install
 
 ```bash
-pip install "plynth[httpx]"
+pip install "plynt[httpx]"
 ```
 
 This installs the core library and the httpx2 transport. `httpx2` is the
@@ -23,8 +23,8 @@ only supported transport backend.
 Start with the lowest level: send one request with a transport directly.
 
 ```python
-from plynth.http.transport import HttpxSyncTransport
-from plynth.base.request import Request
+from plynt.http.transport import HttpxSyncTransport
+from plynt.base.request import Request
 
 transport = HttpxSyncTransport()
 request = Request(method="GET", url="https://httpbin.org/get")
@@ -45,8 +45,8 @@ HTTP-specific parsing helpers.
 construct `Request` objects manually.
 
 ```python
-from plynth.http.client import HTTPClient
-from plynth.http.transport import HttpxSyncTransport
+from plynt.http.client import HTTPClient
+from plynt.http.transport import HttpxSyncTransport
 
 transport = HttpxSyncTransport()
 client = HTTPClient(base_url="https://httpbin.org", transport=transport)
@@ -68,8 +68,8 @@ print(resp.json())
   default. Use `raw=True` to bypass that mapping.
 
 ```python
-from plynth.http.client import APIClient
-from plynth.http.transport import HttpxSyncTransport
+from plynt.http.client import APIClient
+from plynt.http.transport import HttpxSyncTransport
 
 transport = HttpxSyncTransport()
 client = APIClient(base_url="https://jsonplaceholder.typicode.com", transport=transport)
@@ -86,9 +86,9 @@ what your application code uses — it never sees the client or transport.
 
 ```python
 from dataclasses import dataclass
-from plynth.http.client import APIClient
-from plynth.http.service import APIService
-from plynth.http.transport import HttpxSyncTransport
+from plynt.http.client import APIClient
+from plynt.http.service import APIService
+from plynt.http.transport import HttpxSyncTransport
 
 
 @dataclass

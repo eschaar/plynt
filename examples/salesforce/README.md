@@ -1,6 +1,6 @@
 # Salesforce Examples
 
-Markdown snippets that demonstrate the Plynth Salesforce integration against a
+Markdown snippets that demonstrate the Plynt Salesforce integration against a
 real Salesforce org.
 
 These scripts are not just auth demos. They run a small end-to-end flow over
@@ -28,7 +28,7 @@ the connector services:
 1. Install required extras:
 
 ```bash
-pip install "plynth[salesforce,httpx]"
+pip install "plynt[salesforce,httpx]"
 ```
 
 1. Create or access a Salesforce External Client App with OAuth enabled.
@@ -68,11 +68,11 @@ App** (ECA). The steps below use the current ECA UI.
 
 1. Fill in the required fields:
 
-   | Field                    | Value                              |
-   | ------------------------ | ---------------------------------- |
-   | External Client App Name | `Plynth Integration` (or any name) |
-   | API Name                 | auto-filled                        |
-   | Contact Email            | your email address                 |
+   | Field                    | Value                             |
+   | ------------------------ | --------------------------------- |
+   | External Client App Name | `Plynt Integration` (or any name) |
+   | API Name                 | auto-filled                       |
+   | Contact Email            | your email address                |
 
 1. Click **Next**.
 

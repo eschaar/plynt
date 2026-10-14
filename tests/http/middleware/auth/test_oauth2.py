@@ -11,11 +11,11 @@ from typing import Any, cast
 
 import pytest
 
-from plynth.base.request import Request
-from plynth.base.response import Response
-from plynth.base.transport import AsyncTransport, SyncTransport
-from plynth.cache import LocMemCache
-from plynth.http.middleware.auth import (
+from plynt.base.request import Request
+from plynt.base.response import Response
+from plynt.base.transport import AsyncTransport, SyncTransport
+from plynt.cache import LocMemCache
+from plynt.http.middleware.auth import (
     AsyncOAuth2AuthMiddleware,
     AsyncOAuth2AuthMiddlewareBase,
     AsyncOAuth2ClientCredentialsMiddleware,
@@ -27,10 +27,10 @@ from plynth.http.middleware.auth import (
     OAuth2JWTBearerMiddleware,
     OAuth2PasswordMiddleware,
 )
-from plynth.http.policies import HttpRetryPolicy
-from plynth.http.settings import HTTPSettings
-from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
-from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
+from plynt.http.policies import HttpRetryPolicy
+from plynt.http.settings import HTTPSettings
+from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport
+from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
 from tests.http.conftest import (
     DUMMY_ACCESS_TOKEN,
     DUMMY_CLIENT_ID,
@@ -315,7 +315,7 @@ class TestOAuth2AuthMiddleware:
 
         The policy is wired identity-equal into the internal transport middleware.
         """
-        from plynth.http.auth import OAuth2ClientCredentialsConfig
+        from plynt.http.auth import OAuth2ClientCredentialsConfig
 
         policy = HttpRetryPolicy(max_attempts=4)
 

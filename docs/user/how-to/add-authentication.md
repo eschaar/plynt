@@ -1,6 +1,6 @@
 # How to add authentication
 
-Plynth supports five authentication mechanisms via typed config objects.
+Plynt supports five authentication mechanisms via typed config objects.
 Pass a config to `auth_from_config()` to get the corresponding middleware,
 or pass it to `HTTPSettings.auth` to wire it automatically via
 `from_settings()`.
@@ -12,15 +12,15 @@ The standard flow for server-to-server integrations. Exchanges a
 automatically when they expire.
 
 ```python
-from plynth.http.auth import OAuth2ClientCredentialsConfig, auth_from_config
-from plynth.http.transport import HttpxSyncTransport
+from plynt.http.auth import OAuth2ClientCredentialsConfig, auth_from_config
+from plynt.http.transport import HttpxSyncTransport
 
 auth = auth_from_config(
     OAuth2ClientCredentialsConfig(
         client_id="my-client-id",
         client_secret="my-client-secret",
         token_url="https://auth.example.com/oauth/token",
-        ttl_leeway=60,   # refresh 60 seconds before expiry
+        ttl_leeway=60,  # refresh 60 seconds before expiry
     )
 )
 transport = HttpxSyncTransport(middlewares=[auth])
@@ -29,9 +29,10 @@ transport = HttpxSyncTransport(middlewares=[auth])
 ### Via settings
 
 ```python
-from plynth.http.settings import HTTPSettings
-from plynth.http.auth import OAuth2ClientCredentialsConfig
+from plynt.http.settings import HTTPSettings
+from plynt.http.auth import OAuth2ClientCredentialsConfig
 from pydantic_settings import SettingsConfigDict
+
 
 class MySettings(HTTPSettings):
     model_config = SettingsConfigDict(env_prefix="MY_", env_file=".env")
@@ -48,6 +49,7 @@ class MySettings(HTTPSettings):
             token_url="https://auth.example.com/oauth/token",
         )
 
+
 settings = MySettings()
 transport = HttpxSyncTransport.from_settings(settings)
 ```
@@ -57,7 +59,7 @@ transport = HttpxSyncTransport.from_settings(settings)
 For APIs that use a fixed token or API key in the `Authorization` header.
 
 ```python
-from plynth.http.auth import BearerAuthConfig, auth_from_config
+from plynt.http.auth import BearerAuthConfig, auth_from_config
 
 auth = auth_from_config(BearerAuthConfig(token="my-api-key"))
 transport = HttpxSyncTransport(middlewares=[auth])
@@ -68,11 +70,9 @@ The token is sent as `Authorization: Bearer <token>` on every request.
 ## HTTP Basic authentication
 
 ```python
-from plynth.http.auth import BasicAuthConfig, auth_from_config
+from plynt.http.auth import BasicAuthConfig, auth_from_config
 
-auth = auth_from_config(
-    BasicAuthConfig(username="alice", password="hunter2")
-)
+auth = auth_from_config(BasicAuthConfig(username="alice", password="hunter2"))
 transport = HttpxSyncTransport(middlewares=[auth])
 ```
 
@@ -82,11 +82,13 @@ For flows where you sign a JWT assertion and exchange it for an access
 token. You provide a factory callable that generates the signed JWT.
 
 ```python
-from plynth.http.auth import OAuth2JWTBearerConfig, auth_from_config
+from plynt.http.auth import OAuth2JWTBearerConfig, auth_from_config
+
 
 def build_assertion() -> str:
     # Sign and return a JWT here using PyJWT or cryptography
     return "<signed-jwt>"
+
 
 auth = auth_from_config(
     OAuth2JWTBearerConfig(
@@ -104,7 +106,7 @@ For legacy APIs that require a username and password. This flow is
 deprecated by most modern APIs.
 
 ```python
-from plynth.http.auth import OAuth2PasswordConfig, auth_from_config
+from plynt.http.auth import OAuth2PasswordConfig, auth_from_config
 
 auth = auth_from_config(
     OAuth2PasswordConfig(
@@ -125,8 +127,8 @@ to cache across processes or persist tokens in Redis:
 
 ```python
 import redis
-from plynth.cache import RedisCache
-from plynth.http.auth import OAuth2ClientCredentialsConfig, auth_from_config
+from plynt.cache import RedisCache
+from plynt.http.auth import OAuth2ClientCredentialsConfig, auth_from_config
 
 redis_client = redis.Redis(host="localhost")
 cache = RedisCache(redis_client, prefix="tokens:")
@@ -146,7 +148,7 @@ auth = auth_from_config(
 Use `async_auth_from_config()` instead of `auth_from_config()`:
 
 ```python
-from plynth.http.auth import async_auth_from_config
+from plynt.http.auth import async_auth_from_config
 
 auth = async_auth_from_config(OAuth2ClientCredentialsConfig(...))
 ```

@@ -6,10 +6,10 @@ alias with `DjangoCacheBackend` and `CacheMiddleware`.
 ```python
 from __future__ import annotations
 
-from plynth.adapters.django.cache import DjangoCacheBackend
-from plynth.base.middleware import SyncMiddleware
-from plynth.http.transport import HttpxSyncTransport
-from plynth.middleware.cache import CacheMiddleware
+from plynt.adapters.django.cache import DjangoCacheBackend
+from plynt.base.middleware import SyncMiddleware
+from plynt.http.transport import HttpxSyncTransport
+from plynt.middleware.cache import CacheMiddleware
 
 
 def build_transport_with_django_cache(alias: str = "default") -> HttpxSyncTransport:

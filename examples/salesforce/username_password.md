@@ -23,21 +23,21 @@ from pathlib import Path
 from _demo import configure_logging, run_async_demo, run_demo
 from pydantic_settings import SettingsConfigDict
 
-from plynth.connectors.salesforce.auth import (
+from plynt.connectors.salesforce.auth import (
     AsyncSalesforcePasswordAuthMiddleware,
     SalesforcePasswordAuthMiddleware,
 )
-from plynth.connectors.salesforce.client import (
+from plynt.connectors.salesforce.client import (
     AsyncSalesforceAPIClient,
     SalesforceAPIClient,
 )
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.connectors.salesforce.settings import SalesforceSettings
-from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
-from plynth.middleware.logging import AsyncLoggingMiddleware, LoggingMiddleware
+from plynt.connectors.salesforce.settings import SalesforceSettings
+from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport
+from plynt.middleware.logging import AsyncLoggingMiddleware, LoggingMiddleware
 
 
 class _Settings(SalesforceSettings):

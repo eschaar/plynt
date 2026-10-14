@@ -1,19 +1,19 @@
-"""Tests for plynth.base.response (Response, ResponseProtocol)
-and plynth.http.response (HttpResponse)."""
+"""Tests for plynt.base.response (Response, ResponseProtocol)
+and plynt.http.response (HttpResponse)."""
 
 from collections.abc import AsyncIterator, Iterator
 
 import pytest
 
-from plynth.base.errors import StatusError, StreamInterruptedError
-from plynth.base.response import (
+from plynt.base.errors import StatusError, StreamInterruptedError
+from plynt.base.response import (
     AsyncStreamingResponse,
     Response,
     ResponseProtocol,
     StreamingResponse,
 )
-from plynth.http.errors import HttpStatusError
-from plynth.http.response import HttpResponse
+from plynt.http.errors import HttpStatusError
+from plynt.http.response import HttpResponse
 
 
 class _SyncRaw:

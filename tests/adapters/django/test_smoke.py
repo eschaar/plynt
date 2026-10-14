@@ -6,13 +6,13 @@ import importlib
 
 import pytest
 
-from plynth.adapters.django.transport import (
+from plynt.adapters.django.transport import (
     async_transport_from_django_settings,
     transport_from_django_settings,
 )
-from plynth.http.settings import HTTPSettings
-from plynth.http.transport import HttpxAsyncTransport, HttpxSyncTransport
-from plynth.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
+from plynt.http.settings import HTTPSettings
+from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport
+from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
 
 django = pytest.importorskip("django")
 django_settings = importlib.import_module("django.conf").settings

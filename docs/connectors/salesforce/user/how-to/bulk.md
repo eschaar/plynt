@@ -9,7 +9,7 @@ consume too much quota.
 A configured `SalesforceAPIFacade`:
 
 ```python
-from plynth.connectors.salesforce.facade import SalesforceAPIFacade
+from plynt.connectors.salesforce.facade import SalesforceAPIFacade
 
 sf = SalesforceAPIFacade(client)
 bulk = sf.bulk()
@@ -23,11 +23,11 @@ ______________________________________________________________________
 and retrieve results — in a single call:
 
 ```python
-from plynth.connectors.salesforce.bulk.service import BulkOperation
+from plynt.connectors.salesforce.bulk.service import BulkOperation
 
 records = [
     {"FirstName": "Alice", "LastName": "Smith", "Email": "alice@example.com"},
-    {"FirstName": "Bob",   "LastName": "Jones", "Email": "bob@example.com"},
+    {"FirstName": "Bob", "LastName": "Jones", "Email": "bob@example.com"},
 ]
 
 result = bulk.ingest(
@@ -66,7 +66,7 @@ ______________________________________________________________________
 ## Upsert by external ID
 
 ```python
-from plynth.connectors.salesforce.bulk.service import BulkOperation
+from plynt.connectors.salesforce.bulk.service import BulkOperation
 
 result = bulk.ingest(
     sobject="Contact",
@@ -96,7 +96,9 @@ ______________________________________________________________________
 records as a list:
 
 ```python
-records = bulk.query("SELECT Id, Name, Email FROM Contact WHERE IsDeleted = false LIMIT 50000")
+records = bulk.query(
+    "SELECT Id, Name, Email FROM Contact WHERE IsDeleted = false LIMIT 50000"
+)
 for record in records:
     print(record["Id"], record["Email"])
 ```
@@ -169,7 +171,7 @@ ______________________________________________________________________
 ## Async
 
 ```python
-from plynth.connectors.salesforce.facade import AsyncSalesforceAPIFacade
+from plynt.connectors.salesforce.facade import AsyncSalesforceAPIFacade
 
 sf = AsyncSalesforceAPIFacade(async_client)
 bulk = sf.bulk()

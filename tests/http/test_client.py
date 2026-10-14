@@ -7,12 +7,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from plynth.base.middleware import AsyncMiddleware, SyncMiddleware
-from plynth.base.request import Request
-from plynth.base.response import AsyncStreamingResponse, Response, StreamingResponse
-from plynth.base.transport import BaseAsyncTransport, BaseSyncTransport
-from plynth.http.client import APIClient, AsyncAPIClient, AsyncHTTPClient, HTTPClient
-from plynth.http.errors import (
+from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.request import Request
+from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
+from plynt.base.transport import BaseAsyncTransport, BaseSyncTransport
+from plynt.http.client import APIClient, AsyncAPIClient, AsyncHTTPClient, HTTPClient
+from plynt.http.errors import (
     HttpStatusError,
     InternalServerError,
     NotFoundError,

@@ -5,15 +5,15 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from plynth.connectors.salesforce.apex import (
+from plynt.connectors.salesforce.apex import (
     AsyncSalesforceApexRestService,
     SalesforceApexRestService,
 )
-from plynth.connectors.salesforce.facade import (
+from plynt.connectors.salesforce.facade import (
     AsyncSalesforceAPIFacade,
     SalesforceAPIFacade,
 )
-from plynth.http.client import APIClient, AsyncAPIClient
+from plynt.http.client import APIClient, AsyncAPIClient
 from tests.conftest import MockAsyncTransport, MockSyncTransport
 from tests.connectors.salesforce.conftest import DUMMY_INSTANCE_URL, render_json_bytes
 
