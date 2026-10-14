@@ -47,7 +47,7 @@ public contract boundaries for core usage.
 
 - Prefer importing from these package roots instead of internal submodules.
 - Internal module paths may evolve as long as public exports remain compatible.
-- Compatibility and deprecation policy is defined in [ADR-0027](docs/architecture/adr/0027-public-api-compatibility-and-deprecation-policy.md).
+- Compatibility and deprecation policy is defined in [ADR-0027](https://github.com/eschaar/plynt/blob/main/docs/architecture/adr/0027-public-api-compatibility-and-deprecation-policy.md).
 
 ## Salesforce connector
 
@@ -96,10 +96,10 @@ compatibility and deprecation policy in ADR-0027. Current capabilities
 include HTTP, middleware, caching, streaming, Salesforce REST/Bulk/AI,
 LLM provider adapters, Django/DRF/FastAPI adapters, and async gRPC.
 
-The next experimental release candidate focuses on distribution and
-installation hardening. Local and CI tests do not replace validation
-against real external providers. PyPI publication remains disabled until
-release acceptance is explicitly approved.
+Release acceptance includes distribution and installation checks. Local and
+CI tests do not replace validation against real external providers.
+Non-prerelease GitHub releases are published to PyPI through trusted
+publishing after the build and installed-wheel checks pass.
 
 ## Documentation
 

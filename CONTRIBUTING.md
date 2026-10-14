@@ -214,8 +214,9 @@ GitHub secret scanning and push protection are enabled. The `pypi`
 environment permits tags matching `*.*.*`, not branches. The Publish workflow
 also validates plain SemVer release tags before building or uploading.
 Configure the PyPI trusted publisher for `eschaar/plynt`, workflow
-`publish.yml`, and environment `pypi`. Publication remains disabled until
-release acceptance is approved and `ENABLE_PYPI_PUBLISH` is enabled.
+`publish.yml`, and environment `pypi`. Publication is enabled for accepted
+non-prerelease GitHub releases. Set `ENABLE_PYPI_PUBLISH` to `false` in the
+workflow to suspend uploads without disabling build and installation checks.
 
 ### Release naming policy
 
@@ -227,8 +228,10 @@ release acceptance is approved and `ENABLE_PYPI_PUBLISH` is enabled.
 ### Release checklist
 
 - Ensure quality gate is green locally: `make check`.
+- Confirm the PyPI trusted publisher matches the workflow and environment.
 - Merge the open release-please PR into `main` (do not hand-tag).
 - Confirm GitHub release exists with tag `X.Y.Z`.
 - Confirm GitHub release title is `vX.Y.Z`.
 - Confirm `Publish` workflow succeeded for that release.
-- Keep `ENABLE_PYPI_PUBLISH` disabled unless you intentionally publish to PyPI.
+- Confirm the intended upload policy before merging: publication is enabled
+  when `ENABLE_PYPI_PUBLISH` is `true`.
