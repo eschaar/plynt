@@ -13,7 +13,7 @@ name = "plynt"
 dynamic = ["version"]
 description = "Framework-agnostic Python library for building external HTTP API clients and service integrations"
 readme = "README-pypi.md"
-authors = [{ name = "Erik Schaareman", email = "erik@schaareman.org" }]
+authors = [{ name = "Erik Schaareman" }]
 requires-python = ">=3.12"
 license = "MIT"
 keywords = [
