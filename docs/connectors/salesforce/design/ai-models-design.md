@@ -105,11 +105,29 @@ shared core abstractions.
 
 ## Error and Retry Contract
 
-- Map HTTP status and Salesforce payload errors to typed Salesforce connector
-  exceptions.
-- Treat stream-interruption and cancellation as typed streaming errors.
+- Buffered calls through `SalesforceAPIClient` map Salesforce error payloads
+  to typed connector exceptions. Generic `APIClient` instances provide HTTP
+  status errors instead.
+- Streaming calls map HTTP error statuses before returning the body.
+  Streams are raw response wrappers, not Salesforce event parsers: event
+  ordering and terminal markers pass through unchanged.
+- Network failures during iteration raise `StreamInterruptedError`, retaining
+  the original cause. Async cancellation propagates as `CancelledError`
+  rather than being converted into a provider error.
+- Use `with` or `async with` to close streams on completion, interruption,
+  or cancellation.
 - Keep retry behavior transport-level; do not retry after stream consumption has
   started.
+
+## Feedback Validation
+
+Request models require the relevant identifier and an integer rating.
+Provider-specific rating ranges and identifier validity remain server-side
+checks; this library does not invent a common rating scale.
+
+Feedback acknowledgements preserve the server's `success` value.
+Feedback submission has no client-side idempotency guarantee. Applications
+must consider provider semantics before enabling retries for write requests.
 
 ## Compatibility Rules
 
@@ -119,42 +137,31 @@ shared core abstractions.
 
 ## Test Coverage Strategy
 
-### Critical Coverage Gaps
+### Implemented Contract Checks
 
-| Behavior                                                          | Current Weakness                                                       | Production Risk                                                       | Test Type   |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------- |
-| Streaming chat completion with chunk ordering and terminal marker | No streaming tests exist for chunk order and end-of-stream semantics   | Consumers may render incomplete or out-of-order model output          | integration |
-| Stream interruption mid-response                                  | No connector-level tests for abrupt disconnect and typed error mapping | Silent partial output and hard-to-debug failures in user-facing flows | unit        |
-| Sync and async parity across all methods                          | No parity suite exists for planned AI endpoints                        | Inconsistent behavior by runtime mode and regressions in one path     | contract    |
-| Feedback endpoint validation and ack handling                     | No tests for invalid ratings, missing IDs, or idempotency expectations | Feedback data quality issues and unstable client retries              | unit        |
+[AI contract tests](../../../../tests/connectors/salesforce/test_ai_contracts.py)
+exercise the services through real HTTP transports with HTTP-level mocks:
 
-### False Confidence Risks
+- Equivalent sync/async requests and typed results for all eight buffered
+  Models and Agent methods.
+- Ordered line delivery, including a synthetic terminal event, across
+  fragmented HTTP chunks for both streaming methods.
+- Partial output followed by a typed interruption, with no request replay.
+- Async cancellation propagation and stream cleanup.
+- Required feedback identifiers, invalid rating types, and equivalent
+  server-validation error details in sync and async calls.
+- Positive and negative feedback acknowledgements without rewriting the
+  server's `success` value.
 
-**Issue:** High coverage percentages can mask critical behavior gaps.
+Existing service tests also cover optional payload fields and typed responses.
+These checks validate the current library contracts, not provider availability.
 
-- **Generic HTTP transport tests only** — transport coverage does not prove
-  Salesforce payload mapping correctness.
+### Remaining Provider Evidence
 
-  - **Correction:** Add connector contract tests with representative Salesforce
-    AI responses.
+The HTTP fixtures and terminal events are synthetic. They do not prove actual
+Salesforce event schemas, completion semantics, or provider rating ranges.
+Recorded successful Models and Agent calls, streaming terminal events, and
+provider-specific feedback errors remain separate validation work.
 
-- **Planned AI services without streaming failure tests** — stream behavior is
-  hard to test and easy to break.
-
-  - **Correction:** Require explicit streaming failure tests and parity matrix
-    checks as release gates.
-
-### Priority Test Backlog
-
-| Test Title                                                     | Owner  | Acceptance Criteria                                                           |
-| -------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------- |
-| Models streaming chunks preserve order and finalize correctly  | tester | Stream tests assert deterministic chunk sequence and final completion marker. |
-| Agent streaming interruption maps to typed stream error        | tester | Forced disconnect raises documented stream interruption exception.            |
-| Models and Agent sync/async parity matrix                      | tester | For each public method, sync and async return equivalent semantic output.     |
-| Feedback endpoint validation for invalid IDs and rating ranges | tester | Invalid payloads map to typed validation errors with stable messages.         |
-
-### Test Implementation Notes
-
-- Keep current fast mocked tests as baseline.
-- Add VCR.py cassettes for deterministic Salesforce AI response fixtures.
-- Keep optional live backend tests separate and opt-in.
+Keep live tests opt-in. Do not fabricate VCR cassettes or treat a disabled API
+or an absent cassette as proof that the provider contract works.
