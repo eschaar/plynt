@@ -10,12 +10,32 @@ The base ``RetryPolicy`` is protocol-agnostic and lives in
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from http import HTTPStatus
 
-from plynt.base.policies import RetryPolicy
+from plynt.base.policies import RetryPolicy, _default_retryable_exception
+
+try:
+    from httpx2 import NetworkError, ProxyError, RemoteProtocolError, TimeoutException
+except ModuleNotFoundError as exc:  # pragma: no cover - clean core wheel smoke
+    if exc.name != "httpx2":
+        raise
+    _HTTPX_NETWORK_ERRORS: tuple[type[BaseException], ...] = ()
+else:
+    _HTTPX_NETWORK_ERRORS = (
+        NetworkError,
+        ProxyError,
+        RemoteProtocolError,
+        TimeoutException,
+    )
 
 __all__ = ["HttpRetryPolicy"]
+
+
+def _default_http_retryable_exception(exc: BaseException) -> bool:
+    """Recognize built-in and optional HTTP backend network errors (ADR-0038)"""
+    return _default_retryable_exception(exc) or isinstance(exc, _HTTPX_NETWORK_ERRORS)
 
 
 @dataclass
@@ -24,7 +44,10 @@ class HttpRetryPolicy(RetryPolicy):
 
     Inherits all back-off fields from ``RetryPolicy`` and adds
     ``retryable_status_codes``, which causes the retry loop to retry
-    when the server returns one of those codes.
+    when the server returns one of those codes. The default exception
+    classifier also recognizes httpx2 network, timeout, remote protocol,
+    and proxy errors when the optional backend is installed. An explicit
+    classifier replaces this default.
 
     .. note::
         Providing ``retryable_status_codes`` **replaces** the defaults
@@ -54,6 +77,9 @@ class HttpRetryPolicy(RetryPolicy):
 
     """
 
+    retryable_exception_classifier: Callable[[BaseException], bool] = (
+        _default_http_retryable_exception
+    )
     retryable_status_codes: frozenset[int] = field(
         default_factory=lambda: frozenset(
             {

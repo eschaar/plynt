@@ -4,7 +4,7 @@ This index lists architecture decision records (ADRs) for Plynt.
 
 ## Status Summary
 
-- Accepted: 37
+- Accepted: 38
 - Proposed: 0
 
 ## ADR List
@@ -50,6 +50,7 @@ This index lists architecture decision records (ADRs) for Plynt.
 | [ADR-0035](0035-pre-1-versioning-policy.md)                         | Pre-1.0 Versioning Policy                                  | Accepted |
 | [ADR-0036](0036-project-and-package-rebrand-to-plynt.md)            | Rebrand the Project and Align Its Historical Documentation | Accepted |
 | [ADR-0037](0037-deterministic-test-time.md)                         | Deterministic Test Time                                    | Accepted |
+| [ADR-0038](0038-http-retry-exceptions-and-stream-ownership.md)      | HTTP Retry Exceptions and Stream Ownership                 | Accepted |
 
 <!-- markdownlint-enable MD060 -->
 
@@ -63,4 +64,4 @@ Add an ADR for changes that affect:
 - middleware execution semantics,
 - installation extras or optional-framework strategy.
 
-Use the next sequential number (currently: `0038`).
+Use the next sequential number (currently: `0039`).
