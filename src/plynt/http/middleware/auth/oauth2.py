@@ -72,7 +72,7 @@ from urllib.parse import urlencode
 from plynt.base.cache import CacheBackend
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.request import Request
-from plynt.base.response import Response
+from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynt.base.transport import AsyncTransport, SyncTransport
 from plynt.http.policies import HttpRetryPolicy
 from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
@@ -196,7 +196,7 @@ class OAuth2AuthMiddlewareBase(SyncMiddleware, abc.ABC):
         Returns:
             The response. On a 401, invalidates the cached token and
             retries exactly once; the second response is returned
-            regardless.
+            regardless. Discarded streams are closed before refreshing the token.
 
         """
         token_header = self._get_token_header()
@@ -205,6 +205,8 @@ class OAuth2AuthMiddlewareBase(SyncMiddleware, abc.ABC):
         response = next_handler(request)
         if response.status_code == HTTPStatus.UNAUTHORIZED:
             _logger.debug("OAuth2 received 401 — invalidating token and retrying once")
+            if isinstance(response, StreamingResponse):
+                response.close()
             self._invalidate_if_matches(used_token)
             request.headers.update(self._get_token_header())
             response = next_handler(request)
@@ -596,6 +598,8 @@ class AsyncOAuth2AuthMiddlewareBase(AsyncMiddleware, abc.ABC):
         response = await next_handler(request)
         if response.status_code == HTTPStatus.UNAUTHORIZED:
             _logger.debug("OAuth2 received 401 — invalidating token and retrying once")
+            if isinstance(response, AsyncStreamingResponse):
+                await response.aclose()
             await self._invalidate_if_matches(used_token)
             request.headers.update(await self._get_token_header())
             response = await next_handler(request)

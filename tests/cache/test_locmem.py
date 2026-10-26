@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-import time
+from datetime import UTC, datetime, timedelta
+
+import pytest
+import time_machine
 
 from plynt.base.cache import (
     CacheBackend,
@@ -12,6 +15,7 @@ from plynt.base.cache import (
     SupportsTTL,
 )
 from plynt.cache import LocMemCache, LocMemCacheConfig
+from tests.conftest import MonotonicClock
 
 
 class TestLocMemCache:
@@ -100,27 +104,56 @@ class TestLocMemCache:
         cache = LocMemCache()
         assert cache.ttl("missing") is None
 
-    def test_ttl_returns_positive_seconds(self) -> None:
-        """Validate ttl returns positive seconds."""
+    def test_ttl_returns_remaining_seconds(
+        self, monotonic_clock: MonotonicClock
+    ) -> None:
+        """Verify the exact remaining TTL after elapsed time"""
+        monotonic_clock.bind("plynt.cache.locmem")
         cache = LocMemCache()
         cache.set("k", "v", ttl=60.0)
-        remaining = cache.ttl("k")
-        assert remaining is not None
-        assert 0.0 < remaining <= 60.0
+        assert cache.ttl("k") == 60.0
+        monotonic_clock.advance(10.0)
+        assert cache.ttl("k") == 50.0
 
-    def test_entry_expires_after_ttl(self) -> None:
-        """Validate entry expires after ttl."""
+    def test_calendar_shift_does_not_expire_entry(
+        self, monotonic_clock: MonotonicClock
+    ) -> None:
+        """Expire entries by elapsed time rather than calendar changes"""
+        monotonic_clock.bind("plynt.cache.locmem")
+        with time_machine.travel(
+            datetime(2026, 10, 26, 12, 0, tzinfo=UTC), tick=False
+        ) as traveller:
+            cache = LocMemCache()
+            cache.set("key", "value", ttl=60.0)
+
+            traveller.shift(timedelta(days=365))
+            assert cache.get("key") == "value"
+            assert cache.ttl("key") == 60.0
+
+            monotonic_clock.advance(60.0)
+            assert cache.get("key") is None
+
+    @pytest.mark.parametrize("elapsed", [5.0, 6.0], ids=["at-boundary", "after"])
+    def test_entry_expires_after_ttl(
+        self, monotonic_clock: MonotonicClock, elapsed: float
+    ) -> None:
+        """Verify entries survive before their TTL and expire at its boundary"""
+        monotonic_clock.bind("plynt.cache.locmem")
         cache = LocMemCache()
-        cache.set("k", "v", ttl=0.05)  # 50 ms
+        cache.set("k", "v", ttl=5.0)
+        monotonic_clock.advance(4.0)
         assert cache.get("k") == "v"
-        time.sleep(0.1)
+        monotonic_clock.advance(elapsed - 4.0)
         assert cache.get("k") is None
 
-    def test_ttl_returns_zero_after_expiry(self) -> None:
+    def test_ttl_returns_zero_after_expiry(
+        self, monotonic_clock: MonotonicClock
+    ) -> None:
         """Validate ttl returns zero after expiry."""
+        monotonic_clock.bind("plynt.cache.locmem")
         cache = LocMemCache()
-        cache.set("k", "v", ttl=0.05)
-        time.sleep(0.1)
+        cache.set("k", "v", ttl=5.0)
+        monotonic_clock.advance(5.0)
         # Entry is expired but not yet evicted (get hasn't been called).
         remaining = cache.ttl("k")
         assert remaining == 0.0
@@ -134,21 +167,27 @@ class TestLocMemCache:
         assert s["maxsize"] is None
         assert s["currsize"] == 2
 
-    def test_stats_excludes_expired_from_currsize(self) -> None:
+    def test_stats_excludes_expired_from_currsize(
+        self, monotonic_clock: MonotonicClock
+    ) -> None:
         """Validate stats excludes expired from currsize."""
+        monotonic_clock.bind("plynt.cache.locmem")
         cache = LocMemCache()
         cache.set("live", "v")
-        cache.set("dead", "v", ttl=0.05)
-        time.sleep(0.1)
+        cache.set("dead", "v", ttl=5.0)
+        monotonic_clock.advance(5.0)
         s = cache.stats()
         assert s["currsize"] == 1  # only "live"
 
-    def test_purge_expired_removes_expired_entries(self) -> None:
+    def test_purge_expired_removes_expired_entries(
+        self, monotonic_clock: MonotonicClock
+    ) -> None:
         """Validate purge expired removes expired entries."""
+        monotonic_clock.bind("plynt.cache.locmem")
         cache = LocMemCache()
         cache.set("live", "v")
-        cache.set("dead", "v", ttl=0.05)
-        time.sleep(0.1)
+        cache.set("dead", "v", ttl=5.0)
+        monotonic_clock.advance(5.0)
         removed = cache.purge_expired()
         assert removed == 1
         assert cache.currsize == 1

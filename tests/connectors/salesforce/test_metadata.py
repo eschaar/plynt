@@ -23,7 +23,7 @@ from plynt.connectors.salesforce.metadata import (
     SalesforceMetadataService,
 )
 from plynt.http.client import APIClient, AsyncAPIClient
-from tests.conftest import MockAsyncTransport, MockSyncTransport
+from tests.conftest import MockAsyncTransport, MockSyncTransport, MonotonicClock
 from tests.connectors.salesforce.conftest import DUMMY_INSTANCE_URL, render_json_bytes
 
 _DEPLOY_ID = "0AfA0000000XYZKAA4"
@@ -186,7 +186,18 @@ class TestSalesforceMetadataService:
         with pytest.raises(SalesforceMetadataDeployError, match="Deploy error"):
             service.wait_for_deploy(_DEPLOY_ID, poll_interval=0.0)
 
-    def test_wait_for_deploy_raises_timeout(self) -> None:
+    @pytest.mark.parametrize(
+        ("max_wait", "expected_elapsed"),
+        [(1.0, 1.0), (1.5, 2.0)],
+        ids=["at-boundary", "after"],
+    )
+    def test_wait_for_deploy_raises_timeout(
+        self,
+        monotonic_clock: MonotonicClock,
+        max_wait: float,
+        expected_elapsed: float,
+    ) -> None:
+        monotonic_clock.bind("plynt.connectors.salesforce.metadata")
         transport = MockSyncTransport()
         transport.send.return_value = Response(
             status_code=200,
@@ -196,14 +207,14 @@ class TestSalesforceMetadataService:
         service = SalesforceMetadataService(client)
 
         with (
-            patch("plynt.connectors.salesforce.metadata.time.sleep"),
             patch(
-                "plynt.connectors.salesforce.metadata.time.monotonic",
-                side_effect=[0.0, 2.0],
+                "plynt.connectors.salesforce.metadata.time.sleep",
+                side_effect=monotonic_clock.advance,
             ),
             pytest.raises(MetadataDeployTimeoutError),
         ):
-            service.wait_for_deploy(_DEPLOY_ID, max_wait=1.0, poll_interval=0.0)
+            service.wait_for_deploy(_DEPLOY_ID, max_wait=max_wait, poll_interval=1.0)
+        assert monotonic_clock.now == expected_elapsed
 
     def test_deploy_and_wait_runs_full_happy_path(self) -> None:
         transport = MockSyncTransport()
@@ -321,7 +332,18 @@ class TestAsyncSalesforceMetadataService:
         with pytest.raises(SalesforceMetadataDeployError, match="Deploy error"):
             await service.wait_for_deploy(_DEPLOY_ID, poll_interval=0.0)
 
-    async def test_wait_for_deploy_raises_timeout(self) -> None:
+    @pytest.mark.parametrize(
+        ("max_wait", "expected_elapsed"),
+        [(1.0, 1.0), (1.5, 2.0)],
+        ids=["at-boundary", "after"],
+    )
+    async def test_wait_for_deploy_raises_timeout(
+        self,
+        monotonic_clock: MonotonicClock,
+        max_wait: float,
+        expected_elapsed: float,
+    ) -> None:
+        monotonic_clock.bind("plynt.connectors.salesforce.metadata")
         transport = MockAsyncTransport()
         transport.send.return_value = Response(
             status_code=200,
@@ -334,14 +356,14 @@ class TestAsyncSalesforceMetadataService:
             patch(
                 "plynt.connectors.salesforce.metadata.asyncio.sleep",
                 new_callable=AsyncMock,
-            ),
-            patch(
-                "plynt.connectors.salesforce.metadata.time.monotonic",
-                side_effect=[0.0, 2.0],
+                side_effect=monotonic_clock.advance,
             ),
             pytest.raises(MetadataDeployTimeoutError),
         ):
-            await service.wait_for_deploy(_DEPLOY_ID, max_wait=1.0, poll_interval=0.0)
+            await service.wait_for_deploy(
+                _DEPLOY_ID, max_wait=max_wait, poll_interval=1.0
+            )
+        assert monotonic_clock.now == expected_elapsed
 
     async def test_deploy_and_wait_runs_full_happy_path(self) -> None:
         transport = MockAsyncTransport()

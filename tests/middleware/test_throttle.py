@@ -5,9 +5,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from typing import cast
-from unittest.mock import patch
 
 import pytest
+import time_machine
 
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.policies import (
@@ -176,7 +176,7 @@ class TestThrottleGovernancePolicy:
         policy = ThrottleGovernancePolicy(min_delay_seconds=1.0)
         signal = ThrottleSignal(detected=True, reset_at_seconds=reset_at)
 
-        with patch("plynt.base.policies.time.time", return_value=fixed_now):
+        with time_machine.travel(fixed_now, tick=False):
             decision = policy.evaluate(signal)
 
         assert decision.action == ThrottleGovernanceAction.DELAY
@@ -193,7 +193,7 @@ class TestThrottleGovernancePolicy:
             reset_at_seconds=fixed_now + 60.0,
         )
 
-        with patch("plynt.base.policies.time.time", return_value=fixed_now):
+        with time_machine.travel(fixed_now, tick=False):
             decision = policy.evaluate(signal)
 
         assert decision.delay_seconds == 10.0
@@ -205,7 +205,7 @@ class TestThrottleGovernancePolicy:
         policy = ThrottleGovernancePolicy(min_delay_seconds=2.0)
         signal = ThrottleSignal(detected=True, reset_at_seconds=fixed_now - 10.0)
 
-        with patch("plynt.base.policies.time.time", return_value=fixed_now):
+        with time_machine.travel(fixed_now, tick=False):
             decision = policy.evaluate(signal)
 
         assert decision.delay_seconds == 2.0
@@ -264,9 +264,22 @@ class TestThrottleSignalExtraction:
         result = middleware.handle(request, lambda _req: response)
         assert result.__dict__["_governance_delay_seconds"] == 3.0
 
-    def test_parses_retry_after_http_date(self) -> None:
-        """Test that valid HTTP-date Retry-After is parsed into delay."""
-        # Oct 21, 2026 at 07:28:00 GMT is a valid future date
+    @pytest.mark.parametrize(
+        ("fixed_now", "expected_delay"),
+        [
+            pytest.param(
+                datetime(2026, 10, 21, 7, 27, 30, tzinfo=UTC), 30.0, id="future"
+            ),
+            pytest.param(
+                datetime(2026, 10, 21, 7, 28, 0, tzinfo=UTC), 4.0, id="present"
+            ),
+            pytest.param(datetime(2026, 10, 21, 7, 28, 30, tzinfo=UTC), 4.0, id="past"),
+        ],
+    )
+    def test_parses_retry_after_http_date(
+        self, fixed_now: datetime, expected_delay: float
+    ) -> None:
+        """Verify HTTP-date delays and minimum clamping with a fixed clock"""
         policy = ThrottleGovernancePolicy(min_delay_seconds=4.0)
         middleware = ThrottleGovernanceMiddleware(policy=policy)
 
@@ -278,9 +291,10 @@ class TestThrottleSignalExtraction:
 
         request = Request(method="GET", url="http://example.com/test")
 
-        result = middleware.handle(request, lambda _req: response)
-        # Should use the parsed HTTP-date delay, not the min_delay_seconds
-        assert result.__dict__["_governance_delay_seconds"] > 4.0
+        with time_machine.travel(fixed_now, tick=False):
+            result = middleware.handle(request, lambda _req: response)
+
+        assert result.__dict__["_governance_delay_seconds"] == expected_delay
 
 
 class TestThrottleGovernanceMiddleware:
@@ -491,22 +505,21 @@ class TestParseRetryAfter:
         date_str = fixed_future.strftime("%a, %d %b %Y %H:%M:%S GMT")
 
         response = Response(status_code=429, headers={"retry-after": date_str})
-        with patch("plynt.middleware.throttle.datetime") as mock_dt:
-            mock_dt.now.return_value = fixed_now
+        with time_machine.travel(fixed_now, tick=False):
             result = _parse_retry_after(response)
 
         assert result == 30.0
 
     def test_parse_retry_after_http_date_past(self) -> None:
         """Test parsing Retry-After with past HTTP-date returns 0."""
-        # Create a date 30 seconds in the past
-        past = datetime.now(UTC) - timedelta(seconds=30)
+        fixed_now = datetime(2026, 5, 16, 12, 0, 0, tzinfo=UTC)
+        past = fixed_now - timedelta(seconds=30)
         date_str = past.strftime("%a, %d %b %Y %H:%M:%S GMT")
 
         response = Response(status_code=429, headers={"retry-after": date_str})
-        result = _parse_retry_after(response)
+        with time_machine.travel(fixed_now, tick=False):
+            result = _parse_retry_after(response)
 
-        # Should return 0 (don't return negative)
         assert result == 0.0
 
     def test_parse_retry_after_invalid_format(self) -> None:
