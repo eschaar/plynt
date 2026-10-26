@@ -2,6 +2,31 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.11.1](https://github.com/eschaar/plynt/compare/0.11.0...0.11.1) (2026-10-26)
+
+
+### Fixes
+
+* harden retries and streaming with deterministic tests ([ee7a19a](https://github.com/eschaar/plynt/commit/ee7a19aafc501981b85fa0b8110dceb4452244a2))
+* **http:** retry backend network failures (ADR-0038) ([178fc29](https://github.com/eschaar/plynt/commit/178fc298686bd5ce3abf1dd978bed601f14a501e))
+* **streaming:** close discarded responses before retry (ADR-0038) ([9af513f](https://github.com/eschaar/plynt/commit/9af513fffa94978636a6a4f20ce1d6afe05561b0))
+
+
+### Maintenance
+
+* **ci:** bump trufflesecurity/trufflehog ([14b8a8f](https://github.com/eschaar/plynt/commit/14b8a8f0d7dfec85ab9690426a25ec43ee1d840b))
+* **ci:** integrate TruffleHog update from PR [#69](https://github.com/eschaar/plynt/issues/69) ([2659283](https://github.com/eschaar/plynt/commit/265928365a9326d141f171676624f640d362ef70))
+* **deps:** integrate PR [#55](https://github.com/eschaar/plynt/issues/55) and retain newer httpx2 (ADR-0023) ([8b24839](https://github.com/eschaar/plynt/commit/8b24839c9333f50896e2c8a801c87471c240f586))
+* **deps:** integrate PR [#57](https://github.com/eschaar/plynt/issues/57) and retain newer pydantic (ADR-0003) ([e44e3d2](https://github.com/eschaar/plynt/commit/e44e3d2b429ac988cbc6f8021b0b3f4f478d8ef0))
+* **deps:** integrate PR [#58](https://github.com/eschaar/plynt/issues/58) and retain newer cryptography ([b42e004](https://github.com/eschaar/plynt/commit/b42e00486acc2057557635311a4b6c8697db9b2d))
+
+
+### Tests
+
+* **salesforce:** verify AI streaming and feedback contracts ([9de24d5](https://github.com/eschaar/plynt/commit/9de24d597ec2cd005c6d3f7df91ae962e3b69a84))
+* standardize deterministic clocks (ADR-0037) ([a014490](https://github.com/eschaar/plynt/commit/a014490e27501dbb5fc0576811322347079d7714))
+* **throttle:** make HTTP-date delay checks deterministic ([6d11678](https://github.com/eschaar/plynt/commit/6d1167859a32d3aed7b9e99ffc6c3a20887e1d11))
+
 ## [0.11.0](https://github.com/eschaar/plynt/compare/0.10.0...0.11.0) (2026-10-14)
 
 
