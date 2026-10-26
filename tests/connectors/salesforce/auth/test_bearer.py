@@ -6,11 +6,12 @@
 
 from __future__ import annotations
 
-import time
+from datetime import UTC, datetime
 from urllib.parse import parse_qs
 
 import jwt as pyjwt
 import pytest
+import time_machine
 
 from plynt.base.request import Request
 from plynt.base.response import Response
@@ -91,16 +92,16 @@ class TestSalesforceJWTBearerAuthMiddleware:
         exp_seconds = 120
         transport = FakeSalesforceTokenTransport()
         auth = make_bearer_auth(transport, jwt_exp_seconds=exp_seconds)
-        before = int(time.time())
-        _ = auth.instance_url
-        after = int(time.time())
+        fixed_now = datetime(2026, 10, 26, 12, 0, tzinfo=UTC)
+        with time_machine.travel(fixed_now, tick=False):
+            _ = auth.instance_url
         assert transport.last_request is not None
         assert transport.last_request.content is not None
         params = parse_qs(transport.last_request.content.decode())
         payload = pyjwt.decode(
             params["assertion"][0], options={"verify_signature": False}
         )
-        assert before + exp_seconds <= payload["exp"] <= after + exp_seconds
+        assert payload["exp"] == int(fixed_now.timestamp()) + exp_seconds
 
     def test_jwt_bearer_flow_includes_optional_scope_when_configured(self) -> None:
         transport = FakeSalesforceTokenTransport()

@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import math
+import time
+from importlib import import_module
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -17,6 +21,37 @@ from plynt.testsupport.vcr import (
     VCRSettings,
     build_cassette_path,
 )
+
+
+class MonotonicClock:
+    """Control elapsed time only in explicitly bound modules"""
+
+    def __init__(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self.now: float = 0.0
+        self._monkeypatch: pytest.MonkeyPatch = monkeypatch
+
+    def monotonic(self) -> float:
+        """Return the current elapsed time"""
+        return self.now
+
+    def advance(self, seconds: float) -> None:
+        """Advance time by a finite, non-negative number of seconds"""
+        if not math.isfinite(seconds) or seconds < 0:
+            raise ValueError("seconds must be finite and non-negative")
+        self.now += seconds
+
+    def bind(self, module_name: str) -> None:
+        """Replace a module's time reference without changing the shared module"""
+        module_time = SimpleNamespace(**vars(time))
+        module_time.monotonic = self.monotonic
+        self._monkeypatch.setattr(import_module(module_name), "time", module_time)
+
+
+@pytest.fixture
+def monotonic_clock(monkeypatch: pytest.MonkeyPatch) -> MonotonicClock:
+    """Return an isolated elapsed-time clock with automatic binding teardown"""
+    return MonotonicClock(monkeypatch)
+
 
 # ---------------------------------------------------------------------------
 # Mock transports

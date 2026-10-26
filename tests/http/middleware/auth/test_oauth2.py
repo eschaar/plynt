@@ -11,6 +11,7 @@ from typing import Any, cast
 
 import pytest
 
+from plynt.base.cache import SupportsTTL
 from plynt.base.request import Request
 from plynt.base.response import Response
 from plynt.base.transport import AsyncTransport, SyncTransport
@@ -31,6 +32,7 @@ from plynt.http.policies import HttpRetryPolicy
 from plynt.http.settings import HTTPSettings
 from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport
 from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
+from tests.conftest import MonotonicClock
 from tests.http.conftest import (
     DUMMY_ACCESS_TOKEN,
     DUMMY_CLIENT_ID,
@@ -198,8 +200,17 @@ class TestOAuth2AuthMiddleware:
         assert "client_secret=my-secret" in body_str
         assert "grant_type=client_credentials" in body_str
 
-    def test_token_refreshed_after_expiry(self) -> None:
+    @pytest.mark.parametrize("cache_ttl", [None, 1.0], ids=["persistent", "ttl"])
+    @pytest.mark.parametrize("elapsed", [1.0, 2.0], ids=["at-boundary", "after"])
+    def test_token_refreshed_after_expiry(
+        self,
+        monotonic_clock: MonotonicClock,
+        cache_ttl: float | None,
+        elapsed: float,
+    ) -> None:
         """A token past its TTL triggers a new fetch."""
+        monotonic_clock.bind("plynt.http.middleware.auth.oauth2")
+        monotonic_clock.bind("plynt.cache.locmem")
 
         class _ExpiringTransport(SyncTransport):
             """Represent ExpiringTransport."""
@@ -225,8 +236,14 @@ class TestOAuth2AuthMiddleware:
         )
         auth._transport = stub
         auth._get_token_header()
-        # Simulate expiry by backdating the cache entry.
-        auth._cache.set(auth._cache_key, ("token-1", time.monotonic() - 1.0))
+        entry = auth._cache.get(auth._cache_key)
+        assert entry is not None
+        auth._cache.set(auth._cache_key, entry, ttl=cache_ttl)
+        monotonic_clock.advance(0.5)
+        auth._get_token_header()
+        assert stub.calls == 1
+
+        monotonic_clock.advance(elapsed - 0.5)
         auth._get_token_header()
         assert stub.calls == 2
 
@@ -391,16 +408,23 @@ class TestOAuth2AuthMiddleware:
         assert call_count[0] == 1
 
     def test_on_response_stores_token_and_expiry(
-        self, oauth_settings: _OAuthTestSettings, token_transport: _FakeTokenTransport
+        self,
+        oauth_settings: _OAuthTestSettings,
+        token_transport: _FakeTokenTransport,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Base _on_response stores the token and expiry in the cache backend."""
+        monotonic_clock.bind("plynt.http.middleware.auth.oauth2")
+        monotonic_clock.bind("plynt.cache.locmem")
         auth = self._make_auth(oauth_settings, token_transport)
         auth._on_response({"access_token": "my-token", "expires_in": 100})
         entry = auth._cache.get(auth._cache_key)
         assert entry is not None
         token, expires_at = entry
         assert token == "my-token"
-        assert expires_at > time.monotonic()
+        assert expires_at == 70.0
+        assert isinstance(auth._cache, SupportsTTL)
+        assert auth._cache.ttl(auth._cache_key) == 70.0
 
 
 # ---------------------------------------------------------------------------
@@ -582,11 +606,18 @@ class TestAsyncOAuth2AuthMiddleware:
         assert "client_secret=my-secret" in body_str
         assert "grant_type=client_credentials" in body_str
 
+    @pytest.mark.parametrize("cache_ttl", [None, 1.0], ids=["persistent", "ttl"])
+    @pytest.mark.parametrize("elapsed", [1.0, 2.0], ids=["at-boundary", "after"])
     async def test_token_refreshed_after_expiry(
         self,
         oauth_settings: _OAuthTestSettings,
+        monotonic_clock: MonotonicClock,
+        cache_ttl: float | None,
+        elapsed: float,
     ) -> None:
         """A token past its TTL triggers a new fetch."""
+        monotonic_clock.bind("plynt.http.middleware.auth.oauth2")
+        monotonic_clock.bind("plynt.cache.locmem")
 
         class _ExpiringAsyncTransport(AsyncTransport):
             """Represent ExpiringAsyncTransport."""
@@ -612,8 +643,14 @@ class TestAsyncOAuth2AuthMiddleware:
         )
         auth._transport = stub
         await auth._get_token_header()
-        # Simulate expiry by backdating the cache entry.
-        auth._cache.set(auth._cache_key, ("token-1", time.monotonic() - 1.0))
+        entry = auth._cache.get(auth._cache_key)
+        assert entry is not None
+        auth._cache.set(auth._cache_key, entry, ttl=cache_ttl)
+        monotonic_clock.advance(0.5)
+        await auth._get_token_header()
+        assert stub.calls == 1
+
+        monotonic_clock.advance(elapsed - 0.5)
         await auth._get_token_header()
         assert stub.calls == 2
 
@@ -751,15 +788,20 @@ class TestAsyncOAuth2AuthMiddleware:
         self,
         oauth_settings: _OAuthTestSettings,
         async_token_transport: _FakeAsyncTokenTransport,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Base _on_response stores the token and expiry in the cache backend."""
+        monotonic_clock.bind("plynt.http.middleware.auth.oauth2")
+        monotonic_clock.bind("plynt.cache.locmem")
         auth = self._make_auth(oauth_settings, async_token_transport)
         auth._on_response({"access_token": "my-token", "expires_in": 100})
         entry = auth._cache.get(auth._cache_key)
         assert entry is not None
         token, expires_at = entry
         assert token == "my-token"
-        assert expires_at > time.monotonic()
+        assert expires_at == 70.0
+        assert isinstance(auth._cache, SupportsTTL)
+        assert auth._cache.ttl(auth._cache_key) == 70.0
 
 
 # ---------------------------------------------------------------------------

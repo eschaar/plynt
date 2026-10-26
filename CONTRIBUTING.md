@@ -174,6 +174,24 @@ with new coverage exclusions. This is not a branch-coverage guarantee.
 For a focused test run, use `pytest <test-path> --no-cov`; partial suites
 are not expected to cover the entire package.
 
+### Time-sensitive tests
+
+Follow [ADR-0037](docs/architecture/adr/0037-deterministic-test-time.md).
+Use scoped `time_machine.travel(aware_utc_datetime, tick=False)` contexts for
+calendar time, including HTTP dates and JWT claims. Do not enable automatic
+time freezing for the suite.
+
+For elapsed time, request the `monotonic_clock` fixture, call
+`monotonic_clock.bind("plynt.module_under_test")`, and use
+`monotonic_clock.advance(seconds)`. Bind every participating module, including
+the cache when testing token expiry. Bindings restore automatically after
+each test and do not freeze asyncio's clock.
+
+Do not patch the shared `time.monotonic` function. Avoid real sleeps in expiry
+tests. For polling deadlines, patch the wait routine and advance the fixture
+from its side effect. Keep synchronization tests separate: a wait used to
+coordinate threads or yield to another task is not an expiry simulation.
+
 Vendored Salesforce Pub/Sub Python files are generated, not hand-edited.
 The development extra pins `grpcio-tools` to the version that produced
 the committed output:

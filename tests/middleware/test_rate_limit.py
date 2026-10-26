@@ -13,24 +13,9 @@ from plynt.middleware.rate_limit import (
     RateLimitExceededError,
     RateLimitMiddleware,
 )
+from tests.conftest import MonotonicClock
 
 _REQUEST = Request(method="GET", url="https://example.com")
-
-
-class _Clock:
-    """Controllable monotonic clock for deterministic tests."""
-
-    def __init__(self) -> None:
-        """Initialize _Clock."""
-        self.now = 0.0
-
-    def advance(self, delta: float) -> None:
-        """Advance clock by delta seconds."""
-        self.now += delta
-
-    def monotonic(self) -> float:
-        """Return current monotonic value."""
-        return self.now
 
 
 class TestRateLimitMiddleware:
@@ -43,14 +28,10 @@ class TestRateLimitMiddleware:
 
     def test_rejects_when_window_limit_reached(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate sync middleware rejects requests above window limit."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.rate_limit.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.rate_limit")
 
         mw = RateLimitMiddleware(RateLimitPolicy(max_requests=2, window_seconds=10.0))
 
@@ -68,16 +49,14 @@ class TestRateLimitMiddleware:
         with pytest.raises(RateLimitExceededError):
             mw.handle(_REQUEST, lambda req: Response(status_code=200, content=b"3"))
 
+    @pytest.mark.parametrize("elapsed", [5.0, 5.1], ids=["at-boundary", "after"])
     def test_allows_again_after_window_passes(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
+        elapsed: float,
     ) -> None:
         """Validate sync middleware allows requests after window expires."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.rate_limit.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.rate_limit")
 
         mw = RateLimitMiddleware(RateLimitPolicy(max_requests=1, window_seconds=5.0))
 
@@ -85,7 +64,11 @@ class TestRateLimitMiddleware:
         with pytest.raises(RateLimitExceededError):
             mw.handle(_REQUEST, lambda req: Response(status_code=200, content=b"2"))
 
-        clock.advance(5.1)
+        monotonic_clock.advance(4.9)
+        with pytest.raises(RateLimitExceededError):
+            mw.handle(_REQUEST, lambda req: Response(status_code=200, content=b"2"))
+
+        monotonic_clock.advance(elapsed - 4.9)
         result = mw.handle(
             _REQUEST,
             lambda req: Response(status_code=201, content=b"3"),
@@ -129,14 +112,10 @@ class TestAsyncRateLimitMiddleware:
     @pytest.mark.asyncio
     async def test_rejects_when_window_limit_reached(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate async middleware rejects requests above window limit."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.rate_limit.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.rate_limit")
 
         mw = AsyncRateLimitMiddleware(
             RateLimitPolicy(max_requests=2, window_seconds=10.0)
@@ -151,16 +130,14 @@ class TestAsyncRateLimitMiddleware:
             await mw.handle(_REQUEST, lambda req: _async_response(200))
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("elapsed", [5.0, 5.1], ids=["at-boundary", "after"])
     async def test_allows_again_after_window_passes(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
+        elapsed: float,
     ) -> None:
         """Validate async middleware allows requests after window expires."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.rate_limit.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.rate_limit")
 
         mw = AsyncRateLimitMiddleware(
             RateLimitPolicy(max_requests=1, window_seconds=5.0)
@@ -170,7 +147,11 @@ class TestAsyncRateLimitMiddleware:
         with pytest.raises(RateLimitExceededError):
             await mw.handle(_REQUEST, lambda req: _async_response(200))
 
-        clock.advance(5.1)
+        monotonic_clock.advance(4.9)
+        with pytest.raises(RateLimitExceededError):
+            await mw.handle(_REQUEST, lambda req: _async_response(200))
+
+        monotonic_clock.advance(elapsed - 4.9)
         result = await mw.handle(_REQUEST, lambda req: _async_response(201))
         assert result.status_code == 201
 

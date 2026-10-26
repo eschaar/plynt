@@ -15,24 +15,9 @@ from plynt.middleware.circuit_breaker import (
     CircuitBreakerMiddleware,
     CircuitBreakerOpenError,
 )
+from tests.conftest import MonotonicClock
 
 _REQUEST = Request(method="GET", url="https://example.com")
-
-
-class _Clock:
-    """Controllable monotonic clock for deterministic tests."""
-
-    def __init__(self) -> None:
-        """Initialize _Clock."""
-        self.now = 0.0
-
-    def advance(self, delta: float) -> None:
-        """Advance clock by delta seconds."""
-        self.now += delta
-
-    def monotonic(self) -> float:
-        """Return current monotonic value."""
-        return self.now
 
 
 class TestCircuitBreakerMiddleware:
@@ -45,14 +30,10 @@ class TestCircuitBreakerMiddleware:
 
     def test_opens_after_consecutive_exceptions(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate breaker opens after configured consecutive failures."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         mw = CircuitBreakerMiddleware(CircuitBreakerPolicy(failure_threshold=2))
 
@@ -64,16 +45,14 @@ class TestCircuitBreakerMiddleware:
         with pytest.raises(CircuitBreakerOpenError):
             mw.handle(_REQUEST, lambda req: Response(status_code=200, content=b"ok"))
 
+    @pytest.mark.parametrize("elapsed", [5.0, 5.1], ids=["at-boundary", "after"])
     def test_half_open_probe_closes_on_success(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
+        elapsed: float,
     ) -> None:
         """Validate half-open probe closes breaker after successful call."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
         mw = CircuitBreakerMiddleware(policy)
@@ -81,7 +60,11 @@ class TestCircuitBreakerMiddleware:
         with pytest.raises(TimeoutError):
             mw.handle(_REQUEST, lambda req: (_ for _ in ()).throw(TimeoutError("x")))
 
-        clock.advance(5.0)
+        monotonic_clock.advance(4.9)
+        with pytest.raises(CircuitBreakerOpenError):
+            mw.handle(_REQUEST, lambda req: Response(status_code=200, content=b"ok"))
+
+        monotonic_clock.advance(elapsed - 4.9)
         result = mw.handle(
             _REQUEST,
             lambda req: Response(status_code=200, content=b"ok"),
@@ -96,14 +79,10 @@ class TestCircuitBreakerMiddleware:
 
     def test_opens_on_failure_status_code(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate configured failure status code opens breaker."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         policy = CircuitBreakerPolicy(
             failure_threshold=1,
@@ -175,14 +154,10 @@ class TestCircuitBreakerMiddleware:
 
     def test_half_open_probe_failure_reopens_breaker(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate a failing probe in half-open transitions circuit back to open."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
         mw = CircuitBreakerMiddleware(policy)
@@ -190,7 +165,7 @@ class TestCircuitBreakerMiddleware:
         with pytest.raises(TimeoutError):
             mw.handle(_REQUEST, lambda req: (_ for _ in ()).throw(TimeoutError("x")))
 
-        clock.advance(5.1)
+        monotonic_clock.advance(5.1)
 
         with pytest.raises(TimeoutError):
             mw.handle(_REQUEST, lambda req: (_ for _ in ()).throw(TimeoutError("x")))
@@ -202,13 +177,10 @@ class TestCircuitBreakerMiddleware:
     def test_half_open_rejects_excess_probes(
         self,
         monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate half-open state rejects calls beyond max_calls limit."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
         mw = CircuitBreakerMiddleware(policy)
@@ -216,7 +188,7 @@ class TestCircuitBreakerMiddleware:
         with pytest.raises(TimeoutError):
             mw.handle(_REQUEST, lambda req: (_ for _ in ()).throw(TimeoutError("x")))
 
-        clock.advance(5.1)
+        monotonic_clock.advance(5.1)
 
         # Prevent state reset so the circuit stays half-open after the first probe
         monkeypatch.setattr(mw._state, "record_success", lambda: None)
@@ -239,14 +211,10 @@ class TestAsyncCircuitBreakerMiddleware:
     @pytest.mark.asyncio
     async def test_opens_after_consecutive_exceptions(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate async breaker opens after configured failures."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         mw = AsyncCircuitBreakerMiddleware(CircuitBreakerPolicy(failure_threshold=2))
 
@@ -262,16 +230,14 @@ class TestAsyncCircuitBreakerMiddleware:
             await mw.handle(_REQUEST, lambda req: _async_response(200))
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("elapsed", [5.0, 5.1], ids=["at-boundary", "after"])
     async def test_half_open_probe_closes_on_success(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
+        elapsed: float,
     ) -> None:
         """Validate async half-open probe closes breaker on success."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
         mw = AsyncCircuitBreakerMiddleware(policy)
@@ -282,21 +248,21 @@ class TestAsyncCircuitBreakerMiddleware:
         with pytest.raises(TimeoutError):
             await mw.handle(_REQUEST, failing)
 
-        clock.advance(5.0)
+        monotonic_clock.advance(4.9)
+        with pytest.raises(CircuitBreakerOpenError):
+            await mw.handle(_REQUEST, lambda req: _async_response(200))
+
+        monotonic_clock.advance(elapsed - 4.9)
         result = await mw.handle(_REQUEST, lambda req: _async_response(200))
         assert result.status_code == 200
 
     @pytest.mark.asyncio
     async def test_opens_on_failure_status_code(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate async breaker opens on configured failure status."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         policy = CircuitBreakerPolicy(
             failure_threshold=1,
@@ -313,14 +279,10 @@ class TestAsyncCircuitBreakerMiddleware:
     @pytest.mark.asyncio
     async def test_half_open_probe_failure_reopens_breaker(
         self,
-        monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate a failing async probe in half-open transitions circuit to open."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
         mw = AsyncCircuitBreakerMiddleware(policy)
@@ -331,7 +293,7 @@ class TestAsyncCircuitBreakerMiddleware:
         with pytest.raises(TimeoutError):
             await mw.handle(_REQUEST, failing)
 
-        clock.advance(5.1)
+        monotonic_clock.advance(5.1)
 
         with pytest.raises(TimeoutError):
             await mw.handle(_REQUEST, failing)
@@ -344,13 +306,10 @@ class TestAsyncCircuitBreakerMiddleware:
     async def test_half_open_rejects_excess_probes(
         self,
         monkeypatch: pytest.MonkeyPatch,
+        monotonic_clock: MonotonicClock,
     ) -> None:
         """Validate async half-open state rejects calls beyond max_calls limit."""
-        clock = _Clock()
-        monkeypatch.setattr(
-            "plynt.middleware.circuit_breaker.time.monotonic",
-            clock.monotonic,
-        )
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
 
         policy = CircuitBreakerPolicy(failure_threshold=1, recovery_timeout=5.0)
         mw = AsyncCircuitBreakerMiddleware(policy)
@@ -361,7 +320,7 @@ class TestAsyncCircuitBreakerMiddleware:
         with pytest.raises(TimeoutError):
             await mw.handle(_REQUEST, failing)
 
-        clock.advance(5.1)
+        monotonic_clock.advance(5.1)
 
         # Prevent state reset so the circuit stays half-open after the first probe
         monkeypatch.setattr(mw._state, "record_success", lambda: None)

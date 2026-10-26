@@ -30,7 +30,7 @@ from plynt.connectors.salesforce.facade import (
     SalesforceAPIFacade,
 )
 from plynt.http.client import APIClient, AsyncAPIClient
-from tests.conftest import MockAsyncTransport, MockSyncTransport
+from tests.conftest import MockAsyncTransport, MockSyncTransport, MonotonicClock
 
 BASE_URL = "https://myorg.my.salesforce.com"
 API_VERSION = "60.0"
@@ -569,19 +569,30 @@ class TestSalesforceBulkService:
             with pytest.raises(SalesforceBulkJobError):
                 service.wait_for_job(JOB_ID, is_query=False)
 
-    def test_wait_for_job_raises_timeout(self) -> None:
+    @pytest.mark.parametrize(
+        ("max_wait", "expected_elapsed"),
+        [(0.5, 0.5), (1.0, 1.5)],
+        ids=["at-boundary", "after"],
+    )
+    def test_wait_for_job_raises_timeout(
+        self,
+        monotonic_clock: MonotonicClock,
+        max_wait: float,
+        expected_elapsed: float,
+    ) -> None:
         """Raises BulkJobTimeoutError when max_wait seconds elapse."""
+        monotonic_clock.bind("plynt.connectors.salesforce.bulk.service")
         service = self._service_with_states("InProgress", "InProgress", "InProgress")
         with (
-            patch("plynt.connectors.salesforce.bulk.service.time.sleep"),
             patch(
-                "plynt.connectors.salesforce.bulk.service.time.monotonic",
-                side_effect=[0.0, 0.1, 100.0],
+                "plynt.connectors.salesforce.bulk.service.time.sleep",
+                side_effect=monotonic_clock.advance,
             ),
         ):
             with pytest.raises(BulkJobTimeoutError) as exc_info:
-                service.wait_for_job(JOB_ID, is_query=False, max_wait=30.0)
-        assert exc_info.value.max_wait == pytest.approx(30.0)
+                service.wait_for_job(JOB_ID, is_query=False, max_wait=max_wait)
+        assert exc_info.value.max_wait == max_wait
+        assert monotonic_clock.now == expected_elapsed
 
     # ------------------------------------------------------------------
     # get_ingest_results
@@ -1062,20 +1073,31 @@ class TestAsyncSalesforceBulkService:
         assert exc_info.value.job_id == JOB_ID
 
     @pytest.mark.asyncio
-    async def test_wait_for_job_raises_timeout(self) -> None:
+    @pytest.mark.parametrize(
+        ("max_wait", "expected_elapsed"),
+        [(0.5, 0.5), (1.0, 1.5)],
+        ids=["at-boundary", "after"],
+    )
+    async def test_wait_for_job_raises_timeout(
+        self,
+        monotonic_clock: MonotonicClock,
+        max_wait: float,
+        expected_elapsed: float,
+    ) -> None:
         """Raises BulkJobTimeoutError when max_wait is exceeded."""
+        monotonic_clock.bind("plynt.connectors.salesforce.bulk.service")
         service = self._async_service_with_states(
             "InProgress", "InProgress", "InProgress"
         )
         with (
-            patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"),
             patch(
-                "plynt.connectors.salesforce.bulk.service.time.monotonic",
-                side_effect=[0.0, 0.1, 100.0],
+                "plynt.connectors.salesforce.bulk.service.asyncio.sleep",
+                side_effect=monotonic_clock.advance,
             ),
         ):
             with pytest.raises(BulkJobTimeoutError):
-                await service.wait_for_job(JOB_ID, is_query=False, max_wait=30.0)
+                await service.wait_for_job(JOB_ID, is_query=False, max_wait=max_wait)
+        assert monotonic_clock.now == expected_elapsed
 
     # ------------------------------------------------------------------
     # ingest
