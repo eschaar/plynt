@@ -8,12 +8,13 @@ import threading
 import time
 from collections.abc import Callable
 from typing import Any, cast
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
 from plynt.base.cache import SupportsTTL
 from plynt.base.request import Request
-from plynt.base.response import Response
+from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynt.base.transport import AsyncTransport, SyncTransport
 from plynt.cache import LocMemCache
 from plynt.http.middleware.auth import (
@@ -66,6 +67,55 @@ class TestOAuth2AuthMiddleware:
         )
         auth._transport = token_transport  # stub after construction
         return auth
+
+    @pytest.mark.parametrize("final_status", [200, 401])
+    def test_discarded_stream_closes_before_token_refresh(
+        self,
+        oauth_settings: _OAuthTestSettings,
+        token_transport: _FakeTokenTransport,
+        monkeypatch: pytest.MonkeyPatch,
+        final_status: int,
+    ) -> None:
+        auth = self._make_auth(oauth_settings, token_transport)
+        raw = Mock()
+        final_raw = Mock()
+        final = StreamingResponse(final_status, _raw=final_raw)
+        handler = Mock(side_effect=[StreamingResponse(401, _raw=raw), final])
+        get_header = auth._get_token_header
+
+        def checked_header() -> dict[str, str]:
+            if token_transport.calls:
+                raw.close.assert_called_once_with()
+            return get_header()
+
+        monkeypatch.setattr(auth, "_get_token_header", checked_header)
+        result = auth.handle(
+            Request("GET", "https://example.com", stream=True), handler
+        )
+
+        assert result is final
+        assert handler.call_count == 2
+        assert token_transport.calls == 2
+        raw.close.assert_called_once_with()
+        final_raw.close.assert_not_called()
+
+    def test_stream_cleanup_failure_prevents_token_refresh(
+        self,
+        oauth_settings: _OAuthTestSettings,
+        token_transport: _FakeTokenTransport,
+    ) -> None:
+        auth = self._make_auth(oauth_settings, token_transport)
+        error = RuntimeError("stream cleanup failed")
+        raw = Mock()
+        raw.close.side_effect = error
+        handler = Mock(return_value=StreamingResponse(401, _raw=raw))
+
+        with pytest.raises(RuntimeError) as raised:
+            auth.handle(Request("GET", "https://example.com", stream=True), handler)
+
+        assert raised.value is error
+        assert handler.call_count == 1
+        assert token_transport.calls == 1
 
     def test_get_token_header_returns_bearer_header(
         self, oauth_settings: _OAuthTestSettings, token_transport: _FakeTokenTransport
@@ -434,6 +484,59 @@ class TestOAuth2AuthMiddleware:
 
 class TestAsyncOAuth2AuthMiddleware:
     """Test suite for AsyncOAuth2AuthMiddleware."""
+
+    @pytest.mark.parametrize("final_status", [200, 401])
+    async def test_discarded_stream_closes_before_token_refresh(
+        self,
+        oauth_settings: _OAuthTestSettings,
+        async_token_transport: _FakeAsyncTokenTransport,
+        monkeypatch: pytest.MonkeyPatch,
+        final_status: int,
+    ) -> None:
+        auth = self._make_auth(oauth_settings, async_token_transport)
+        raw = Mock()
+        raw.aclose = AsyncMock()
+        final_raw = Mock()
+        final_raw.aclose = AsyncMock()
+        final = AsyncStreamingResponse(final_status, _raw=final_raw)
+        handler = AsyncMock(side_effect=[AsyncStreamingResponse(401, _raw=raw), final])
+        get_header = auth._get_token_header
+
+        async def checked_header() -> dict[str, str]:
+            if async_token_transport.calls:
+                raw.aclose.assert_awaited_once_with()
+            return await get_header()
+
+        monkeypatch.setattr(auth, "_get_token_header", checked_header)
+        result = await auth.handle(
+            Request("GET", "https://example.com", stream=True), handler
+        )
+
+        assert result is final
+        assert handler.await_count == 2
+        assert async_token_transport.calls == 2
+        raw.aclose.assert_awaited_once_with()
+        final_raw.aclose.assert_not_awaited()
+
+    async def test_stream_cleanup_failure_prevents_token_refresh(
+        self,
+        oauth_settings: _OAuthTestSettings,
+        async_token_transport: _FakeAsyncTokenTransport,
+    ) -> None:
+        auth = self._make_auth(oauth_settings, async_token_transport)
+        error = RuntimeError("stream cleanup failed")
+        raw = Mock()
+        raw.aclose = AsyncMock(side_effect=error)
+        handler = AsyncMock(return_value=AsyncStreamingResponse(401, _raw=raw))
+
+        with pytest.raises(RuntimeError) as raised:
+            await auth.handle(
+                Request("GET", "https://example.com", stream=True), handler
+            )
+
+        assert raised.value is error
+        assert handler.await_count == 1
+        assert async_token_transport.calls == 1
 
     def _make_auth(
         self,

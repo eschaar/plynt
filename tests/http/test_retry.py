@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from http import HTTPStatus
+from unittest.mock import AsyncMock, Mock
 
 import httpx2 as httpx
 import pytest
 
 from plynt.base.policies import RetryPolicy
 from plynt.base.request import Request
+from plynt.base.response import AsyncStreamingResponse, StreamingResponse
 from plynt.http.policies import HttpRetryPolicy
 from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport
 from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
@@ -241,3 +243,114 @@ class TestHttpNetworkRetries:
 
         assert raised.value is error
         assert len(requests) == expected_attempts
+
+
+@pytest.mark.parametrize("statuses", [(503, 200), (503, 503, 503), (400,), (503, 400)])
+class TestHttpStreamingRetries:
+    def test_sync_closes_discarded_streams_before_waiting(
+        self, statuses: tuple[int, ...], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        responses: list[httpx.Response] = []
+        pending = iter(statuses)
+
+        def assert_closed(_delay: float) -> None:
+            assert all(response.is_closed for response in responses)
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            assert_closed(0)
+            response = httpx.Response(next(pending), stream=httpx.ByteStream(b"body"))
+            responses.append(response)
+            return response
+
+        monkeypatch.setattr("plynt.middleware.retry.time.sleep", assert_closed)
+        with HttpxSyncTransport(
+            client=httpx.Client(transport=httpx.MockTransport(handler)),
+            middlewares=[
+                RetryMiddleware(HttpRetryPolicy(max_attempts=3, backoff_initial=0))
+            ],
+        ) as transport:
+            try:
+                response = transport.send(
+                    Request("GET", "https://example.com", stream=True)
+                )
+                assert isinstance(response, StreamingResponse)
+                assert response.status_code == statuses[-1]
+                assert [raw.is_closed for raw in responses] == [
+                    *([True] * (len(statuses) - 1)),
+                    False,
+                ]
+                response.close()
+                assert all(raw.is_closed for raw in responses)
+            finally:
+                for raw in responses:
+                    raw.close()
+
+    @pytest.mark.asyncio
+    async def test_async_closes_discarded_streams_before_waiting(
+        self, statuses: tuple[int, ...], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        responses: list[httpx.Response] = []
+        pending = iter(statuses)
+
+        async def assert_closed(_delay: float) -> None:
+            assert all(response.is_closed for response in responses)
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            assert all(response.is_closed for response in responses)
+            response = httpx.Response(next(pending), stream=httpx.ByteStream(b"body"))
+            responses.append(response)
+            return response
+
+        monkeypatch.setattr("plynt.middleware.retry.asyncio.sleep", assert_closed)
+        async with HttpxAsyncTransport(
+            client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+            middlewares=[
+                AsyncRetryMiddleware(HttpRetryPolicy(max_attempts=3, backoff_initial=0))
+            ],
+        ) as transport:
+            try:
+                response = await transport.send(
+                    Request("GET", "https://example.com", stream=True)
+                )
+                assert isinstance(response, AsyncStreamingResponse)
+                assert response.status_code == statuses[-1]
+                assert [raw.is_closed for raw in responses] == [
+                    *([True] * (len(statuses) - 1)),
+                    False,
+                ]
+                await response.aclose()
+                assert all(raw.is_closed for raw in responses)
+            finally:
+                for raw in responses:
+                    await raw.aclose()
+
+
+class TestStreamingRetryCleanupFailure:
+    def test_sync_cleanup_failure_prevents_next_attempt(self) -> None:
+        error = RuntimeError("stream cleanup failed")
+        raw = Mock()
+        raw.close.side_effect = error
+        handler = Mock(return_value=StreamingResponse(503, _raw=raw))
+
+        with pytest.raises(RuntimeError) as raised:
+            RetryMiddleware(HttpRetryPolicy(backoff_initial=0)).handle(
+                Request("GET", "https://example.com", stream=True), handler
+            )
+
+        assert raised.value is error
+        assert handler.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_async_cleanup_failure_prevents_next_attempt(self) -> None:
+        error = RuntimeError("stream cleanup failed")
+        raw = Mock()
+        raw.aclose = AsyncMock(side_effect=error)
+        handler = AsyncMock(return_value=AsyncStreamingResponse(503, _raw=raw))
+
+        with pytest.raises(RuntimeError) as raised:
+            await AsyncRetryMiddleware(HttpRetryPolicy(backoff_initial=0)).handle(
+                Request("GET", "https://example.com", stream=True), handler
+            )
+
+        assert raised.value is error
+        assert handler.await_count == 1

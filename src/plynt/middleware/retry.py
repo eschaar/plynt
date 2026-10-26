@@ -28,7 +28,7 @@ from collections.abc import Awaitable, Callable
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.policies import RetryPolicy
 from plynt.base.request import Request
-from plynt.base.response import Response
+from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynt.middleware.throttle import ThrottleGovernedError
 
 __all__ = ["AsyncRetryMiddleware", "RetryMiddleware"]
@@ -129,7 +129,8 @@ class RetryMiddleware(  # pylint: disable=too-few-public-methods
 
         Returns:
             The response from the first non-retryable attempt, or the
-            last response once all attempts are exhausted.
+            last response once all attempts are exhausted. Discarded streams
+            are closed before backoff; the returned stream remains caller-owned.
 
         Raises:
             ThrottleGovernedError: Re-raised immediately when governance
@@ -148,6 +149,8 @@ class RetryMiddleware(  # pylint: disable=too-few-public-methods
 
         for attempt in range(policy.max_attempts):
             if attempt > 0:
+                if isinstance(response, StreamingResponse):
+                    response.close()
                 backoff = self._backoff_delay(attempt)
                 delay = self._effective_delay(backoff, response)
                 _logger.debug(
@@ -227,7 +230,8 @@ class AsyncRetryMiddleware(  # pylint: disable=too-few-public-methods
 
         Returns:
             The response from the first non-retryable attempt, or the
-            last response once all attempts are exhausted.
+            last response once all attempts are exhausted. Discarded streams
+            are closed before backoff; the returned stream remains caller-owned.
 
         Raises:
             ThrottleGovernedError: Re-raised immediately when governance
@@ -246,6 +250,8 @@ class AsyncRetryMiddleware(  # pylint: disable=too-few-public-methods
 
         for attempt in range(policy.max_attempts):
             if attempt > 0:
+                if isinstance(response, AsyncStreamingResponse):
+                    await response.aclose()
                 backoff = self._backoff_delay(attempt)
                 delay = self._effective_delay(backoff, response)
                 _logger.debug(
