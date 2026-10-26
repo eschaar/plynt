@@ -264,9 +264,22 @@ class TestThrottleSignalExtraction:
         result = middleware.handle(request, lambda _req: response)
         assert result.__dict__["_governance_delay_seconds"] == 3.0
 
-    def test_parses_retry_after_http_date(self) -> None:
-        """Test that valid HTTP-date Retry-After is parsed into delay."""
-        # Oct 21, 2026 at 07:28:00 GMT is a valid future date
+    @pytest.mark.parametrize(
+        ("fixed_now", "expected_delay"),
+        [
+            pytest.param(
+                datetime(2026, 10, 21, 7, 27, 30, tzinfo=UTC), 30.0, id="future"
+            ),
+            pytest.param(
+                datetime(2026, 10, 21, 7, 28, 0, tzinfo=UTC), 4.0, id="present"
+            ),
+            pytest.param(datetime(2026, 10, 21, 7, 28, 30, tzinfo=UTC), 4.0, id="past"),
+        ],
+    )
+    def test_parses_retry_after_http_date(
+        self, fixed_now: datetime, expected_delay: float
+    ) -> None:
+        """Verify HTTP-date delays and minimum clamping with a fixed clock"""
         policy = ThrottleGovernancePolicy(min_delay_seconds=4.0)
         middleware = ThrottleGovernanceMiddleware(policy=policy)
 
@@ -278,9 +291,11 @@ class TestThrottleSignalExtraction:
 
         request = Request(method="GET", url="http://example.com/test")
 
-        result = middleware.handle(request, lambda _req: response)
-        # Should use the parsed HTTP-date delay, not the min_delay_seconds
-        assert result.__dict__["_governance_delay_seconds"] > 4.0
+        with patch("plynt.middleware.throttle.datetime") as mock_dt:
+            mock_dt.now.return_value = fixed_now
+            result = middleware.handle(request, lambda _req: response)
+
+        assert result.__dict__["_governance_delay_seconds"] == expected_delay
 
 
 class TestThrottleGovernanceMiddleware:
