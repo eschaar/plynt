@@ -99,7 +99,7 @@ dev = [
   "pip-audit",
   "pre-commit>=4.7.0",
   "tox>=4.65.4",
-  "grpcio-tools==1.84.0",
+  "grpcio-tools==1.84.1",
   # Security floors for transitive audit and environment tooling.
   "urllib3>=2.8.0,<3",
   "virtualenv>=21.7.13,<22",
