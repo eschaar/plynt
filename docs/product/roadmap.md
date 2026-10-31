@@ -34,6 +34,7 @@ ______________________________________________________________________
 | 4b  | DRF integration layer `plynt[drf]`                | **Done**         | Shipped in v0.8.0; mixins, header helpers, sync/async support                       |
 | 4c  | FastAPI framework adapter `plynt[fastapi]`        | **Done**         | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs        |
 | 4d  | Flask framework adapter `plynt[flask]`            | **Conditional**  | Convenience layer only; validate demand before ADR                                  |
+| 4e  | FastAPI inbound request-ID and error envelope     | **Idea**         | Candidates from Sales API; ADR required before implementation                       |
 | 5   | Cache backend documentation                       | **Done**         | Redis SSL, framework-native wrapping, and custom backend how-to guides added        |
 | 6   | gRPC transport `plynt[grpc]`                      | **Implemented**  | ADR-0030; async calls and optional runtime                                          |
 | 7   | AI / LLM connector `plynt.connectors.llm`         | **Done**         | Generic contract, sync/async parity, OpenAI and Anthropic adapters                  |
@@ -711,6 +712,31 @@ Primary use case:
 
 **Prerequisite:** Flask still requires a dedicated ADR before
 implementation.
+
+#### 4e. FastAPI inbound request-ID and error envelope helpers
+
+**Status:** Idea. Requires an ADR before implementation.
+
+Origin: the standalone Sales API (FastAPI over plynt) implements both
+pieces locally. Promote them only when a second FastAPI consumer needs
+the same behavior.
+
+The existing 4c helpers cover outbound header propagation and a fixed
+error payload. These candidates cover the inbound side:
+
+- Inbound request-ID middleware: accept or generate `X-Request-ID`,
+  validate length and characters, store it in a context variable, echo it
+  on every response, and feed it into the existing header propagation.
+- Error-envelope helper: let the application supply the envelope shape
+  (for example `code`, `message`, `details`, `request_id`, `timestamp`)
+  instead of the fixed `message`/`code` payload, so plynt errors and
+  application errors share one response format.
+
+Out of scope: API versioning, caller authentication, scope policies, and
+application-specific error codes. These remain in the consuming service.
+
+**Prerequisite:** an ADR that confirms these helpers stay thin adapters
+under `plynt.adapters.fastapi` and add no new runtime dependencies.
 
 ______________________________________________________________________
 
