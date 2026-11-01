@@ -349,6 +349,23 @@ class TestOAuth2AuthMiddleware:
         )
         assert isinstance(auth._transport, HttpxSyncTransport)
 
+    def test_close_releases_owned_transport_once(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Close the internally owned sync token transport only once."""
+        auth = OAuth2AuthMiddleware(
+            client_id=DUMMY_CLIENT_ID,
+            client_secret=DUMMY_CLIENT_SECRET,
+            token_url=DUMMY_TOKEN_URL,
+        )
+        close = Mock()
+        monkeypatch.setattr(auth._transport, "close", close)
+
+        auth.close()
+        auth.close()
+
+        close.assert_called_once_with()
+
     def test_internal_transport_uses_token_retry_policy(self) -> None:
         """token_retry_policy is wired into the internal transport's RetryMiddleware."""
         policy = HttpRetryPolicy(max_attempts=5)
@@ -800,6 +817,23 @@ class TestAsyncOAuth2AuthMiddleware:
             token_url=DUMMY_TOKEN_URL,
         )
         assert isinstance(auth._transport, HttpxAsyncTransport)
+
+    async def test_aclose_releases_owned_transport_once(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Close the internally owned async token transport only once."""
+        auth = AsyncOAuth2AuthMiddleware(
+            client_id=DUMMY_CLIENT_ID,
+            client_secret=DUMMY_CLIENT_SECRET,
+            token_url=DUMMY_TOKEN_URL,
+        )
+        close = AsyncMock()
+        monkeypatch.setattr(auth._transport, "aclose", close)
+
+        await auth.aclose()
+        await auth.aclose()
+
+        close.assert_awaited_once_with()
 
     async def test_internal_transport_uses_token_retry_policy(
         self,
