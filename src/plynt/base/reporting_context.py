@@ -5,7 +5,12 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, replace
 
-__all__ = ["get_retry_attempts", "observe_retry_attempt", "reporting_scope"]
+__all__ = [
+    "get_retry_attempts",
+    "observe_retry_attempt",
+    "reporting_scope",
+    "suspend_retry_observation",
+]
 
 
 @dataclass(frozen=True)
@@ -24,6 +29,16 @@ _state: ContextVar[_ReportingState | None] = ContextVar(
 def reporting_scope() -> Generator[None, None, None]:
     """Isolate retry observations for one logical outbound call"""
     token = _state.set(_ReportingState())
+    try:
+        yield
+    finally:
+        _state.reset(token)
+
+
+@contextmanager
+def suspend_retry_observation() -> Generator[None, None, None]:
+    """Exclude a nested outbound call and restore its parent's observations."""
+    token = _state.set(None)
     try:
         yield
     finally:

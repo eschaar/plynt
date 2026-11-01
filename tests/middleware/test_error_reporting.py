@@ -8,10 +8,12 @@ from threading import Barrier
 import pytest
 
 from plynt.base import (
+    AsyncTransport,
     InvalidInputError,
     Request,
     Response,
     RetryPolicy,
+    SyncTransport,
     default_error_envelope,
     get_error_event_id,
 )
@@ -21,6 +23,10 @@ from plynt.base.reporting_context import (
     reporting_scope,
 )
 from plynt.http.errors import NotFoundError
+from plynt.http.middleware.auth import (
+    AsyncOAuth2ClientCredentialsMiddleware,
+    OAuth2ClientCredentialsMiddleware,
+)
 from plynt.middleware import AsyncErrorReportingMiddleware, ErrorReportingMiddleware
 from plynt.middleware.retry import AsyncRetryMiddleware, RetryMiddleware
 
@@ -235,6 +241,149 @@ class TestAsyncErrorReportingMiddleware:
 
         await asyncio.gather(run(1), run(3))
         assert {context["attempts"] for _, context in reporter.calls} == {1, 3}
+
+    def test_oauth_token_retries_do_not_inflate_api_retry_observations(self) -> None:
+        reporter = _Reporter()
+        auth = OAuth2ClientCredentialsMiddleware(
+            client_id="client",
+            client_secret="secret",
+            token_url="https://auth.example.test/token",
+        )
+        token_retry = RetryMiddleware(
+            RetryPolicy(
+                max_attempts=2,
+                backoff_initial=0,
+                retryable_exception_classifier=lambda exc: isinstance(
+                    exc, ConnectionError
+                ),
+            )
+        )
+        token_attempts = 0
+
+        def send_token(request: Request) -> Response:
+            def token_handler(_: Request) -> Response:
+                nonlocal token_attempts
+                token_attempts += 1
+                if token_attempts == 1:
+                    raise ConnectionError("token retry")
+                return Response(
+                    status_code=200,
+                    content=b'{"access_token":"token","expires_in":3600}',
+                )
+
+            return token_retry.handle(request, token_handler)
+
+        class _TokenTransport(SyncTransport):
+            def send(self, request: Request) -> Response:
+                return send_token(request)
+
+        auth._transport = _TokenTransport()
+        api_retry = RetryMiddleware(
+            RetryPolicy(
+                max_attempts=3,
+                backoff_initial=0,
+                retryable_exception_classifier=lambda exc: isinstance(
+                    exc, ConnectionError
+                ),
+            )
+        )
+        api_attempts = 0
+
+        def fail_api(_: Request) -> Response:
+            nonlocal api_attempts
+            api_attempts += 1
+            assert get_retry_attempts() == api_attempts
+            raise ConnectionError("API failure")
+
+        try:
+            with pytest.raises(ConnectionError, match="API failure"):
+                ErrorReportingMiddleware(reporter).handle(
+                    Request("GET", "/"),
+                    lambda request: auth.handle(
+                        request,
+                        lambda api_request: api_retry.handle(api_request, fail_api),
+                    ),
+                )
+        finally:
+            auth.close()
+
+        assert token_attempts == 2
+        assert api_attempts == 3
+        assert reporter.calls[0][1]["attempts"] == 3
+        assert reporter.calls[0][1]["retries"] == 2
+
+    @pytest.mark.asyncio
+    async def test_async_oauth_token_retries_do_not_inflate_api_observations(
+        self,
+    ) -> None:
+        reporter = _Reporter()
+        auth = AsyncOAuth2ClientCredentialsMiddleware(
+            client_id="client",
+            client_secret="secret",
+            token_url="https://auth.example.test/token",
+        )
+        token_retry = AsyncRetryMiddleware(
+            RetryPolicy(
+                max_attempts=2,
+                backoff_initial=0,
+                retryable_exception_classifier=lambda exc: isinstance(
+                    exc, ConnectionError
+                ),
+            )
+        )
+        token_attempts = 0
+
+        async def send_token(request: Request) -> Response:
+            async def token_handler(_: Request) -> Response:
+                nonlocal token_attempts
+                token_attempts += 1
+                if token_attempts == 1:
+                    raise ConnectionError("token retry")
+                return Response(
+                    status_code=200,
+                    content=b'{"access_token":"token","expires_in":3600}',
+                )
+
+            return await token_retry.handle(request, token_handler)
+
+        class _TokenTransport(AsyncTransport):
+            async def send(self, request: Request) -> Response:
+                return await send_token(request)
+
+        auth._transport = _TokenTransport()
+        api_retry = AsyncRetryMiddleware(
+            RetryPolicy(
+                max_attempts=3,
+                backoff_initial=0,
+                retryable_exception_classifier=lambda exc: isinstance(
+                    exc, ConnectionError
+                ),
+            )
+        )
+        api_attempts = 0
+
+        async def fail_api(_: Request) -> Response:
+            nonlocal api_attempts
+            api_attempts += 1
+            assert get_retry_attempts() == api_attempts
+            raise ConnectionError("API failure")
+
+        try:
+            with pytest.raises(ConnectionError, match="API failure"):
+                await AsyncErrorReportingMiddleware(reporter).handle(
+                    Request("GET", "/"),
+                    lambda request: auth.handle(
+                        request,
+                        lambda api_request: api_retry.handle(api_request, fail_api),
+                    ),
+                )
+        finally:
+            await auth.aclose()
+
+        assert token_attempts == 2
+        assert api_attempts == 3
+        assert reporter.calls[0][1]["attempts"] == 3
+        assert reporter.calls[0][1]["retries"] == 2
 
     @pytest.mark.asyncio
     async def test_success_passes_through(self) -> None:

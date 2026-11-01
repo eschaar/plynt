@@ -72,6 +72,7 @@ from urllib.parse import urlencode
 from plynt.base.cache import CacheBackend
 from plynt.base.errors import AuthenticationError
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
+from plynt.base.reporting_context import suspend_retry_observation
 from plynt.base.request import Request
 from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynt.base.transport import AsyncTransport, SyncTransport
@@ -272,7 +273,8 @@ class OAuth2AuthMiddlewareBase(SyncMiddleware, abc.ABC):
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             content=self._build_token_body(),
         )
-        response = self._transport.send(request)
+        with suspend_retry_observation():
+            response = self._transport.send(request)
         if response.status_code != HTTPStatus.OK:
             raise AuthenticationError(
                 status_code=response.status_code,
@@ -670,7 +672,8 @@ class AsyncOAuth2AuthMiddlewareBase(AsyncMiddleware, abc.ABC):
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             content=self._build_token_body(),
         )
-        response = await self._transport.send(request)
+        with suspend_retry_observation():
+            response = await self._transport.send(request)
         if response.status_code != HTTPStatus.OK:
             raise AuthenticationError(
                 status_code=response.status_code,
