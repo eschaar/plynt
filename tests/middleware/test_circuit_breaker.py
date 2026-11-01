@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
@@ -22,6 +24,45 @@ _REQUEST = Request(method="GET", url="https://example.com")
 
 class TestCircuitBreakerMiddleware:
     """Tests for the synchronous circuit breaker middleware."""
+
+    @pytest.mark.parametrize(
+        "error", [ValueError("ignored"), KeyboardInterrupt(), SystemExit()]
+    )
+    @pytest.mark.parametrize("count_network_errors", [True, False])
+    def test_ignored_exception_releases_probe(
+        self,
+        monotonic_clock: MonotonicClock,
+        error: BaseException,
+        count_network_errors: bool,
+    ) -> None:
+        """Release ignored probes without counting or treating them as success"""
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
+        mw = CircuitBreakerMiddleware(
+            CircuitBreakerPolicy(
+                failure_threshold=1,
+                recovery_timeout=1,
+                failure_status_codes=frozenset({503}),
+                count_network_errors=count_network_errors,
+            )
+        )
+        mw.handle(_REQUEST, lambda req: Response(status_code=503))
+        monotonic_clock.advance(1)
+
+        def fail(request: Request) -> Response:
+            raise error
+
+        for _ in range(2):
+            with pytest.raises(type(error)) as caught:
+                mw.handle(_REQUEST, fail)
+            assert caught.value is error
+            assert mw._state._state == "half-open"
+            assert mw._state._failure_count == 0
+
+        assert (
+            mw.handle(_REQUEST, lambda req: Response(status_code=200)).status_code
+            == 200
+        )
+        assert mw._state._state == "closed"
 
     def test_satisfies_sync_middleware_protocol(self) -> None:
         """Validate middleware satisfies SyncMiddleware protocol."""
@@ -202,6 +243,93 @@ class TestCircuitBreakerMiddleware:
 
 class TestAsyncCircuitBreakerMiddleware:
     """Tests for the asynchronous circuit breaker middleware."""
+
+    @pytest.mark.parametrize(
+        "error",
+        [
+            ValueError("ignored"),
+            KeyboardInterrupt(),
+            SystemExit(),
+            asyncio.CancelledError(),
+        ],
+    )
+    @pytest.mark.parametrize("count_network_errors", [True, False])
+    async def test_ignored_exception_releases_probe(
+        self,
+        monotonic_clock: MonotonicClock,
+        error: BaseException,
+        count_network_errors: bool,
+    ) -> None:
+        """Release ignored async probes and preserve the original exception"""
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
+        mw = AsyncCircuitBreakerMiddleware(
+            CircuitBreakerPolicy(
+                failure_threshold=1,
+                recovery_timeout=1,
+                failure_status_codes=frozenset({503}),
+                count_network_errors=count_network_errors,
+            )
+        )
+
+        async def unavailable(request: Request) -> Response:
+            return Response(status_code=503)
+
+        async def fail(request: Request) -> Response:
+            raise error
+
+        async def success(request: Request) -> Response:
+            return Response(status_code=200)
+
+        await mw.handle(_REQUEST, unavailable)
+        monotonic_clock.advance(1)
+        for _ in range(2):
+            with pytest.raises(type(error)) as caught:
+                await mw.handle(_REQUEST, fail)
+            assert caught.value is error
+            assert mw._state._state == "half-open"
+            assert mw._state._failure_count == 0
+
+        assert (await mw.handle(_REQUEST, success)).status_code == 200
+        assert mw._state._state == "closed"
+
+    async def test_cancelled_task_releases_half_open_probe(
+        self, monotonic_clock: MonotonicClock
+    ) -> None:
+        """Allow another probe after cancellation of an in-flight task"""
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
+        mw = AsyncCircuitBreakerMiddleware(
+            CircuitBreakerPolicy(
+                failure_threshold=1,
+                recovery_timeout=1,
+                failure_status_codes=frozenset({503}),
+            )
+        )
+
+        async def unavailable(request: Request) -> Response:
+            return Response(status_code=503)
+
+        entered = asyncio.Event()
+
+        async def blocked(request: Request) -> Response:
+            entered.set()
+            await asyncio.Event().wait()
+            return Response(status_code=200)
+
+        await mw.handle(_REQUEST, unavailable)
+        monotonic_clock.advance(1)
+        task = asyncio.create_task(mw.handle(_REQUEST, blocked))
+        await entered.wait()
+        with pytest.raises(CircuitBreakerOpenError):
+            await mw.handle(_REQUEST, unavailable)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        # A classified failure must still reopen after the slot is released.
+        assert (await mw.handle(_REQUEST, unavailable)).status_code == 503
+        with pytest.raises(CircuitBreakerOpenError) as caught:
+            await mw.handle(_REQUEST, unavailable)
+        assert caught.value.retry_after_seconds == 1
 
     def test_satisfies_async_middleware_protocol(self) -> None:
         """Validate middleware satisfies AsyncMiddleware protocol."""
