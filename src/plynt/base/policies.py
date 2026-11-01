@@ -45,9 +45,10 @@ class RetryPolicy:
     Attributes:
         max_attempts: Total number of attempts, including the first.
             ``1`` means no retries. Must be >= 1.
-        backoff_initial: Delay in seconds before the second attempt.
-        backoff_multiplier: Factor by which the delay grows per attempt.
-        backoff_max: Upper bound for the computed delay in seconds.
+        backoff_initial: Finite, nonnegative delay in seconds before the
+            second attempt.
+        backoff_multiplier: Finite, nonnegative factor applied per attempt.
+        backoff_max: Finite, nonnegative upper delay bound in seconds.
         retry_on_network_error: When ``True``, network-level exceptions
             (e.g. connection reset) trigger a retry. When ``False``,
             they are re-raised immediately.
@@ -75,6 +76,15 @@ class RetryPolicy:
     retryable_exception_classifier: Callable[[BaseException], bool] = (
         _default_retryable_exception
     )
+
+    def __post_init__(self) -> None:
+        """Validate retry budgets before transport execution"""
+        if not isinstance(self.max_attempts, int) or self.max_attempts < 1:
+            raise ValueError("max_attempts must be an integer >= 1")
+        for name in ("backoff_initial", "backoff_multiplier", "backoff_max"):
+            value = getattr(self, name)
+            if not math.isfinite(value) or value < 0:
+                raise ValueError(f"{name} must be finite and >= 0")
 
 
 @dataclass
