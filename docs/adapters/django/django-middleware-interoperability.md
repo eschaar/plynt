@@ -9,9 +9,17 @@ Use this as the baseline integration profile for production services.
 
 1. Correlation and tracing continuity
 
-   Forward these headers from inbound request to outbound plynt calls:
+   Install [RequestIDMiddleware](use-request-id-middleware.md) before
+   `CommonMiddleware` and response-cache middleware. It validates or generates
+   the request ID and echoes it on responses, including redirects.
 
-   1. `X-Request-Id`
+   Enable scoped outbound propagation with `HeaderMiddleware` or
+   `AsyncHeaderMiddleware` using `request_id_policy`. An explicitly forwarded
+   request-ID header takes precedence over scoped propagation.
+
+   Forward other correlation and tracing headers only when the application
+   uses them:
+
    1. `X-Correlation-Id`
    1. `traceparent`
    1. `tracestate`
@@ -67,6 +75,7 @@ Use this as the baseline integration profile for production services.
 
 ## Recommended implementation checklist
 
+1. Install request-ID middleware before redirects and response caches.
 1. Use `PlyntServiceMixin` with `request_headers = RequestHeadersConfig(...)`.
 1. Define `request_headers.mapping` for tenant/auth context when needed.
 1. Configure dedicated cache aliases for response and auth token caches.

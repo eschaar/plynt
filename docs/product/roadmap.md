@@ -820,8 +820,9 @@ implementation.
 [ADR-0040](../architecture/adr/0040-inbound-request-id-and-error-envelope.md).
 
 Request-ID context, outbound propagation, logging enrichment, and the core
-error-envelope contract are implemented. Inbound middleware and configurable
-framework exception handlers remain open.
+error-envelope contract are implemented. Django inbound request-ID middleware
+is implemented with sync/async and redirect coverage. Configurable framework
+exception handlers and ASGI request-ID middleware remain open.
 
 Origin: a FastAPI service over plynt and earlier Django services each
 implement these pieces locally. The behavior is framework-independent,

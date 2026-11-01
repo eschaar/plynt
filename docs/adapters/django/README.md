@@ -6,6 +6,7 @@ and cache support without introducing Django behavior into the core.
 - [Use Django cache](use-django-cache-backend.md)
 - [Build a transport from settings](use-django-transport-helper.md)
 - [Middleware interoperability](django-middleware-interoperability.md)
+- [Scope and echo request IDs](use-request-id-middleware.md)
 - [Django REST Framework](drf/README.md)
 - [Runnable examples](../../../examples/django/README.md)
 
