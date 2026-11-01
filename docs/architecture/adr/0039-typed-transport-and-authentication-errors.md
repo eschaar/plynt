@@ -40,9 +40,12 @@ We will:
    is excluded from `str()` and `repr()`.
 1. Keep `RuntimeError` as an additional base of `AuthenticationError`, so
    existing `except RuntimeError` handlers keep working during 0.x.
-1. The default retry classifier recognizes the new plynt types. It keeps
-   recognizing raw httpx2 exceptions for custom transports, so ADR-0038's
-   rule that core policies never import the backend stays intact.
+1. The default exception classifier in `HttpRetryPolicy` recognizes the new
+   plynt types. It keeps recognizing raw httpx2 exceptions for custom
+   transports, so ADR-0038's rule that core policies never import the backend
+   stays intact. The protocol-agnostic `RetryPolicy` and its default
+   classifier remain unchanged; this decision does not extend their exception
+   set.
 1. Changing the raised network exception types is a breaking change.
    Ship it with a breaking Conventional Commit and a migration note per
    [ADR-0035](0035-pre-1-versioning-policy.md).

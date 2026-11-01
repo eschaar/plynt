@@ -11,6 +11,10 @@ classes, settings, exceptions, and return types.
   properties
 - [Middleware](middleware.md) — all middleware classes, policy fields, and
   exceptions
+- [Error handling](../how-to/handle-errors.md) — exception hierarchy and
+  handling patterns
+- [Typed error migration](../migrations/typed-transport-errors.md) — consumer
+  upgrade steps for typed transport and authentication errors
 - [Cache backends](cache-backends.md) — `LocMemCache`, `RedisCache`,
   `CachetoolsCache`, and `DummyCache`
 - [Auth configs](auth-configs.md) — all five auth config dataclasses with

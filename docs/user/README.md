@@ -39,6 +39,11 @@ Documentation follows the [Diátaxis](https://diataxis.fr/) framework:
 | [Reference](reference/README.md)     | Technical API descriptions   | You need to look up a class, setting, or error           |
 | [Explanation](explanation/README.md) | Conceptual background        | You want to understand *why* things work the way they do |
 
+## Upgrade guidance
+
+Review the [typed transport and authentication error migration guide](migrations/typed-transport-errors.md)
+before upgrading across a 0.x release containing those breaking changes.
+
 ## Quick start
 
 ```bash

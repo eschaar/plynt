@@ -9,6 +9,11 @@ Plynt is a framework-agnostic API client foundation. It separates generic
 transport and middleware concerns from protocol-specific implementations and
 domain connectors.
 
+## System Style
+
+**backend-only** — Plynt is a Python client library and integration foundation;
+it provides no first-party user interface.
+
 ## Layer Model
 
 Plynt uses a layered model where responsibility is explicit and composable:

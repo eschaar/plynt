@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased — roadmap preparation
+
+Release-please owns version selection and versioned entries.
+
+- Add typed HTTP network and authentication errors, request-ID propagation,
+  configurable adapter error envelopes, and optional error reporting/Sentry.
+- Document shared Salesforce auth cleanup and the FastAPI lifespan recipe;
+  ship typing metadata and reorganize framework guides.
+- Breaking: built-in network failures now raise Plynt transport types; token
+  failures no longer expose response bodies in their messages. See the
+  [migration guide](docs/user/migrations/typed-transport-errors.md) and
+  [release preparation](docs/releases/2026-11-01-roadmap-release-notes.md).
+- Live CDC remains Experimental and deferred; performance is unmeasured.
+
 ## [0.11.1](https://github.com/eschaar/plynt/compare/0.11.0...0.11.1) (2026-10-26)
 
 

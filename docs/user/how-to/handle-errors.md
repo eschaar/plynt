@@ -3,6 +3,10 @@
 Plynt maps HTTP status codes to typed Python exceptions. Catch the most
 specific exception you need and let the rest propagate.
 
+For consumer upgrade steps covering the typed transport and authentication
+errors, see the
+[migration guide](../migrations/typed-transport-errors.md).
+
 ## Core exception hierarchy
 
 ```mermaid
