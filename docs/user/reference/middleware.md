@@ -93,6 +93,11 @@ HTTP transports.
 Protocol-agnostic base. Same fields as `HttpRetryPolicy`, but
 `retryable_status_codes` defaults to an empty frozenset.
 
+Both retry policies validate configuration at construction (ADR-0012).
+`max_attempts` must be an integer of at least 1, including the first attempt.
+All three backoff values must be finite and nonnegative. Invalid values raise
+`ValueError`; zero delays and multipliers below 1 remain supported.
+
 ______________________________________________________________________
 
 ## CircuitBreakerMiddleware

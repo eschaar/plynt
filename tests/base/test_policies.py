@@ -6,7 +6,46 @@ from typing import Any
 
 import pytest
 
-from plynt.base.policies import CircuitBreakerPolicy, RateLimitPolicy
+from plynt.base.policies import CircuitBreakerPolicy, RateLimitPolicy, RetryPolicy
+from plynt.http.policies import HttpRetryPolicy
+
+
+@pytest.mark.parametrize("policy_type", [RetryPolicy, HttpRetryPolicy])
+class TestRetryPolicyValidation:
+    """Validate shared retry construction invariants"""
+
+    @pytest.mark.parametrize("attempts", [0, -1, 1.5, float("nan"), float("inf")])
+    def test_invalid_attempts_raise(
+        self, policy_type: type[RetryPolicy], attempts: Any
+    ) -> None:
+        """Reject attempts that cannot describe a positive integer retry budget"""
+        with pytest.raises(ValueError, match="max_attempts must be an integer >= 1"):
+            policy_type(max_attempts=attempts)
+
+    @pytest.mark.parametrize(
+        "field", ["backoff_initial", "backoff_multiplier", "backoff_max"]
+    )
+    @pytest.mark.parametrize(
+        "value", [float("nan"), float("inf"), -float("inf"), -0.01]
+    )
+    def test_invalid_backoff_raises(
+        self, policy_type: type[RetryPolicy], field: str, value: float
+    ) -> None:
+        """Reject nonfinite and negative backoff values before any request"""
+        values: dict[str, Any] = {field: value}
+        with pytest.raises(ValueError, match=f"{field} must be finite and >= 0"):
+            policy_type(**values)
+
+    def test_valid_boundaries(self, policy_type: type[RetryPolicy]) -> None:
+        """Keep single attempts, zero delays and decreasing backoff valid"""
+        policy = policy_type(
+            max_attempts=1, backoff_initial=0, backoff_multiplier=0.5, backoff_max=0
+        )
+        assert policy.max_attempts == 1
+        assert policy.backoff_initial == 0
+        assert policy.backoff_multiplier == 0.5
+        assert policy.backoff_max == 0
+        assert policy_type(backoff_multiplier=0).backoff_multiplier == 0
 
 
 class TestCircuitBreakerPolicy:
