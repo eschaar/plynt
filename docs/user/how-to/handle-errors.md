@@ -106,8 +106,15 @@ is available only through `response_body`; it is excluded from `str()`,
 `repr()`, exception arguments, and `to_dict()`. Do not log this attribute:
 authentication responses may contain sensitive data.
 
-The type is available now. Built-in OAuth2 and Salesforce token flows still
-raise `RuntimeError`; using the new type there is a subsequent ADR-0039 step.
+Built-in OAuth2 token flows raise this type when the token
+endpoint returns a status other than 200. Client credentials, password, and
+JWT bearer flows share this behavior in sync and async code. Token validation
+and cache configuration errors retain their existing exception types.
+
+Existing `except RuntimeError` handlers still catch token response failures.
+For more specific handling, catch `AuthenticationError` and inspect
+`status_code`. Code parsing the old exception message must use this attribute
+instead; the response body is no longer included in the message.
 
 ## Catch HTTP status errors
 
@@ -194,12 +201,5 @@ except RateLimitExceededError:
 ## Let unexpected errors propagate
 
 Not every exception needs to be caught at the call site. Let unexpected
-errors propagate to your application's central error handler (Sentry,
-logging middleware, framework error handler, etc.).
-
-## Connector-specific errors
-
-Connectors extend `HttpStatusError` with domain-specific subclasses. See
-the connector's own error reference for details. For example:
-
-- [Salesforce — handle errors](../../connectors/salesforce/user/how-to/handle-errors.md)
+errors propagate to your application's central error handler, logging
+middleware, or configured error reporter.

@@ -13,6 +13,7 @@ import jwt as pyjwt
 import pytest
 import time_machine
 
+from plynt.base.errors import AuthenticationError
 from plynt.base.request import Request
 from plynt.base.response import Response
 from plynt.connectors.salesforce.auth import (
@@ -36,6 +37,16 @@ from tests.connectors.salesforce.conftest import (
 
 class TestSalesforceJWTBearerAuthMiddleware:
     """Exercise sync JWT bearer assertion, audience, expiry, and retry behavior."""
+
+    def test_rejected_token_response_raises_authentication_error(self) -> None:
+        auth = make_bearer_auth(FakeSalesforceTokenTransport(status=401))
+
+        with pytest.raises(AuthenticationError) as caught:
+            _ = auth.instance_url
+
+        assert caught.value.status_code == 401
+        assert caught.value.response_body is not None
+        assert auth._cache.get(auth._cache_key) is None
 
     def test_instance_url_extracted_from_token_response(self) -> None:
         auth = make_bearer_auth()
@@ -192,6 +203,18 @@ class TestSalesforceJWTBearerAuthMiddleware:
 
 class TestAsyncSalesforceJWTBearerAuthMiddleware:
     """Exercise async JWT bearer assertion and boundary validation behavior."""
+
+    async def test_rejected_token_response_raises_authentication_error(self) -> None:
+        auth = make_bearer_auth(
+            FakeAsyncSalesforceTokenTransport(status=401), async_mode=True
+        )
+
+        with pytest.raises(AuthenticationError) as caught:
+            await auth.get_instance_url()
+
+        assert caught.value.status_code == 401
+        assert caught.value.response_body is not None
+        assert auth._cache.get(auth._cache_key) is None
 
     async def test_instance_url_extracted_from_token_response(self) -> None:
         auth = make_bearer_auth(async_mode=True)

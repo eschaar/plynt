@@ -70,6 +70,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 from plynt.base.cache import CacheBackend
+from plynt.base.errors import AuthenticationError
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.request import Request
 from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
@@ -273,8 +274,9 @@ class OAuth2AuthMiddlewareBase(SyncMiddleware, abc.ABC):
         )
         response = self._transport.send(request)
         if response.status_code != HTTPStatus.OK:
-            raise RuntimeError(
-                f"Token endpoint returned {response.status_code}: {response.content!r}"
+            raise AuthenticationError(
+                status_code=response.status_code,
+                response_body=response.content,
             )
         data = json.loads(response.content)
         self._on_response(data)
@@ -670,8 +672,9 @@ class AsyncOAuth2AuthMiddlewareBase(AsyncMiddleware, abc.ABC):
         )
         response = await self._transport.send(request)
         if response.status_code != HTTPStatus.OK:
-            raise RuntimeError(
-                f"Token endpoint returned {response.status_code}: {response.content!r}"
+            raise AuthenticationError(
+                status_code=response.status_code,
+                response_body=response.content,
             )
         data = json.loads(response.content)
         self._on_response(data)

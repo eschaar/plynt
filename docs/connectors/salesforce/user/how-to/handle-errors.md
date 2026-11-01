@@ -66,6 +66,35 @@ except SalesforceAPIError as e:
     print(f"Salesforce error {e.status_code}: {e.errors[0].error_code}")
 ```
 
+## Authentication endpoint failures
+
+Salesforce client credentials, password, and JWT bearer middleware raise
+`AuthenticationError` when the token endpoint returns a status other than 200.
+This applies to both sync and async clients. These failures occur before a
+Salesforce API call and are not `SalesforceAPIError` instances.
+
+```python
+from plynt.base import AuthenticationError
+
+try:
+    instance_url = auth.instance_url
+except AuthenticationError as error:
+    print(f"Authentication endpoint returned {error.status_code}")
+```
+
+For async middleware, use `await auth.get_instance_url()` instead.
+
+The error retains the status code and an optional `response_body` attribute.
+The body is excluded from messages and structured output; do not log it,
+because authentication responses may contain sensitive data.
+
+Existing `except RuntimeError` handlers still match. Code parsing the old
+message must inspect `status_code` instead. Missing or empty `instance_url`
+in a successful token response still raises `RuntimeError`.
+
+See the [generic error contract](../../../../user/how-to/handle-errors.md)
+for the shared transport and authentication error types.
+
 ## Session expiry
 
 `SalesforceSessionExpiredError` is raised when Salesforce returns

@@ -10,6 +10,7 @@ from urllib.parse import parse_qs
 
 import pytest
 
+from plynt.base.errors import AuthenticationError
 from plynt.base.request import Request
 from plynt.base.response import Response
 from plynt.base.transport import AsyncTransport, SyncTransport
@@ -104,11 +105,15 @@ class TestSalesforceClientCredentialsAuthMiddleware:
         _ = auth.instance_url
         assert transport.calls == 1
 
-    def test_error_response_raises_runtime_error(self) -> None:
+    def test_error_response_raises_authentication_error(self) -> None:
         transport = FakeSalesforceTokenTransport(status=401)
         auth = make_oauth_auth(transport)
-        with pytest.raises(RuntimeError, match="401"):
+        with pytest.raises(AuthenticationError, match="401") as caught:
             _ = auth.instance_url
+        assert isinstance(caught.value, RuntimeError)
+        assert caught.value.status_code == 401
+        assert caught.value.response_body is not None
+        assert auth._cache.get(auth._cache_key) is None
 
     def test_client_credentials_flow_sends_expected_form_fields(self) -> None:
         transport = FakeSalesforceTokenTransport()
@@ -203,11 +208,15 @@ class TestAsyncSalesforceClientCredentialsAuthMiddleware:
         await auth.get_instance_url()
         assert transport.calls == 1
 
-    async def test_error_response_raises_runtime_error(self) -> None:
+    async def test_error_response_raises_authentication_error(self) -> None:
         transport = FakeAsyncSalesforceTokenTransport(status=401)
         auth = make_oauth_auth(transport, async_mode=True)
-        with pytest.raises(RuntimeError, match="401"):
+        with pytest.raises(AuthenticationError, match="401") as caught:
             await auth.get_instance_url()
+        assert isinstance(caught.value, RuntimeError)
+        assert caught.value.status_code == 401
+        assert caught.value.response_body is not None
+        assert auth._cache.get(auth._cache_key) is None
 
     async def test_client_credentials_flow_sends_expected_form_fields(self) -> None:
         transport = FakeAsyncSalesforceTokenTransport()
