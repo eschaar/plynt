@@ -118,6 +118,7 @@ package-dir = { "" = "src" }
 include-package-data = true
 
 [tool.setuptools.package-data]
+"plynt" = ["py.typed"]
 "plynt.connectors.salesforce.cdc._proto" = ["*.proto", "*.md"]
 
 [tool.coverage.run]

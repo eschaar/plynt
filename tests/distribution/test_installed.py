@@ -51,6 +51,10 @@ class TestInstalledDistribution:
                     .is_relative_to(Path(sys.prefix).resolve())
                 ), f"{name} was imported from the checkout rather than the wheel"
 
+    def test_package_is_marked_typed(self) -> None:
+        package = resources.files("plynt")
+        assert package.joinpath("py.typed").is_file()
+
     def test_core_models_work(self) -> None:
         from plynt.base import Request, Response
 
