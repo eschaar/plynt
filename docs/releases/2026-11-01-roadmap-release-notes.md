@@ -75,5 +75,5 @@ the pre-1.0 policy; release-please selects the version from Conventional Commits
 - Migration: `docs/user/migrations/typed-transport-errors.md`.
 - Verification and sign-off record: linked above.
 - Documentation candidate: `3d87a933daa9166301977082c5b9c032d1516256`.
-- Remote handoff: authentication blocked; no PR/run/release IDs exist.
-  See the release gate for push attempts and the required authentication action.
+- Remote handoff: SSH authentication verified on resumption; push/PR next.
+  No PR/run/release IDs exist yet. The release gate tracks protected checks.
