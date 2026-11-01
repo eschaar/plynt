@@ -75,6 +75,17 @@ class TestRedisCache:
         backend.set("k", "v", ttl=60.0)
         assert backend.get("k") == "v"
 
+    @pytest.mark.parametrize(
+        ("ttl", "seconds"), [(0.0, 1), (0.9, 1), (1.9, 1), (2.0, 2), (2.9, 2)]
+    )
+    def test_ttl_truncates_and_clamps(self, ttl: float, seconds: int) -> None:
+        """Preserve integer truncation and the one-second Redis expiry minimum"""
+        backend = self._make()
+        with patch.object(backend._client, "set", wraps=backend._client.set) as store:
+            backend.set("k", "v", ttl=ttl)
+        store.assert_called_once_with("test:k", pickle.dumps("v"), ex=seconds)
+        assert backend.get("k") == "v"
+
     def test_ttl_returns_remaining_seconds(self) -> None:
         """Validate ttl returns remaining seconds."""
         backend = self._make()

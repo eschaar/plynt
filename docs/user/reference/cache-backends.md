@@ -49,6 +49,10 @@ cache = RedisCache(client, prefix="my-service:")
 | `client`  | `redis.Redis` | required   | A connected Redis client instance |
 | `prefix`  | `str`         | `"plynt:"` | Key namespace prefix              |
 
+Per-key TTLs use `max(1, int(ttl))` seconds: positive fractional values are
+truncated, not rounded to the nearest second, with a minimum expiry of one
+second. `ttl=None` stores without expiry.
+
 **Security note:** `RedisCache` serialises with `pickle`. Ensure the Redis
 instance is accessible only from trusted processes — do not expose it to
 untrusted input.
