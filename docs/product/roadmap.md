@@ -24,6 +24,7 @@ ______________________________________________________________________
 | 1e  | `TracingMiddleware` `plynt[otel]`                 | **Conditional**  | ADR required; use OTel auto-instrumentation unless plynt spans are needed           |
 | 1f  | `MetricsMiddleware` `plynt[prometheus]`           | **Conditional**  | ADR required; use OTel unless standalone metrics are needed                         |
 | 1g  | `MockMiddleware`                                  | **Planned**      | Test/dev only; Tier 3                                                               |
+| 1h  | Error-tracking integration `plynt[sentry]`        | **Idea**         | Vendor-neutral reporting hook with an optional Sentry adapter; ADR required         |
 | 2   | Salesforce connector — REST + Bulk + AI           | **Done**         | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API      |
 | 2f  | Salesforce Pub/Sub CDC                            | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
 | 2g  | `plynt-salesforce` package extraction             | **Deferred**     | After multi-connector gate                                                          |
@@ -35,7 +36,7 @@ ______________________________________________________________________
 | 4b  | DRF integration layer `plynt[drf]`                | **Done**         | Shipped in v0.8.0; mixins, header helpers, sync/async support                       |
 | 4c  | FastAPI framework adapter `plynt[fastapi]`        | **Done**         | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs        |
 | 4d  | Flask framework adapter `plynt[flask]`            | **Conditional**  | Convenience layer only; validate demand before ADR                                  |
-| 4e  | FastAPI inbound request-ID and error envelope     | **Idea**         | Candidates from Sales API; ADR required before implementation                       |
+| 4e  | Inbound request-ID and error envelope helpers     | **Idea**         | Framework-agnostic core with thin Django, DRF, and FastAPI adapters; ADR required   |
 | 5   | Cache backend documentation                       | **Done**         | Redis SSL, framework-native wrapping, and custom backend how-to guides added        |
 | 6   | gRPC transport `plynt[grpc]`                      | **Implemented**  | ADR-0030; async calls and optional runtime                                          |
 | 7   | AI / LLM connector `plynt.connectors.llm`         | **Done**         | Generic contract, sync/async parity, OpenAI and Anthropic adapters                  |
@@ -400,6 +401,35 @@ Intercept requests and return pre-configured responses in tests, as a
 middleware-level alternative to httpx's `MockTransport`. See
 [idea](ideas/middleware-extensions.md#mockmiddleware) for interface sketch.
 
+#### 1h. Error-tracking integration — `plynt[sentry]` (Tier 2)
+
+**Status:** Idea. Requires an ADR before implementation.
+
+Let services report plynt failures to an error tracker with useful,
+redacted context, and return the tracker's event ID to callers.
+
+The Sentry SDK already captures exceptions and httpx calls on its own.
+This item only adds what the SDK cannot know:
+
+- plynt context on events: connector, service, operation, upstream status,
+  retry attempts, and the upstream request ID
+- redaction that reuses plynt's logging rules, so tokens and auth headers
+  never reach the tracker
+- the event ID made available to the error-envelope helpers in 4e, for
+  example as `X-Error-Id` or an `error_id` field
+
+Design constraints:
+
+- Keep the core vendor-neutral: a small reporting protocol with no
+  default implementation and no new core dependency.
+- Ship Sentry as the first optional adapter behind `plynt[sentry]`.
+  Other trackers can implement the same protocol.
+- Do not include company-specific tags, DSN handling, or environment
+  conventions. Applications keep ownership of SDK initialization.
+
+**Prerequisite:** New ADR covering the reporting protocol and the
+`plynt[sentry]` extra per ADR-0003 and ADR-0028.
+
 ______________________________________________________________________
 
 ### 2. Salesforce integration — remaining work
@@ -760,30 +790,43 @@ Primary use case:
 **Prerequisite:** Flask still requires a dedicated ADR before
 implementation.
 
-#### 4e. FastAPI inbound request-ID and error envelope helpers
+#### 4e. Inbound request-ID and error envelope helpers
 
 **Status:** Idea. Requires an ADR before implementation.
 
-Origin: the standalone Sales API (FastAPI over plynt) implements both
-pieces locally. Promote them only when a second FastAPI consumer needs
-the same behavior.
+Origin: a FastAPI service over plynt and earlier Django services each
+implement these pieces locally. The behavior is framework-independent,
+so it belongs in one shared implementation rather than per framework.
 
-The existing 4c helpers cover outbound header propagation and a fixed
-error payload. These candidates cover the inbound side:
+The existing 4b and 4c helpers cover outbound header propagation and a
+fixed error payload. These candidates cover the inbound side.
 
-- Inbound request-ID middleware: accept or generate `X-Request-ID`,
-  validate length and characters, store it in a context variable, echo it
-  on every response, and feed it into the existing header propagation.
-- Error-envelope helper: let the application supply the envelope shape
-  (for example `code`, `message`, `details`, `request_id`, `timestamp`)
-  instead of the fixed `message`/`code` payload, so plynt errors and
-  application errors share one response format.
+Framework-agnostic core (no new dependencies):
+
+- Request-ID context: accept or generate an ID, validate its length and
+  characters, and store it in a context variable that works for sync and
+  async code. Header name and ID generator are configurable.
+- Outbound propagation: let `HeaderMiddleware` read the current ID, so
+  every upstream call carries it without per-call wiring.
+- Logging: a log filter that adds the current ID to log records.
+- Error envelope: let the application supply the envelope shape (for
+  example `code`, `message`, `details`, `request_id`, `timestamp`) so
+  plynt errors and application errors share one response format.
+
+Thin framework adapters, each only wiring the core into the framework:
+
+- Django and DRF: middleware that sets the ID and echoes it on responses;
+  the DRF exception handler uses the configured envelope.
+- FastAPI and other ASGI apps: middleware with the same behavior; the
+  FastAPI exception mapping uses the configured envelope.
+- Flask (4d), if that adapter is ever built.
 
 Out of scope: API versioning, caller authentication, scope policies, and
 application-specific error codes. These remain in the consuming service.
 
-**Prerequisite:** an ADR that confirms these helpers stay thin adapters
-under `plynt.adapters.fastapi` and add no new runtime dependencies.
+**Prerequisite:** an ADR that places the request-ID context and envelope
+contract in the core, confirms the adapters stay thin per ADR-0024, and
+adds no new runtime dependencies.
 
 ______________________________________________________________________
 
