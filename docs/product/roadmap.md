@@ -653,7 +653,7 @@ message flows now build on the current response and transport model.
 
 Done: the `py.typed` marker, `close()` / `aclose()` on the OAuth2
 middleware, JWT bearer auth on both Salesforce clients, and the SObject
-docstring alignment. Typed token and transport failures are decided in
+docstring alignment. Typed token and transport failures are implemented under
 [ADR-0039](../architecture/adr/0039-typed-transport-and-authentication-errors.md).
 The FastAPI lifespan pattern is still open.
 
@@ -665,10 +665,10 @@ The FastAPI lifespan pattern is still open.
   its own `HttpxAsyncTransport` for the token endpoint, with no public
   `aclose()`. Consumers cannot release it at shutdown. Add `aclose()`, or
   accept an injected transport that the owner closes.
-- **Typed token failures:** a non-200 token response raises a plain
-  `RuntimeError` that includes the raw token-endpoint body. Raise a typed
-  auth error with the status code instead, and keep the response body out
-  of the exception message so it cannot leak into logs.
+- **Typed token failures (done):** non-200 token responses raise
+  `AuthenticationError`, compatible with `RuntimeError`. The status code
+  is available separately; the response body is excluded from messages
+  and structured output.
 - **Async JWT on the async client:** the `auth` union of
   `AsyncSalesforceAPIClient` lists client credentials, password and session,
   but not `AsyncSalesforceJWTBearerAuthMiddleware`. Add it, or define one
@@ -677,13 +677,11 @@ The FastAPI lifespan pattern is still open.
   cannot share one auth middleware instance between the transport and the
   client, which the Salesforce client needs for `instance_url`. Document a
   pattern or add a Salesforce-aware lifespan helper.
-- **Typed transport failures:** `HttpxAsyncTransport` and its sync sibling
-  let `httpx2` exceptions (timeouts, connect errors, pool exhaustion)
-  propagate unchanged, although `plynt.base.errors.TransportError` exists.
-  Consumers must import `httpx2` to handle network failures, which leaks the
-  transport behind the abstraction. Wrap them in typed `TransportError`
-  subclasses, such as timeout and connection errors, and keep the original
-  as `__cause__`.
+- **Typed transport failures (done):** sync and async HTTP transports raise
+  `TransportTimeoutError` or `TransportConnectionError` for network failures
+  while sending requests or opening streams. The original error remains
+  available as `__cause__`. HTTP retry classification recognizes both types;
+  returned-stream iteration keeps its existing interruption contract.
 - **Consistent SObject path documentation:** the module and method
   docstrings of `SalesforceObjectService` show `POST /sobjects/{Object}/`
   with a trailing slash, while `_sobject_path()` sends `/sobjects/{Object}`.
