@@ -7,6 +7,7 @@ Python log handler, independent of the Plynt transport or middleware layer:
   per-window limit, preventing log- and Sentry-flooding from noisy upstreams.
 - ``ExceptionInfoFilter`` — injects active exception context into records
   that were emitted without it.
+- ``RequestIDFilter`` — attaches the current request ID to every record.
 - ``PlyntHTTPFilter`` — convenience subclass of ``ThrottleLogs``
   pre-configured for the ``plynt.http`` logger with sensible defaults.
 """
@@ -18,11 +19,31 @@ import sys
 import threading
 from re import Pattern
 
+from plynt.base.request_id import get_request_id
+
 __all__ = [
     "ExceptionInfoFilter",
     "PlyntHTTPFilter",
+    "RequestIDFilter",
     "ThrottleLogs",
 ]
+
+
+class RequestIDFilter(logging.Filter):
+    """Attach the current request ID to log records (ADR-0040)
+
+    Set ``request_id`` to the active scoped ID, or ``"-"`` outside a scope.
+    Replace any existing value with the current context to avoid stale IDs.
+    This filter never suppresses records and never generates an ID.
+
+    Attach it to handlers so records from child loggers are enriched too.
+
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Set the scoped request ID and allow the record through"""
+        record.request_id = get_request_id() or "-"
+        return True
 
 
 class ThrottleLogs(logging.Filter):

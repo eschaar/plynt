@@ -74,6 +74,10 @@ Each log line is a JSON object:
 
 Any `extra={}` fields on a logging call are included as additional keys.
 
+To include the active scoped request ID, attach `RequestIDFilter` to the
+handler. See [request ID logging](use-request-id-context.md#include-the-id-in-logs)
+for structured and plain-text configuration.
+
 ## Step 4 — Throttle noisy logs
 
 `ThrottleLogs` suppresses repeated log records after a configurable

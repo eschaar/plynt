@@ -67,6 +67,30 @@ unchanged.
 Place the header middleware before retry middleware so the ID stays the same
 throughout retry attempts.
 
+## Include the ID in logs
+
+Attach `RequestIDFilter` to a handler to enrich records from both application
+and plynt loggers. Python logger filters do not apply to propagated child
+records, so configure this filter on the handler rather than a parent logger.
+
+```python
+import logging
+from plynt.log import RequestIDFilter, StructuredFormatter
+
+handler = logging.StreamHandler()
+handler.addFilter(RequestIDFilter())
+handler.setFormatter(StructuredFormatter())
+logging.getLogger("plynt").addHandler(handler)
+```
+
+The filter sets `record.request_id` to the active scoped ID, or `"-"` when
+no scope is active. It never generates an ID or suppresses a record. Existing
+`request_id` fields are replaced with the current context, preventing stale IDs.
+
+`StructuredFormatter` includes the field automatically. For plain-text output,
+use `logging.Formatter("%(request_id)s %(message)s")` on the filtered handler.
+Filtering is opt-in; existing logging configuration remains unchanged.
+
 ## Scope and concurrency
 
 The same `with policy.scope(...)` block works in synchronous functions and

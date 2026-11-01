@@ -3,12 +3,24 @@ PlyntHTTPFilter)."""
 
 from __future__ import annotations
 
+import asyncio
+import io
+import json
 import logging
 import re
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 
 import pytest
 
-from plynt.log import ExceptionInfoFilter, PlyntHTTPFilter, ThrottleLogs
+from plynt.base import RequestIDPolicy, get_request_id
+from plynt.log import (
+    ExceptionInfoFilter,
+    PlyntHTTPFilter,
+    RequestIDFilter,
+    StructuredFormatter,
+    ThrottleLogs,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -38,6 +50,102 @@ def _make_record(
     if created is not None:
         record.created = created
     return record
+
+
+class TestRequestIDFilter:
+    def test_active_scope_adds_request_id_without_suppressing_record(self) -> None:
+        record = _make_record()
+        with RequestIDPolicy().scope("request-123"):
+            assert RequestIDFilter().filter(record) is True
+        assert record.__dict__["request_id"] == "request-123"
+
+    def test_missing_scope_adds_placeholder_without_generating_id(self) -> None:
+        record = _make_record()
+        assert RequestIDFilter().filter(record) is True
+        assert record.__dict__["request_id"] == "-"
+        assert get_request_id() is None
+
+    def test_current_context_replaces_existing_request_id(self) -> None:
+        record = _make_record()
+        record.request_id = "stale"
+        with RequestIDPolicy().scope("current"):
+            RequestIDFilter().filter(record)
+        assert record.__dict__["request_id"] == "current"
+        RequestIDFilter().filter(record)
+        assert record.__dict__["request_id"] == "-"
+
+    def test_exception_exit_restores_outer_id_for_logging(self) -> None:
+        policy = RequestIDPolicy()
+        log_filter = RequestIDFilter()
+        record = _make_record()
+        with policy.scope("outer"):
+            with pytest.raises(ValueError, match="failure"):
+                with policy.scope("inner"):
+                    log_filter.filter(record)
+                    assert record.__dict__["request_id"] == "inner"
+                    raise ValueError("failure")
+            log_filter.filter(record)
+            assert record.__dict__["request_id"] == "outer"
+        log_filter.filter(record)
+        assert record.__dict__["request_id"] == "-"
+
+    @pytest.mark.parametrize("structured", [False, True])
+    def test_handler_enriches_child_logger_records(self, structured: bool) -> None:
+        stream = io.StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.addFilter(RequestIDFilter())
+        handler.setFormatter(
+            StructuredFormatter()
+            if structured
+            else logging.Formatter("%(request_id)s %(message)s")
+        )
+        parent = logging.Logger("application")
+        parent.addHandler(handler)
+        child = logging.Logger("application.child")
+        child.parent = parent
+        with RequestIDPolicy().scope("handler-id"):
+            child.warning("scoped")
+        child.warning("outside")
+        lines = stream.getvalue().splitlines()
+        if structured:
+            assert json.loads(lines[0])["request_id"] == "handler-id"
+            assert json.loads(lines[1])["request_id"] == "-"
+        else:
+            assert lines == ["handler-id scoped", "- outside"]
+
+    @pytest.mark.asyncio
+    async def test_shared_filter_keeps_concurrent_task_ids_isolated(self) -> None:
+        policy = RequestIDPolicy()
+        log_filter = RequestIDFilter()
+
+        async def log_in_scope(request_id: str) -> str:
+            with policy.scope(request_id):
+                await asyncio.sleep(0)
+                record = _make_record()
+                log_filter.filter(record)
+                return str(record.__dict__["request_id"])
+
+        first, second = await asyncio.gather(
+            log_in_scope("first"), log_in_scope("second")
+        )
+        assert first == "first"
+        assert second == "second"
+        assert get_request_id() is None
+
+    def test_worker_logging_uses_explicitly_copied_context(self) -> None:
+        log_filter = RequestIDFilter()
+
+        def log_request_id() -> str:
+            record = _make_record()
+            log_filter.filter(record)
+            return str(record.__dict__["request_id"])
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            with RequestIDPolicy().scope("copied"):
+                assert executor.submit(log_request_id).result() == "-"
+                context = copy_context()
+                assert executor.submit(context.run, log_request_id).result() == "copied"
+            assert executor.submit(log_request_id).result() == "-"
 
 
 # ---------------------------------------------------------------------------
