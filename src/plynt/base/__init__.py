@@ -13,6 +13,7 @@ from plynt.base.error_envelope import (
     build_error_envelope,
     default_error_envelope,
 )
+from plynt.base.error_reporter import ErrorReporter
 from plynt.base.errors import (
     AuthenticationError,
     BaseError,
@@ -58,6 +59,7 @@ __all__ = [
     "ConfigurationError",
     "DependencyUnavailableError",
     "ErrorEnvelope",
+    "ErrorReporter",
     "FeatureDisabledError",
     "InvalidInputError",
     "OperationFailedError",

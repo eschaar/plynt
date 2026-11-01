@@ -247,6 +247,15 @@ documented separately in the [adapter guides](../../adapters/README.md).
 
 ## Let unexpected errors propagate
 
+`ErrorReporter` in `plynt.base` defines the vendor-neutral reporting contract
+from ADR-0041. Implement `report(error, context)` and
+`async areport(error, context)` to return an event ID, or `None` when no event
+is captured. Callers must supply redacted context; the protocol performs no
+redaction, reporting, or SDK initialization itself. Reporting failures propagate.
+
+The core ships no reporter implementation or vendor dependency. Reporting
+middleware and optional tracker integrations are subsequent implementation steps.
+
 Not every exception needs to be caught at the call site. Let unexpected
 errors propagate to your application's central error handler, logging
 middleware, or configured error reporter.

@@ -416,7 +416,8 @@ middleware-level alternative to httpx's `MockTransport`. See
 
 **Status:** Planned under accepted
 [ADR-0041](../architecture/adr/0041-error-tracking-integration-and-sentry-extra.md).
-Reporting middleware and the optional Sentry integration are not implemented.
+The core `ErrorReporter` protocol is implemented. Reporting middleware and the
+optional Sentry integration remain open.
 
 Let services report plynt failures to an error tracker with useful,
 redacted context, and return the tracker's event ID to callers.
