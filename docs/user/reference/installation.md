@@ -57,11 +57,13 @@ guides.
 
 ## gRPC runtime compatibility
 
-The gRPC extra requires `grpcio>=1.84.0,<2` and `protobuf>=7.35.1,<8`. Resolve
+The gRPC extra requires `grpcio>=1.85.0,<2` and `protobuf>=7.35.1,<8`. Resolve
 these dependencies together and run `python -m pip check` after upgrading. The
-development generator is pinned to `grpcio-tools==1.84.0` under
-[ADR-0032](../../architecture/adr/0032-grpc-codegen-version-refresh.md).
-Consumers do not need that development-only package.
+development generator is pinned to `grpcio-tools==1.85.0`. The generated gRPC
+stub enforces the gRPC runtime floor; regenerated protobuf checks continue to
+require protobuf 7.35.1. Routine refresh policy and validation gates are in
+[ADR-0044](../../architecture/adr/0044-grpc-toolchain-upgrade-policy.md).
+Consumers do not need the development-only generator.
 
 Keep the installer itself current. The development and distribution gates
 bootstrap `pip>=26.2,<27`; this is tooling, not a Plynt runtime dependency:

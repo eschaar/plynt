@@ -85,6 +85,24 @@ class TestInstalledDistribution:
             for requirement in requirements
         )
 
+    def test_grpc_extra_bounds_match_generated_runtime_requirements(self) -> None:
+        requirements = metadata.requires("plynt") or []
+
+        assert any(
+            requirement.startswith("grpcio")
+            and ">=1.85.0" in requirement
+            and "<2" in requirement
+            and 'extra == "grpc"' in requirement
+            for requirement in requirements
+        )
+        assert any(
+            requirement.startswith("protobuf")
+            and ">=7.35.1" in requirement
+            and "<8" in requirement
+            and 'extra == "grpc"' in requirement
+            for requirement in requirements
+        )
+
     def test_declared_python_support_matches_contract(self) -> None:
         package = metadata.metadata("plynt")
 
