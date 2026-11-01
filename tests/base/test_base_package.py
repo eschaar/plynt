@@ -3,7 +3,6 @@
 import importlib
 
 from plynt.base.cache import CacheBackend
-from plynt.base.context import RequestIDPolicy, get_request_id
 from plynt.base.errors import (
     AuthenticationError,
     BaseError,
@@ -13,6 +12,7 @@ from plynt.base.errors import (
 )
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.request import Request
+from plynt.base.request_id import RequestIDPolicy, get_request_id
 from plynt.base.response import Response
 from plynt.base.settings import Settings
 from plynt.base.transport import AsyncTransport, SyncTransport

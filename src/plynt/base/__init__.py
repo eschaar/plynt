@@ -8,7 +8,6 @@ frameworks, or optional extras.
 """
 
 from plynt.base.cache import CacheBackend, SupportsSizeInfo, SupportsStats, SupportsTTL
-from plynt.base.context import RequestIDPolicy, get_request_id
 from plynt.base.errors import (
     AuthenticationError,
     BaseError,
@@ -26,6 +25,7 @@ from plynt.base.errors import (
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.policies import CircuitBreakerPolicy, RateLimitPolicy, RetryPolicy
 from plynt.base.request import Request
+from plynt.base.request_id import RequestIDPolicy, get_request_id
 from plynt.base.response import (
     AsyncStreamingResponse,
     Response,
