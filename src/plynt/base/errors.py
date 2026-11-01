@@ -295,6 +295,19 @@ class AuthenticationError(TransportError, RuntimeError):
         self.status_code = status_code
         self.response_body = response_body
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AuthenticationError:
+        """Restore the safe status detail without reconstructing a response body."""
+        details = data.get("details")
+        status_code = (
+            details.get("status_code") if isinstance(details, Mapping) else None
+        )
+        if not isinstance(status_code, int) or isinstance(status_code, bool):
+            raise ValueError(
+                "AuthenticationError details must include an integer status_code"
+            )
+        return cls(status_code=status_code)
+
 
 class StatusError(TransportError):
     """Raised when a response status code indicates failure.

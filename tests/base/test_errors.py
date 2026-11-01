@@ -195,6 +195,38 @@ class TestAuthenticationError:
         assert repr(error) == repr(without_body)
         assert error.to_dict() == without_body.to_dict()
 
+    @pytest.mark.parametrize("status_code", [400, 401, 403, 500])
+    def test_from_dict_round_trip_restores_status_without_response_body(
+        self, status_code: int
+    ) -> None:
+        error = AuthenticationError(status_code=status_code, response_body=b"private")
+
+        restored = AuthenticationError.from_dict(error.to_dict())
+
+        assert type(restored) is AuthenticationError
+        assert restored.status_code == status_code
+        assert restored.response_body is None
+        assert restored.to_dict() == error.to_dict()
+        assert b"private" not in repr(restored).encode()
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"message": "Authentication failed"},
+            {"details": {}},
+            {"details": {"status_code": True}},
+            {"details": {"status_code": "401"}},
+        ],
+    )
+    def test_from_dict_requires_integer_status_detail(
+        self, payload: dict[str, object]
+    ) -> None:
+        with pytest.raises(
+            ValueError,
+            match="AuthenticationError details must include an integer status_code",
+        ):
+            AuthenticationError.from_dict(payload)
+
     def test_existing_runtime_error_handler_catches_authentication_error(self) -> None:
         error = AuthenticationError(status_code=401)
 
