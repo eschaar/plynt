@@ -8,6 +8,11 @@ Accepted
 
 **Implemented:** The `CacheBackend` Protocol (`plynt.base.cache`).
 
+**Current installation clarification:** The original `[cache]` extra proposal
+below is historical; no `plynt[cache]` extra is published. The `DummyCache`
+and `LocMemCache` backends need no third-party package. Install `redis` to use
+`RedisCache` or `cachetools` to use `CachetoolsCache`, as applicable.
+
 **Superseded:** The `cache=` constructor parameter on `BaseSyncTransport` /
 `BaseAsyncTransport` (original proposal, ADR-0013) has been replaced by
 `CacheMiddleware` / `AsyncCacheMiddleware` in `plynt.middleware.cache`.
@@ -20,8 +25,9 @@ transport = HttpxSyncTransport(middlewares=[CacheMiddleware(my_cache)])
 ```
 
 **Implemented:** Concrete built-in backends in `plynt.cache`. `DummyCache`,
-`LocMemCache`, `CachetoolsCache` (requires `[cache]` extra), and `RedisCache`
-(requires `[cache]` extra) are available.
+`LocMemCache`, `CachetoolsCache`, and `RedisCache` are available. The latter
+two require their respective third-party packages, `cachetools` and `redis`,
+installed separately.
 
 **Implemented:** Typed cache configuration (`DummyCacheConfig`,
 `LocMemCacheConfig`, `RedisCacheConfig`, `CacheConfig`, `cache_from_config()`)
@@ -57,11 +63,15 @@ fields on `HTTPSettings` whose values were location URIs
 
 ### Installation Extra
 
-Caching support is shipped as an optional install extra:
+The original decision proposed shipping caching support as an optional install
+extra:
 
 ```text
 pip install plynt[cache]
 ```
+
+This is retained as a historical proposal, not a current installation
+instruction; see the current installation clarification above.
 
 ### Abstract Cache Interface
 
@@ -245,3 +255,4 @@ from plynt.cache import RedisCacheConfig, cache_from_config
 - ADR-0006 — Transport Layer (interception point for caching)
 - ADR-0008 — Client Layer (consumers of transports)
 - ADR-0013 — Transport Base Class (canonical middleware ordering)
+- ADR-0045 — Secure Cache Identity and Reuse (cache identity and auth-before-cache ordering)

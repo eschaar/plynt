@@ -67,17 +67,21 @@ A typical HTTP request path is:
 The middleware model is chain-of-responsibility (`handle(request, next)`),
 implemented in base transport classes.
 
-Canonical order:
+Canonical order for an HTTP transport built from settings (first is
+outermost):
 
-1. Cache middleware (outermost)
-1. Auth middleware
-1. Circuit breaker middleware
-1. Rate limit middleware
+1. Auth middleware (when configured)
+1. Response cache middleware (when configured)
 1. Retry middleware (innermost above I/O)
 
-This keeps cross-cutting behavior reusable and explicit. The HTTP middleware
-chain is not reused by gRPC; that protocol has its own interceptor and metadata
-boundaries.
+This places response caching after request-mutating authentication so the cache
+identity includes the outbound auth headers, as required by
+[ADR-0045](adr/0045-secure-cache-identity.md). `HttpxSyncTransport` and
+`HttpxAsyncTransport` settings factories assemble auth, response cache, then
+retry. Optional circuit-breaker and rate-limit middleware may be supplied
+separately; their placement is not defined by these factories. The HTTP
+middleware chain is not reused by gRPC; that protocol has its own interceptor
+and metadata boundaries.
 
 ## Sync and Async Strategy
 
