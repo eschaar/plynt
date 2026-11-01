@@ -35,7 +35,7 @@ experimental capabilities remain `Experimental`.
 | 2f  | Salesforce Pub/Sub CDC                            | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
 | 2g  | `plynt-salesforce` package extraction             | **Deferred**     | After multi-connector gate                                                          |
 | 2l  | Salesforce GraphQL API                            | **Conditional**  | Implement on repeated demand only                                                   |
-| 2o  | Async auth lifecycle and typing gaps              | **In progress**  | Quick wins done; typed errors per ADR-0039 (accepted), lifespan pattern open        |
+| 2o  | Async auth lifecycle and typing gaps              | **Done**         | Typed errors, auth cleanup/typing, and tested shared-auth lifespan recipe           |
 | 3   | Streaming response (SSE / chunked HTTP)           | **Done**         | ADR-0017; enables Salesforce AI and LLM connector                                   |
 | 3b  | Raw response access on `APIClient`                | **Done**         | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                    |
 | 4a  | Django core adapter `plynt[django]`               | **Done**         | Shipped in v0.8.0; settings bridge, cache backend, transport helpers                |
@@ -692,14 +692,15 @@ message flows now build on the current response and transport model.
 
 #### 2o. Async auth lifecycle, typing and transport gaps
 
-**Status:** In progress. Found while building the standalone Sales API on
+**Status:** Done. Found while building the standalone Sales API on
 `AsyncSalesforceAPIClient`. Each item was verified in the plynt source.
 
 Done: the `py.typed` marker, `close()` / `aclose()` on the OAuth2
 middleware, JWT bearer auth on both Salesforce clients, and the SObject
 docstring alignment. Typed token and transport failures are implemented under
 [ADR-0039](../architecture/adr/0039-typed-transport-and-authentication-errors.md).
-The FastAPI lifespan pattern is still open.
+The [FastAPI shared-auth lifespan recipe](../connectors/salesforce/user/how-to/use-fastapi-lifespan.md)
+is documented and tested with HTTP-level mocks.
 
 - **Typed package marker (done):** the package ships `plynt/py.typed`,
   included in the wheel so consumers can use the inline annotations.
@@ -711,10 +712,11 @@ The FastAPI lifespan pattern is still open.
   and structured output.
 - **JWT client typing (done):** both Salesforce client auth unions include
   their corresponding sync or async JWT bearer middleware.
-- **Shared auth in the FastAPI lifespan:** `PlyntLifespan` and `get_client`
-  cannot share one auth middleware instance between the transport and the
-  client, which the Salesforce client needs for `instance_url`. Document a
-  pattern or add a Salesforce-aware lifespan helper.
+- **Shared auth in the FastAPI lifespan (done):** an application-owned
+  `AsyncExitStack` shares one auth instance between client and transport,
+  preserving token and `instance_url` state. The executable recipe covers
+  concurrent calls, repeated lifespans, missing configuration, and cleanup
+  after startup/handler failure. No connector-aware core helper was added.
 - **Typed transport failures (done):** sync and async HTTP transports raise
   `TransportTimeoutError` or `TransportConnectionError` for network failures
   while sending requests or opening streams. The original error remains
