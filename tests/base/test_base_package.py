@@ -4,6 +4,7 @@ import importlib
 
 from plynt.base.cache import CacheBackend
 from plynt.base.errors import (
+    AuthenticationError,
     BaseError,
     ConfigurationError,
     TransportConnectionError,
@@ -27,6 +28,7 @@ class TestBasePackage:
             "AsyncMiddleware",
             "AsyncStreamingResponse",
             "AsyncTransport",
+            "AuthenticationError",
             "BaseAsyncTransport",
             "BaseError",
             "BaseSyncTransport",
@@ -62,6 +64,7 @@ class TestBasePackage:
 
         assert module.AsyncMiddleware is AsyncMiddleware
         assert module.AsyncTransport is AsyncTransport
+        assert module.AuthenticationError is AuthenticationError
         assert module.BaseError is BaseError
         assert module.CacheBackend is CacheBackend
         assert module.ConfigurationError is ConfigurationError

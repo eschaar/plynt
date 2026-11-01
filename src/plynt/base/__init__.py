@@ -9,6 +9,7 @@ frameworks, or optional extras.
 
 from plynt.base.cache import CacheBackend, SupportsSizeInfo, SupportsStats, SupportsTTL
 from plynt.base.errors import (
+    AuthenticationError,
     BaseError,
     ConfigurationError,
     DependencyUnavailableError,
@@ -42,6 +43,7 @@ __all__ = [
     "AsyncMiddleware",
     "AsyncStreamingResponse",
     "AsyncTransport",
+    "AuthenticationError",
     "BaseAsyncTransport",
     "BaseError",
     "BaseSyncTransport",

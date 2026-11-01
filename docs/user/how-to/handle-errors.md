@@ -5,28 +5,43 @@ specific exception you need and let the rest propagate.
 
 ## Core exception hierarchy
 
-```bash
-Exception
-└── RuntimeError
-    ├── TransportError                   (plynt.base.errors)
-    │   └── StatusError                  (plynt.base.errors)
-    │       └── HttpStatusError          (plynt.http.errors)
-    │           ├── BadRequestError      (400)
-    │           ├── UnauthorizedError    (401)
-    │           ├── ForbiddenError       (403)
-    │           ├── NotFoundError        (404)
-    │           ├── NotAllowedError      (405)
-    │           ├── RequestTimeoutError  (408)
-    │           ├── ConflictError        (409)
-    │           ├── GoneError            (410)
-    │           ├── UnprocessableEntityError (422)
-    │           ├── InternalServerError  (500)
-    │           ├── OperationFailedError (500)
-    │           ├── ServiceUnavailableError (503)
-    │           └── FeatureOfflineError  (503)
-    ├── CircuitBreakerOpenError          (plynt.middleware.circuit_breaker)
-    └── RateLimitExceededError           (plynt.middleware.rate_limit)
+```mermaid
+classDiagram
+    Exception <|-- BaseError
+    Exception <|-- RuntimeError
+    BaseError <|-- TransportError
+    TransportError <|-- TransportTimeoutError
+    TransportError <|-- TransportConnectionError
+    TransportError <|-- AuthenticationError
+    RuntimeError <|-- AuthenticationError
+    TransportError <|-- StreamInterruptedError
+    TransportError <|-- StatusError
+    StatusError <|-- HttpStatusError
+    RuntimeError <|-- CircuitBreakerOpenError
+    RuntimeError <|-- RateLimitExceededError
 ```
+
+Arrows point to the parent class. Core errors live in `plynt.base.errors`;
+`HttpStatusError` lives in `plynt.http.errors`. Circuit breaker and rate limit
+errors live in their respective middleware modules.
+
+The HTTP status subclasses of `HttpStatusError` are:
+
+| Error                      | HTTP status |
+| -------------------------- | ----------- |
+| `BadRequestError`          | 400         |
+| `UnauthorizedError`        | 401         |
+| `ForbiddenError`           | 403         |
+| `NotFoundError`            | 404         |
+| `NotAllowedError`          | 405         |
+| `RequestTimeoutError`      | 408         |
+| `ConflictError`            | 409         |
+| `GoneError`                | 410         |
+| `UnprocessableEntityError` | 422         |
+| `InternalServerError`      | 500         |
+| `OperationFailedError`     | 500         |
+| `ServiceUnavailableError`  | 503         |
+| `FeatureOfflineError`      | 503         |
 
 ## Transport timeout and connection errors
 
@@ -45,6 +60,28 @@ Implementations can preserve the original exception with `raise ... from exc`.
 These types are available for custom transports. The built-in HTTP transports
 still propagate backend exceptions; automatic mapping is a subsequent part of
 [ADR-0039](../../architecture/adr/0039-typed-transport-and-authentication-errors.md).
+
+## Authentication errors
+
+`AuthenticationError` is exported from `plynt.base`. It inherits from both
+`TransportError` and `RuntimeError`, preserving compatibility with existing
+`except RuntimeError` handlers for token failures.
+
+```python
+from plynt.base import AuthenticationError
+
+error = AuthenticationError(status_code=401, response_body=b"Upstream response")
+assert error.status_code == 401
+assert error.code == "AUTHENTICATION_ERROR"
+```
+
+The message contains the status code, not the upstream response body. The body
+is available only through `response_body`; it is excluded from `str()`,
+`repr()`, exception arguments, and `to_dict()`. Do not log this attribute:
+authentication responses may contain sensitive data.
+
+The type is available now. Built-in OAuth2 and Salesforce token flows still
+raise `RuntimeError`; using the new type there is a subsequent ADR-0039 step.
 
 ## Catch HTTP status errors
 

@@ -269,6 +269,29 @@ class TransportConnectionError(TransportError):
     message = "The transport connection failed"
 
 
+class AuthenticationError(TransportError, RuntimeError):
+    """Represent a failed authentication response without exposing its body
+
+    Args:
+        status_code: Status returned by the authentication endpoint.
+        response_body: Raw response for explicit inspection only. It is
+            excluded from messages and the structured error representation.
+
+    """
+
+    code = "AUTHENTICATION_ERROR"
+    status_code: int
+    response_body: bytes | None
+
+    def __init__(self, *, status_code: int, response_body: bytes | None = None) -> None:
+        super().__init__(
+            f"Authentication failed with status {status_code}",
+            status_code=status_code,
+        )
+        self.status_code = status_code
+        self.response_body = response_body
+
+
 class StatusError(TransportError):
     """Raised when a response status code indicates failure.
 

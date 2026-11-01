@@ -1,6 +1,7 @@
 import pytest
 
 from plynt.base.errors import (
+    AuthenticationError,
     BaseError,
     DependencyUnavailableError,
     FeatureDisabledError,
@@ -159,6 +160,52 @@ class TestTypedTransportErrors:
         assert caught.value.__cause__ is cause
         assert caught.value.code == code
         assert caught.value.message == message
+
+
+class TestAuthenticationError:
+    @pytest.mark.parametrize("status_code", [400, 401, 403, 500])
+    def test_status_code_has_safe_structured_representation(
+        self, status_code: int
+    ) -> None:
+        error = AuthenticationError(status_code=status_code)
+
+        assert isinstance(error, BaseError)
+        assert isinstance(error, TransportError)
+        assert isinstance(error, RuntimeError)
+        assert not isinstance(error, StatusError)
+        assert error.status_code == status_code
+        assert error.response_body is None
+        assert error.to_dict() == {
+            "message": f"Authentication failed with status {status_code}",
+            "code": "AUTHENTICATION_ERROR",
+            "details": {"status_code": status_code},
+        }
+
+    @pytest.mark.parametrize("body", [b"", b"Upstream diagnostic text", b"\xff\x00"])
+    def test_response_body_is_available_but_excluded_from_output(
+        self, body: bytes
+    ) -> None:
+        error = AuthenticationError(status_code=401, response_body=body)
+        without_body = AuthenticationError(status_code=401)
+
+        assert error.response_body == body
+        assert error.message == without_body.message
+        assert error.args == without_body.args
+        assert str(error) == str(without_body)
+        assert repr(error) == repr(without_body)
+        assert error.to_dict() == without_body.to_dict()
+
+    def test_existing_runtime_error_handler_catches_authentication_error(self) -> None:
+        error = AuthenticationError(status_code=401)
+
+        with pytest.raises(RuntimeError) as caught:
+            raise error
+
+        assert caught.value is error
+
+    def test_status_code_is_required(self) -> None:
+        with pytest.raises(TypeError):
+            AuthenticationError()  # type: ignore[call-arg]
 
 
 class TestStatusError:
