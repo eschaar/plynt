@@ -13,6 +13,11 @@ ______________________________________________________________________
 
 ## Status Overview
 
+`Done` means the scoped capability is implemented, tested, and documented in
+the current checkout. It does not imply a published release or completed
+production/provider validation. Outstanding validation is stated separately;
+experimental capabilities remain `Experimental`.
+
 <!-- markdownlint-disable MD060 -->
 
 | #   | Area                                              | Status           | Notes                                                                               |
@@ -37,9 +42,9 @@ ______________________________________________________________________
 | 4b  | DRF integration layer `plynt[drf]`                | **Done**         | Shipped in v0.8.0; mixins, header helpers, sync/async support                       |
 | 4c  | FastAPI framework adapter `plynt[fastapi]`        | **Done**         | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs        |
 | 4d  | Flask framework adapter `plynt[flask]`            | **Conditional**  | Convenience layer only; validate demand before ADR                                  |
-| 4e  | Inbound request-ID and error envelope helpers     | **In progress**  | Context, outbound propagation, log filter, and core envelope done; adapters open    |
+| 4e  | Inbound request-ID and error envelope helpers     | **Done**         | ADR-0040 core, Django/DRF, and FastAPI/ASGI integrations implemented                |
 | 5   | Cache backend documentation                       | **Done**         | Redis SSL, framework-native wrapping, and custom backend how-to guides added        |
-| 6   | gRPC transport `plynt[grpc]`                      | **Implemented**  | ADR-0030; async calls and optional runtime                                          |
+| 6   | gRPC transport `plynt[grpc]`                      | **Done**         | ADR-0030; async calls and optional runtime; release gates tracked separately        |
 | 7   | AI / LLM connector `plynt.connectors.llm`         | **Done**         | Generic contract, sync/async parity, OpenAI and Anthropic adapters                  |
 | 8   | SOAP transport `plynt[soap]`                      | **Planned**      | Long-term; ADR required; after gRPC validated                                       |
 | 9   | Connector package extraction                      | **Planned**      | Policy defined; individual extractions need ADR                                     |
@@ -122,6 +127,9 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
   (ADR-0020)
 - `Settings` base class — env-driven, pydantic-settings (ADR-0004)
 - `BaseError` hierarchy (ADR-0007)
+- Typed transport timeout/connection and authentication errors (ADR-0039)
+- `RequestIDPolicy`, `get_request_id`, and configurable error envelopes
+  (ADR-0040)
 
 ### HTTP transport (`plynt.http`)
 
@@ -151,6 +159,7 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
   - `OAuth2AuthMiddleware` / `AsyncOAuth2AuthMiddleware` backward-compat aliases
   - Pluggable token cache: `token_cache=` accepts any `CacheBackend`
     (`LocMemCache` default; `RedisCache` for cross-process sharing)
+  - Idempotent `close()` / `aclose()` for owned OAuth2 token transports
 - `HttpRetryPolicy` — HTTP-aware retry with configurable backoff (ADR-0012)
 - `HttpResponse` — encoding detection, `.text`, `.json()` (ADR-0007)
 - Streaming HTTP support — `HTTPClient.stream()` / `AsyncHTTPClient.stream()`
@@ -190,8 +199,9 @@ with provider adapters for OpenAI and Anthropic shipped in the same connector.
   response logging, once per logical call outside the retry loop (ADR-0014)
 - `HeaderMiddleware` / `AsyncHeaderMiddleware` — inject static or dynamic
   headers on every request (ADR-0015)
-- `ThrottleFilter`, `ExceptionInfoFilter`, `PlyntHTTPFilter` — stdlib
+- `ThrottleLogs`, `ExceptionInfoFilter`, `PlyntHTTPFilter` — stdlib
   logging filters (ADR-0014)
+- `RequestIDFilter` — opt-in scoped request-ID logging (ADR-0040)
 - `StructuredFormatter` — single-line JSON log output (ADR-0014)
 - Opt-in body logging with mandatory credential scrubbing (`log_bodies=True`)
   (ADR-0014)
@@ -404,7 +414,9 @@ middleware-level alternative to httpx's `MockTransport`. See
 
 #### 1h. Error-tracking integration — `plynt[sentry]` (Tier 2)
 
-**Status:** Idea. Requires an ADR before implementation.
+**Status:** Planned under accepted
+[ADR-0041](../architecture/adr/0041-error-tracking-integration-and-sentry-extra.md).
+Reporting middleware and the optional Sentry integration are not implemented.
 
 Let services report plynt failures to an error tracker with useful,
 redacted context, and return the tracker's event ID to callers.
@@ -428,7 +440,7 @@ Design constraints:
 - Do not include company-specific tags, DSN handling, or environment
   conventions. Applications keep ownership of SDK initialization.
 
-**Prerequisite:** New ADR covering the reporting protocol and the
+**Architectural basis:** ADR-0041 covers the reporting protocol and the
 `plynt[sentry]` extra per ADR-0003 and ADR-0028.
 
 #### 1i. Composable middleware extension points
@@ -622,7 +634,7 @@ Scope note:
 
 #### 2m. Generative AI — Models REST API
 
-**Status:** Implemented — shipped on top of the current streaming foundation.
+**Status:** Done — implemented on top of the current streaming foundation.
 
 - `SalesforceModelsService` / `AsyncSalesforceModelsService` — LLM inference
   via Salesforce Einstein Trust Layer
@@ -644,7 +656,7 @@ the current response and transport model for sync and streaming calls.
 
 #### 2n. Generative AI — Agent API
 
-**Status:** Implemented — shipped on top of the current streaming foundation.
+**Status:** Done — implemented on top of the current streaming foundation.
 
 - `SalesforceAgentService` / `AsyncSalesforceAgentService` — orchestrate
   Salesforce AI agents from external systems
@@ -677,22 +689,16 @@ docstring alignment. Typed token and transport failures are implemented under
 [ADR-0039](../architecture/adr/0039-typed-transport-and-authentication-errors.md).
 The FastAPI lifespan pattern is still open.
 
-- **Typed package marker:** the package ships no `py.typed` (only
-  `plynt.testsupport.vcr` has one). Type checkers treat plynt as untyped,
-  so consumers need `follow_untyped_imports` or stubs. Add the marker and
-  include it in the wheel.
-- **Closable OAuth2 token transport:** the async OAuth2 middleware creates
-  its own `HttpxAsyncTransport` for the token endpoint, with no public
-  `aclose()`. Consumers cannot release it at shutdown. Add `aclose()`, or
-  accept an injected transport that the owner closes.
+- **Typed package marker (done):** the package ships `plynt/py.typed`,
+  included in the wheel so consumers can use the inline annotations.
+- **Closable OAuth2 token transport (done):** sync and async OAuth2 middleware
+  expose idempotent `close()` / `aclose()` for owned token transports.
 - **Typed token failures (done):** non-200 token responses raise
   `AuthenticationError`, compatible with `RuntimeError`. The status code
   is available separately; the response body is excluded from messages
   and structured output.
-- **Async JWT on the async client:** the `auth` union of
-  `AsyncSalesforceAPIClient` lists client credentials, password and session,
-  but not `AsyncSalesforceJWTBearerAuthMiddleware`. Add it, or define one
-  shared async Salesforce auth protocol.
+- **JWT client typing (done):** both Salesforce client auth unions include
+  their corresponding sync or async JWT bearer middleware.
 - **Shared auth in the FastAPI lifespan:** `PlyntLifespan` and `get_client`
   cannot share one auth middleware instance between the transport and the
   client, which the Salesforce client needs for `instance_url`. Document a
@@ -702,15 +708,9 @@ The FastAPI lifespan pattern is still open.
   while sending requests or opening streams. The original error remains
   available as `__cause__`. HTTP retry classification recognizes both types;
   returned-stream iteration keeps its existing interruption contract.
-- **Consistent SObject path documentation:** the module and method
-  docstrings of `SalesforceObjectService` show `POST /sobjects/{Object}/`
-  with a trailing slash, while `_sobject_path()` sends `/sobjects/{Object}`.
-  Salesforce accepts both forms. Its REST reference writes the collection
-  resource with a slash (`/sobjects/Account/`) and record resources without
-  one (`/sobjects/Account/{id}`), while describe responses return
-  `urls.sobject` without one. Behavior is correct; low priority. Align the
-  docstrings with the sent paths and assert exact paths in tests. Trailing
-  slashes on inbound routes stay a convention of the consuming service.
+- **Consistent SObject path documentation (done):** docstrings match the
+  exact outbound paths and tests assert them. Trailing slashes on inbound
+  routes remain a convention of the consuming service.
 
 **Prerequisite:** the typed auth error, the typed transport errors and any
 new public lifespan helper change the public API and need an ADR. The
@@ -720,7 +720,7 @@ ______________________________________________________________________
 
 ### 3. Streaming response support (SSE / chunked HTTP)
 
-**Status:** Implemented — see [ADR-0017](../architecture/adr/0017-streaming-response.md).
+**Status:** Done — see [ADR-0017](../architecture/adr/0017-streaming-response.md).
 
 This foundation work is complete and now enables planned higher-level work such
 as items 2m, 2n, and 7.
@@ -744,7 +744,7 @@ ______________________________________________________________________
 
 ### 4. Framework adapters
 
-**Status:** Implemented for Django, DRF, and FastAPI. Flask remains
+**Status:** Done for Django, DRF, and FastAPI. Flask remains
 conditional.
 
 The framework-adapter direction is validated by shipped Django, DRF, and
@@ -764,7 +764,7 @@ accepted, deferred, or shipped independently.
 
 #### 4a. Django core adapter (`plynt[django]`) — [changedoc](../changes/django-framework-adapter_django_adapter_20260713.md)
 
-**Status:** Implemented and shipped in v0.8.0. See
+**Status:** Done and shipped in v0.8.0. See
 [ADR-0024](../architecture/adr/0024-framework-adapter-strategy.md).
 
 - `from_django_settings()` factory — reads plynt config from `settings.py`
@@ -774,15 +774,16 @@ accepted, deferred, or shipped independently.
 
 #### 4b. DRF integration layer (`plynt[drf]`) — [changedoc](../changes/django-framework-adapter_django_adapter_20260713.md)
 
-**Status:** Implemented and shipped in v0.8.0.
+**Status:** Done and shipped in v0.8.0.
 
 - `PlyntServiceMixin` for `APIView` and `ViewSet` service wiring
 - request-header propagation helpers for correlation headers such as `X-Request-Id`
 - DRF-focused docs showing integration with `APIView` and `ViewSet`
+- Configurable error envelopes using the core contract (ADR-0040)
 
 #### 4c. FastAPI extra (`plynt[fastapi]`) — [changedoc](../changes/fastapi-framework-adapter_fastapi_adapter_20260725.md)
 
-**Status:** Implemented with accepted
+**Status:** Done with accepted
 [ADR-0026](../architecture/adr/0026-fastapi-adapter-lifecycle-and-di.md).
 
 Primary use case:
@@ -801,6 +802,8 @@ Primary use case:
 
 - plynt exception-mapping helpers for FastAPI JSON responses
 
+- Pure ASGI request-ID middleware and configurable error envelopes (ADR-0040)
+
 - Settings: no adapter needed; `HTTPSettings` subclasses work directly
 
 #### 4d. Flask extra (`plynt[flask]`) — [idea](ideas/flask-adapter.md)
@@ -816,22 +819,23 @@ implementation.
 
 #### 4e. Inbound request-ID and error envelope helpers
 
-**Status:** In progress under accepted
+**Status:** Done under accepted
 [ADR-0040](../architecture/adr/0040-inbound-request-id-and-error-envelope.md).
 
 Request-ID context, outbound propagation, logging enrichment, and the core
 error-envelope contract are implemented. Django inbound request-ID middleware
 is implemented with sync/async and redirect coverage. DRF exception mapping
 supports custom envelopes. Pure ASGI request-ID middleware is implemented,
-including FastAPI redirect and sync/async endpoint coverage. FastAPI envelope
-integration remains open.
+including FastAPI redirect and sync/async endpoint coverage. FastAPI mapping,
+handler factories, and installation helpers support custom envelopes.
+Default payloads and native framework exception handlers remain unchanged.
 
 Origin: a FastAPI service over plynt and earlier Django services each
 implement these pieces locally. The behavior is framework-independent,
 so it belongs in one shared implementation rather than per framework.
 
 The existing 4b and 4c helpers cover outbound header propagation and a
-fixed error payload. These candidates cover the inbound side.
+fixed error payload. Item 4e adds the inbound side and configurable envelopes.
 
 Framework-agnostic core (no new dependencies):
 
@@ -878,7 +882,7 @@ ______________________________________________________________________
 
 ### 6. gRPC transport (`plynt[grpc]`)
 
-**Status:** Implemented under accepted ADR-0030.
+**Status:** Done under accepted ADR-0030.
 
 - `GrpcAioTransport` manages an optional `grpc.aio` channel.
 - `AsyncGrpcClient` supports unary and streaming call patterns.
@@ -893,7 +897,7 @@ ______________________________________________________________________
 
 ### 7. AI / LLM connector (`plynt.connectors.llm`)
 
-**Status:** Implemented.
+**Status:** Done.
 
 Plynt's transport and middleware chain is well-suited for LLM API clients:
 auth (API key via `BearerTokenAuthMiddleware`), retry, and rate limiting are
@@ -984,8 +988,8 @@ need. This item tracks the policy and the pending extractions.
 
 - `plynt.connectors.salesforce` -> `plynt-salesforce`
   Prerequisite: Item 2e stable; multi-version + multi-connector gate.
-- `plynt.connectors.llm` (future) -> `plynt-openai` or `plynt-llm`
-  Prerequisite: Item 7 implemented.
+- `plynt.connectors.llm` -> `plynt-openai` or `plynt-llm`
+  Item 7 is implemented; extraction still requires its own ADR.
 
 ______________________________________________________________________
 
