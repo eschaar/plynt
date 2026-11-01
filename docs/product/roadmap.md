@@ -821,8 +821,9 @@ implementation.
 
 Request-ID context, outbound propagation, logging enrichment, and the core
 error-envelope contract are implemented. Django inbound request-ID middleware
-is implemented with sync/async and redirect coverage. Configurable framework
-exception handlers and ASGI request-ID middleware remain open.
+is implemented with sync/async and redirect coverage. DRF exception mapping
+supports custom envelopes. FastAPI envelope integration and ASGI request-ID
+middleware remain open.
 
 Origin: a FastAPI service over plynt and earlier Django services each
 implement these pieces locally. The behavior is framework-independent,
