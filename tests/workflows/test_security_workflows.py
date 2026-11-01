@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+import shlex
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).parents[2]
@@ -36,3 +38,20 @@ def test_publish_token_permission_is_gated_after_release_validation() -> None:
     assert "needs: validate-release" in publish_job
     assert "environment: pypi" in publish_job
     assert "id-token: write" in publish_job
+
+
+def test_security_audit_installs_every_declared_runtime_extra() -> None:
+    """Audit the base development environment and all declared runtime extras."""
+    manifest = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    runtime_extras = set(manifest["project"]["optional-dependencies"]) - {"dev", "test"}
+    workflow = (ROOT / ".github/workflows/security.yml").read_text()
+    install_line = next(
+        line.partition("run:")[2].strip()
+        for line in workflow.splitlines()
+        if "pip install -e" in line
+    )
+    install_args = shlex.split(install_line)
+    requirement = next(arg for arg in install_args if arg.startswith(".["))
+    installed_extras = set(requirement.removeprefix(".[").removesuffix("]").split(","))
+
+    assert installed_extras == runtime_extras | {"dev"}
