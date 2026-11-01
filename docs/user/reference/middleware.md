@@ -151,6 +151,11 @@ RateLimitMiddleware(policy: RateLimitPolicy)
 
 ### RateLimitExceededError
 
+`RateLimitPolicy` validates its numeric limits at construction (ADR-0020).
+`max_requests` must be finite and at least 1; `window_seconds` must be finite
+and greater than 0. Invalid limits, including NaN and infinity, raise
+`ValueError` rather than producing an unusable limiter.
+
 `RateLimitExceededError(retry_after_seconds: float)` — raised when the
 limit is hit.
 

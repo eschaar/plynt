@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from plynt.base.policies import CircuitBreakerPolicy, RateLimitPolicy
@@ -62,6 +64,20 @@ class TestCircuitBreakerPolicy:
 
 class TestRateLimitPolicy:
     """Test suite for RateLimitPolicy."""
+
+    @pytest.mark.parametrize("field", ["max_requests", "window_seconds"])
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf")])
+    def test_nonfinite_values_raise(self, field: str, value: float) -> None:
+        """Reject nonfinite limits before they can disable or wedge enforcement"""
+        values: dict[str, Any] = {field: value}
+        with pytest.raises(ValueError, match=f"{field} must be finite"):
+            RateLimitPolicy(**values)
+
+    def test_smallest_request_count_and_positive_window(self) -> None:
+        """Accept one request and a finite positive fractional window"""
+        policy = RateLimitPolicy(max_requests=1, window_seconds=0.001)
+        assert policy.max_requests == 1
+        assert policy.window_seconds == 0.001
 
     def test_default_values(self) -> None:
         """Validate default field values."""
