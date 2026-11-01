@@ -41,8 +41,8 @@ class _CircuitBreakerState:
         self._failure_count = 0
         self._half_open_calls = 0
 
-    def before_call(self, *, now: float) -> None:
-        """Validate whether a request may proceed."""
+    def before_call(self, *, now: float) -> float | None:
+        """Validate admission and return the opening time for a reserved probe"""
         if self._state == "open":
             elapsed = now - self._opened_at
             if elapsed < self._policy.recovery_timeout:
@@ -54,6 +54,8 @@ class _CircuitBreakerState:
             if self._half_open_calls >= self._policy.half_open_max_calls:
                 raise CircuitBreakerOpenError(0.0)
             self._half_open_calls += 1
+            return self._opened_at
+        return None
 
     def after_response(self, response: Response, *, now: float) -> None:
         """Update breaker state based on a response."""
@@ -62,7 +64,9 @@ class _CircuitBreakerState:
             return
         self.record_success()
 
-    def after_exception(self, exc: BaseException, *, now: float) -> None:
+    def after_exception(
+        self, exc: BaseException, *, now: float, probe_opened_at: float | None
+    ) -> None:
         """Update breaker state based on an exception."""
         should_count = (
             isinstance(exc, Exception)
@@ -71,7 +75,11 @@ class _CircuitBreakerState:
         )
         if should_count:
             self.record_failure(now=now)
-        elif self._state == "half-open":
+        elif (
+            self._state == "half-open"
+            and probe_opened_at is not None
+            and probe_opened_at == self._opened_at
+        ):
             self._half_open_calls -= 1
 
     def record_success(self) -> None:
@@ -117,13 +125,15 @@ class CircuitBreakerMiddleware(SyncMiddleware):
         """Process a request through the circuit breaker."""
         now = time.monotonic()
         with self._lock:
-            self._state.before_call(now=now)
+            probe_opened_at = self._state.before_call(now=now)
 
         try:
             response = next_handler(request)
         except BaseException as exc:
             with self._lock:
-                self._state.after_exception(exc, now=time.monotonic())
+                self._state.after_exception(
+                    exc, now=time.monotonic(), probe_opened_at=probe_opened_at
+                )
             raise
 
         with self._lock:
@@ -149,13 +159,15 @@ class AsyncCircuitBreakerMiddleware(AsyncMiddleware):
     ) -> Response:
         """Process a request through the async circuit breaker."""
         async with self._lock:
-            self._state.before_call(now=time.monotonic())
+            probe_opened_at = self._state.before_call(now=time.monotonic())
 
         try:
             response = await next_handler(request)
         except BaseException as exc:
             async with self._lock:
-                self._state.after_exception(exc, now=time.monotonic())
+                self._state.after_exception(
+                    exc, now=time.monotonic(), probe_opened_at=probe_opened_at
+                )
             raise
 
         async with self._lock:
