@@ -507,7 +507,15 @@ class OAuth2JWTBearerMiddleware(OAuth2AuthMiddlewareBase):
 
     def _cache_key_material(self) -> str:
         """Return material used to build the token cache key."""
-        return f"jwt:{self._token_url}:{self._jwt_cache_key_material}"
+        return json.dumps(
+            [
+                "jwt",
+                self._token_url,
+                self._jwt_cache_key_material,
+                self._scope,
+            ],
+            separators=(",", ":"),
+        )
 
     def _build_token_body(self) -> bytes:
         """Return the form-encoded body for an OAuth2 JWT Bearer request."""
@@ -858,7 +866,15 @@ class AsyncOAuth2JWTBearerMiddleware(AsyncOAuth2AuthMiddlewareBase):
 
     def _cache_key_material(self) -> str:
         """Return material used to build the token cache key."""
-        return f"jwt:{self._token_url}:{self._jwt_cache_key_material}"
+        return json.dumps(
+            [
+                "jwt",
+                self._token_url,
+                self._jwt_cache_key_material,
+                self._scope,
+            ],
+            separators=(",", ":"),
+        )
 
     def _build_token_body(self) -> bytes:
         """Return the form-encoded body for an OAuth2 JWT Bearer request."""
