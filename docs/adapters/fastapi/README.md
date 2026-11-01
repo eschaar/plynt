@@ -7,6 +7,7 @@ Install `plynt[fastapi]`. The adapter provides:
 - Bundled service dependencies for router setup.
 - Outbound request-header propagation.
 - Exception-to-JSON response mapping.
+- [Scoped request IDs for FastAPI and ASGI](use-request-id-middleware.md).
 
 See [Build a FastAPI service facade](use-fastapi-service-facade.md) for
 installation, lifecycle ownership, and dependency examples.

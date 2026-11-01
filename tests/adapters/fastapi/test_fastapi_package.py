@@ -8,6 +8,7 @@ pytest.importorskip("fastapi")
 
 from plynt.adapters.fastapi import (
     PlyntLifespan,
+    RequestIDMiddleware,
     build_async_request_header_middleware,
     build_error_payload,
     build_request_header_middleware,
@@ -32,6 +33,7 @@ class TestFastAPIAdapterPackage:
             "DEFAULT_HEADER_MAP",
             "DEFAULT_SENSITIVE_HEADER_DENYLIST",
             "PlyntLifespan",
+            "RequestIDMiddleware",
             "build_async_request_header_middleware",
             "build_error_payload",
             "build_request_header_middleware",
@@ -49,6 +51,7 @@ class TestFastAPIAdapterPackage:
         module = importlib.import_module("plynt.adapters.fastapi")
 
         assert module.PlyntLifespan is PlyntLifespan
+        assert module.RequestIDMiddleware is RequestIDMiddleware
         assert (
             module.build_async_request_header_middleware
             is build_async_request_header_middleware
