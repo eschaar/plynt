@@ -28,6 +28,7 @@ ______________________________________________________________________
 | 2f  | Salesforce Pub/Sub CDC                            | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
 | 2g  | `plynt-salesforce` package extraction             | **Deferred**     | After multi-connector gate                                                          |
 | 2l  | Salesforce GraphQL API                            | **Conditional**  | Implement on repeated demand only                                                   |
+| 2m  | Async auth lifecycle and typing gaps              | **Planned**      | Findings from Sales API; public-API items need an ADR                               |
 | 3   | Streaming response (SSE / chunked HTTP)           | **Done**         | ADR-0017; enables Salesforce AI and LLM connector                                   |
 | 3b  | Raw response access on `APIClient`                | **Done**         | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                    |
 | 4a  | Django core adapter `plynt[django]`               | **Done**         | Shipped in v0.8.0; settings bridge, cache backend, transport helpers                |
@@ -614,6 +615,41 @@ message flows now build on the current response and transport model.
 - Agent API enables external orchestration of Salesforce agents.
 - Topics, actions, and agent state remain Salesforce org concerns.
 - Complements the LLM connector (item 7) for agent-specific workflows.
+
+#### 2m. Async auth lifecycle and typing gaps
+
+**Status:** Planned. Found while building the standalone Sales API on
+`AsyncSalesforceAPIClient`. Each item was verified in the plynt source.
+
+- **Typed package marker:** the package ships no `py.typed` (only
+  `plynt.testsupport.vcr` has one). Type checkers treat plynt as untyped,
+  so consumers need `follow_untyped_imports` or stubs. Add the marker and
+  include it in the wheel.
+- **Closable OAuth2 token transport:** the async OAuth2 middleware creates
+  its own `HttpxAsyncTransport` for the token endpoint, with no public
+  `aclose()`. Consumers cannot release it at shutdown. Add `aclose()`, or
+  accept an injected transport that the owner closes.
+- **Typed token failures:** a non-200 token response raises a plain
+  `RuntimeError` that includes the raw token-endpoint body. Raise a typed
+  auth error with the status code instead, and keep the response body out
+  of the exception message so it cannot leak into logs.
+- **Async JWT on the async client:** the `auth` union of
+  `AsyncSalesforceAPIClient` lists client credentials, password and session,
+  but not `AsyncSalesforceJWTBearerAuthMiddleware`. Add it, or define one
+  shared async Salesforce auth protocol.
+- **Shared auth in the FastAPI lifespan:** `PlyntLifespan` and `get_client`
+  cannot share one auth middleware instance between the transport and the
+  client, which the Salesforce client needs for `instance_url`. Document a
+  pattern or add a Salesforce-aware lifespan helper.
+
+Not a defect: plynt builds Salesforce REST paths without a trailing slash,
+for example `/sobjects/Product2`. That matches the Salesforce reference
+paths; trailing slashes are an inbound API convention of the consuming
+service.
+
+**Prerequisite:** the typed auth error and any new public lifespan helper
+change the public API and need an ADR. The `py.typed` marker and the union
+fix do not.
 
 ______________________________________________________________________
 
