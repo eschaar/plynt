@@ -394,8 +394,10 @@ class SalesforceBulkService(APIService):
 
         Args:
             is_query: ``True`` for query jobs, ``False`` for ingest jobs.
-            max_wait: Maximum total wait time in seconds. Waits indefinitely
-                when ``None``.
+            max_wait: Polling budget in seconds, including sleeps and elapsed
+                status-request time. Waits indefinitely when ``None``.
+                Cannot interrupt an in-flight request; transport timeouts
+                still apply independently.
 
         Raises:
             SalesforceBulkJobError: If the job ends in ``Aborted`` or
@@ -407,16 +409,24 @@ class SalesforceBulkService(APIService):
         deadline = time.monotonic() + max_wait if max_wait is not None else None
         attempt = 0
         while True:
-            time.sleep(_poll_delay(attempt))
+            delay = _poll_delay(attempt)
+            if deadline is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise BulkJobTimeoutError(job_id=job_id, max_wait=max_wait)  # type: ignore[arg-type]
+                delay = min(delay, remaining)
+            time.sleep(delay)
+            if deadline is not None and time.monotonic() >= deadline:
+                raise BulkJobTimeoutError(job_id=job_id, max_wait=max_wait)  # type: ignore[arg-type]
             attempt += 1
             job = self.get_job(job_id, is_query=is_query)
+            if deadline is not None and time.monotonic() >= deadline:
+                raise BulkJobTimeoutError(job_id=job_id, max_wait=max_wait)  # type: ignore[arg-type]
             if job.state in _TERMINAL_STATES:
                 if job.state is not BulkJobState.job_complete:
                     msg = job.error_message or f"Job ended in state {job.state!r}"
                     raise SalesforceBulkJobError(job_id=job_id, message=msg)
                 return job
-            if deadline is not None and time.monotonic() >= deadline:
-                raise BulkJobTimeoutError(job_id=job_id, max_wait=max_wait)  # type: ignore[arg-type]
 
     def get_ingest_results(self, job_id: str) -> BulkIngestResult:
         """Retrieve the results of a completed ingest job."""
@@ -771,8 +781,10 @@ class AsyncSalesforceBulkService(AsyncAPIService):
 
         Args:
             is_query: ``True`` for query jobs, ``False`` for ingest jobs.
-            max_wait: Maximum total wait time in seconds. Waits indefinitely
-                when ``None``.
+            max_wait: Polling budget in seconds, including sleeps and elapsed
+                status-request time. Waits indefinitely when ``None``.
+                Cannot interrupt an in-flight request; transport timeouts
+                still apply independently.
 
         Raises:
             SalesforceBulkJobError: If the job ends in ``Aborted`` or
@@ -784,16 +796,24 @@ class AsyncSalesforceBulkService(AsyncAPIService):
         deadline = time.monotonic() + max_wait if max_wait is not None else None
         attempt = 0
         while True:
-            await asyncio.sleep(_poll_delay(attempt))
+            delay = _poll_delay(attempt)
+            if deadline is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise BulkJobTimeoutError(job_id=job_id, max_wait=max_wait)  # type: ignore[arg-type]
+                delay = min(delay, remaining)
+            await asyncio.sleep(delay)
+            if deadline is not None and time.monotonic() >= deadline:
+                raise BulkJobTimeoutError(job_id=job_id, max_wait=max_wait)  # type: ignore[arg-type]
             attempt += 1
             job = await self.get_job(job_id, is_query=is_query)
+            if deadline is not None and time.monotonic() >= deadline:
+                raise BulkJobTimeoutError(job_id=job_id, max_wait=max_wait)  # type: ignore[arg-type]
             if job.state in _TERMINAL_STATES:
                 if job.state is not BulkJobState.job_complete:
                     msg = job.error_message or f"Job ended in state {job.state!r}"
                     raise SalesforceBulkJobError(job_id=job_id, message=msg)
                 return job
-            if deadline is not None and time.monotonic() >= deadline:
-                raise BulkJobTimeoutError(job_id=job_id, max_wait=max_wait)  # type: ignore[arg-type]
 
     async def get_ingest_results(self, job_id: str) -> BulkIngestResult:
         """Retrieve the results of a completed ingest job."""

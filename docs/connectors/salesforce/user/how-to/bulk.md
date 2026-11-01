@@ -123,6 +123,15 @@ indefinitely:
 result = bulk.ingest("Lead", BulkOperation.insert, records, max_wait=120.0)
 ```
 
+`max_wait` is a polling budget, not a hard wall-clock timeout for the whole
+operation. It includes sleeps and elapsed status-request time, bounds each
+sleep to the remaining budget, and is checked before and after each status
+request. A response returned at or after the deadline raises
+`BulkJobTimeoutError`, even if it reports completion. An in-flight request
+cannot be interrupted by this budget: configure transport timeouts separately.
+Job creation, uploads, result retrieval, and best-effort cleanup are outside
+the polling budget. Sync and async services use the same rules.
+
 ______________________________________________________________________
 
 ## Handle failed records
