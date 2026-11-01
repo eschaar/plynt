@@ -29,8 +29,17 @@ from plynt.adapters.django.drf.errors import (  # noqa: E402
     map_exception_to_drf_response,
     plynt_exception_handler,
 )
-from plynt.base import BaseError, InvalidInputError, RequestIDPolicy  # noqa: E402
+from plynt.base import (  # noqa: E402
+    BaseError,
+    InvalidInputError,
+    RequestIDPolicy,
+    default_error_envelope,
+    get_error_event_id,
+)
+from plynt.base import Request as OutboundRequest  # noqa: E402
+from plynt.base import Response as OutboundResponse  # noqa: E402
 from plynt.http.errors import NotFoundError  # noqa: E402
+from plynt.middleware import ErrorReportingMiddleware  # noqa: E402
 
 
 def custom_envelope(
@@ -51,6 +60,69 @@ _FailingView: Any = type("_FailingView", (APIView,), {"get": _failing_get})
 
 
 class TestDRFErrorEnvelope:
+    @pytest.mark.parametrize("publish_event_id", [False, True])
+    def test_reported_exception_reaches_real_view_handler_with_opt_in_id(
+        self, publish_event_id: bool
+    ) -> None:
+        class Reporter:
+            def report(
+                self, exc: Exception, context: Mapping[str, object]
+            ) -> str | None:
+                return "drf-event"
+
+            async def areport(
+                self, exc: Exception, context: Mapping[str, object]
+            ) -> str | None:
+                return self.report(exc, context)
+
+        def envelope(
+            error: Exception, status: int, request_id: str | None
+        ) -> Mapping[str, object]:
+            payload = default_error_envelope(error, status, request_id)
+            event_id = get_error_event_id(error)
+            if event_id is not None:
+                payload["error_id"] = event_id
+            return payload
+
+        def exception_handler(exc: Exception, context: dict[str, Any]) -> Any:
+            return plynt_exception_handler(
+                exc, context, envelope=envelope if publish_event_id else None
+            )
+
+        def failing(request: OutboundRequest) -> OutboundResponse:
+            raise InvalidInputError()
+
+        def reported_get(self: object, request: Request) -> Response:
+            ErrorReportingMiddleware(Reporter()).handle(
+                OutboundRequest("GET", "/upstream"), failing
+            )
+            pytest.fail("The outbound call must raise")
+
+        view: Any = type(
+            "_ReportedView",
+            (APIView,),
+            {
+                "get": reported_get,
+                "get_exception_handler": lambda self: exception_handler,
+                "authentication_classes": [],
+            },
+        )
+        with override_settings(REST_FRAMEWORK={"UNAUTHENTICATED_USER": None}):
+            response = RequestIDMiddleware(view.as_view())(
+                RequestFactory().get("/", headers={"X-Request-ID": "inbound"})
+            )
+        assert isinstance(response, Response)
+        response.render()
+        expected: dict[str, object] = {
+            "message": "Invalid input data",
+            "code": "INVALID_INPUT",
+        }
+        if publish_event_id:
+            expected["error_id"] = "drf-event"
+        assert response.status_code == 400
+        assert response["X-Request-ID"] == "inbound"
+        assert json.loads(response.content) == expected
+
     @pytest.mark.parametrize(
         ("error", "status"),
         [

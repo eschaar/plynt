@@ -6,6 +6,8 @@ can be used with any transport — no HTTP or framework coupling. Use
 
 Available middleware:
 
+- ``plynt.middleware.error_reporting`` — ``ErrorReportingMiddleware``,
+  ``AsyncErrorReportingMiddleware``
 - ``plynt.middleware.cache`` — ``CacheMiddleware``, ``AsyncCacheMiddleware``
 - ``plynt.middleware.circuit_breaker`` — ``CircuitBreakerMiddleware``,
   ``AsyncCircuitBreakerMiddleware``
@@ -28,6 +30,10 @@ from plynt.middleware.circuit_breaker import (
     AsyncCircuitBreakerMiddleware,
     CircuitBreakerMiddleware,
 )
+from plynt.middleware.error_reporting import (
+    AsyncErrorReportingMiddleware,
+    ErrorReportingMiddleware,
+)
 from plynt.middleware.header import AsyncHeaderMiddleware, HeaderMiddleware
 from plynt.middleware.logging import AsyncLoggingMiddleware, LoggingMiddleware
 from plynt.middleware.rate_limit import (
@@ -44,6 +50,7 @@ from plynt.middleware.throttle import (
 __all__ = [
     "AsyncCacheMiddleware",
     "AsyncCircuitBreakerMiddleware",
+    "AsyncErrorReportingMiddleware",
     "AsyncHeaderMiddleware",
     "AsyncLoggingMiddleware",
     "AsyncRateLimitMiddleware",
@@ -51,6 +58,7 @@ __all__ = [
     "AsyncThrottleGovernanceMiddleware",
     "CacheMiddleware",
     "CircuitBreakerMiddleware",
+    "ErrorReportingMiddleware",
     "HeaderMiddleware",
     "LoggingMiddleware",
     "RateLimitMiddleware",

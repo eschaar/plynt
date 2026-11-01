@@ -27,6 +27,7 @@ from collections.abc import Awaitable, Callable
 
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.policies import RetryPolicy
+from plynt.base.reporting_context import observe_retry_attempt
 from plynt.base.request import Request
 from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynt.middleware.throttle import ThrottleGovernedError
@@ -142,6 +143,7 @@ class RetryMiddleware(  # pylint: disable=too-few-public-methods
         """
         policy = self._policy
         if policy.max_attempts <= 1:
+            observe_retry_attempt()
             return next_handler(request)
 
         last_exc: BaseException | None = None
@@ -162,6 +164,7 @@ class RetryMiddleware(  # pylint: disable=too-few-public-methods
                 time.sleep(delay)
 
             try:
+                observe_retry_attempt()
                 response = next_handler(request)
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 if not self._should_retry_exception(exc):
@@ -243,6 +246,7 @@ class AsyncRetryMiddleware(  # pylint: disable=too-few-public-methods
         """
         policy = self._policy
         if policy.max_attempts <= 1:
+            observe_retry_attempt()
             return await next_handler(request)
 
         last_exc: BaseException | None = None
@@ -263,6 +267,7 @@ class AsyncRetryMiddleware(  # pylint: disable=too-few-public-methods
                 await asyncio.sleep(delay)
 
             try:
+                observe_retry_attempt()
                 response = await next_handler(request)
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 if not self._should_retry_exception(exc):

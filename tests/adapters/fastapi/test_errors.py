@@ -19,15 +19,88 @@ from plynt.adapters.fastapi.errors import (  # noqa: E402
     install_plynt_exception_handlers,
     map_exception_to_fastapi_response,
 )
-from plynt.base import RequestIDPolicy, get_request_id  # noqa: E402
+from plynt.base import (  # noqa: E402
+    Request,
+    RequestIDPolicy,
+    Response,
+    default_error_envelope,
+    get_error_event_id,
+    get_request_id,
+)
 from plynt.base.errors import BaseError, InvalidInputError  # noqa: E402
 from plynt.http.errors import NotFoundError  # noqa: E402
+from plynt.middleware import (  # noqa: E402
+    AsyncErrorReportingMiddleware,
+    ErrorReportingMiddleware,
+)
 
 FastAPI = fastapi.FastAPI
 TestClient = fastapi_testclient.TestClient
 
 
 class TestFastAPIErrorHelpers:
+    @pytest.mark.parametrize("async_endpoint", [False, True])
+    def test_reported_event_reaches_envelope_from_worker_or_async_endpoint(
+        self, async_endpoint: bool
+    ) -> None:
+        class Reporter:
+            def report(
+                self, exc: Exception, context: Mapping[str, object]
+            ) -> str | None:
+                return "tracker-event"
+
+            async def areport(
+                self, exc: Exception, context: Mapping[str, object]
+            ) -> str | None:
+                return self.report(exc, context)
+
+        def envelope(
+            error: Exception, status: int, request_id: str | None
+        ) -> Mapping[str, object]:
+            payload = default_error_envelope(error, status, request_id)
+            event_id = get_error_event_id(error)
+            if event_id is not None:
+                payload["error_id"] = event_id
+            return payload
+
+        def failing(request: Request) -> Response:
+            raise InvalidInputError()
+
+        async def async_failing(request: Request) -> Response:
+            return failing(request)
+
+        def sync_endpoint() -> None:
+            ErrorReportingMiddleware(Reporter()).handle(
+                Request("GET", "/upstream"), failing
+            )
+
+        async def async_handler() -> None:
+            await AsyncErrorReportingMiddleware(Reporter()).handle(
+                Request("GET", "/upstream"), async_failing
+            )
+
+        def unreported() -> None:
+            raise InvalidInputError()
+
+        app = FastAPI()
+        install_plynt_exception_handlers(app, envelope=envelope)
+        app.get("/reported")(async_handler if async_endpoint else sync_endpoint)
+        app.get("/unreported")(unreported)
+        with TestClient(RequestIDMiddleware(app)) as client:
+            reported = client.get("/reported")
+            unreported_response = client.get("/unreported")
+        assert reported.status_code == 400
+        assert reported.json() == {
+            "message": "Invalid input data",
+            "code": "INVALID_INPUT",
+            "error_id": "tracker-event",
+        }
+        assert unreported_response.status_code == 400
+        assert unreported_response.json() == {
+            "message": "Invalid input data",
+            "code": "INVALID_INPUT",
+        }
+
     @pytest.mark.parametrize(
         ("error", "status"),
         [

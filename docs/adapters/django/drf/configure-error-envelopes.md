@@ -50,3 +50,8 @@ Callback failures and invalid output produce safe error logging and the default
 payload. `include_details=True` on the handler or mapping helper preserves the
 existing default-payload opt-in, including fallback; custom envelopes own their
 entire payload. Only include details that are safe to expose.
+
+To publish a tracker's event ID, read `get_error_event_id(error)` in the custom
+callable and include it only when present. See
+[reporting and event IDs](../../../user/how-to/report-errors.md#opt-in-to-event-ids-in-responses).
+The receipt belongs to the exact exception; default responses never include it.

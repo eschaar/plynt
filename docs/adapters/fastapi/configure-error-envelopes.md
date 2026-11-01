@@ -48,3 +48,9 @@ Callback failures or invalid JSON output log a safe error and use the default
 envelope. See the
 [core envelope contract](../../user/how-to/handle-errors.md#build-an-external-error-envelope)
 for validation and information-exposure responsibilities.
+
+To publish a tracker's event ID, read `get_error_event_id(error)` in the custom
+callable and include it only when present. See
+[reporting and event IDs](../../user/how-to/report-errors.md#opt-in-to-event-ids-in-responses).
+The receipt follows the exact exception, including from sync workerthreads;
+default responses never include it.

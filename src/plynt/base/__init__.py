@@ -13,7 +13,7 @@ from plynt.base.error_envelope import (
     build_error_envelope,
     default_error_envelope,
 )
-from plynt.base.error_reporter import ErrorReporter
+from plynt.base.error_reporter import ErrorReporter, get_error_event_id
 from plynt.base.errors import (
     AuthenticationError,
     BaseError,
@@ -83,5 +83,6 @@ __all__ = [
     "TransportTimeoutError",
     "build_error_envelope",
     "default_error_envelope",
+    "get_error_event_id",
     "get_request_id",
 ]

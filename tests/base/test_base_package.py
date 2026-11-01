@@ -8,7 +8,7 @@ from plynt.base.error_envelope import (
     build_error_envelope,
     default_error_envelope,
 )
-from plynt.base.error_reporter import ErrorReporter
+from plynt.base.error_reporter import ErrorReporter, get_error_event_id
 from plynt.base.errors import (
     AuthenticationError,
     BaseError,
@@ -68,6 +68,7 @@ class TestBasePackage:
             "TransportTimeoutError",
             "build_error_envelope",
             "default_error_envelope",
+            "get_error_event_id",
             "get_request_id",
         ]
 
@@ -83,6 +84,7 @@ class TestBasePackage:
         assert module.ConfigurationError is ConfigurationError
         assert module.ErrorEnvelope is ErrorEnvelope
         assert module.ErrorReporter is ErrorReporter
+        assert module.get_error_event_id is get_error_event_id
         assert module.build_error_envelope is build_error_envelope
         assert module.default_error_envelope is default_error_envelope
         assert module.Request is Request

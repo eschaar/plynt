@@ -60,6 +60,10 @@ Design Rules
 5) Transport-specific mapping belongs outside core
    - HTTP status codes, headers, etc. live in an API layer.
 
+Private reporting receipts (ADR-0043) are execution diagnostics, not a second
+error-data extensibility point. They do not alter this serialized contract;
+custom external envelopes may explicitly opt in to their event ID.
+
 This contract is intentionally small and strict to remain stable long-term.
 """
 
