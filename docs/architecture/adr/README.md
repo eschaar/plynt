@@ -4,7 +4,7 @@ This index lists architecture decision records (ADRs) for Plynt.
 
 ## Status Summary
 
-- Accepted: 43
+- Accepted: 44
 - Proposed: 0
 
 ## ADR List
@@ -56,8 +56,13 @@ This index lists architecture decision records (ADRs) for Plynt.
 | [ADR-0041](0041-error-tracking-integration-and-sentry-extra.md)     | Error-Tracking Integration and Sentry Extra                | Accepted |
 | [ADR-0042](0042-error-reporting-context-handoff.md)                 | Error-Reporting Context Handoff                            | Accepted |
 | [ADR-0043](0043-exception-bound-error-event-ids.md)                 | Exception-Bound Error Event IDs                            | Accepted |
+| [ADR-0044](0044-grpc-toolchain-upgrade-policy.md)                   | Tested gRPC Toolchain Upgrade Policy                       | Accepted |
 
 <!-- markdownlint-enable MD060 -->
+
+ADR-0044 supersedes ADR-0032's fixed gRPC version selections for subsequent
+refreshes and clarifies ADR-0031's pin lifecycle. Both earlier accepted records
+retain their historical decisions and unchanged installation requirements.
 
 ## When to Add a New ADR
 
@@ -69,4 +74,4 @@ Add an ADR for changes that affect:
 - middleware execution semantics,
 - installation extras or optional-framework strategy.
 
-Use the next sequential number (currently: `0044`).
+Use the next sequential number (currently: `0045`).

@@ -3,6 +3,11 @@
 **Date:** 2026-10-14
 **Status:** Accepted
 
+**Partial supersession:** [ADR-0044](0044-grpc-toolchain-upgrade-policy.md)
+supersedes this refresh's fixed version selections for subsequent upgrades.
+The accepted 1.84.0 decision below is retained as historical context; its
+installation boundaries and validation requirements remain in force.
+
 ## Context
 
 ADR-0031 pins the Salesforce Pub/Sub generator to `grpcio-tools==1.83.1`
