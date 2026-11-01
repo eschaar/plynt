@@ -17,7 +17,9 @@ from plynt.base.errors import (
     OperationFailedError,
     StatusError,
     StreamInterruptedError,
+    TransportConnectionError,
     TransportError,
+    TransportTimeoutError,
 )
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.policies import CircuitBreakerPolicy, RateLimitPolicy, RetryPolicy
@@ -64,5 +66,7 @@ __all__ = [
     "SupportsTTL",
     "SyncMiddleware",
     "SyncTransport",
+    "TransportConnectionError",
     "TransportError",
+    "TransportTimeoutError",
 ]

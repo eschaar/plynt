@@ -28,6 +28,24 @@ Exception
     └── RateLimitExceededError           (plynt.middleware.rate_limit)
 ```
 
+## Transport timeout and connection errors
+
+`TransportTimeoutError` and `TransportConnectionError` are protocol-agnostic
+subclasses of `TransportError`, exported from `plynt.base`. Neither represents
+an HTTP response status: a network timeout is not an HTTP 408 response.
+
+- `TransportTimeoutError` represents connect, read, write, or pool timeouts.
+- `TransportConnectionError` represents connection, network, proxy, or remote
+  protocol failures.
+
+Both inherit the standard `message`, `code`, and `details` contract. Their
+default codes are `TRANSPORT_TIMEOUT` and `TRANSPORT_CONNECTION_ERROR`.
+Implementations can preserve the original exception with `raise ... from exc`.
+
+These types are available for custom transports. The built-in HTTP transports
+still propagate backend exceptions; automatic mapping is a subsequent part of
+[ADR-0039](../../architecture/adr/0039-typed-transport-and-authentication-errors.md).
+
 ## Catch HTTP status errors
 
 `APIClient` raises `HttpStatusError` (or a subclass) for `4xx` and `5xx` responses.

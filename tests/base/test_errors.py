@@ -6,7 +6,9 @@ from plynt.base.errors import (
     FeatureDisabledError,
     InvalidInputError,
     StatusError,
+    TransportConnectionError,
     TransportError,
+    TransportTimeoutError,
 )
 
 
@@ -96,6 +98,67 @@ class TestTransportError:
         """Validate custom message."""
         err = TransportError("Connection refused")
         assert err.message == "Connection refused"
+
+
+@pytest.mark.parametrize(
+    ("error_type", "code", "message"),
+    [
+        (
+            TransportTimeoutError,
+            "TRANSPORT_TIMEOUT",
+            "The transport operation timed out",
+        ),
+        (
+            TransportConnectionError,
+            "TRANSPORT_CONNECTION_ERROR",
+            "The transport connection failed",
+        ),
+    ],
+)
+class TestTypedTransportErrors:
+    def test_default_contract(
+        self, error_type: type[TransportError], code: str, message: str
+    ) -> None:
+        error = error_type()
+
+        assert isinstance(error, BaseError)
+        assert isinstance(error, TransportError)
+        assert not isinstance(error, StatusError)
+        assert error.message == message
+        assert error.code == code
+        assert error.to_dict() == {"message": message, "code": code}
+
+    def test_custom_contract_round_trip(
+        self, error_type: type[TransportError], code: str, message: str
+    ) -> None:
+        error = error_type(
+            "Custom failure", code="CUSTOM", details={"operation": "send"}
+        )
+        restored = error_type.from_dict(error.to_dict())
+
+        assert type(restored) is error_type
+        assert restored.to_dict() == {
+            "message": "Custom failure",
+            "code": "CUSTOM",
+            "details": {"operation": "send"},
+        }
+        assert error_type.__name__ in str(restored)
+        assert "Custom failure" in str(restored)
+        assert restored.code != code
+        assert restored.message != message
+
+    def test_explicit_cause_is_preserved(
+        self, error_type: type[TransportError], code: str, message: str
+    ) -> None:
+        cause = OSError("Network failure")
+
+        with pytest.raises(TransportError) as caught:
+            raise error_type() from cause
+
+        assert type(caught.value) is error_type
+        assert caught.value.__cause__ is cause
+        assert caught.value.code == code
+        assert caught.value.message == message
 
 
 class TestStatusError:

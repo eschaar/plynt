@@ -3,7 +3,12 @@
 import importlib
 
 from plynt.base.cache import CacheBackend
-from plynt.base.errors import BaseError, ConfigurationError
+from plynt.base.errors import (
+    BaseError,
+    ConfigurationError,
+    TransportConnectionError,
+    TransportTimeoutError,
+)
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.request import Request
 from plynt.base.response import Response
@@ -46,7 +51,9 @@ class TestBasePackage:
             "SupportsTTL",
             "SyncMiddleware",
             "SyncTransport",
+            "TransportConnectionError",
             "TransportError",
+            "TransportTimeoutError",
         ]
 
     def test_package_reexports_public_objects(self) -> None:
@@ -63,3 +70,5 @@ class TestBasePackage:
         assert module.Settings is Settings
         assert module.SyncMiddleware is SyncMiddleware
         assert module.SyncTransport is SyncTransport
+        assert module.TransportConnectionError is TransportConnectionError
+        assert module.TransportTimeoutError is TransportTimeoutError

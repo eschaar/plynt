@@ -255,6 +255,20 @@ class TransportError(BaseError):
     message = "A transport error occurred"
 
 
+class TransportTimeoutError(TransportError):
+    """Represent a timeout while connecting, sending, or receiving"""
+
+    code = "TRANSPORT_TIMEOUT"
+    message = "The transport operation timed out"
+
+
+class TransportConnectionError(TransportError):
+    """Represent a connection, network, proxy, or remote protocol failure"""
+
+    code = "TRANSPORT_CONNECTION_ERROR"
+    message = "The transport connection failed"
+
+
 class StatusError(TransportError):
     """Raised when a response status code indicates failure.
 
