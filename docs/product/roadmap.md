@@ -37,7 +37,7 @@ ______________________________________________________________________
 | 4b  | DRF integration layer `plynt[drf]`                | **Done**         | Shipped in v0.8.0; mixins, header helpers, sync/async support                       |
 | 4c  | FastAPI framework adapter `plynt[fastapi]`        | **Done**         | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs        |
 | 4d  | Flask framework adapter `plynt[flask]`            | **Conditional**  | Convenience layer only; validate demand before ADR                                  |
-| 4e  | Inbound request-ID and error envelope helpers     | **In progress**  | Context, outbound propagation, and log filter done; envelope and adapters open      |
+| 4e  | Inbound request-ID and error envelope helpers     | **In progress**  | Context, outbound propagation, log filter, and core envelope done; adapters open    |
 | 5   | Cache backend documentation                       | **Done**         | Redis SSL, framework-native wrapping, and custom backend how-to guides added        |
 | 6   | gRPC transport `plynt[grpc]`                      | **Implemented**  | ADR-0030; async calls and optional runtime                                          |
 | 7   | AI / LLM connector `plynt.connectors.llm`         | **Done**         | Generic contract, sync/async parity, OpenAI and Anthropic adapters                  |
@@ -816,7 +816,12 @@ implementation.
 
 #### 4e. Inbound request-ID and error envelope helpers
 
-**Status:** Idea. Requires an ADR before implementation.
+**Status:** In progress under accepted
+[ADR-0040](../architecture/adr/0040-inbound-request-id-and-error-envelope.md).
+
+Request-ID context, outbound propagation, logging enrichment, and the core
+error-envelope contract are implemented. Inbound middleware and configurable
+framework exception handlers remain open.
 
 Origin: a FastAPI service over plynt and earlier Django services each
 implement these pieces locally. The behavior is framework-independent,
@@ -848,9 +853,9 @@ Thin framework adapters, each only wiring the core into the framework:
 Out of scope: API versioning, caller authentication, scope policies, and
 application-specific error codes. These remain in the consuming service.
 
-**Prerequisite:** an ADR that places the request-ID context and envelope
-contract in the core, confirms the adapters stay thin per ADR-0024, and
-adds no new runtime dependencies.
+**Architectural basis:** ADR-0040 places the request-ID context and envelope
+contract in the core, keeps adapters thin per ADR-0024, and adds no new
+runtime dependencies.
 
 ______________________________________________________________________
 

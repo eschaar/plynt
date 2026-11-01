@@ -8,6 +8,11 @@ frameworks, or optional extras.
 """
 
 from plynt.base.cache import CacheBackend, SupportsSizeInfo, SupportsStats, SupportsTTL
+from plynt.base.error_envelope import (
+    ErrorEnvelope,
+    build_error_envelope,
+    default_error_envelope,
+)
 from plynt.base.errors import (
     AuthenticationError,
     BaseError,
@@ -52,6 +57,7 @@ __all__ = [
     "CircuitBreakerPolicy",
     "ConfigurationError",
     "DependencyUnavailableError",
+    "ErrorEnvelope",
     "FeatureDisabledError",
     "InvalidInputError",
     "OperationFailedError",
@@ -73,5 +79,7 @@ __all__ = [
     "TransportConnectionError",
     "TransportError",
     "TransportTimeoutError",
+    "build_error_envelope",
+    "default_error_envelope",
     "get_request_id",
 ]

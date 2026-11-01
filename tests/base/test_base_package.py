@@ -3,6 +3,11 @@
 import importlib
 
 from plynt.base.cache import CacheBackend
+from plynt.base.error_envelope import (
+    ErrorEnvelope,
+    build_error_envelope,
+    default_error_envelope,
+)
 from plynt.base.errors import (
     AuthenticationError,
     BaseError,
@@ -37,6 +42,7 @@ class TestBasePackage:
             "CircuitBreakerPolicy",
             "ConfigurationError",
             "DependencyUnavailableError",
+            "ErrorEnvelope",
             "FeatureDisabledError",
             "InvalidInputError",
             "OperationFailedError",
@@ -58,6 +64,8 @@ class TestBasePackage:
             "TransportConnectionError",
             "TransportError",
             "TransportTimeoutError",
+            "build_error_envelope",
+            "default_error_envelope",
             "get_request_id",
         ]
 
@@ -71,6 +79,9 @@ class TestBasePackage:
         assert module.BaseError is BaseError
         assert module.CacheBackend is CacheBackend
         assert module.ConfigurationError is ConfigurationError
+        assert module.ErrorEnvelope is ErrorEnvelope
+        assert module.build_error_envelope is build_error_envelope
+        assert module.default_error_envelope is default_error_envelope
         assert module.Request is Request
         assert module.RequestIDPolicy is RequestIDPolicy
         assert module.get_request_id is get_request_id

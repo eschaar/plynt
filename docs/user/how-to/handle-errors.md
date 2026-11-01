@@ -198,6 +198,53 @@ except RateLimitExceededError:
     print("Client-side rate limit hit — slow down")
 ```
 
+## Build an external error envelope
+
+`build_error_envelope` provides the shared core contract from ADR-0040.
+The caller selects the status code and supplies the active request ID;
+the core does not map statuses, generate IDs, or create framework responses.
+
+Without a custom callable, the payload retains the existing `message` and
+`code` fields. A `BaseError` exposes its message and code, with
+`INTERNAL_SERVER_ERROR` when its code is absent. Other exceptions return the
+generic internal-server-error payload without their exception messages.
+Request IDs, status codes, tracebacks, and response bodies are not added.
+
+```python
+from collections.abc import Mapping
+from plynt.base import ErrorEnvelope, build_error_envelope, get_request_id
+
+
+def custom_envelope(
+    error: Exception, status_code: int, request_id: str | None
+) -> Mapping[str, object]:
+    return {"code": "REQUEST_FAILED", "request_id": request_id}
+
+
+envelope: ErrorEnvelope = custom_envelope
+payload = build_error_envelope(
+    ValueError("private"), 500, get_request_id(), envelope=envelope
+)
+```
+
+An `ErrorEnvelope` is a synchronous callable receiving the exception,
+status code, and optional request ID. It returns a JSON-serializable mapping
+with string keys. The custom callable owns the whole payload; it must avoid
+exposing sensitive exception details.
+
+If the callable raises or returns invalid output, the builder logs an error
+without the exception message, traceback, or rejected payload, then uses the
+default envelope. Non-finite numbers and circular values are rejected.
+Process-control exceptions such as `KeyboardInterrupt` still propagate.
+
+`include_details=True` preserves the existing opt-in `BaseError.details`
+behavior for the default envelope, including fallback. Applications are
+responsible for ensuring those details are safe and JSON-serializable.
+The option does not add fields to a custom envelope.
+
+This core helper is available directly. Configurable envelope integration
+in framework exception handlers is a subsequent ADR-0040 step.
+
 ## Let unexpected errors propagate
 
 Not every exception needs to be caught at the call site. Let unexpected
