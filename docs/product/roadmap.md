@@ -28,7 +28,7 @@ ______________________________________________________________________
 | 2f  | Salesforce Pub/Sub CDC                            | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
 | 2g  | `plynt-salesforce` package extraction             | **Deferred**     | After multi-connector gate                                                          |
 | 2l  | Salesforce GraphQL API                            | **Conditional**  | Implement on repeated demand only                                                   |
-| 2m  | Async auth lifecycle and typing gaps              | **Planned**      | Findings from Sales API; public-API items need an ADR                               |
+| 2o  | Async auth lifecycle and typing gaps              | **Planned**      | Findings from Sales API; public-API items need an ADR                               |
 | 3   | Streaming response (SSE / chunked HTTP)           | **Done**         | ADR-0017; enables Salesforce AI and LLM connector                                   |
 | 3b  | Raw response access on `APIClient`                | **Done**         | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                    |
 | 4a  | Django core adapter `plynt[django]`               | **Done**         | Shipped in v0.8.0; settings bridge, cache backend, transport helpers                |
@@ -616,7 +616,7 @@ message flows now build on the current response and transport model.
 - Topics, actions, and agent state remain Salesforce org concerns.
 - Complements the LLM connector (item 7) for agent-specific workflows.
 
-#### 2m. Async auth lifecycle and typing gaps
+#### 2o. Async auth lifecycle, typing and transport gaps
 
 **Status:** Planned. Found while building the standalone Sales API on
 `AsyncSalesforceAPIClient`. Each item was verified in the plynt source.
@@ -641,15 +641,26 @@ message flows now build on the current response and transport model.
   cannot share one auth middleware instance between the transport and the
   client, which the Salesforce client needs for `instance_url`. Document a
   pattern or add a Salesforce-aware lifespan helper.
+- **Typed transport failures:** `HttpxAsyncTransport` and its sync sibling
+  let `httpx2` exceptions (timeouts, connect errors, pool exhaustion)
+  propagate unchanged, although `plynt.base.errors.TransportError` exists.
+  Consumers must import `httpx2` to handle network failures, which leaks the
+  transport behind the abstraction. Wrap them in typed `TransportError`
+  subclasses, such as timeout and connection errors, and keep the original
+  as `__cause__`.
+- **Consistent SObject path documentation:** the module and method
+  docstrings of `SalesforceObjectService` show `POST /sobjects/{Object}/`
+  with a trailing slash, while `_sobject_path()` sends `/sobjects/{Object}`.
+  Salesforce accepts both forms. Its REST reference writes the collection
+  resource with a slash (`/sobjects/Account/`) and record resources without
+  one (`/sobjects/Account/{id}`), while describe responses return
+  `urls.sobject` without one. Behavior is correct; low priority. Align the
+  docstrings with the sent paths and assert exact paths in tests. Trailing
+  slashes on inbound routes stay a convention of the consuming service.
 
-Not a defect: plynt builds Salesforce REST paths without a trailing slash,
-for example `/sobjects/Product2`. That matches the Salesforce reference
-paths; trailing slashes are an inbound API convention of the consuming
-service.
-
-**Prerequisite:** the typed auth error and any new public lifespan helper
-change the public API and need an ADR. The `py.typed` marker and the union
-fix do not.
+**Prerequisite:** the typed auth error, the typed transport errors and any
+new public lifespan helper change the public API and need an ADR. The
+`py.typed` marker, the union fix and the docstring alignment do not.
 
 ______________________________________________________________________
 
