@@ -44,6 +44,7 @@ import asyncio
 import csv
 import io
 import json
+import logging
 import math
 import time
 from enum import StrEnum
@@ -77,6 +78,7 @@ _CSV_CONTENT_TYPE = "text/csv; charset=UTF-8"
 _MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100 MB per Salesforce Bulk API 2.0 limit
 _POLL_INITIAL = 0.5  # seconds — initial backoff interval
 _POLL_MAX_INTERVAL = 2.0  # seconds — maximum backoff interval cap
+_logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -482,7 +484,8 @@ class SalesforceBulkService(APIService):
         """Run a complete Bulk API 2.0 ingest job and return the results.
 
         Manages the full lifecycle: create → upload → close → poll → retrieve.
-        Aborts the job automatically if any step raises an exception.
+        Attempts to abort an abortable job after an ordinary exception.
+        Cancellation and process-control exceptions bypass cleanup.
 
         Args:
             sobject: Salesforce object API name, e.g. ``"Account"``.
@@ -522,8 +525,8 @@ class SalesforceBulkService(APIService):
                 current = self.get_job(job.id, is_query=False)
                 if current.state in _ABORTABLE_STATES:
                     self.abort_job(job.id, is_query=False)
-            except Exception:  # noqa: S110
-                pass
+            except Exception:
+                _logger.warning("Bulk job cleanup failed; original error preserved")
             raise
 
     def query(
@@ -536,7 +539,8 @@ class SalesforceBulkService(APIService):
         """Run a complete Bulk API 2.0 query job and return all records.
 
         Manages the full lifecycle: create → poll → retrieve (auto-paginated).
-        Aborts the job automatically if any step raises an exception.
+        Attempts to abort an abortable job after an ordinary exception.
+        Cancellation and process-control exceptions bypass cleanup.
 
         Args:
             include_deleted: When ``True``, uses ``queryAll`` to include
@@ -562,8 +566,8 @@ class SalesforceBulkService(APIService):
                 current = self.get_job(job.id, is_query=True)
                 if current.state in _ABORTABLE_STATES:
                     self.abort_job(job.id, is_query=True)
-            except Exception:  # noqa: S110
-                pass
+            except Exception:
+                _logger.warning("Bulk job cleanup failed; original error preserved")
             raise
 
 
@@ -869,7 +873,8 @@ class AsyncSalesforceBulkService(AsyncAPIService):
         """Run a complete Bulk API 2.0 ingest job and return the results.
 
         Manages the full lifecycle: create → upload → close → poll → retrieve.
-        Aborts the job automatically if any step raises an exception.
+        Attempts to abort an abortable job after an ordinary exception.
+        Cancellation and process-control exceptions bypass cleanup.
 
         Args:
             sobject: Salesforce object API name, e.g. ``"Account"``.
@@ -909,8 +914,8 @@ class AsyncSalesforceBulkService(AsyncAPIService):
                 current = await self.get_job(job.id, is_query=False)
                 if current.state in _ABORTABLE_STATES:
                     await self.abort_job(job.id, is_query=False)
-            except Exception:  # noqa: S110
-                pass
+            except Exception:
+                _logger.warning("Bulk job cleanup failed; original error preserved")
             raise
 
     async def query(
@@ -923,7 +928,8 @@ class AsyncSalesforceBulkService(AsyncAPIService):
         """Run a complete Bulk API 2.0 query job and return all records.
 
         Manages the full lifecycle: create → poll → retrieve (auto-paginated).
-        Aborts the job automatically if any step raises an exception.
+        Attempts to abort an abortable job after an ordinary exception.
+        Cancellation and process-control exceptions bypass cleanup.
 
         Args:
             include_deleted: When ``True``, uses ``queryAll`` to include
@@ -949,6 +955,6 @@ class AsyncSalesforceBulkService(AsyncAPIService):
                 current = await self.get_job(job.id, is_query=True)
                 if current.state in _ABORTABLE_STATES:
                     await self.abort_job(job.id, is_query=True)
-            except Exception:  # noqa: S110
-                pass
+            except Exception:
+                _logger.warning("Bulk job cleanup failed; original error preserved")
             raise

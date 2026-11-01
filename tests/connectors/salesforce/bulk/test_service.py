@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any, cast
 from unittest.mock import AsyncMock, patch
@@ -1430,6 +1431,125 @@ class TestAsyncSalesforceBulkService:
 # ---------------------------------------------------------------------------
 # Facade integration
 # ---------------------------------------------------------------------------
+
+
+class TestBulkCleanup:
+    """Verify best-effort cleanup diagnostics and exception ownership"""
+
+    @pytest.mark.parametrize("is_query", [False, True])
+    @pytest.mark.parametrize("fail_abort", [False, True], ids=["status", "abort"])
+    def test_cleanup_failure_logs_safe_message(
+        self, is_query: bool, fail_abort: bool, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Log neither job identifiers nor private exception data on cleanup failure"""
+        service, transport = _make_service()
+        original = RuntimeError("private operation body")
+        cleanup = RuntimeError("private cleanup body")
+        responses: list[Response | Exception] = [
+            Response(status_code=200, content=_job_payload()),
+            original,
+        ]
+        if fail_abort:
+            responses.append(Response(status_code=200, content=_job_payload()))
+        responses.append(cleanup)
+        transport.send.side_effect = responses
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
+            with pytest.raises(RuntimeError) as caught:
+                if is_query:
+                    service.query("SELECT Id FROM Account")
+                else:
+                    service.ingest("Account", BulkOperation.insert, [{"Name": "Acme"}])
+        assert caught.value is original
+        assert transport.send.call_count == len(responses)
+        assert caplog.messages == ["Bulk job cleanup failed; original error preserved"]
+        assert caplog.records[0].exc_info is None
+        assert not caplog.records[0].args
+        assert JOB_ID not in caplog.text
+        assert "private" not in caplog.text
+
+    @pytest.mark.parametrize("is_query", [False, True])
+    @pytest.mark.parametrize("fail_abort", [False, True], ids=["status", "abort"])
+    async def test_async_cleanup_failure_logs_safe_message(
+        self, is_query: bool, fail_abort: bool, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Preserve the async operation error while reporting cleanup failure safely"""
+        service, transport = _make_async_service()
+        original = RuntimeError("private operation body")
+        cleanup = RuntimeError("private cleanup body")
+        responses: list[Response | Exception] = [
+            Response(status_code=200, content=_job_payload()),
+            original,
+        ]
+        if fail_abort:
+            responses.append(Response(status_code=200, content=_job_payload()))
+        responses.append(cleanup)
+        transport.send.side_effect = responses
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
+            with pytest.raises(RuntimeError) as caught:
+                if is_query:
+                    await service.query("SELECT Id FROM Account")
+                else:
+                    await service.ingest(
+                        "Account", BulkOperation.insert, [{"Name": "Acme"}]
+                    )
+        assert caught.value is original
+        assert transport.send.call_count == len(responses)
+        assert caplog.messages == ["Bulk job cleanup failed; original error preserved"]
+        assert caplog.records[0].exc_info is None
+        assert not caplog.records[0].args
+        assert JOB_ID not in caplog.text
+        assert "private" not in caplog.text
+
+    @pytest.mark.parametrize("is_query", [False, True])
+    @pytest.mark.parametrize("error", [KeyboardInterrupt(), SystemExit()])
+    def test_process_control_bypasses_cleanup(
+        self, is_query: bool, error: BaseException, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Preserve process-control exceptions without starting cleanup I/O"""
+        service, transport = _make_service()
+        transport.send.side_effect = [
+            Response(status_code=200, content=_job_payload()),
+            error,
+        ]
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
+            with pytest.raises(type(error)) as caught:
+                if is_query:
+                    service.query("SELECT Id FROM Account")
+                else:
+                    service.ingest("Account", BulkOperation.insert, [{"Name": "Acme"}])
+        assert caught.value is error
+        assert transport.send.call_count == 2
+        assert not caplog.records
+
+    @pytest.mark.parametrize("is_query", [False, True])
+    async def test_task_cancellation_bypasses_cleanup(
+        self, is_query: bool, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Keep cancellation prompt without starting best-effort cleanup requests"""
+        service, transport = _make_async_service()
+        entered = asyncio.Event()
+
+        async def send(*args: Any, **kwargs: Any) -> Response:
+            if transport.send.call_count == 1:
+                return Response(status_code=200, content=_job_payload())
+            entered.set()
+            await asyncio.Event().wait()
+            return Response(status_code=200)
+
+        transport.send.side_effect = send
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
+            operation = (
+                service.query("SELECT Id FROM Account")
+                if is_query
+                else service.ingest("Account", BulkOperation.insert, [{"Name": "Acme"}])
+            )
+            task = asyncio.create_task(operation)
+            await entered.wait()
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+        assert transport.send.call_count == 2
+        assert not caplog.records
 
 
 class TestSalesforceAPIFacade:
