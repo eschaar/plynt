@@ -160,6 +160,11 @@ class TestCsvToRecords:
 class TestPollDelay:
     """Tests for _poll_delay."""
 
+    @pytest.mark.parametrize("attempt", [2, 1023, 1024, 1025, 10**100])
+    def test_large_attempt_stays_at_cap(self, attempt: int) -> None:
+        """Return a finite capped delay without evaluating an overflowing power"""
+        assert _poll_delay(attempt) == 2.0
+
     def test_first_attempt_is_half_second(self) -> None:
         """Attempt 0 returns the initial 0.5 s delay."""
         assert _poll_delay(0) == pytest.approx(0.5)
@@ -553,6 +558,15 @@ class TestSalesforceBulkService:
         with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
             job = service.wait_for_job(JOB_ID, is_query=False)
         assert job.state is BulkJobState.job_complete
+
+    def test_wait_for_job_survives_more_than_1024_polls(self) -> None:
+        """Complete a long-running job without overflowing the polling backoff"""
+        service = self._service_with_states(*(["InProgress"] * 1025), "JobComplete")
+        with patch("plynt.connectors.salesforce.bulk.service.time.sleep") as sleep:
+            job = service.wait_for_job(JOB_ID, is_query=False)
+        assert job.state is BulkJobState.job_complete
+        assert sleep.call_count == 1026
+        assert sleep.call_args.args == (2.0,)
 
     def test_wait_for_job_raises_on_failed_state(self) -> None:
         """Raises SalesforceBulkJobError when job ends in Failed state."""
@@ -1062,6 +1076,17 @@ class TestAsyncSalesforceBulkService:
         with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
             job = await service.wait_for_job(JOB_ID, is_query=False)
         assert job.state is BulkJobState.job_complete
+
+    async def test_wait_for_job_survives_more_than_1024_polls(self) -> None:
+        """Complete a long async job without overflowing the polling backoff"""
+        service = self._async_service_with_states(
+            *(["InProgress"] * 1025), "JobComplete"
+        )
+        with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep") as sleep:
+            job = await service.wait_for_job(JOB_ID, is_query=False)
+        assert job.state is BulkJobState.job_complete
+        assert sleep.await_count == 1026
+        assert sleep.call_args.args == (2.0,)
 
     @pytest.mark.asyncio
     async def test_wait_for_job_raises_on_failed_state(self) -> None:
