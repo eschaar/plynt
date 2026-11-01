@@ -552,11 +552,12 @@ class TestSalesforceBulkService:
     # wait_for_job
     # ------------------------------------------------------------------
 
-    def test_wait_for_job_returns_when_complete(self) -> None:
+    @pytest.mark.parametrize("max_wait", [None, 5.0])
+    def test_wait_for_job_returns_when_complete(self, max_wait: float | None) -> None:
         """Returns the job info when state reaches JobComplete."""
         service = self._service_with_states("InProgress", "JobComplete")
         with patch("plynt.connectors.salesforce.bulk.service.time.sleep"):
-            job = service.wait_for_job(JOB_ID, is_query=False)
+            job = service.wait_for_job(JOB_ID, is_query=False, max_wait=max_wait)
         assert job.state is BulkJobState.job_complete
 
     def test_wait_for_job_survives_more_than_1024_polls(self) -> None:
@@ -585,8 +586,8 @@ class TestSalesforceBulkService:
 
     @pytest.mark.parametrize(
         ("max_wait", "expected_elapsed"),
-        [(0.5, 0.5), (1.0, 1.5)],
-        ids=["at-boundary", "after"],
+        [(0.0, 0.0), (0.5, 0.5), (1.0, 1.0)],
+        ids=["no-budget", "at-boundary", "capped-sleep"],
     )
     def test_wait_for_job_raises_timeout(
         self,
@@ -607,6 +608,47 @@ class TestSalesforceBulkService:
                 service.wait_for_job(JOB_ID, is_query=False, max_wait=max_wait)
         assert exc_info.value.max_wait == max_wait
         assert monotonic_clock.now == expected_elapsed
+
+    @pytest.mark.parametrize("state", ["InProgress", "JobComplete", "Failed"])
+    @pytest.mark.parametrize("poll_duration", [0.5, 1.0])
+    def test_slow_poll_exhausts_budget(
+        self, monotonic_clock: MonotonicClock, state: str, poll_duration: float
+    ) -> None:
+        """Check the budget after I/O without claiming to interrupt the request"""
+        monotonic_clock.bind("plynt.connectors.salesforce.bulk.service")
+        service, transport = _make_service()
+
+        def slow_response(*args: Any, **kwargs: Any) -> Response:
+            monotonic_clock.advance(poll_duration)
+            return Response(status_code=200, content=_job_payload(state=state))
+
+        transport.send.side_effect = slow_response
+        with patch(
+            "plynt.connectors.salesforce.bulk.service.time.sleep",
+            side_effect=monotonic_clock.advance,
+        ) as sleep:
+            with pytest.raises(BulkJobTimeoutError) as caught:
+                service.wait_for_job(JOB_ID, is_query=False, max_wait=1.0)
+        assert caught.value.max_wait == 1.0
+        assert monotonic_clock.now == 0.5 + poll_duration
+        assert sleep.call_args_list == [((0.5,),)]
+        assert transport.send.call_count == 1
+
+    @pytest.mark.parametrize("max_wait", [0.0, 0.5, 1.0])
+    def test_no_poll_starts_at_deadline(
+        self, monotonic_clock: MonotonicClock, max_wait: float
+    ) -> None:
+        """Avoid another status request once the polling budget is exhausted"""
+        monotonic_clock.bind("plynt.connectors.salesforce.bulk.service")
+        service, transport = _make_service(content=_job_payload(state="InProgress"))
+        with patch(
+            "plynt.connectors.salesforce.bulk.service.time.sleep",
+            side_effect=monotonic_clock.advance,
+        ):
+            with pytest.raises(BulkJobTimeoutError):
+                service.wait_for_job(JOB_ID, is_query=False, max_wait=max_wait)
+        assert monotonic_clock.now == max_wait
+        assert transport.send.call_count == (1 if max_wait == 1.0 else 0)
 
     # ------------------------------------------------------------------
     # get_ingest_results
@@ -1070,11 +1112,14 @@ class TestAsyncSalesforceBulkService:
     # ------------------------------------------------------------------
 
     @pytest.mark.asyncio
-    async def test_wait_for_job_returns_when_complete(self) -> None:
+    @pytest.mark.parametrize("max_wait", [None, 5.0])
+    async def test_wait_for_job_returns_when_complete(
+        self, max_wait: float | None
+    ) -> None:
         """Returns the job info when state reaches JobComplete."""
         service = self._async_service_with_states("InProgress", "JobComplete")
         with patch("plynt.connectors.salesforce.bulk.service.asyncio.sleep"):
-            job = await service.wait_for_job(JOB_ID, is_query=False)
+            job = await service.wait_for_job(JOB_ID, is_query=False, max_wait=max_wait)
         assert job.state is BulkJobState.job_complete
 
     async def test_wait_for_job_survives_more_than_1024_polls(self) -> None:
@@ -1100,8 +1145,8 @@ class TestAsyncSalesforceBulkService:
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         ("max_wait", "expected_elapsed"),
-        [(0.5, 0.5), (1.0, 1.5)],
-        ids=["at-boundary", "after"],
+        [(0.0, 0.0), (0.5, 0.5), (1.0, 1.0)],
+        ids=["no-budget", "at-boundary", "capped-sleep"],
     )
     async def test_wait_for_job_raises_timeout(
         self,
@@ -1123,6 +1168,49 @@ class TestAsyncSalesforceBulkService:
             with pytest.raises(BulkJobTimeoutError):
                 await service.wait_for_job(JOB_ID, is_query=False, max_wait=max_wait)
         assert monotonic_clock.now == expected_elapsed
+
+    @pytest.mark.parametrize("state", ["InProgress", "JobComplete", "Failed"])
+    @pytest.mark.parametrize("poll_duration", [0.5, 1.0])
+    async def test_slow_poll_exhausts_budget(
+        self, monotonic_clock: MonotonicClock, state: str, poll_duration: float
+    ) -> None:
+        """Check the async budget after I/O without interrupting the request"""
+        monotonic_clock.bind("plynt.connectors.salesforce.bulk.service")
+        service, transport = _make_async_service()
+
+        async def slow_response(*args: Any, **kwargs: Any) -> Response:
+            monotonic_clock.advance(poll_duration)
+            return Response(status_code=200, content=_job_payload(state=state))
+
+        transport.send.side_effect = slow_response
+        with patch(
+            "plynt.connectors.salesforce.bulk.service.asyncio.sleep",
+            side_effect=monotonic_clock.advance,
+        ) as sleep:
+            with pytest.raises(BulkJobTimeoutError) as caught:
+                await service.wait_for_job(JOB_ID, is_query=False, max_wait=1.0)
+        assert caught.value.max_wait == 1.0
+        assert monotonic_clock.now == 0.5 + poll_duration
+        assert sleep.call_args_list == [((0.5,),)]
+        assert transport.send.call_count == 1
+
+    @pytest.mark.parametrize("max_wait", [0.0, 0.5, 1.0])
+    async def test_no_poll_starts_at_deadline(
+        self, monotonic_clock: MonotonicClock, max_wait: float
+    ) -> None:
+        """Avoid another async status request when the budget is exhausted"""
+        monotonic_clock.bind("plynt.connectors.salesforce.bulk.service")
+        service, transport = _make_async_service(
+            content=_job_payload(state="InProgress")
+        )
+        with patch(
+            "plynt.connectors.salesforce.bulk.service.asyncio.sleep",
+            side_effect=monotonic_clock.advance,
+        ):
+            with pytest.raises(BulkJobTimeoutError):
+                await service.wait_for_job(JOB_ID, is_query=False, max_wait=max_wait)
+        assert monotonic_clock.now == max_wait
+        assert transport.send.call_count == (1 if max_wait == 1.0 else 0)
 
     # ------------------------------------------------------------------
     # ingest
