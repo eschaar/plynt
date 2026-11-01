@@ -32,6 +32,8 @@ Example (async)::
 from __future__ import annotations
 
 import logging
+from collections.abc import Generator
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, TypeVar
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -44,6 +46,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - clean core wheel smoke
 else:
     _HTTPX_IMPORT_ERROR = None
 
+from plynt.base.errors import TransportConnectionError, TransportTimeoutError
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.request import Request
 from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
@@ -74,6 +77,17 @@ def _ensure_httpx_runtime() -> None:
             "httpx2 is required for HttpxSyncTransport and HttpxAsyncTransport. "
             "Install it with: pip install plynt[httpx]"
         ) from _HTTPX_IMPORT_ERROR
+
+
+@contextmanager
+def _map_transport_errors() -> Generator[None, None, None]:
+    """Map backend network failures without exposing backend messages (ADR-0039)"""
+    try:
+        yield
+    except httpx.TimeoutException as exc:
+        raise TransportTimeoutError() from exc
+    except (httpx.NetworkError, httpx.ProxyError, httpx.RemoteProtocolError) as exc:
+        raise TransportConnectionError() from exc
 
 
 # Headers that must never appear in log output (case-insensitive match).
@@ -345,7 +359,8 @@ class HttpxSyncTransport(BaseSyncTransport):
         """Send a request using ``httpx2`` (pure I/O, no auth/retry/cache).
 
         Raises:
-            httpx.HTTPError: If a network or protocol error occurs.
+            TransportTimeoutError: If a network operation times out.
+            TransportConnectionError: If the connection or remote protocol fails.
 
         """
         if request.stream:
@@ -381,7 +396,8 @@ class HttpxSyncTransport(BaseSyncTransport):
         }
         if request.timeout is not None:
             kwargs["timeout"] = request.timeout
-        r = self._client.request(**kwargs)  # type: ignore[arg-type]
+        with _map_transport_errors():
+            r = self._client.request(**kwargs)  # type: ignore[arg-type]
         _logger.debug(
             "<-- %d %s %s",
             r.status_code,
@@ -439,7 +455,8 @@ class HttpxSyncTransport(BaseSyncTransport):
         if request.timeout is not None:
             raw_request.extensions["timeout"] = httpx.Timeout(request.timeout).as_dict()
 
-        raw_response = self._client.send(raw_request, stream=True)
+        with _map_transport_errors():
+            raw_response = self._client.send(raw_request, stream=True)
 
         _logger.debug(
             "<-- %d %s %s (streaming, no body)",
@@ -567,7 +584,8 @@ class HttpxAsyncTransport(BaseAsyncTransport):
         """Send a request asynchronously (pure I/O, no auth/retry/cache).
 
         Raises:
-            httpx.HTTPError: If a network or protocol error occurs.
+            TransportTimeoutError: If a network operation times out.
+            TransportConnectionError: If the connection or remote protocol fails.
 
         """
         if request.stream:
@@ -603,7 +621,8 @@ class HttpxAsyncTransport(BaseAsyncTransport):
         }
         if request.timeout is not None:
             kwargs["timeout"] = request.timeout
-        r = await self._client.request(**kwargs)  # type: ignore[arg-type]
+        with _map_transport_errors():
+            r = await self._client.request(**kwargs)  # type: ignore[arg-type]
         _logger.debug(
             "<-- %d %s %s",
             r.status_code,
@@ -661,7 +680,8 @@ class HttpxAsyncTransport(BaseAsyncTransport):
         if request.timeout is not None:
             raw_request.extensions["timeout"] = httpx.Timeout(request.timeout).as_dict()
 
-        raw_response = await self._client.send(raw_request, stream=True)
+        with _map_transport_errors():
+            raw_response = await self._client.send(raw_request, stream=True)
 
         _logger.debug(
             "<-- %d %s %s (streaming, no body)",

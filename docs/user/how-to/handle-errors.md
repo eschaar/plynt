@@ -57,9 +57,35 @@ Both inherit the standard `message`, `code`, and `details` contract. Their
 default codes are `TRANSPORT_TIMEOUT` and `TRANSPORT_CONNECTION_ERROR`.
 Implementations can preserve the original exception with `raise ... from exc`.
 
-These types are available for custom transports. The built-in HTTP transports
-still propagate backend exceptions; automatic mapping is a subsequent part of
-[ADR-0039](../../architecture/adr/0039-typed-transport-and-authentication-errors.md).
+Built-in HTTP transports raise these types for network failures while sending
+a request or opening a stream. The original backend exception is preserved in
+`__cause__`, not copied into the message. Local protocol errors, unsupported
+protocols, and programming errors propagate unchanged.
+
+Failures during iteration of an already returned stream continue to use the
+existing `StreamInterruptedError` contract. Streams are never retried after
+being returned to the caller.
+
+### Migrate backend exception handlers
+
+Under [ADR-0039](../../architecture/adr/0039-typed-transport-and-authentication-errors.md),
+handlers catching `httpx2.TimeoutException` or network exceptions no longer
+match failures from built-in transports. Catch the plynt types instead:
+
+```python
+from plynt.base import TransportConnectionError, TransportTimeoutError
+
+try:
+    response = client.get("/items")
+except TransportTimeoutError:
+    print("Upstream request timed out")
+except TransportConnectionError:
+    print("Upstream connection failed")
+```
+
+The default `HttpRetryPolicy` recognizes both types and still accepts raw
+backend network exceptions from custom transports. Explicit retry classifiers
+replace that default: update classifiers that only match httpx2 exceptions.
 
 ## Authentication errors
 

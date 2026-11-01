@@ -14,6 +14,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from http import HTTPStatus
 
+from plynt.base.errors import TransportConnectionError, TransportTimeoutError
 from plynt.base.policies import RetryPolicy, _default_retryable_exception
 
 try:
@@ -34,8 +35,12 @@ __all__ = ["HttpRetryPolicy"]
 
 
 def _default_http_retryable_exception(exc: BaseException) -> bool:
-    """Recognize built-in and optional HTTP backend network errors (ADR-0038)"""
-    return _default_retryable_exception(exc) or isinstance(exc, _HTTPX_NETWORK_ERRORS)
+    """Recognize plynt, built-in, and optional backend network errors (ADR-0039)"""
+    return (
+        _default_retryable_exception(exc)
+        or isinstance(exc, (TransportTimeoutError, TransportConnectionError))
+        or isinstance(exc, _HTTPX_NETWORK_ERRORS)
+    )
 
 
 @dataclass
@@ -45,8 +50,9 @@ class HttpRetryPolicy(RetryPolicy):
     Inherits all back-off fields from ``RetryPolicy`` and adds
     ``retryable_status_codes``, which causes the retry loop to retry
     when the server returns one of those codes. The default exception
-    classifier also recognizes httpx2 network, timeout, remote protocol,
-    and proxy errors when the optional backend is installed. An explicit
+    classifier recognizes plynt timeout and connection errors, plus raw httpx2
+    network, timeout, remote protocol, and proxy errors from custom transports
+    when the optional backend is installed. An explicit
     classifier replaces this default.
 
     .. note::
