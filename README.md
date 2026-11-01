@@ -123,6 +123,7 @@ pip install "plynt[salesforce]"  # Salesforce REST connector
 | `django`     | Django adapter support + `httpx2`       | Django integration helpers and cache adapters     |
 | `drf`        | DRF adapter support + Django + `httpx2` | DRF service mixins and exception mapping patterns |
 | `fastapi`    | FastAPI adapter support + `httpx2`      | FastAPI dependency wiring for plynt clients       |
+| `sentry`     | Sentry SDK                              | Opt-in sanitized error reporting                  |
 | `salesforce` | HTTP, signing, validation, Avro         | REST, bulk, AI; combine with `grpc` for CDC       |
 
 ```bash

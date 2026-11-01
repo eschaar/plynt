@@ -7,16 +7,17 @@ combinations are outside the tested contract.
 
 ## Extras
 
-| Extra        | Purpose                                                       |
-| ------------ | ------------------------------------------------------------- |
-| `httpx`      | Built-in sync and async HTTP transport using `httpx2`         |
-| `grpc`       | Async gRPC transport, with gRPC and protobuf runtimes         |
-| `salesforce` | Salesforce HTTP APIs, signing, models, and Avro decoding      |
-| `django`     | Django settings, cache, and HTTP transport adapters           |
-| `drf`        | Django REST Framework adapter, including Django support       |
-| `fastapi`    | FastAPI lifespan, dependency, header, and error adapters      |
-| `test`       | pytest, coverage, async testing, and HTTP recording utilities |
-| `dev`        | Test, lint, type-check, build, and pinned codegen tools       |
+| Extra        | Purpose                                                        |
+| ------------ | -------------------------------------------------------------- |
+| `httpx`      | Built-in sync and async HTTP transport using `httpx2`          |
+| `grpc`       | Async gRPC transport, with gRPC and protobuf runtimes          |
+| `salesforce` | Salesforce HTTP APIs, signing, models, and Avro decoding       |
+| `django`     | Django settings, cache, and HTTP transport adapters            |
+| `drf`        | Django REST Framework adapter, including Django support        |
+| `fastapi`    | FastAPI lifespan, dependency, header, and error adapters       |
+| `sentry`     | Optional reporting using an application-initialized Sentry SDK |
+| `test`       | pytest, coverage, async testing, and HTTP recording utilities  |
+| `dev`        | Test, lint, type-check, build, and pinned codegen tools        |
 
 There is no `oauth`, `llm`, or `soap` extra. Generic OAuth2 helpers are included
 in the package; concrete HTTP calls need `httpx` or a caller-supplied transport.
@@ -43,6 +44,7 @@ migration instructions, see:
 
 - [Framework adapters](../../adapters/README.md)
 - [Connector documentation](../../connectors/)
+- [Sentry integration](../../integrations/sentry.md)
 
 ### Migration from Python 3.11
 
@@ -84,7 +86,7 @@ adapters are not silently skipped. Without `make`, use:
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade "pip>=26.2,<27"
 .venv/bin/python -m pip install -e \
-  ".[dev,httpx,grpc,salesforce,django,drf,fastapi]"
+  ".[dev,httpx,grpc,salesforce,django,drf,fastapi,sentry]"
 ```
 
 The `dev` extra alone installs tooling, not every framework or connector. The
@@ -94,7 +96,7 @@ canonical development command deliberately composes runtime extras.
 
 The Distribution workflow builds a wheel from the source distribution and
 installs it in fresh environments for core, HTTP, gRPC, CDC, Django, DRF, and
-FastAPI. It also checks the CDC runtime minima. The full test matrix exercises
+FastAPI, and Sentry. It also checks the CDC runtime minima. The full test matrix exercises
 all implemented runtime extras on Linux Python 3.12-3.15.
 
 These checks verify installation boundaries, not correctness against an external

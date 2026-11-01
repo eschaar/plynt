@@ -17,6 +17,7 @@ goal. They assume you are already familiar with the basics.
 - [Configure logging](configure-logging.md) — structured JSON logging, log
   throttling, and exception filters
 - [Handle errors](handle-errors.md) — catch and inspect typed HTTP exceptions
+- [Report errors](report-errors.md) — opt-in reporting with redacted context
 - [Use async](use-async.md) — switch to async/await for concurrent workloads
 
 ## Extension documentation
@@ -24,3 +25,5 @@ goal. They assume you are already familiar with the basics.
 Framework-specific recipes live in the
 [adapter documentation](../../adapters/README.md). Platform-specific recipes
 live with each connector under [connector documentation](../../connectors/).
+Vendor reporting setup lives in the
+[Sentry integration guide](../../integrations/sentry.md).

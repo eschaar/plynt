@@ -26,6 +26,7 @@ _MODULES: dict[str, tuple[str, ...]] = {
     "django": ("plynt.adapters.django",),
     "drf": ("plynt.adapters.django.drf",),
     "fastapi": ("plynt.adapters.fastapi",),
+    "sentry": ("plynt.integrations.sentry",),
 }
 _SELECTED = (
     tuple(_MODULES)
@@ -68,7 +69,15 @@ class TestInstalledDistribution:
         package = metadata.metadata("plynt")
         extras = set(package.get_all("Provides-Extra") or [])
 
-        assert {"httpx", "grpc", "salesforce", "django", "drf", "fastapi"} <= extras
+        assert {
+            "httpx",
+            "grpc",
+            "salesforce",
+            "django",
+            "drf",
+            "fastapi",
+            "sentry",
+        } <= extras
         requirements = metadata.requires("plynt") or []
         assert any(
             requirement.startswith("fastavro")
@@ -134,10 +143,75 @@ class TestInstalledDistribution:
                 "django",
                 "rest_framework",
                 "httpx2",
+                "sentry_sdk",
             ):
                 assert find_spec(module) is None
         else:
             assert _PROFILE in _MODULES or _PROFILE == "full"
+
+    def test_sentry_dependency_is_optional_and_bounded(self) -> None:
+        requirements = metadata.requires("plynt") or []
+        sentry = [item for item in requirements if item.startswith("sentry-sdk")]
+        assert len(sentry) == 1
+        assert 'extra == "sentry"' in sentry[0]
+        assert ">=2.73.0" in sentry[0]
+        assert "<3" in sentry[0]
+
+    def test_sentry_reporter_construction_boundary(self) -> None:
+        if find_spec("sentry_sdk") is None:
+            with pytest.raises(ImportError, match=r"plynt\[sentry\]"):
+                importlib.import_module("plynt.integrations.sentry")
+        else:
+            from plynt.base import ErrorReporter
+            from plynt.integrations.sentry import SentryErrorReporter
+
+            assert isinstance(SentryErrorReporter(), ErrorReporter)
+
+    @pytest.mark.parametrize(
+        "profile", ("sentry",) if _PROFILE in {"sentry", "full"} else ()
+    )
+    def test_sentry_captures_with_application_owned_in_memory_transport(
+        self, profile: str
+    ) -> None:
+        import json
+
+        import sentry_sdk
+        from sentry_sdk.envelope import Envelope
+        from sentry_sdk.transport import Transport
+
+        from plynt.integrations.sentry import SentryErrorReporter
+
+        class MemoryTransport(Transport):
+            def __init__(self) -> None:
+                super().__init__()
+                self.payloads: list[str] = []
+
+            def capture_envelope(self, envelope: Envelope) -> None:
+                event = envelope.get_event()
+                if event is not None:
+                    self.payloads.append(json.dumps(event))
+
+        transport = MemoryTransport()
+        client = sentry_sdk.Client(
+            dsn="https://public@example.invalid/1",
+            transport=transport,
+            default_integrations=False,
+        )
+        try:
+            with sentry_sdk.new_scope() as scope:
+                scope.set_client(client)
+                event_id = SentryErrorReporter().report(
+                    ValueError("private-error"), {"operation": "smoke"}
+                )
+            assert event_id is not None
+            assert len(transport.payloads) == 1
+            event = json.loads(transport.payloads[0])
+            assert event["event_id"] == event_id
+            assert event["contexts"]["plynt"] == {"operation": "smoke"}
+            assert event["exception"]["values"][0]["mechanism"]["handled"] is True
+            assert "private-error" not in transport.payloads[0]
+        finally:
+            client.close()
 
     def test_http_backend_construction_boundary(self) -> None:
         from plynt.http import HttpxAsyncTransport, HttpxSyncTransport

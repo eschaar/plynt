@@ -88,13 +88,13 @@ python-install:
 .venv:
 	$(PYTHON) -m venv $(VENV)
 	$(PIP) install --upgrade 'pip>=26.2,<27'
-	$(PIP) install -e '.[dev,httpx,grpc,salesforce,django,drf,fastapi]'
+	$(PIP) install -e '.[dev,httpx,grpc,salesforce,django,drf,fastapi,sentry]'
 
 .PHONY: install
 install:
 	@if [ ! -d "$(VENV)" ]; then $(PYTHON) -m venv $(VENV); fi
 	$(PIP) install --upgrade 'pip>=26.2,<27'
-	$(PIP) install -e '.[dev,httpx,grpc,salesforce,django,drf,fastapi]'
+	$(PIP) install -e '.[dev,httpx,grpc,salesforce,django,drf,fastapi,sentry]'
 
 # ---------------------------------------------------------------------------
 # Salesforce CDC vendored Pub/Sub proto

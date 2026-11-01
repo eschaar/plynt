@@ -29,7 +29,7 @@ experimental capabilities remain `Experimental`.
 | 1e  | `TracingMiddleware` `plynt[otel]`                 | **Conditional**  | ADR required; use OTel auto-instrumentation unless plynt spans are needed           |
 | 1f  | `MetricsMiddleware` `plynt[prometheus]`           | **Conditional**  | ADR required; use OTel unless standalone metrics are needed                         |
 | 1g  | `MockMiddleware`                                  | **Planned**      | Test/dev only; Tier 3                                                               |
-| 1h  | Error-tracking integration `plynt[sentry]`        | **Planned**      | Vendor-neutral reporting hook with optional Sentry adapter; ADR-0041 accepted       |
+| 1h  | Error-tracking integration `plynt[sentry]`        | **Done**         | Reporting, event IDs, optional Sentry adapter, and isolated installation profiles   |
 | 1i  | Composable middleware extension points            | **Idea**         | Investigate narrow injected providers or strategies on concrete demand              |
 | 2   | Salesforce connector — REST + Bulk + AI           | **Done**         | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API      |
 | 2f  | Salesforce Pub/Sub CDC                            | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
@@ -414,10 +414,17 @@ middleware-level alternative to httpx's `MockTransport`. See
 
 #### 1h. Error-tracking integration — `plynt[sentry]` (Tier 2)
 
-**Status:** Planned under accepted
+**Status:** Done under accepted
 [ADR-0041](../architecture/adr/0041-error-tracking-integration-and-sentry-extra.md).
-The core `ErrorReporter` protocol is implemented. Reporting middleware and the
-optional Sentry integration remain open.
+The core `ErrorReporter` protocol and opt-in sync/async reporting middleware
+are implemented, with context handoff under ADR-0042. Exception-bound event IDs
+and opt-in envelope publication are implemented under
+[ADR-0043](../architecture/adr/0043-exception-bound-error-event-ids.md).
+The optional [Sentry integration](../integrations/sentry.md), tox extra, CI
+installation paths, and isolated core/Sentry wheel profiles are implemented.
+Local verification covers Python 3.12-3.15 with 100% statement coverage.
+Core and Sentry wheel profiles pass on Python 3.12 and 3.15.
+This is checkout evidence, not publication or delivery to an external tracker.
 
 Let services report plynt failures to an error tracker with useful,
 redacted context, and return the tracker's event ID to callers.
@@ -427,10 +434,14 @@ This item only adds what the SDK cannot know:
 
 - plynt context on events: connector, service, operation, upstream status,
   retry attempts, and the upstream request ID
-- redaction that reuses plynt's logging rules, so tokens and auth headers
-  never reach the tracker
+- redacted request context using plynt's logging rules; the Sentry adapter
+  also omits automatic request data, breadcrumbs, and unsafe exception details
 - the event ID made available to the error-envelope helpers in 4e, for
-  example as `X-Error-Id` or an `error_id` field
+  example as an opt-in `error_id` field
+
+Application-owned SDK metadata, callbacks, and automatic captures outside plynt
+retain application responsibility. SDK deduplication is execution-local, not a
+global suppression guarantee; see the integration guide for limitations.
 
 Design constraints:
 
