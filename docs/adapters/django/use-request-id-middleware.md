@@ -73,5 +73,6 @@ The default trusts valid inbound IDs. Use `trust_inbound=False` for
 internet-facing services that should always generate their own ID. Request IDs
 are correlation values, never authentication or idempotency keys.
 
-This middleware does not change DRF error envelopes. Configurable exception
-handler integration is a separate ADR-0040 step.
+This middleware does not change DRF error envelopes. Use
+[DRF envelope configuration](drf/configure-error-envelopes.md) to include the ID
+in error payloads.

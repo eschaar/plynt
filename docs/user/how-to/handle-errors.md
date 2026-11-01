@@ -242,8 +242,8 @@ behavior for the default envelope, including fallback. Applications are
 responsible for ensuring those details are safe and JSON-serializable.
 The option does not add fields to a custom envelope.
 
-This core helper is available directly. Configurable envelope integration
-in framework exception handlers is a subsequent ADR-0040 step.
+This core helper is available directly. Framework-specific configuration is
+documented separately in the [adapter guides](../../adapters/README.md).
 
 ## Let unexpected errors propagate
 

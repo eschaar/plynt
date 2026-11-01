@@ -74,5 +74,5 @@ Request-ID propagation and logging remain explicit opt-ins:
 See the [core request-ID guide](../../user/how-to/use-request-id-context.md)
 for configuration and request-versus-workflow semantics.
 
-Custom FastAPI error envelopes are a subsequent ADR-0040 step; this middleware
-only manages context and response headers.
+Use [custom error envelopes](configure-error-envelopes.md) to include the scoped
+ID in plynt error responses. This middleware only manages context and headers.

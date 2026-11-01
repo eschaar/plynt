@@ -8,6 +8,7 @@ Install `plynt[fastapi]`. The adapter provides:
 - Outbound request-header propagation.
 - Exception-to-JSON response mapping.
 - [Scoped request IDs for FastAPI and ASGI](use-request-id-middleware.md).
+- [Configurable error envelopes](configure-error-envelopes.md).
 
 See [Build a FastAPI service facade](use-fastapi-service-facade.md) for
 installation, lifecycle ownership, and dependency examples.

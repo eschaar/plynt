@@ -2,7 +2,8 @@
 
 `RequestIDPolicy` configures request ID validation, generation, and scoped
 context using `contextvars`. The policy itself does not read requests, modify endpoints,
-or inject headers. Framework integration is a subsequent ADR-0040 step.
+or inject headers. Framework-specific wiring is documented in the
+[adapter guides](../../adapters/README.md).
 
 ```python
 from plynt.base import RequestIDPolicy, get_request_id
