@@ -201,7 +201,9 @@ def _csv_to_records(csv_text: str) -> list[dict[str, Any]]:
 
 def _poll_delay(attempt: int) -> float:
     """Return the exponential backoff delay for a polling attempt."""
-    return min(_POLL_MAX_INTERVAL, _POLL_INITIAL * math.pow(2, attempt))
+    if attempt >= math.log2(_POLL_MAX_INTERVAL / _POLL_INITIAL):
+        return _POLL_MAX_INTERVAL
+    return _POLL_INITIAL * math.pow(2, attempt)
 
 
 # ---------------------------------------------------------------------------

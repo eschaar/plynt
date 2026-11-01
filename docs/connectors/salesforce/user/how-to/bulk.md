@@ -114,6 +114,8 @@ ______________________________________________________________________
 ## Control timeout
 
 Both `ingest()` and `query()` poll until the job reaches a terminal state.
+Polling delays start at 0.5 seconds, double to a 2-second cap, and remain
+at that cap even for long-running jobs (ADR SF-0005).
 Set `max_wait` (in seconds) to raise `TimeoutError` instead of polling
 indefinitely:
 
