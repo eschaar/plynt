@@ -15,42 +15,38 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write
 
 env:
   PYTHON_VERSION: "3.14"
   TRUSTED_RELEASE_ACTORS: "prime-releasebot[bot],github-actions[bot],eschaar"
   ENABLE_PYPI_PUBLISH: "true"
+  RELEASE_TAG: ${{ github.event.release.tag_name }}
+  RELEASE_ACTOR: ${{ github.event.release.author.login }}
 
 jobs:
-  publish:
-    name: Build and Publish to PyPI
+  validate-release:
+    name: Validate Release Metadata
     if: "${{ github.event.release.prerelease == false }}"
     runs-on: ubuntu-latest
-    environment: pypi
 
     steps:
       - name: Validate release tag format
-        # Fail fast before checkout if the tag is not a plain SemVer X.Y.Z.
-        # Prevents non-versioned or pre-release tags from triggering a publish.
+        # Fail before the protected publish job if the tag is not plain SemVer.
         shell: bash
         run: |
-          TAG="${{ github.event.release.tag_name }}"
+          TAG="$RELEASE_TAG"
           if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "ERROR: release tag '$TAG' is not in expected SemVer X.Y.Z format."
+            echo "ERROR: release tag is not in expected SemVer X.Y.Z format."
             echo "Only plain version tags (e.g. 1.2.3) are permitted to trigger publish."
             exit 1
           fi
-          echo "tag=$TAG format is valid."
+          echo "Release tag format is valid."
 
       - name: Validate release actor
-        # Only allow trusted actors to trigger a PyPI publish.
-        # prime-releasebot[bot] covers release-please GitHub App automation.
-        # github-actions[bot] is kept as a compatibility fallback.
-        # eschaar covers direct maintainer releases.
+        # Only trusted actors may continue to the protected PyPI publish job.
         shell: bash
         run: |
-          ACTOR="${{ github.event.release.author.login }}"
+          ACTOR="$RELEASE_ACTOR"
           IFS=',' read -r -a ALLOWED <<< "$TRUSTED_RELEASE_ACTORS"
 
           TRUSTED=false
@@ -62,18 +58,29 @@ jobs:
           done
 
           if [[ "$TRUSTED" != "true" ]]; then
-            echo "ERROR: release created by '$ACTOR' which is not in the trusted actor list."
+            echo "ERROR: release actor is not in the trusted actor list."
             echo "Allowed: $TRUSTED_RELEASE_ACTORS"
             echo "Releases must be created by release automation or a trusted maintainer."
             exit 1
           fi
 
-          echo "release_actor='$ACTOR' is trusted."
+          echo "Release actor is trusted."
 
+  publish:
+    name: Build and Publish to PyPI
+    needs: validate-release
+    if: "${{ github.event.release.prerelease == false }}"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    environment: pypi
+
+    steps:
       - name: Checkout release tag
         uses: actions/checkout@v7
         with:
-          ref: refs/tags/${{ github.event.release.tag_name }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
           fetch-depth: 0
 
       - name: Setup Python
@@ -85,7 +92,7 @@ jobs:
         # Verify that HEAD is at the expected release tag before building.
         shell: bash
         run: |
-          EXPECTED="${{ github.event.release.tag_name }}"
+          EXPECTED="$RELEASE_TAG"
           ACTUAL_TAG="$(git tag --points-at HEAD | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
           echo "expected_tag=$EXPECTED"
           echo "head_tag=$ACTUAL_TAG"
