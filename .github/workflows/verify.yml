@@ -44,11 +44,14 @@ jobs:
         run: python -m pip install --upgrade 'pip>=26.2,<27' tox
 
       - name: Tox env listing (evidence)
+        # Explicit bash enables GitHub Actions' -eo pipefail invocation.
+        shell: bash
         run: |
           mkdir -p evidence
           tox -av | tee evidence/tox-env-list-${{ matrix.python-version }}.txt
 
       - name: Test via tox
+        shell: bash
         run: |
           tox -e ${{ matrix.python-version }} \
             | tee evidence/tox-run-${{ matrix.python-version }}.txt
