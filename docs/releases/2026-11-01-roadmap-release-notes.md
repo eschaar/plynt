@@ -49,7 +49,7 @@ Moved framework guides retain entry points in the user documentation.
 | [Architecture](../architecture/overview.md), ADR-0035 and ADR-0039–0043 | Architect OK after documentation clarification          |
 | [Verification](../reports/2026-11-01-release-verification.md)           | Local matrix/packages pass; tester migration handoff OK |
 | [Release gate and explicit reviews](2026-11-01-roadmap-release-gate.md) | Tester, architect, designer, product OK for PR handoff  |
-| Remote PR/merge-group checks and secret scanning                        | Not yet run; required before merge                      |
+| Remote PR/merge-group checks and secret scanning                        | PR #79 checks pending; required before merge            |
 
 ## Limitations and release status
 
@@ -75,5 +75,6 @@ the pre-1.0 policy; release-please selects the version from Conventional Commits
 - Migration: `docs/user/migrations/typed-transport-errors.md`.
 - Verification and sign-off record: linked above.
 - Documentation candidate: `3d87a933daa9166301977082c5b9c032d1516256`.
-- Remote handoff: SSH authentication verified on resumption; push/PR next.
-  No PR/run/release IDs exist yet. The release gate tracks protected checks.
+- Remote handoff: SSH push succeeded; [PR #79](https://github.com/eschaar/plynt/pull/79)
+  opened against `main`. The release gate registers initial remote runs;
+  current-head protected checks remain pending. No release is claimed.

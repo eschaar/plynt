@@ -4,8 +4,8 @@ Date: 2026-11-01
 Branch: `feature/roadmap-development`
 Reviewed implementation: `7a7b96b33ebccec6ce63b7fca16c156851484843`
 Actual main baseline: `ab2d7da473d7ed0a57d625d54bd12e940e1e8dbb`
-Decision: **Ready for PR creation. Documentation/reviews and SSH authentication
-passed; merge and publication await current remote gates.**
+Decision: **PR handoff complete. Documentation/reviews and SSH push passed;
+merge and publication await current remote gates.**
 
 ## Scope
 
@@ -41,7 +41,7 @@ commands, results, exact revisions, limitations, and its explicit verdict.
 | Dependency consistency and known-vulnerability audits | Pass within recorded audit scope                                      |
 | Public API comparison                                 | Approved breaks identified; migration reviewed by tester and designer |
 | Migration notes and final changelog                   | Migration reviewed; unversioned release packaging prepared            |
-| Current PR/merge-group CI and secret scan             | Not run; no PR exists                                                 |
+| Current PR/merge-group CI and secret scan             | PR #79 opened; current remote checks pending                          |
 
 Performance overhead has not been benchmarked. Observability behavior was
 tested locally, including sanitization and in-memory Sentry delivery; no
@@ -82,7 +82,7 @@ No time-bound gate exception exists. User authorization does not replace reviews
 
 ## Blockers and Owners
 
-1. **Release:** authentication is resolved; resume normal SSH push/PR, then
+1. **Release:** authentication and PR handoff are resolved;
    obtain current Check, Verify, Distribution (including Sentry), Commit, and
    Security evidence before merge. No gate bypass or workflow removal.
 
@@ -128,8 +128,14 @@ versions, releases, or bypass protections.
   configured SSH push destination; main still matches the baseline above.
 - Freshness: changes since the verified implementation are reviewed
   documentation and release records only; no source or package metadata drift.
-- Remote branch and PR: absent on resumption; normal SSH push/PR is next.
-- Remote CI/run IDs: none for this candidate; no PR event exists.
+- SSH push succeeded for candidate `ade65c6a410425825b89478d9bf5f4b612c34c2b`.
+- Remote branch: `feature/roadmap-development`.
+- PR: [#79](https://github.com/eschaar/plynt/pull/79), targeting `main`.
+- Initial PR runs for `ade65c6a4104`: Check `41358028685`,
+  Verify `41358028704`, Distribution `41358028692`, Commit `41358028686`,
+  Security `41358028694`; queued at registration, not passed evidence.
+- This documentation-only registration creates a new head; require all
+  current-head checks again before merge. Initial run IDs are historical.
 - Merge, release-please release PR, tag, GitHub release and PyPI publication:
   not performed by this execution. Version manifest remains `0.11.1`.
 - Follow-up registration commit changes this release record only; see branch log
