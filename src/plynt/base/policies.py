@@ -122,8 +122,8 @@ class RateLimitPolicy:
 
     Attributes:
         max_requests: Maximum number of requests allowed in each time
-            window.
-        window_seconds: Window size in seconds.
+            window. Must be finite and >= 1.
+        window_seconds: Window size in seconds. Must be finite and > 0.
 
     """
 
@@ -132,6 +132,10 @@ class RateLimitPolicy:
 
     def __post_init__(self) -> None:
         """Validate policy values."""
+        if not math.isfinite(self.max_requests):
+            raise ValueError("max_requests must be finite")
+        if not math.isfinite(self.window_seconds):
+            raise ValueError("window_seconds must be finite")
         if self.max_requests < 1:
             raise ValueError("max_requests must be >= 1")
         if self.window_seconds <= 0:
