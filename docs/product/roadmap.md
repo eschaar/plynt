@@ -25,6 +25,7 @@ ______________________________________________________________________
 | 1f  | `MetricsMiddleware` `plynt[prometheus]`           | **Conditional**  | ADR required; use OTel unless standalone metrics are needed                         |
 | 1g  | `MockMiddleware`                                  | **Planned**      | Test/dev only; Tier 3                                                               |
 | 1h  | Error-tracking integration `plynt[sentry]`        | **Planned**      | Vendor-neutral reporting hook with optional Sentry adapter; ADR-0041 accepted       |
+| 1i  | Composable middleware extension points            | **Idea**         | Investigate narrow injected providers or strategies on concrete demand              |
 | 2   | Salesforce connector — REST + Bulk + AI           | **Done**         | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API      |
 | 2f  | Salesforce Pub/Sub CDC                            | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
 | 2g  | `plynt-salesforce` package extraction             | **Deferred**     | After multi-connector gate                                                          |
@@ -36,7 +37,7 @@ ______________________________________________________________________
 | 4b  | DRF integration layer `plynt[drf]`                | **Done**         | Shipped in v0.8.0; mixins, header helpers, sync/async support                       |
 | 4c  | FastAPI framework adapter `plynt[fastapi]`        | **Done**         | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs        |
 | 4d  | Flask framework adapter `plynt[flask]`            | **Conditional**  | Convenience layer only; validate demand before ADR                                  |
-| 4e  | Inbound request-ID and error envelope helpers     | **Planned**      | Framework-agnostic core with thin Django, DRF, FastAPI adapters; ADR-0040 accepted  |
+| 4e  | Inbound request-ID and error envelope helpers     | **In progress**  | Context, outbound propagation, and log filter done; envelope and adapters open      |
 | 5   | Cache backend documentation                       | **Done**         | Redis SSL, framework-native wrapping, and custom backend how-to guides added        |
 | 6   | gRPC transport `plynt[grpc]`                      | **Implemented**  | ADR-0030; async calls and optional runtime                                          |
 | 7   | AI / LLM connector `plynt.connectors.llm`         | **Done**         | Generic contract, sync/async parity, OpenAI and Anthropic adapters                  |
@@ -429,6 +430,25 @@ Design constraints:
 
 **Prerequisite:** New ADR covering the reporting protocol and the
 `plynt[sentry]` extra per ADR-0003 and ADR-0028.
+
+#### 1i. Composable middleware extension points
+
+**Status:** Backlog idea; investigate on concrete demand, not a delivery promise.
+
+Consider narrow injected providers or strategies where configuration currently
+requires subclassing or couples independent responsibilities:
+
+- Logging context providers and shared redaction rules.
+- Throttle signal detectors for differing upstream conventions.
+- Cache-key strategies independent of the storage backend.
+
+Prefer constructor injection and existing protocols or callables over a general
+plugin registry, runtime mutation, or automatic discovery. Retry classifiers,
+cache backend capabilities, dynamic header values, and the accepted reporting
+contract already provide focused extension mechanisms.
+
+No retrospective redesign is planned. Public contracts or changes to core
+responsibilities require an ADR before implementation.
 
 ______________________________________________________________________
 
