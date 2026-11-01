@@ -20,6 +20,10 @@ pip install "plynt[fastapi,httpx]"
 
 Add connector-specific extras only when you need connector-specific services.
 
+For Salesforce's shared token and `instance_url` ownership, use the
+[connector lifespan recipe](../../connectors/salesforce/user/how-to/use-fastapi-lifespan.md)
+instead of constructing separate auth instances for client and transport.
+
 ## Define typed settings per upstream
 
 Use one `HTTPSettings` subclass per upstream backend. This keeps auth and retry
