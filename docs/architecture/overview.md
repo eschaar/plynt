@@ -101,7 +101,13 @@ The core remains free of those optional dependencies.
 Full tests exercise all implemented extras. Separate clean wheel installation
 tests verify that each documented profile works without development tooling. The
 wheel is built from the source distribution, not from an editable install.
-Codegen is pinned and compared against committed output.
+Codegen is exactly pinned in dependency manifests and compared against committed
+output. Consumer runtime minima must satisfy the generated runtime checks, with
+finite major-version upper bounds. Routine same-major tool/runtime refreshes
+require reviewed, reproducible generation and fresh minimum/current-runtime,
+installed-wheel, and supported-matrix evidence under
+[ADR-0044](adr/0044-grpc-toolchain-upgrade-policy.md). Major or architectural
+boundary changes require a separate decision; codegen remains development-only.
 
 Full coverage runs enforce 100% statement coverage in the existing measured
 source scope. This is not branch coverage or proof of provider correctness. The
@@ -112,7 +118,11 @@ Experimental connectors require provider-specific validation beyond local tests.
 Their operational requirements are documented with each connector. See
 [ADR-0031](adr/0031-experimental-release-installation-contract.md) for the
 installation and acceptance contract. The generator refresh and gRPC runtime
-alignment are recorded in [ADR-0032](adr/0032-grpc-codegen-version-refresh.md).
+alignment for the historical 1.84.0 refresh are recorded in
+[ADR-0032](adr/0032-grpc-codegen-version-refresh.md).
+[ADR-0044](adr/0044-grpc-toolchain-upgrade-policy.md) approves the next 1.85.0
+refresh and governs later routine upgrades; implementation and verification
+remain required, and no provider-readiness claim follows from this approval.
 Python support, the 3.14 default, and the local `.venv`/pyenv bootstrap are in
 [ADR-0033](adr/0033-python-315-support-and-local-pyenv.md). Python 3.11 removal
 and Django 6.1 requirements are recorded in

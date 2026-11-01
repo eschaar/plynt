@@ -3,6 +3,12 @@
 **Date:** 2026-10-13
 **Status:** Accepted
 
+**Version follow-up:** [ADR-0032](0032-grpc-codegen-version-refresh.md)
+superseded the original gRPC version selections.
+[ADR-0044](0044-grpc-toolchain-upgrade-policy.md) now governs subsequent
+toolchain refreshes and pin placement. The historical decision below retains
+its installation and reproducibility requirements.
+
 ## Context
 
 The first experimental release candidate must work outside an editable
