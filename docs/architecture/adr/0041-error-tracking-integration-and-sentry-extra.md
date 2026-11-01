@@ -1,7 +1,7 @@
 # ADR-0041: Error-Tracking Integration and Sentry Extra
 
 **Date:** 2026-11-01
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 
@@ -18,7 +18,7 @@ or organization-specific conventions.
 
 ## Decision
 
-Proposed:
+We will:
 
 1. Add a small `ErrorReporter` protocol in the core with sync and async
    methods that receive an exception and a redacted context mapping and

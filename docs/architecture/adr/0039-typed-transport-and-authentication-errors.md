@@ -1,7 +1,7 @@
 # ADR-0039: Typed Transport and Authentication Errors
 
 **Date:** 2026-11-01
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 
@@ -23,7 +23,7 @@ for that normalization. This record revisits that alternative explicitly.
 
 ## Decision
 
-Proposed:
+We will:
 
 1. Add two protocol-agnostic subclasses of `TransportError` in
    `plynt.base.errors`:

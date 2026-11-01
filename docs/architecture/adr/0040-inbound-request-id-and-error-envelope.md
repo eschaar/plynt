@@ -1,7 +1,7 @@
 # ADR-0040: Inbound Request ID and Error Envelope
 
 **Date:** 2026-11-01
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 
@@ -24,7 +24,7 @@ would duplicate the same validation, context, and formatting rules.
 
 ## Decision
 
-Proposed:
+We will:
 
 1. Add a framework-agnostic request-context module to the core, without
    new dependencies:
@@ -47,6 +47,17 @@ Proposed:
      FastAPI exception mapping accepts an envelope callable.
 1. Rejected or missing inbound IDs are replaced by a generated ID. They
    never cause a request to fail.
+1. Plynt does not read, change, or normalize trailing-slash behavior.
+   Inbound slash handling stays a framework setting of the application
+   (Django `APPEND_SLASH`, Starlette `redirect_slashes`), and outbound
+   paths stay exactly as each service defines them. The request-ID
+   middleware never derives anything from the path, and logs record the
+   path as received.
+1. The request-ID middleware runs before framework redirects, so slash
+   redirects and other early responses also carry the request ID:
+   - Django: document placement above `CommonMiddleware` in `MIDDLEWARE`.
+   - FastAPI and ASGI: wrapping the app as ASGI middleware places it
+     before router redirects by construction.
 
 ## Alternatives Considered
 
@@ -92,6 +103,28 @@ few lines of glue.
   test concurrent sync and async requests.
 - Header injection through crafted IDs. Mitigation: strict validation
   before use in responses, upstream headers, or logs.
+- Log forging and oversized values from client-supplied IDs.
+  Mitigation: a maximum length (128 characters by default) and an
+  allowed character set of letters, digits, `-`, `_`, `.`, and `:`.
+  Invalid values are replaced, never echoed.
+- Trusting IDs from untrusted callers. Mitigation: an option to always
+  generate a new ID, for services exposed directly to the internet. The
+  request ID is a correlation value only and never used for
+  authorization or idempotency.
+- Context missing in worker threads, for example `run_in_executor` or
+  Django `sync_to_async`. Mitigation: document `contextvars.copy_context`
+  and test that the ID is visible in Django sync/async views and FastAPI
+  sync and async endpoints.
+- Missing request ID on slash redirects or other responses produced
+  before the view. Mitigation: placement rules above, with Django and
+  FastAPI tests that request a path with and without a trailing slash and
+  assert the header on both the redirect and the final response.
+- Duplicate or conflicting outbound headers when the application also
+  forwards the inbound header. Mitigation: the outbound option sets the
+  header only when absent, and tests cover both configurations.
+- Error envelope callables that raise or leak details. Mitigation: fall
+  back to the default envelope when the callable raises, log the failure,
+  and never include tracebacks or response bodies in the default.
 
 ## Related ADRs
 

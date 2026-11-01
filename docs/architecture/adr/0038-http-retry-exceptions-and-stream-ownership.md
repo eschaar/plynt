@@ -1,7 +1,9 @@
 # ADR-0038: HTTP Retry Exceptions and Stream Ownership
 
 **Date:** 2026-10-26
-**Status:** Accepted
+**Status:** Accepted (partially superseded by
+[ADR-0039](0039-typed-transport-and-authentication-errors.md) for transport
+exception normalization)
 
 ## Context
 

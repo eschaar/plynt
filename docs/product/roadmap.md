@@ -24,19 +24,19 @@ ______________________________________________________________________
 | 1e  | `TracingMiddleware` `plynt[otel]`                 | **Conditional**  | ADR required; use OTel auto-instrumentation unless plynt spans are needed           |
 | 1f  | `MetricsMiddleware` `plynt[prometheus]`           | **Conditional**  | ADR required; use OTel unless standalone metrics are needed                         |
 | 1g  | `MockMiddleware`                                  | **Planned**      | Test/dev only; Tier 3                                                               |
-| 1h  | Error-tracking integration `plynt[sentry]`        | **Idea**         | Vendor-neutral reporting hook with optional Sentry adapter; proposed ADR-0041       |
+| 1h  | Error-tracking integration `plynt[sentry]`        | **Planned**      | Vendor-neutral reporting hook with optional Sentry adapter; ADR-0041 accepted       |
 | 2   | Salesforce connector — REST + Bulk + AI           | **Done**         | SObject, Query, Bulk 2.0, Composite, Metadata, Identity, Models API, Agent API      |
 | 2f  | Salesforce Pub/Sub CDC                            | **Experimental** | Implemented; real-org replay and lifecycle validation pending                       |
 | 2g  | `plynt-salesforce` package extraction             | **Deferred**     | After multi-connector gate                                                          |
 | 2l  | Salesforce GraphQL API                            | **Conditional**  | Implement on repeated demand only                                                   |
-| 2o  | Async auth lifecycle and typing gaps              | **In progress**  | Quick wins done; typed errors in proposed ADR-0039, lifespan pattern open           |
+| 2o  | Async auth lifecycle and typing gaps              | **In progress**  | Quick wins done; typed errors per ADR-0039 (accepted), lifespan pattern open        |
 | 3   | Streaming response (SSE / chunked HTTP)           | **Done**         | ADR-0017; enables Salesforce AI and LLM connector                                   |
 | 3b  | Raw response access on `APIClient`                | **Done**         | ADR-0018; `request(..., raw=True)` bypasses typed status mapping                    |
 | 4a  | Django core adapter `plynt[django]`               | **Done**         | Shipped in v0.8.0; settings bridge, cache backend, transport helpers                |
 | 4b  | DRF integration layer `plynt[drf]`                | **Done**         | Shipped in v0.8.0; mixins, header helpers, sync/async support                       |
 | 4c  | FastAPI framework adapter `plynt[fastapi]`        | **Done**         | Implemented; lifespan, DI, headers, exception mapping, sync/async usage docs        |
 | 4d  | Flask framework adapter `plynt[flask]`            | **Conditional**  | Convenience layer only; validate demand before ADR                                  |
-| 4e  | Inbound request-ID and error envelope helpers     | **Idea**         | Framework-agnostic core with thin Django, DRF, FastAPI adapters; proposed ADR-0040  |
+| 4e  | Inbound request-ID and error envelope helpers     | **Planned**      | Framework-agnostic core with thin Django, DRF, FastAPI adapters; ADR-0040 accepted  |
 | 5   | Cache backend documentation                       | **Done**         | Redis SSL, framework-native wrapping, and custom backend how-to guides added        |
 | 6   | gRPC transport `plynt[grpc]`                      | **Implemented**  | ADR-0030; async calls and optional runtime                                          |
 | 7   | AI / LLM connector `plynt.connectors.llm`         | **Done**         | Generic contract, sync/async parity, OpenAI and Anthropic adapters                  |
@@ -653,7 +653,7 @@ message flows now build on the current response and transport model.
 
 Done: the `py.typed` marker, `close()` / `aclose()` on the OAuth2
 middleware, JWT bearer auth on both Salesforce clients, and the SObject
-docstring alignment. Typed token and transport failures are proposed in
+docstring alignment. Typed token and transport failures are decided in
 [ADR-0039](../architecture/adr/0039-typed-transport-and-authentication-errors.md).
 The FastAPI lifespan pattern is still open.
 
