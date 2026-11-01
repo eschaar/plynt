@@ -30,6 +30,13 @@ execution-local reporting context for observed retry information.
 - Reporting middleware opens a fresh per-call observation scope.
   Retry middleware updates that scope immediately before each delegated
   attempt. No scope means no telemetry work or retained retry state.
+- Store reporting observations in one immutable state value in one ContextVar.
+  An absent state means reporting is inactive; an active state with no attempt
+  observation keeps counts unavailable. Updates replace the state instead of
+  mutating an object shared through copied execution contexts.
+- Keep the inbound request-ID context separate: one inbound request may contain
+  several independent outbound reporting scopes. No generic context registry
+  or contextmanager wrapper is required.
 - Record `attempts` as the number of delegated retry-loop calls and
   `retries` as attempts after the first. These are not wire-send counts:
   inner middleware may short-circuit before transport I/O.

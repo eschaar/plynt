@@ -4,7 +4,7 @@ This index lists architecture decision records (ADRs) for Plynt.
 
 ## Status Summary
 
-- Accepted: 42
+- Accepted: 43
 - Proposed: 0
 
 ## ADR List
@@ -55,6 +55,7 @@ This index lists architecture decision records (ADRs) for Plynt.
 | [ADR-0040](0040-inbound-request-id-and-error-envelope.md)           | Inbound Request ID and Error Envelope                      | Accepted |
 | [ADR-0041](0041-error-tracking-integration-and-sentry-extra.md)     | Error-Tracking Integration and Sentry Extra                | Accepted |
 | [ADR-0042](0042-error-reporting-context-handoff.md)                 | Error-Reporting Context Handoff                            | Accepted |
+| [ADR-0043](0043-exception-bound-error-event-ids.md)                 | Exception-Bound Error Event IDs                            | Accepted |
 
 <!-- markdownlint-enable MD060 -->
 
@@ -68,4 +69,4 @@ Add an ADR for changes that affect:
 - middleware execution semantics,
 - installation extras or optional-framework strategy.
 
-Use the next sequential number (currently: `0043`).
+Use the next sequential number (currently: `0044`).
