@@ -11,6 +11,7 @@ Available components:
   per-window limit, preventing log- and Sentry-flooding from noisy upstreams.
 - ``ExceptionInfoFilter`` — injects active exception context into records
   that were emitted without it.
+- ``RequestIDFilter`` — attaches the current request ID to every record.
 - ``PlyntHTTPFilter`` — convenience subclass of ``ThrottleLogs``
   pre-configured for the ``plynt.http`` logger with sensible defaults.
 - ``StructuredFormatter`` — renders log records as single-line JSON objects
@@ -34,12 +35,18 @@ Usage example::
 
 from __future__ import annotations
 
-from plynt.log.filters import ExceptionInfoFilter, PlyntHTTPFilter, ThrottleLogs
+from plynt.log.filters import (
+    ExceptionInfoFilter,
+    PlyntHTTPFilter,
+    RequestIDFilter,
+    ThrottleLogs,
+)
 from plynt.log.formatter import StructuredFormatter
 
 __all__ = [
     "ExceptionInfoFilter",
     "PlyntHTTPFilter",
+    "RequestIDFilter",
     "StructuredFormatter",
     "ThrottleLogs",
 ]

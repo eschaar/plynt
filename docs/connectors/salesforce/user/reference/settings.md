@@ -1,6 +1,6 @@
 # Settings reference: `SalesforceSettings`
 
-`SalesforceSettings` extends `ApiSettings` (from `plynt.base.settings`) with
+`SalesforceSettings` extends `ApiSettings` (from `plynt.http.settings`) with
 Salesforce-specific configuration fields.
 
 ## Fields

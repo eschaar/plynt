@@ -363,7 +363,7 @@ class TestPlyntExceptionHandler:
         monkeypatch.setattr(
             drf_errors,
             "map_exception_to_drf_response",
-            lambda exc: fallback,
+            lambda exc, **kwargs: fallback,
         )
 
         def _import_module(name: str) -> Any:

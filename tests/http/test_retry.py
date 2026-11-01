@@ -8,6 +8,12 @@ from unittest.mock import AsyncMock, Mock
 import httpx2 as httpx
 import pytest
 
+from plynt.base.errors import (
+    AuthenticationError,
+    TransportConnectionError,
+    TransportError,
+    TransportTimeoutError,
+)
 from plynt.base.policies import RetryPolicy
 from plynt.base.request import Request
 from plynt.base.response import AsyncStreamingResponse, StreamingResponse
@@ -81,6 +87,8 @@ class TestHttpRetryPolicy:
     @pytest.mark.parametrize(
         "error",
         [
+            TransportConnectionError(),
+            TransportTimeoutError(),
             httpx.ConnectError("connection failed"),
             httpx.ReadError("connection reset"),
             httpx.WriteError("connection reset"),
@@ -103,6 +111,8 @@ class TestHttpRetryPolicy:
     @pytest.mark.parametrize(
         "error",
         [
+            TransportError(),
+            AuthenticationError(status_code=401),
             httpx.LocalProtocolError("invalid request"),
             httpx.UnsupportedProtocol("unsupported URL"),
             httpx.HTTPStatusError(
@@ -125,6 +135,8 @@ class TestHttpRetryPolicy:
         )
         assert policy.retryable_exception_classifier(ValueError())
         assert not policy.retryable_exception_classifier(httpx.ConnectError("failed"))
+        assert not policy.retryable_exception_classifier(TransportConnectionError())
+        assert not policy.retryable_exception_classifier(TransportTimeoutError())
 
 
 class TestHttpRetryRecovery:
@@ -211,10 +223,10 @@ class TestHttpNetworkRetries:
             client=httpx.Client(transport=httpx.MockTransport(handler)),
             middlewares=[RetryMiddleware(policy)],
         ) as transport:
-            with pytest.raises(error_type) as raised:
+            with pytest.raises(TransportError) as raised:
                 transport.send(Request("GET", "https://example.com", stream=stream))
 
-        assert raised.value is error
+        assert raised.value.__cause__ is error
         assert len(requests) == expected_attempts
 
     @pytest.mark.asyncio
@@ -236,12 +248,12 @@ class TestHttpNetworkRetries:
             client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
             middlewares=[AsyncRetryMiddleware(policy)],
         ) as transport:
-            with pytest.raises(error_type) as raised:
+            with pytest.raises(TransportError) as raised:
                 await transport.send(
                     Request("GET", "https://example.com", stream=stream)
                 )
 
-        assert raised.value is error
+        assert raised.value.__cause__ is error
         assert len(requests) == expected_attempts
 
 

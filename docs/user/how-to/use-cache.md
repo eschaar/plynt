@@ -87,8 +87,8 @@ Alternatively, omit `CacheMiddleware` entirely in the test transport.
 
 ## Placement in the middleware stack
 
-Place `CacheMiddleware` **outermost** (first in the list). A cache hit
-skips auth token fetching, retry, circuit breaking, and network I/O:
+Place `CacheMiddleware` **outermost** (first in the list). A cache hit skips
+auth token fetching, retry, circuit breaking, and network I/O:
 
 ```python
 middlewares = [
@@ -101,8 +101,8 @@ middlewares = [
 
 ## Async
 
-Use `AsyncCacheMiddleware` with `HttpxAsyncTransport`. The cache backend is
-the same; no async-specific backend is needed:
+Use `AsyncCacheMiddleware` with `HttpxAsyncTransport`. The cache backend is the
+same; no async-specific backend is needed:
 
 ```python
 from plynt.middleware.cache import AsyncCacheMiddleware
@@ -112,46 +112,11 @@ transport = HttpxAsyncTransport(
 )
 ```
 
-## Wrap framework-native caches behind Plynt's cache protocol
-
-Any object that implements `get`, `set`, and `delete` with compatible
-semantics can be used as a Plynt cache backend.
-
-Example wrapper for Django's `django.core.cache`:
-
-```python
-from typing import Any
-
-
-class DjangoCacheAdapter:
-    def __init__(self, django_cache: Any) -> None:
-        self._cache = django_cache
-
-    def get(self, key: str) -> object | None:
-        return self._cache.get(key)
-
-    def set(self, key: str, value: object, ttl: float | None = None) -> None:
-        timeout = None if ttl is None else int(ttl)
-        self._cache.set(key, value, timeout=timeout)
-
-    def delete(self, key: str) -> None:
-        self._cache.delete(key)
-```
-
-Use this adapter exactly like built-in backends:
-
-```python
-from django.core.cache import caches
-from plynt.middleware.cache import CacheMiddleware
-
-cache_backend = DjangoCacheAdapter(caches["default"])
-middleware = CacheMiddleware(cache_backend, ttl=300)
-```
-
 ## Implement a custom cache backend
 
-For non-framework systems, implement a small adapter class with the same three
-methods.
+Implement `get`, `set`, `delete`, and `clear` with the `CacheBackend` contract.
+Framework-specific implementations are documented in the
+[adapter guides](../../adapters/README.md).
 
 ```python
 from collections.abc import MutableMapping
@@ -161,8 +126,8 @@ class DictCacheAdapter:
     def __init__(self, store: MutableMapping[str, object]) -> None:
         self._store = store
 
-    def get(self, key: str) -> object | None:
-        return self._store.get(key)
+    def get(self, key: str, default: object = None) -> object:
+        return self._store.get(key, default)
 
     def set(self, key: str, value: object, ttl: float | None = None) -> None:
         # This adapter ignores ttl; add expiry handling if needed.
@@ -170,10 +135,12 @@ class DictCacheAdapter:
 
     def delete(self, key: str) -> None:
         self._store.pop(key, None)
+
+    def clear(self) -> None:
+        self._store.clear()
 ```
 
-Start simple, then add TTL or eviction behavior only when your runtime needs
-it.
+Start simple, then add TTL or eviction behavior only when your runtime needs it.
 
 ## Reference
 

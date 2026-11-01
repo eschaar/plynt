@@ -7,14 +7,17 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx2 as httpx
 import pytest
 
 from plynt.base.request import Request
 from plynt.connectors.salesforce.auth import (
     AsyncSalesforceClientCredentialsAuthMiddleware,
+    AsyncSalesforceJWTBearerAuthMiddleware,
     AsyncSalesforcePasswordAuthMiddleware,
     AsyncSalesforceSessionAuthMiddleware,
     SalesforceClientCredentialsAuthMiddleware,
+    SalesforceJWTBearerAuthMiddleware,
     SalesforcePasswordAuthMiddleware,
     SalesforceSessionAuthMiddleware,
 )
@@ -31,7 +34,12 @@ from plynt.connectors.salesforce.errors import (
 from plynt.http.client import APIClient, AsyncAPIClient
 from plynt.http.errors import NotFoundError, UnauthorizedError
 from plynt.http.renderer import JSONRenderer
+from plynt.http.transport import HttpxAsyncTransport, HttpxSyncTransport
 from tests.conftest import MockAsyncTransport, MockSyncTransport
+from tests.connectors.salesforce.auth.helpers import (
+    DUMMY_JWT_USERNAME,
+    DUMMY_PRIVATE_KEY,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -199,6 +207,50 @@ class TestSalesforceAPIClient:
         client.get(SERVICE_PATH)
         sent: Request = transport.send.call_args[0][0]
         assert sent.url.startswith(INSTANCE_URL)
+
+    def test_accepts_jwt_auth_with_http_mock(self) -> None:
+        """Use JWT auth to fetch instance URL and make a mocked API call."""
+        requests: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            if request.url.path == "/services/oauth2/token":
+                return httpx.Response(
+                    200,
+                    json={
+                        "access_token": "jwt-access-token",
+                        "expires_in": 3600,
+                        "instance_url": INSTANCE_URL,
+                    },
+                )
+            return httpx.Response(200, content=b"{}")
+
+        auth = SalesforceJWTBearerAuthMiddleware(
+            client_id="client-id",
+            username=DUMMY_JWT_USERNAME,
+            private_key=DUMMY_PRIVATE_KEY,
+            token_url="https://login.salesforce.com/services/oauth2/token",
+        )
+        auth._transport = HttpxSyncTransport(
+            client=httpx.Client(transport=httpx.MockTransport(handler))
+        )
+        transport = HttpxSyncTransport(
+            client=httpx.Client(transport=httpx.MockTransport(handler)),
+            middlewares=[auth],
+        )
+        client = SalesforceAPIClient(auth=auth, transport=transport)
+
+        try:
+            client.get(SERVICE_PATH)
+        finally:
+            transport.close()
+            auth.close()
+
+        assert [request.url.path for request in requests] == [
+            "/services/oauth2/token",
+            SERVICE_PATH,
+        ]
+        assert requests[1].headers["Authorization"] == "Bearer jwt-access-token"
 
     def test_accepts_session_auth_middleware(self) -> None:
         """Validate client works with direct session/token auth middleware."""
@@ -446,6 +498,50 @@ class TestAsyncSalesforceAPIClient:
         await client.get(SERVICE_PATH)
         sent: Request = transport.send.call_args[0][0]
         assert sent.url.startswith(INSTANCE_URL)
+
+    async def test_accepts_async_jwt_auth_with_http_mock(self) -> None:
+        """Use JWT auth to fetch instance URL and make a mocked API call."""
+        requests: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            if request.url.path == "/services/oauth2/token":
+                return httpx.Response(
+                    200,
+                    json={
+                        "access_token": "jwt-access-token",
+                        "expires_in": 3600,
+                        "instance_url": INSTANCE_URL,
+                    },
+                )
+            return httpx.Response(200, content=b"{}")
+
+        auth = AsyncSalesforceJWTBearerAuthMiddleware(
+            client_id="client-id",
+            username=DUMMY_JWT_USERNAME,
+            private_key=DUMMY_PRIVATE_KEY,
+            token_url="https://login.salesforce.com/services/oauth2/token",
+        )
+        auth._transport = HttpxAsyncTransport(
+            client=httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        )
+        transport = HttpxAsyncTransport(
+            client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+            middlewares=[auth],
+        )
+        client = AsyncSalesforceAPIClient(auth=auth, transport=transport)
+
+        try:
+            await client.get(SERVICE_PATH)
+        finally:
+            await transport.aclose()
+            await auth.aclose()
+
+        assert [request.url.path for request in requests] == [
+            "/services/oauth2/token",
+            SERVICE_PATH,
+        ]
+        assert requests[1].headers["Authorization"] == "Bearer jwt-access-token"
 
     async def test_get_api_version_discovers_latest_from_versions_endpoint(
         self,

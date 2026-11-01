@@ -1,12 +1,15 @@
 import pytest
 
 from plynt.base.errors import (
+    AuthenticationError,
     BaseError,
     DependencyUnavailableError,
     FeatureDisabledError,
     InvalidInputError,
     StatusError,
+    TransportConnectionError,
     TransportError,
+    TransportTimeoutError,
 )
 
 
@@ -96,6 +99,113 @@ class TestTransportError:
         """Validate custom message."""
         err = TransportError("Connection refused")
         assert err.message == "Connection refused"
+
+
+@pytest.mark.parametrize(
+    ("error_type", "code", "message"),
+    [
+        (
+            TransportTimeoutError,
+            "TRANSPORT_TIMEOUT",
+            "The transport operation timed out",
+        ),
+        (
+            TransportConnectionError,
+            "TRANSPORT_CONNECTION_ERROR",
+            "The transport connection failed",
+        ),
+    ],
+)
+class TestTypedTransportErrors:
+    def test_default_contract(
+        self, error_type: type[TransportError], code: str, message: str
+    ) -> None:
+        error = error_type()
+
+        assert isinstance(error, BaseError)
+        assert isinstance(error, TransportError)
+        assert not isinstance(error, StatusError)
+        assert error.message == message
+        assert error.code == code
+        assert error.to_dict() == {"message": message, "code": code}
+
+    def test_custom_contract_round_trip(
+        self, error_type: type[TransportError], code: str, message: str
+    ) -> None:
+        error = error_type(
+            "Custom failure", code="CUSTOM", details={"operation": "send"}
+        )
+        restored = error_type.from_dict(error.to_dict())
+
+        assert type(restored) is error_type
+        assert restored.to_dict() == {
+            "message": "Custom failure",
+            "code": "CUSTOM",
+            "details": {"operation": "send"},
+        }
+        assert error_type.__name__ in str(restored)
+        assert "Custom failure" in str(restored)
+        assert restored.code != code
+        assert restored.message != message
+
+    def test_explicit_cause_is_preserved(
+        self, error_type: type[TransportError], code: str, message: str
+    ) -> None:
+        cause = OSError("Network failure")
+
+        with pytest.raises(TransportError) as caught:
+            raise error_type() from cause
+
+        assert type(caught.value) is error_type
+        assert caught.value.__cause__ is cause
+        assert caught.value.code == code
+        assert caught.value.message == message
+
+
+class TestAuthenticationError:
+    @pytest.mark.parametrize("status_code", [400, 401, 403, 500])
+    def test_status_code_has_safe_structured_representation(
+        self, status_code: int
+    ) -> None:
+        error = AuthenticationError(status_code=status_code)
+
+        assert isinstance(error, BaseError)
+        assert isinstance(error, TransportError)
+        assert isinstance(error, RuntimeError)
+        assert not isinstance(error, StatusError)
+        assert error.status_code == status_code
+        assert error.response_body is None
+        assert error.to_dict() == {
+            "message": f"Authentication failed with status {status_code}",
+            "code": "AUTHENTICATION_ERROR",
+            "details": {"status_code": status_code},
+        }
+
+    @pytest.mark.parametrize("body", [b"", b"Upstream diagnostic text", b"\xff\x00"])
+    def test_response_body_is_available_but_excluded_from_output(
+        self, body: bytes
+    ) -> None:
+        error = AuthenticationError(status_code=401, response_body=body)
+        without_body = AuthenticationError(status_code=401)
+
+        assert error.response_body == body
+        assert error.message == without_body.message
+        assert error.args == without_body.args
+        assert str(error) == str(without_body)
+        assert repr(error) == repr(without_body)
+        assert error.to_dict() == without_body.to_dict()
+
+    def test_existing_runtime_error_handler_catches_authentication_error(self) -> None:
+        error = AuthenticationError(status_code=401)
+
+        with pytest.raises(RuntimeError) as caught:
+            raise error
+
+        assert caught.value is error
+
+    def test_status_code_is_required(self) -> None:
+        with pytest.raises(TypeError):
+            AuthenticationError()  # type: ignore[call-arg]
 
 
 class TestStatusError:

@@ -14,6 +14,11 @@ import httpx2 as httpx
 import pytest
 
 import plynt.http.transport as transport_module
+from plynt.base.errors import (
+    TransportConnectionError,
+    TransportError,
+    TransportTimeoutError,
+)
 from plynt.base.middleware import (
     AsyncMiddleware,
     NextAsyncHandler,
@@ -55,6 +60,81 @@ from tests.http.conftest import (
 # ---------------------------------------------------------------------------
 # Typed-settings helpers for auth (ADR-0011)
 # ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("stream", [False, True])
+@pytest.mark.parametrize(
+    ("backend_error_type", "expected_type"),
+    [
+        (httpx.ConnectTimeout, TransportTimeoutError),
+        (httpx.ReadTimeout, TransportTimeoutError),
+        (httpx.WriteTimeout, TransportTimeoutError),
+        (httpx.PoolTimeout, TransportTimeoutError),
+        (httpx.ConnectError, TransportConnectionError),
+        (httpx.ReadError, TransportConnectionError),
+        (httpx.WriteError, TransportConnectionError),
+        (httpx.CloseError, TransportConnectionError),
+        (httpx.ProxyError, TransportConnectionError),
+        (httpx.RemoteProtocolError, TransportConnectionError),
+        (httpx.LocalProtocolError, httpx.LocalProtocolError),
+        (httpx.UnsupportedProtocol, httpx.UnsupportedProtocol),
+        (ValueError, ValueError),
+        (TypeError, TypeError),
+    ],
+)
+class TestTransportErrorMapping:
+    def test_sync_maps_only_network_failures(
+        self,
+        stream: bool,
+        backend_error_type: type[Exception],
+        expected_type: type[Exception],
+    ) -> None:
+        error = backend_error_type("Backend diagnostic text")
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            raise error
+
+        with HttpxSyncTransport(
+            client=httpx.Client(transport=httpx.MockTransport(handler))
+        ) as transport:
+            with pytest.raises(expected_type) as caught:
+                transport.send(Request("GET", "https://example.com", stream=stream))
+
+        assert type(caught.value) is expected_type
+        if isinstance(caught.value, TransportError):
+            assert caught.value.__cause__ is error
+            assert "Backend diagnostic text" not in str(caught.value)
+            assert "Backend diagnostic text" not in repr(caught.value)
+        else:
+            assert caught.value is error
+
+    @pytest.mark.asyncio
+    async def test_async_maps_only_network_failures(
+        self,
+        stream: bool,
+        backend_error_type: type[Exception],
+        expected_type: type[Exception],
+    ) -> None:
+        error = backend_error_type("Backend diagnostic text")
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            raise error
+
+        async with HttpxAsyncTransport(
+            client=httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        ) as transport:
+            with pytest.raises(expected_type) as caught:
+                await transport.send(
+                    Request("GET", "https://example.com", stream=stream)
+                )
+
+        assert type(caught.value) is expected_type
+        if isinstance(caught.value, TransportError):
+            assert caught.value.__cause__ is error
+            assert "Backend diagnostic text" not in str(caught.value)
+            assert "Backend diagnostic text" not in repr(caught.value)
+        else:
+            assert caught.value is error
 
 
 class _BearerSettings(HTTPSettings):

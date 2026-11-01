@@ -9,6 +9,11 @@ Plynt is a framework-agnostic API client foundation. It separates generic
 transport and middleware concerns from protocol-specific implementations and
 domain connectors.
 
+## System Style
+
+**backend-only** — Plynt is a Python client library and integration foundation;
+it provides no first-party user interface.
+
 ## Layer Model
 
 Plynt uses a layered model where responsibility is explicit and composable:
@@ -19,24 +24,24 @@ Plynt uses a layered model where responsibility is explicit and composable:
 1. Client layer (`plynt.http.client`)
 1. Service layer (`plynt.http.service` and connector services)
 
-Core abstractions live in `plynt.base` and are protocol-agnostic.
-HTTP-specific implementations live in `plynt.http`.
-Business connectors (for example Salesforce) live in `plynt.connectors.*`.
+Core abstractions live in `plynt.base` and are protocol-agnostic. HTTP-specific
+implementations live in `plynt.http`. Business connectors (for example
+Salesforce) live in `plynt.connectors.*`.
 
 `plynt.grpc` is a sibling protocol namespace with async transport, client,
 settings, errors, interceptors, and protobuf helpers. It does not define
-Salesforce replay, checkpoints, Avro decoding, or subscription flow control.
-See [ADR-0030](adr/0030-grpc-protocol-boundary.md).
+Salesforce replay, checkpoints, Avro decoding, or subscription flow control. See
+[ADR-0030](adr/0030-grpc-protocol-boundary.md).
 
 ## Connector vs Adapter
 
 Use these terms consistently:
 
-- **Connector**: domain-facing integration surface for an external platform.
-  A connector owns domain models and service orchestration for that platform.
+- **Connector**: domain-facing integration surface for an external platform. A
+  connector owns domain models and service orchestration for that platform.
   Examples: `plynt.connectors.salesforce`, `plynt.connectors.llm`.
-- **Adapter**: interface translation component between two boundaries.
-  Adapters translate payloads, framework contracts, or transport concerns.
+- **Adapter**: interface translation component between two boundaries. Adapters
+  translate payloads, framework contracts, or transport concerns.
 
 Typical placement:
 
@@ -44,23 +49,8 @@ Typical placement:
 - Provider adapters can live inside a connector when one connector supports
   multiple providers under a shared contract.
 
-Current FastAPI adapter capabilities include:
-
-1. lifespan-based transport lifecycle management,
-1. dependency factories for transport/client/service resolution,
-1. bundled service-dependency helpers for router setup,
-1. request-header propagation helpers,
-1. plynt exception-to-JSON response mapping helpers.
-
-## Framework Adapter Capability Matrix
-
-This matrix summarizes the currently shipped adapter surface.
-
-| Adapter          | Lifecycle boundary | Transport/client DI | Service DI | Header propagation | Error mapping | Sync | Async |
-| ---------------- | ------------------ | ------------------- | ---------- | ------------------ | ------------- | ---- | ----- |
-| Django core      | Request/view scope | Via helper function | N/A        | N/A                | N/A           | Yes  | Yes   |
-| Django DRF layer | Request lifecycle  | Yes                 | Yes        | Yes                | Yes           | Yes  | Yes   |
-| FastAPI adapter  | ASGI lifespan      | Yes                 | Yes        | Yes                | Yes           | Yes  | Yes   |
+Framework-specific capabilities and usage live in the
+[adapter documentation](../adapters/README.md).
 
 ## Runtime Flow
 
@@ -85,56 +75,55 @@ Canonical order:
 1. Rate limit middleware
 1. Retry middleware (innermost above I/O)
 
-This keeps cross-cutting behavior reusable and explicit.
-The HTTP middleware chain is not reused by gRPC; that protocol has its own
-interceptor and metadata boundaries.
+This keeps cross-cutting behavior reusable and explicit. The HTTP middleware
+chain is not reused by gRPC; that protocol has its own interceptor and metadata
+boundaries.
 
 ## Sync and Async Strategy
 
 Sync and async variants share architecture and naming patterns. I/O mode is a
 transport concern, while service/domain semantics stay execution-model agnostic.
-HTTP capabilities retain sync/async parity. The initial gRPC foundation and
-Salesforce CDC subscriber are async-only; no sync eventing API is promised.
+HTTP capabilities retain sync/async parity. The initial gRPC foundation is
+async-only. Connector-specific execution-model support is documented by each
+connector.
 
 ## Configuration Strategy
 
-Configuration is typed and environment-driven through settings classes.
-HTTP settings can wire auth and cache configuration into transport factories.
-No framework-specific configuration logic is allowed in the core package.
+Configuration is typed and environment-driven through settings classes. HTTP
+settings can wire auth and cache configuration into transport factories. No
+framework-specific configuration logic is allowed in the core package.
 
 ## Experimental Release Boundary
 
-Salesforce CDC composes `plynt[grpc,salesforce]`: gRPC and protobuf stay in
-the protocol extra, while Avro decoding belongs to the Salesforce extra.
-The core remains free of those runtime dependencies.
+Protocol and connector runtime dependencies stay behind their respective extras.
+The core remains free of those optional dependencies.
 
 Full tests exercise all implemented extras. Separate clean wheel installation
-tests verify that each documented profile works without development tooling.
-The wheel is built from the source distribution, not from an editable install.
+tests verify that each documented profile works without development tooling. The
+wheel is built from the source distribution, not from an editable install.
 Codegen is pinned and compared against committed output.
 
 Full coverage runs enforce 100% statement coverage in the existing measured
-source scope. This is not branch coverage or proof of provider correctness.
-The supported Linux Python 3.12-3.15 matrix and installed-wheel checks remain
+source scope. This is not branch coverage or proof of provider correctness. The
+supported Linux Python 3.12-3.15 matrix and installed-wheel checks remain
 separate acceptance gates.
 
-CDC remains experimental pending validation of authentication, real schemas,
-long-running operation, and opaque replay cursor fidelity against Salesforce.
-See [ADR-0031](adr/0031-experimental-release-installation-contract.md) for the
-installation and acceptance contract.
-The generator refresh and gRPC runtime alignment are recorded in
-[ADR-0032](adr/0032-grpc-codegen-version-refresh.md).
+Experimental connectors require provider-specific validation beyond local tests.
+Their operational requirements are documented with each connector. See
+[ADR-0031](adr/0031-experimental-release-installation-contract.md) for the
+installation and acceptance contract. The generator refresh and gRPC runtime
+alignment are recorded in [ADR-0032](adr/0032-grpc-codegen-version-refresh.md).
 Python support, the 3.14 default, and the local `.venv`/pyenv bootstrap are in
-[ADR-0033](adr/0033-python-315-support-and-local-pyenv.md).
-Python 3.11 removal and Django 6.1 requirements are recorded in
-[ADR-0034](adr/0034-django-6-support.md).
-See the [current hardening evidence](../releases/2026-10-13-experimental-rc-hardening-evidence.md)
-for verified revisions and outstanding checks. Versions and tags are owned
-by CI/CD and release-please; passing local gates does not approve publication.
+[ADR-0033](adr/0033-python-315-support-and-local-pyenv.md). Python 3.11 removal
+and Django 6.1 requirements are recorded in
+[ADR-0034](adr/0034-django-6-support.md). See the
+[current hardening evidence](../releases/2026-10-13-experimental-rc-hardening-evidence.md)
+for verified revisions and outstanding checks. Versions and tags are owned by
+CI/CD and release-please; passing local gates does not approve publication.
 
 ## ADRs
 
-Architecture decisions are captured in ADRs under `docs/architecture/adr/`.
-Use the ADR index for status and scope:
+Architecture decisions are captured in ADRs under `docs/architecture/adr/`. Use
+the ADR index for status and scope:
 
 - [ADR Index](adr/README.md)

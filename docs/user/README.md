@@ -1,10 +1,9 @@
 # Plynt user documentation
 
-Plynt is a framework-agnostic Python HTTP client library. It provides a
-layered architecture — transport, middleware, client, and service — that
-makes it easy to integrate with external APIs and to add cross-cutting
-concerns (caching, retries, circuit breaking, authentication, logging) in a
-composable way.
+Plynt is a framework-agnostic Python HTTP client library. It provides a layered
+architecture — transport, middleware, client, and service — that makes it easy
+to integrate with external APIs and to add cross-cutting concerns (caching,
+retries, circuit breaking, authentication, logging) in a composable way.
 
 ## Architecture overview
 
@@ -40,6 +39,11 @@ Documentation follows the [Diátaxis](https://diataxis.fr/) framework:
 | [Reference](reference/README.md)     | Technical API descriptions   | You need to look up a class, setting, or error           |
 | [Explanation](explanation/README.md) | Conceptual background        | You want to understand *why* things work the way they do |
 
+## Upgrade guidance
+
+Review the [typed transport and authentication error migration guide](migrations/typed-transport-errors.md)
+before upgrading across a 0.x release containing those breaking changes.
+
 ## Quick start
 
 ```bash
@@ -56,36 +60,22 @@ response = client.get("/items")
 print(response.json())
 ```
 
-See [Tutorial 1 — Getting started](tutorials/01-getting-started.md) for a
-full walkthrough.
+See [Tutorial 1 — Getting started](tutorials/01-getting-started.md) for a full
+walkthrough.
 
-## Connectors
+## Optional extensions
 
-Plynt ships with Salesforce and generic LLM connectors. Connector-specific
-documentation lives alongside each connector:
+This section documents shared library functionality. Extension-specific
+configuration and usage are documented separately:
 
-- [Generic LLM connector](../connectors/llm/README.md)
-- [Salesforce connector](../connectors/salesforce/user/README.md)
-
-## Runnable examples
-
-Use runnable examples when you want to validate credentials, endpoint setup,
-and basic service behavior end-to-end.
-
-- [LLM examples](../../examples/llm/README.md)
-- [Django examples](../../examples/django/README.md)
-- [Salesforce examples](../../examples/salesforce/README.md)
+- [Framework adapters](../adapters/README.md)
+- [Connectors](../connectors/)
 
 ## Installation extras
 
-Install `plynt[httpx]` for built-in HTTP transports or
-`plynt[salesforce]` for Salesforce REST, Bulk, and AI services.
-Experimental Salesforce CDC composes `plynt[grpc,salesforce]`,
-including the Avro decoder.
+Install `plynt[httpx]` for built-in HTTP transports. OAuth2 helpers are included
+in the package; there is no separate `oauth` extra. Choose adapter and connector
+extras from their respective guides.
 
-Framework adapters use the `django`, `drf`, and `fastapi` extras. OAuth2
-helpers are included in the package; there is no separate `oauth` extra.
-Development bootstrap deliberately includes all implemented runtime extras.
-
-See the canonical [installation reference](reference/installation.md) for
-the complete profiles, runtime compatibility, and development commands.
+See the canonical [installation reference](reference/installation.md) for the
+complete profiles, runtime compatibility, and development commands.

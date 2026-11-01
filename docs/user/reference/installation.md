@@ -1,26 +1,27 @@
 # Installation and extras
 
 Plynt uses optional extras to keep the core dependency surface minimal.
-Supported environments are Linux with Python 3.12, 3.13, 3.14, and 3.15.
-Python 3.14 is the development default; Python 3.15 remains fully tested.
-Other combinations are outside the tested contract.
+Supported environments are Linux with Python 3.12, 3.13, 3.14, and 3.15. Python
+3.14 is the development default; Python 3.15 remains fully tested. Other
+combinations are outside the tested contract.
 
 ## Extras
 
-| Extra        | Purpose                                                       |
-| ------------ | ------------------------------------------------------------- |
-| `httpx`      | Built-in sync and async HTTP transport using `httpx2`         |
-| `grpc`       | Async gRPC transport, with gRPC and protobuf runtimes         |
-| `salesforce` | Salesforce HTTP APIs, signing, models, and Avro decoding      |
-| `django`     | Django settings, cache, and HTTP transport adapters           |
-| `drf`        | Django REST Framework adapter, including Django support       |
-| `fastapi`    | FastAPI lifespan, dependency, header, and error adapters      |
-| `test`       | pytest, coverage, async testing, and HTTP recording utilities |
-| `dev`        | Test, lint, type-check, build, and pinned codegen tools       |
+| Extra        | Purpose                                                        |
+| ------------ | -------------------------------------------------------------- |
+| `httpx`      | Built-in sync and async HTTP transport using `httpx2`          |
+| `grpc`       | Async gRPC transport, with gRPC and protobuf runtimes          |
+| `salesforce` | Salesforce HTTP APIs, signing, models, and Avro decoding       |
+| `django`     | Django settings, cache, and HTTP transport adapters            |
+| `drf`        | Django REST Framework adapter, including Django support        |
+| `fastapi`    | FastAPI lifespan, dependency, header, and error adapters       |
+| `sentry`     | Optional reporting using an application-initialized Sentry SDK |
+| `test`       | pytest, coverage, async testing, and HTTP recording utilities  |
+| `dev`        | Test, lint, type-check, build, and pinned codegen tools        |
 
-There is no `oauth`, `llm`, or `soap` extra. Generic OAuth2 helpers are
-included in the package; concrete HTTP calls need `httpx` or a caller-supplied
-transport. The LLM connector uses the HTTP installation profile.
+There is no `oauth`, `llm`, or `soap` extra. Generic OAuth2 helpers are included
+in the package; concrete HTTP calls need `httpx` or a caller-supplied transport.
+The LLM connector uses the HTTP installation profile.
 
 ## Install examples
 
@@ -28,60 +29,39 @@ transport. The LLM connector uses the HTTP installation profile.
 # Core only: use a caller-supplied transport
 pip install plynt
 
-# HTTP and LLM provider adapters
+# Built-in HTTP transport
 pip install "plynt[httpx]"
 
-# Salesforce REST, Bulk, and AI
-pip install "plynt[salesforce]"
-
-# Experimental Salesforce CDC, including Avro decoding
-pip install "plynt[grpc,salesforce]"
-
-# Framework adapters
-pip install "plynt[django]"
-pip install "plynt[drf]"
-pip install "plynt[fastapi]"
+# Async gRPC transport
+pip install "plynt[grpc]"
 ```
 
-Core-only installations preserve package imports. Constructing the built-in
-HTTP transport without `httpx2` raises an actionable dependency error.
+Core-only installations preserve package imports. Constructing the built-in HTTP
+transport without `httpx2` raises an actionable dependency error.
 
-The HTTP extras require `httpx2>=2.13.1`. The Salesforce extra requires
-`pydantic>=2.14.1` and `cryptography>=50.0.2`; the DRF extra requires
-`djangorestframework>=3.18.3,<4`. Both Django and DRF extras require
-`django>=6.1.2,<7`. httpx2 2.13.1 is the latest release verified in this refresh.
+The HTTP extras require `httpx2>=2.13.1`. For extension installation and runtime
+migration instructions, see:
 
-### Migration from Python 3.11 and Django 5.2
+- [Framework adapters](../../adapters/README.md)
+- [Connector documentation](../../connectors/)
+- [Sentry integration](../../integrations/sentry.md)
+
+### Migration from Python 3.11
 
 This is a breaking installation-contract change under
-[ADR-0034](../../architecture/adr/0034-django-6-support.md).
-Python 3.11 and Django versions below 6.1.2 are no longer supported.
-Upgrade the interpreter first, preferably to Python 3.14, and recreate the
-development `.venv` rather than reusing an environment with an older Python.
-Applications using the Django or DRF extra must follow Django's
-[6.0 release notes](https://docs.djangoproject.com/en/6.0/releases/6.0/)
-and [6.1 release notes](https://docs.djangoproject.com/en/6.1/releases/6.1/)
-for application-level migrations before upgrading the extra.
-Other extras retain their existing dependency boundaries.
+[ADR-0034](../../architecture/adr/0034-django-6-support.md). Python 3.11 is no
+longer supported. Upgrade the interpreter first, preferably to Python 3.14, and
+recreate the development `.venv` rather than reusing an environment with an
+older Python. Framework-specific migration instructions live in the adapter
+guides.
 
-## CDC runtime compatibility
+## gRPC runtime compatibility
 
-The vendored Pub/Sub messages require `grpcio>=1.84.0,<2` and
-`protobuf>=7.35.1,<8`. The Salesforce extra includes `fastavro>=1.13.1,<2`.
-Upgrading from older gRPC or protobuf versions requires resolving those
-dependencies together; run `python -m pip check` afterward.
-
-The Salesforce extra also requires `PyJWT>=2.15.1,<3` to exclude affected
-signing-library versions identified during hardening. Development tooling
-sets security floors for urllib3 and virtualenv; neither becomes a core
-runtime dependency.
-
-These minima are smoke-tested independently of the development generator.
-No code generation runs during installation or package import.
-See [ADR-0031](../../architecture/adr/0031-experimental-release-installation-contract.md).
-The generator is pinned to `grpcio-tools==1.84.0` under
-[ADR-0032](../../architecture/adr/0032-grpc-codegen-version-refresh.md);
-consumers do not need that development-only package.
+The gRPC extra requires `grpcio>=1.84.0,<2` and `protobuf>=7.35.1,<8`. Resolve
+these dependencies together and run `python -m pip check` after upgrading. The
+development generator is pinned to `grpcio-tools==1.84.0` under
+[ADR-0032](../../architecture/adr/0032-grpc-codegen-version-refresh.md).
+Consumers do not need that development-only package.
 
 Keep the installer itself current. The development and distribution gates
 bootstrap `pip>=26.2,<27`; this is tooling, not a Plynt runtime dependency:
@@ -99,26 +79,25 @@ make install
 make check
 ```
 
-The development bootstrap includes every implemented runtime extra so
-optional adapters are not silently skipped. Without `make`, use:
+The development bootstrap includes every implemented runtime extra so optional
+adapters are not silently skipped. Without `make`, use:
 
 ```bash
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade "pip>=26.2,<27"
 .venv/bin/python -m pip install -e \
-  ".[dev,httpx,grpc,salesforce,django,drf,fastapi]"
+  ".[dev,httpx,grpc,salesforce,django,drf,fastapi,sentry]"
 ```
 
-The `dev` extra alone installs tooling, not every framework or connector.
-The canonical development command deliberately composes runtime extras.
+The `dev` extra alone installs tooling, not every framework or connector. The
+canonical development command deliberately composes runtime extras.
 
 ## Experimental distribution checks
 
 The Distribution workflow builds a wheel from the source distribution and
-installs it in fresh environments for core, HTTP, gRPC, CDC, Django, DRF,
-and FastAPI. It also checks the CDC runtime minima. The full test matrix
-exercises all implemented runtime extras on Linux Python 3.12-3.15.
+installs it in fresh environments for core, HTTP, gRPC, CDC, Django, DRF, and
+FastAPI, and Sentry. It also checks the CDC runtime minima. The full test matrix exercises
+all implemented runtime extras on Linux Python 3.12-3.15.
 
-CDC still needs real Salesforce-org validation, including replay cursor
-fidelity. A local distribution passing these checks is not a production
-readiness claim.
+These checks verify installation boundaries, not correctness against an external
+provider. Connector-specific readiness evidence lives with each connector.

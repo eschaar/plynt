@@ -1,8 +1,8 @@
 # Plynt architecture
 
-This article describes how Plynt is structured and how its layers
-interact. Reading it will help you understand where to hook in your own
-logic and why each piece exists where it does.
+This article describes how Plynt is structured and how its layers interact.
+Reading it will help you understand where to hook in your own logic and why each
+piece exists where it does.
 
 ## HTTP layers at a glance
 
@@ -34,13 +34,12 @@ graph TB
 ## The transport layer
 
 The HTTP **transport** is the component that makes HTTP network calls. It wraps
-an HTTP library (currently httpx2) and applies the middleware chain before
-and after every request.
+an HTTP library (currently httpx2) and applies the middleware chain before and
+after every request.
 
-`HttpxSyncTransport` and `HttpxAsyncTransport` are the concrete
-implementations. Both extend abstract base classes
-(`BaseSyncTransport` / `BaseAsyncTransport`) so that connectors and tests
-can substitute alternative transports.
+`HttpxSyncTransport` and `HttpxAsyncTransport` are the concrete implementations.
+Both extend abstract base classes (`BaseSyncTransport` / `BaseAsyncTransport`)
+so that connectors and tests can substitute alternative transports.
 
 ```python
 from plynt.http.transport import HttpxSyncTransport
@@ -51,8 +50,8 @@ transport = HttpxSyncTransport()
 ## The middleware chain
 
 Middleware runs inside the transport. Each middleware wraps the next in an
-**onion model**: the outermost middleware runs first on the way in and
-last on the way out.
+**onion model**: the outermost middleware runs first on the way in and last on
+the way out.
 
 ```mermaid
 flowchart LR
@@ -68,9 +67,9 @@ flowchart LR
 
 ### Middleware ordering convention
 
-The first element in the `middlewares` list is **outermost** — it sees
-every request first and every response last. This matches Django, ASGI,
-and Express conventions.
+The first element in the `middlewares` list is **outermost** — it sees every
+request first and every response last. This matches Django, ASGI, and Express
+conventions.
 
 ```python
 transport = HttpxSyncTransport(
@@ -98,11 +97,11 @@ detailed explanation of why ordering matters.
 
 `APIClient` extends `HTTPClient` with JSON REST conventions:
 
-- Sends `Content-Type: application/json` and `Accept: application/json`
-  on every request.
+- Sends `Content-Type: application/json` and `Accept: application/json` on every
+  request.
 - Raises a typed `HttpStatusError` for 4xx and 5xx by default.
-- Supports `raw=True` on `request()` when you need direct access to
-  upstream status and headers without typed exception mapping.
+- Supports `raw=True` on `request()` when you need direct access to upstream
+  status and headers without typed exception mapping.
 
 ```python
 from plynt.http.client import APIClient
@@ -113,8 +112,8 @@ resp = client.get("/items")  # raises on 4xx/5xx automatically
 
 ### Raw mode and layer boundary
 
-`HTTPClient` is already the raw layer. It always returns a `Response`
-without status-to-exception mapping.
+`HTTPClient` is already the raw layer. It always returns a `Response` without
+status-to-exception mapping.
 
 `APIClient` adds the mapping behavior and therefore owns the `raw` toggle:
 
@@ -125,15 +124,15 @@ if resp.status_code == 404:
 ```
 
 Internally, verb helpers (`get`, `post`, and others) forward extra keyword
-arguments to `request()`. This keeps the API DRY and avoids duplicated
-override methods in subclasses. Trade-off: verb signatures are less explicit
-about subclass-specific options such as `raw`.
+arguments to `request()`. This keeps the API DRY and avoids duplicated override
+methods in subclasses. Trade-off: verb signatures are less explicit about
+subclass-specific options such as `raw`.
 
 ## The service layer
 
-Services wrap a client and translate raw `Response` objects into domain
-models. Your application code interacts with services — never with clients
-or transports directly.
+Services wrap a client and translate raw `Response` objects into domain models.
+Your application code interacts with services — never with clients or transports
+directly.
 
 ```python
 from plynt.http.service import APIService
@@ -149,14 +148,14 @@ class ItemService(APIService):
         return Item.model_validate_json(resp.content)
 ```
 
-`APIService` provides `self._client` (an `APIClient`). `HTTPService`
-provides the same for non-JSON services.
+`APIService` provides `self._client` (an `APIClient`). `HTTPService` provides
+the same for non-JSON services.
 
 ## The settings layer
 
-`HTTPSettings` centralises all transport configuration: base URL,
-timeouts, auth config, and cache config. Services are typically wired up
-from a single settings object.
+`HTTPSettings` centralises all transport configuration: base URL, timeouts, auth
+config, and cache config. Services are typically wired up from a single settings
+object.
 
 ```python
 from plynt.http.settings import HTTPSettings
@@ -181,13 +180,13 @@ settings = MyServiceSettings()
 transport = HttpxSyncTransport.from_settings(settings)
 ```
 
-`from_settings()` reads `base_url`, timeouts, auth, and cache config from
-the settings object and constructs a fully wired transport.
+`from_settings()` reads `base_url`, timeouts, auth, and cache config from the
+settings object and constructs a fully wired transport.
 
 ## The cache layer
 
-`CacheBackend` is a simple protocol: `get`, `set`, `delete`, `clear`.
-Plynt ships four implementations:
+`CacheBackend` is a simple protocol: `get`, `set`, `delete`, `clear`. Plynt
+ships four implementations:
 
 | Backend           | When to use                                 |
 | ----------------- | ------------------------------------------- |
@@ -200,8 +199,7 @@ See [Cache backends reference](../reference/cache-backends.md).
 
 ## How connectors use these layers
 
-Built-in connectors (for example, the Salesforce connector) follow the
-same pattern you would use for your own connector:
+Connectors follow the same pattern you would use for your own integration:
 
 1. **Settings** subclass of `ApiSettings` with connector-specific fields.
 1. **Auth middleware** subclass of `SyncMiddleware` (or `AsyncMiddleware`).
@@ -212,25 +210,17 @@ same pattern you would use for your own connector:
 See [Tutorial: Build your own connector](../tutorials/02-build-a-connector.md)
 to create a connector from scratch.
 
-## Optional gRPC and Salesforce CDC
+## Optional gRPC
 
-The HTTP diagrams above do not describe gRPC. `plynt.grpc` is a sibling
-protocol namespace with async transport/client helpers and protocol-specific
+The HTTP diagrams above do not describe gRPC. `plynt.grpc` is a sibling protocol
+namespace with async transport/client helpers and protocol-specific
 interceptors. It does not reuse the HTTP middleware chain.
 
-The experimental Salesforce CDC package wraps a caller-supplied async gRPC
-channel through its Pub/Sub adapter. Auth metadata, schema caching, Avro
-decoding, field bitmap expansion, flow control, replay, and checkpoints stay
-inside the connector. Snapshot reconciliation and durable processing belong
-to the consuming application.
-
-Install `plynt[grpc,salesforce]` and see the
-[CDC deployment guide](../../connectors/salesforce/user/how-to/deploy-cdc.md).
-This path is async-only and still requires real-org validation.
-See [ADR-0030](../../architecture/adr/0030-grpc-protocol-boundary.md) and
-[ADR-0031](../../architecture/adr/0031-experimental-release-installation-contract.md)
-for protocol and installation boundaries.
+The initial gRPC transport is async-only. Domain event processing, decoding,
+replay, and checkpoints belong to connectors or the consuming application. See
+[ADR-0030](../../architecture/adr/0030-grpc-protocol-boundary.md) for protocol
+boundaries.
 
 Core-only installations can still import HTTP clients and inject their own
-transports. Constructing a built-in httpx2 transport requires `plynt[http]`;
+transports. Constructing a built-in httpx2 transport requires `plynt[httpx]`;
 see the [installation reference](../reference/installation.md).

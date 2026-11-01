@@ -46,6 +46,7 @@ from collections.abc import Awaitable, Callable
 
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.request import Request
+from plynt.base.request_id import RequestIDPolicy, get_request_id
 from plynt.base.response import Response
 
 __all__ = ["AsyncHeaderMiddleware", "HeaderMiddleware"]
@@ -53,6 +54,17 @@ __all__ = ["AsyncHeaderMiddleware", "HeaderMiddleware"]
 #: Type alias for a header value: either a static string or a zero-argument
 #: callable that returns a string (evaluated once per request).
 HeaderValue = str | Callable[[], str]
+
+
+def _propagate_request_id(request: Request, policy: RequestIDPolicy | None) -> None:
+    """Add the active ID only when its header is absent (ADR-0040)"""
+    if policy is None:
+        return
+    request_id = get_request_id()
+    if request_id is not None and not any(
+        name.lower() == policy.header_name.lower() for name in request.headers
+    ):
+        request.headers[policy.header_name] = request_id
 
 
 class HeaderMiddleware(SyncMiddleware):
@@ -68,6 +80,8 @@ class HeaderMiddleware(SyncMiddleware):
 
     Args:
         headers: Mapping of header names to static values or callables.
+        request_id_policy: Enable propagation of the active request ID using
+            this policy's header name. No header is added outside a scope.
 
     Example::
 
@@ -81,9 +95,15 @@ class HeaderMiddleware(SyncMiddleware):
 
     """
 
-    def __init__(self, headers: dict[str, HeaderValue]) -> None:
+    def __init__(
+        self,
+        headers: dict[str, HeaderValue],
+        *,
+        request_id_policy: RequestIDPolicy | None = None,
+    ) -> None:
         """Initialize HeaderMiddleware."""
         self._headers = headers
+        self._request_id_policy = request_id_policy
 
     def handle(
         self,
@@ -102,6 +122,7 @@ class HeaderMiddleware(SyncMiddleware):
         for name, value in self._headers.items():
             if name not in request.headers:
                 request.headers[name] = value() if callable(value) else value
+        _propagate_request_id(request, self._request_id_policy)
         return next_handler(request)
 
 
@@ -114,6 +135,8 @@ class AsyncHeaderMiddleware(AsyncMiddleware):
 
     Args:
         headers: Mapping of header names to static values or callables.
+        request_id_policy: Enable propagation of the active request ID using
+            this policy's header name. No header is added outside a scope.
 
     Example::
 
@@ -127,9 +150,15 @@ class AsyncHeaderMiddleware(AsyncMiddleware):
 
     """
 
-    def __init__(self, headers: dict[str, HeaderValue]) -> None:
+    def __init__(
+        self,
+        headers: dict[str, HeaderValue],
+        *,
+        request_id_policy: RequestIDPolicy | None = None,
+    ) -> None:
         """Initialize AsyncHeaderMiddleware."""
         self._headers = headers
+        self._request_id_policy = request_id_policy
 
     async def handle(
         self,
@@ -146,4 +175,5 @@ class AsyncHeaderMiddleware(AsyncMiddleware):
         for name, value in self._headers.items():
             if name not in request.headers:
                 request.headers[name] = value() if callable(value) else value
+        _propagate_request_id(request, self._request_id_policy)
         return await next_handler(request)

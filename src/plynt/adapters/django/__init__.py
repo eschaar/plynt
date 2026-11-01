@@ -9,6 +9,7 @@ users do not need Django REST Framework installed.
 """
 
 from plynt.adapters.django.cache import DjangoCacheBackend
+from plynt.adapters.django.request_id import RequestIDMiddleware
 from plynt.adapters.django.settings import from_django_settings
 from plynt.adapters.django.transport import (
     async_transport_from_django_settings,
@@ -17,6 +18,7 @@ from plynt.adapters.django.transport import (
 
 __all__ = [
     "DjangoCacheBackend",
+    "RequestIDMiddleware",
     "async_transport_from_django_settings",
     "from_django_settings",
     "transport_from_django_settings",

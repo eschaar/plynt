@@ -10,9 +10,11 @@ from collections.abc import Callable
 from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 
+import httpx2 as httpx
 import pytest
 
 from plynt.base.cache import SupportsTTL
+from plynt.base.errors import AuthenticationError
 from plynt.base.request import Request
 from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
 from plynt.base.transport import AsyncTransport, SyncTransport
@@ -158,8 +160,9 @@ class TestOAuth2AuthMiddleware:
         assert entry is not None
         assert entry[0] == "fresh-token"
 
+    @pytest.mark.parametrize("status_code", [400, 401, 403, 500])
     def test_raises_on_non_200_token_response(
-        self, oauth_settings: _OAuthTestSettings
+        self, oauth_settings: _OAuthTestSettings, status_code: int
     ) -> None:
         """Validate raises on non 200 token response."""
         auth = OAuth2AuthMiddleware(
@@ -167,9 +170,29 @@ class TestOAuth2AuthMiddleware:
             client_secret=oauth_settings.client_secret,
             token_url=oauth_settings.token_url,
         )
-        auth._transport = _FakeTokenTransport(status=401)
-        with pytest.raises(RuntimeError, match="401"):
-            auth._get_token_header()
+        body = b"Upstream diagnostic text"
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(status_code, content=body)
+
+        with HttpxSyncTransport(
+            client=httpx.Client(transport=httpx.MockTransport(handler))
+        ) as transport:
+            auth._transport = transport
+            try:
+                with pytest.raises(AuthenticationError) as caught:
+                    auth._get_token_header()
+            finally:
+                auth.close()
+
+        error = caught.value
+        assert isinstance(error, RuntimeError)
+        assert error.status_code == status_code
+        assert error.response_body == body
+        assert body.decode() not in str(error)
+        assert body.decode() not in repr(error)
+        assert error.to_dict()["details"] == {"status_code": status_code}
+        assert auth._cache.get(auth._cache_key) is None
 
     def test_handle_injects_auth_and_calls_next(
         self, oauth_settings: _OAuthTestSettings, token_transport: _FakeTokenTransport
@@ -348,6 +371,23 @@ class TestOAuth2AuthMiddleware:
             token_url=DUMMY_TOKEN_URL,
         )
         assert isinstance(auth._transport, HttpxSyncTransport)
+
+    def test_close_releases_owned_transport_once(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Close the internally owned sync token transport only once."""
+        auth = OAuth2AuthMiddleware(
+            client_id=DUMMY_CLIENT_ID,
+            client_secret=DUMMY_CLIENT_SECRET,
+            token_url=DUMMY_TOKEN_URL,
+        )
+        close = Mock()
+        monkeypatch.setattr(auth._transport, "close", close)
+
+        auth.close()
+        auth.close()
+
+        close.assert_called_once_with()
 
     def test_internal_transport_uses_token_retry_policy(self) -> None:
         """token_retry_policy is wired into the internal transport's RetryMiddleware."""
@@ -603,9 +643,11 @@ class TestAsyncOAuth2AuthMiddleware:
         assert entry is not None
         assert entry[0] == "fresh-token"
 
+    @pytest.mark.parametrize("status_code", [400, 401, 403, 500])
     async def test_raises_on_non_200_token_response(
         self,
         oauth_settings: _OAuthTestSettings,
+        status_code: int,
     ) -> None:
         """Validate raises on non 200 token response."""
         auth = AsyncOAuth2AuthMiddleware(
@@ -613,9 +655,29 @@ class TestAsyncOAuth2AuthMiddleware:
             client_secret=oauth_settings.client_secret,
             token_url=oauth_settings.token_url,
         )
-        auth._transport = _FakeAsyncTokenTransport(status=401)
-        with pytest.raises(RuntimeError, match="401"):
-            await auth._get_token_header()
+        body = b"Upstream diagnostic text"
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(status_code, content=body)
+
+        async with HttpxAsyncTransport(
+            client=httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        ) as transport:
+            auth._transport = transport
+            try:
+                with pytest.raises(AuthenticationError) as caught:
+                    await auth._get_token_header()
+            finally:
+                await auth.aclose()
+
+        error = caught.value
+        assert isinstance(error, RuntimeError)
+        assert error.status_code == status_code
+        assert error.response_body == body
+        assert body.decode() not in str(error)
+        assert body.decode() not in repr(error)
+        assert error.to_dict()["details"] == {"status_code": status_code}
+        assert auth._cache.get(auth._cache_key) is None
 
     async def test_handle_injects_auth_and_calls_next(
         self,
@@ -800,6 +862,23 @@ class TestAsyncOAuth2AuthMiddleware:
             token_url=DUMMY_TOKEN_URL,
         )
         assert isinstance(auth._transport, HttpxAsyncTransport)
+
+    async def test_aclose_releases_owned_transport_once(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Close the internally owned async token transport only once."""
+        auth = AsyncOAuth2AuthMiddleware(
+            client_id=DUMMY_CLIENT_ID,
+            client_secret=DUMMY_CLIENT_SECRET,
+            token_url=DUMMY_TOKEN_URL,
+        )
+        close = AsyncMock()
+        monkeypatch.setattr(auth._transport, "aclose", close)
+
+        await auth.aclose()
+        await auth.aclose()
+
+        close.assert_awaited_once_with()
 
     async def test_internal_transport_uses_token_retry_policy(
         self,

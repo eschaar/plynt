@@ -4,7 +4,7 @@ This index lists architecture decision records (ADRs) for Plynt.
 
 ## Status Summary
 
-- Accepted: 38
+- Accepted: 43
 - Proposed: 0
 
 ## ADR List
@@ -51,6 +51,11 @@ This index lists architecture decision records (ADRs) for Plynt.
 | [ADR-0036](0036-project-and-package-rebrand-to-plynt.md)            | Rebrand the Project and Align Its Historical Documentation | Accepted |
 | [ADR-0037](0037-deterministic-test-time.md)                         | Deterministic Test Time                                    | Accepted |
 | [ADR-0038](0038-http-retry-exceptions-and-stream-ownership.md)      | HTTP Retry Exceptions and Stream Ownership                 | Accepted |
+| [ADR-0039](0039-typed-transport-and-authentication-errors.md)       | Typed Transport and Authentication Errors                  | Accepted |
+| [ADR-0040](0040-inbound-request-id-and-error-envelope.md)           | Inbound Request ID and Error Envelope                      | Accepted |
+| [ADR-0041](0041-error-tracking-integration-and-sentry-extra.md)     | Error-Tracking Integration and Sentry Extra                | Accepted |
+| [ADR-0042](0042-error-reporting-context-handoff.md)                 | Error-Reporting Context Handoff                            | Accepted |
+| [ADR-0043](0043-exception-bound-error-event-ids.md)                 | Exception-Bound Error Event IDs                            | Accepted |
 
 <!-- markdownlint-enable MD060 -->
 
@@ -64,4 +69,4 @@ Add an ADR for changes that affect:
 - middleware execution semantics,
 - installation extras or optional-framework strategy.
 
-Use the next sequential number (currently: `0039`).
+Use the next sequential number (currently: `0044`).

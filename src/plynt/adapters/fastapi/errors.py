@@ -6,6 +6,11 @@ import importlib
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from plynt.base.error_envelope import (
+    ErrorEnvelope,
+    build_error_envelope,
+    default_error_envelope,
+)
 from plynt.base.errors import (
     BaseError,
     ConfigurationError,
@@ -15,6 +20,7 @@ from plynt.base.errors import (
     OperationFailedError,
     TransportError,
 )
+from plynt.base.request_id import get_request_id
 from plynt.http.errors import HttpStatusError
 
 __all__ = [
@@ -59,31 +65,24 @@ def build_error_payload(
         JSON-serializable payload suitable for FastAPI responses.
 
     """
-    if isinstance(exc, BaseError):
-        payload: dict[str, Any] = {
-            "message": exc.message,
-            "code": exc.code or "INTERNAL_SERVER_ERROR",
-        }
-        if include_details and exc.details is not None:
-            payload["details"] = exc.details
-        return payload
-
-    return {
-        "message": "Internal server error",
-        "code": "INTERNAL_SERVER_ERROR",
-    }
+    return default_error_envelope(
+        exc, 500, get_request_id(), include_details=include_details
+    )
 
 
 def map_exception_to_fastapi_response(
     exc: Exception,
     *,
     include_details: bool = False,
+    envelope: ErrorEnvelope | None = None,
 ) -> Any:
     """Convert exception into a FastAPI JSON response object.
 
     Args:
         exc: Raised exception.
         include_details: Include plynt error ``details`` in the payload.
+        envelope: Custom payload callable receiving the exception, mapped
+            status, and active request ID. Uses safe core fallback on failure.
 
     Returns:
         FastAPI ``JSONResponse`` with mapped status and payload.
@@ -98,13 +97,20 @@ def map_exception_to_fastapi_response(
     elif isinstance(exc, BaseError):
         status_code = _status_code_for_base_error(exc)
 
-    payload = build_error_payload(exc, include_details=include_details)
+    payload = build_error_envelope(
+        exc,
+        status_code,
+        get_request_id(),
+        envelope=envelope,
+        include_details=include_details,
+    )
     return json_response(payload, status_code=status_code)
 
 
 def create_plynt_exception_handler(
     *,
     include_details: bool = False,
+    envelope: ErrorEnvelope | None = None,
 ) -> Callable[[object, Exception], Awaitable[Any]]:
     """Create FastAPI-compatible async exception handler for plynt errors."""
 
@@ -112,6 +118,7 @@ def create_plynt_exception_handler(
         return map_exception_to_fastapi_response(
             exc,
             include_details=include_details,
+            envelope=envelope,
         )
 
     return _handler
@@ -121,6 +128,7 @@ def install_plynt_exception_handlers(
     app: object,
     *,
     include_details: bool = False,
+    envelope: ErrorEnvelope | None = None,
 ) -> None:
     """Install plynt exception handlers on a FastAPI app.
 
@@ -129,12 +137,16 @@ def install_plynt_exception_handlers(
     Args:
         app: FastAPI app-like object exposing ``add_exception_handler``.
         include_details: Include plynt ``details`` in external payloads.
+        envelope: Custom payload callable for the registered plynt errors.
+            Native validation and HTTP exceptions retain their own handlers.
 
     """
     add_exception_handler = getattr(app, "add_exception_handler", None)
     if add_exception_handler is None:
         raise RuntimeError("FastAPI app object must expose add_exception_handler")
 
-    handler = create_plynt_exception_handler(include_details=include_details)
+    handler = create_plynt_exception_handler(
+        include_details=include_details, envelope=envelope
+    )
     add_exception_handler(BaseError, handler)
     add_exception_handler(HttpStatusError, handler)

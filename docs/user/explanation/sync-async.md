@@ -1,8 +1,8 @@
 # Sync and async in Plynt
 
-Plynt supports both sync and async execution models without duplicating
-business logic. This article explains how the models are separated and when
-to choose each.
+Plynt supports both sync and async execution models without duplicating business
+logic. This article explains how the models are separated and when to choose
+each.
 
 ## The separation
 
@@ -15,17 +15,16 @@ Plynt separates execution model from business logic across three layers:
 | **Service base** | `HTTPService` / `APIService` | `AsyncHTTPService` / `AsyncAPIService` |
 | **Middleware**   | `SyncMiddleware` protocol    | `AsyncMiddleware` protocol             |
 
-Your domain logic — building requests, parsing responses, mapping errors —
-lives in the service layer and is the same regardless of execution model.
-Only the transport and client classes differ.
+Your domain logic — building requests, parsing responses, mapping errors — lives
+in the service layer and is the same regardless of execution model. Only the
+transport and client classes differ.
 
 ## Why not a single universal client?
 
 A single client that wraps both sync and async would require either
-`asyncio.run()` wrappers (blocks in async contexts) or thread-pool
-executors (added complexity and overhead). Instead, Plynt provides
-dedicated classes so you pick the model that matches your stack — with no
-adapters and no surprises.
+`asyncio.run()` wrappers (blocks in async contexts) or thread-pool executors
+(added complexity and overhead). Instead, Plynt provides dedicated classes so
+you pick the model that matches your stack — with no adapters and no surprises.
 
 ## Choosing between sync and async
 
@@ -38,25 +37,24 @@ adapters and no surprises.
 
 ## Async parity
 
-HTTP transports, clients, middleware, and supported REST services provide
-sync and async variants. Shared domain behavior should not depend on the
-execution model.
+HTTP transports, clients, middleware, and supported REST services provide sync
+and async variants. Shared domain behavior should not depend on the execution
+model.
 
-This does not promise parity for every protocol. The initial gRPC foundation
-and experimental Salesforce CDC subscriber are async-only under
-[ADR-0030](../../architecture/adr/0030-grpc-protocol-boundary.md) and
-[SF-0013](../../connectors/salesforce/architecture/adr/sf-0013-salesforce-eventing-architecture.md).
-There is no synchronous CDC subscriber.
+This does not promise parity for every protocol. The initial gRPC foundation is
+async-only under
+[ADR-0030](../../architecture/adr/0030-grpc-protocol-boundary.md).
+Connector-specific execution-model support is documented by each connector.
 
-When writing a connector for both models, create a sync service class and
-an async service class that share the URL-building and response-parsing
-logic via helper methods or module-level functions.
+When writing a connector for both models, create a sync service class and an
+async service class that share the URL-building and response-parsing logic via
+helper methods or module-level functions.
 
 ## Mixing sync and async
 
-Do not call sync transport methods from inside an async context without a
-thread pool — it will block the event loop. If you need to call a sync
-library from async code, use `asyncio.to_thread()`:
+Do not call sync transport methods from inside an async context without a thread
+pool — it will block the event loop. If you need to call a sync library from
+async code, use `asyncio.to_thread()`:
 
 ```python
 import asyncio
@@ -70,5 +68,5 @@ async def fetch():
     return result
 ```
 
-For production async use, always use `HttpxAsyncTransport` and
-`AsyncAPIClient` directly.
+For production async use, always use `HttpxAsyncTransport` and `AsyncAPIClient`
+directly.

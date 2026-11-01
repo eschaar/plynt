@@ -19,12 +19,14 @@ from plynt.adapters.fastapi.headers import (
     build_request_header_middleware,
 )
 from plynt.adapters.fastapi.lifespan import PlyntLifespan
+from plynt.adapters.fastapi.request_id import RequestIDMiddleware
 from plynt.adapters.fastapi.services import build_service_dependencies, get_service
 
 __all__ = [
     "DEFAULT_HEADER_MAP",
     "DEFAULT_SENSITIVE_HEADER_DENYLIST",
     "PlyntLifespan",
+    "RequestIDMiddleware",
     "build_async_request_header_middleware",
     "build_error_payload",
     "build_request_header_middleware",

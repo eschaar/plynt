@@ -5,6 +5,11 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
+from plynt.base.error_envelope import (
+    ErrorEnvelope,
+    build_error_envelope,
+    default_error_envelope,
+)
 from plynt.base.errors import (
     BaseError,
     ConfigurationError,
@@ -14,6 +19,7 @@ from plynt.base.errors import (
     OperationFailedError,
     TransportError,
 )
+from plynt.base.request_id import get_request_id
 from plynt.http.errors import HttpStatusError
 
 __all__ = [
@@ -60,31 +66,24 @@ def build_error_payload(
         JSON-serializable payload suitable for DRF responses
 
     """
-    if isinstance(exc, BaseError):
-        payload: dict[str, Any] = {
-            "message": exc.message,
-            "code": exc.code or "INTERNAL_SERVER_ERROR",
-        }
-        if include_details and exc.details is not None:
-            payload["details"] = exc.details
-        return payload
-
-    return {
-        "message": "Internal server error",
-        "code": "INTERNAL_SERVER_ERROR",
-    }
+    return default_error_envelope(
+        exc, 500, get_request_id(), include_details=include_details
+    )
 
 
 def map_exception_to_drf_response(
     exc: Exception,
     *,
     include_details: bool = False,
+    envelope: ErrorEnvelope | None = None,
 ) -> Any:
     """Convert exception into DRF ``Response`` object
 
     Args:
         exc: Raised exception.
         include_details: Include plynt error ``details`` in the payload.
+        envelope: Custom payload callable receiving the exception, mapped
+            status, and active request ID. Uses safe core fallback on failure.
 
     Returns:
         DRF ``Response`` instance with mapped status and payload
@@ -99,15 +98,33 @@ def map_exception_to_drf_response(
     elif isinstance(exc, BaseError):
         status_code = _status_code_for_base_error(exc)
 
-    payload = build_error_payload(exc, include_details=include_details)
+    payload = build_error_envelope(
+        exc,
+        status_code,
+        get_request_id(),
+        envelope=envelope,
+        include_details=include_details,
+    )
     return response_cls(payload, status=status_code)
 
 
-def plynt_exception_handler(exc: Exception, context: dict[str, Any]) -> Any:
+def plynt_exception_handler(
+    exc: Exception,
+    context: dict[str, Any],
+    *,
+    envelope: ErrorEnvelope | None = None,
+    include_details: bool = False,
+) -> Any:
     """Handle plynt exceptions with DRF fallback behavior
 
     First delegates to DRF's default exception handler. When DRF does not map
     the exception, this returns a mapped plynt error response.
+
+    Args:
+        envelope: Custom callable used only for the plynt fallback response.
+            Responses handled by DRF itself remain unchanged.
+        include_details: Include plynt details in the default fallback payload.
+
     """
     views_mod = importlib.import_module("rest_framework.views")
     drf_exception_handler = views_mod.exception_handler
@@ -116,4 +133,6 @@ def plynt_exception_handler(exc: Exception, context: dict[str, Any]) -> Any:
     if drf_response is not None:
         return drf_response
 
-    return map_exception_to_drf_response(exc)
+    return map_exception_to_drf_response(
+        exc, envelope=envelope, include_details=include_details
+    )

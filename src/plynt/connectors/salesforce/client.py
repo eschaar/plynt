@@ -11,6 +11,7 @@ Usage::
     from plynt.http.transport import HttpxSyncTransport
     from plynt.connectors.salesforce.auth import (
         SalesforceClientCredentialsAuthMiddleware,
+        SalesforceJWTBearerAuthMiddleware,
     )
     from plynt.connectors.salesforce.client import SalesforceAPIClient
     from plynt.connectors.salesforce.facade import SalesforceAPIFacade
@@ -39,9 +40,11 @@ from plynt.base.response import Response
 from plynt.base.transport import AsyncTransport, SyncTransport
 from plynt.connectors.salesforce.auth import (
     AsyncSalesforceClientCredentialsAuthMiddleware,
+    AsyncSalesforceJWTBearerAuthMiddleware,
     AsyncSalesforcePasswordAuthMiddleware,
     AsyncSalesforceSessionAuthMiddleware,
     SalesforceClientCredentialsAuthMiddleware,
+    SalesforceJWTBearerAuthMiddleware,
     SalesforcePasswordAuthMiddleware,
     SalesforceSessionAuthMiddleware,
 )
@@ -91,6 +94,7 @@ class SalesforceAPIClient(APIClient):
         self,
         auth: (
             SalesforceClientCredentialsAuthMiddleware
+            | SalesforceJWTBearerAuthMiddleware
             | SalesforcePasswordAuthMiddleware
             | SalesforceSessionAuthMiddleware
         ),
@@ -262,6 +266,7 @@ class AsyncSalesforceAPIClient(AsyncAPIClient):
         self,
         auth: (
             AsyncSalesforceClientCredentialsAuthMiddleware
+            | AsyncSalesforceJWTBearerAuthMiddleware
             | AsyncSalesforcePasswordAuthMiddleware
             | AsyncSalesforceSessionAuthMiddleware
         ),

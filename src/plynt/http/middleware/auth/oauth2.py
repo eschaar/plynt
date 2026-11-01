@@ -70,6 +70,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 from plynt.base.cache import CacheBackend
+from plynt.base.errors import AuthenticationError
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.request import Request
 from plynt.base.response import AsyncStreamingResponse, Response, StreamingResponse
@@ -93,6 +94,7 @@ __all__ = [
 _CACHE_KEY_PREFIX = "plynt:oauth2:"
 _JWT_BEARER_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:jwt-bearer"
 JWTAssertionFactory = Callable[[], str]
+
 
 _logger = logging.getLogger(__name__)
 
@@ -160,12 +162,20 @@ class OAuth2AuthMiddlewareBase(SyncMiddleware, abc.ABC):
         from plynt.http.transport import HttpxSyncTransport
         from plynt.middleware.logging import LoggingMiddleware
 
-        self._transport: SyncTransport = HttpxSyncTransport(
+        self._owned_transport = HttpxSyncTransport(
             middlewares=[
                 LoggingMiddleware(logger=_logger, level=logging.DEBUG),
                 RetryMiddleware(token_retry_policy or HttpRetryPolicy(max_attempts=2)),
             ],
         )
+        self._transport: SyncTransport = self._owned_transport
+        self._transport_closed = False
+
+    def close(self) -> None:
+        """Close the token transport owned by this middleware."""
+        if not self._transport_closed:
+            self._owned_transport.close()
+            self._transport_closed = True
 
     @abc.abstractmethod
     def _cache_key_material(self) -> str:
@@ -264,8 +274,9 @@ class OAuth2AuthMiddlewareBase(SyncMiddleware, abc.ABC):
         )
         response = self._transport.send(request)
         if response.status_code != HTTPStatus.OK:
-            raise RuntimeError(
-                f"Token endpoint returned {response.status_code}: {response.content!r}"
+            raise AuthenticationError(
+                status_code=response.status_code,
+                response_body=response.content,
             )
         data = json.loads(response.content)
         self._on_response(data)
@@ -567,7 +578,7 @@ class AsyncOAuth2AuthMiddlewareBase(AsyncMiddleware, abc.ABC):
         from plynt.http.transport import HttpxAsyncTransport
         from plynt.middleware.logging import AsyncLoggingMiddleware
 
-        self._transport: AsyncTransport = HttpxAsyncTransport(
+        self._owned_transport = HttpxAsyncTransport(
             middlewares=[
                 AsyncLoggingMiddleware(logger=_logger, level=logging.DEBUG),
                 AsyncRetryMiddleware(
@@ -575,6 +586,14 @@ class AsyncOAuth2AuthMiddlewareBase(AsyncMiddleware, abc.ABC):
                 ),
             ],
         )
+        self._transport: AsyncTransport = self._owned_transport
+        self._transport_closed = False
+
+    async def aclose(self) -> None:
+        """Close the token transport owned by this middleware."""
+        if not self._transport_closed:
+            await self._owned_transport.aclose()
+            self._transport_closed = True
 
     @abc.abstractmethod
     def _cache_key_material(self) -> str:
@@ -653,8 +672,9 @@ class AsyncOAuth2AuthMiddlewareBase(AsyncMiddleware, abc.ABC):
         )
         response = await self._transport.send(request)
         if response.status_code != HTTPStatus.OK:
-            raise RuntimeError(
-                f"Token endpoint returned {response.status_code}: {response.content!r}"
+            raise AuthenticationError(
+                status_code=response.status_code,
+                response_body=response.content,
             )
         data = json.loads(response.content)
         self._on_response(data)

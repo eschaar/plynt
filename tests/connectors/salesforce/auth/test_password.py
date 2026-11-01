@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs
 
+import pytest
+
+from plynt.base.errors import AuthenticationError
 from tests.connectors.salesforce.auth.helpers import make_oauth_auth
 from tests.connectors.salesforce.conftest import (
     DUMMY_CLIENT_ID,
@@ -18,6 +21,18 @@ from tests.connectors.salesforce.conftest import (
 
 class TestSalesforcePasswordAuthMiddleware:
     """Exercise sync password auth payload construction and token variants."""
+
+    def test_rejected_token_response_raises_authentication_error(self) -> None:
+        auth = make_oauth_auth(
+            FakeSalesforceTokenTransport(status=401), flow="password"
+        )
+
+        with pytest.raises(AuthenticationError) as caught:
+            _ = auth.instance_url
+
+        assert caught.value.status_code == 401
+        assert caught.value.response_body is not None
+        assert auth._cache.get(auth._cache_key) is None
 
     def test_instance_url_is_extracted_from_token_response(self) -> None:
         auth = make_oauth_auth(flow="password")
@@ -61,6 +76,20 @@ class TestSalesforcePasswordAuthMiddleware:
 
 class TestAsyncSalesforcePasswordAuthMiddleware:
     """Exercise async password auth payload construction and token variants."""
+
+    async def test_rejected_token_response_raises_authentication_error(self) -> None:
+        auth = make_oauth_auth(
+            FakeAsyncSalesforceTokenTransport(status=401),
+            flow="password",
+            async_mode=True,
+        )
+
+        with pytest.raises(AuthenticationError) as caught:
+            await auth.get_instance_url()
+
+        assert caught.value.status_code == 401
+        assert caught.value.response_body is not None
+        assert auth._cache.get(auth._cache_key) is None
 
     async def test_get_instance_url_returns_instance_url(self) -> None:
         auth = make_oauth_auth(flow="password", async_mode=True)

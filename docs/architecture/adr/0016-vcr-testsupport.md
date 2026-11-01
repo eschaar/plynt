@@ -161,4 +161,4 @@ No integration-specific logic is part of this ADR.
 
 Implementation and usage guide:
 
-- [VCR Testsupport Guide](../../src/plynt/testsupport/vcr/README.md)
+- [VCR Testsupport Guide](../../../src/plynt/testsupport/vcr/README.md)

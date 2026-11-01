@@ -60,6 +60,10 @@ Design Rules
 5) Transport-specific mapping belongs outside core
    - HTTP status codes, headers, etc. live in an API layer.
 
+Private reporting receipts (ADR-0043) are execution diagnostics, not a second
+error-data extensibility point. They do not alter this serialized contract;
+custom external envelopes may explicitly opt in to their event ID.
+
 This contract is intentionally small and strict to remain stable long-term.
 """
 
@@ -253,6 +257,43 @@ class TransportError(BaseError):
 
     code = "TRANSPORT_ERROR"
     message = "A transport error occurred"
+
+
+class TransportTimeoutError(TransportError):
+    """Represent a timeout while connecting, sending, or receiving"""
+
+    code = "TRANSPORT_TIMEOUT"
+    message = "The transport operation timed out"
+
+
+class TransportConnectionError(TransportError):
+    """Represent a connection, network, proxy, or remote protocol failure"""
+
+    code = "TRANSPORT_CONNECTION_ERROR"
+    message = "The transport connection failed"
+
+
+class AuthenticationError(TransportError, RuntimeError):
+    """Represent a failed authentication response without exposing its body
+
+    Args:
+        status_code: Status returned by the authentication endpoint.
+        response_body: Raw response for explicit inspection only. It is
+            excluded from messages and the structured error representation.
+
+    """
+
+    code = "AUTHENTICATION_ERROR"
+    status_code: int
+    response_body: bytes | None
+
+    def __init__(self, *, status_code: int, response_body: bytes | None = None) -> None:
+        super().__init__(
+            f"Authentication failed with status {status_code}",
+            status_code=status_code,
+        )
+        self.status_code = status_code
+        self.response_body = response_body
 
 
 class StatusError(TransportError):

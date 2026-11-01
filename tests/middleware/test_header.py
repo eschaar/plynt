@@ -6,6 +6,7 @@ import pytest
 
 from plynt.base.middleware import AsyncMiddleware, SyncMiddleware
 from plynt.base.request import Request
+from plynt.base.request_id import RequestIDPolicy
 from plynt.base.response import Response
 from plynt.middleware.header import AsyncHeaderMiddleware, HeaderMiddleware
 
@@ -14,6 +15,107 @@ from plynt.middleware.header import AsyncHeaderMiddleware, HeaderMiddleware
 # ---------------------------------------------------------------------------
 
 _RESPONSE = Response(status_code=200, content=b"ok")
+
+
+@pytest.mark.parametrize(
+    ("existing_headers", "configured_headers", "expected"),
+    [
+        ({}, {}, {"X-Request-ID": "active"}),
+        ({"X-Request-ID": "pinned"}, {}, {"X-Request-ID": "pinned"}),
+        ({"x-request-id": "pinned"}, {}, {"x-request-id": "pinned"}),
+        ({}, {"X-Request-ID": "configured"}, {"X-Request-ID": "configured"}),
+        ({}, {"x-request-id": "configured"}, {"x-request-id": "configured"}),
+    ],
+)
+class TestRequestIDPropagation:
+    def test_sync_preserves_existing_headers(
+        self,
+        existing_headers: dict[str, str],
+        configured_headers: dict[str, str],
+        expected: dict[str, str],
+    ) -> None:
+        policy = RequestIDPolicy()
+        middleware = HeaderMiddleware(
+            dict(configured_headers), request_id_policy=policy
+        )
+        request = Request("GET", "https://example.com", headers=dict(existing_headers))
+
+        with policy.scope("active"):
+            result = middleware.handle(request, _noop)
+
+        assert result is _RESPONSE
+        assert request.headers == expected
+
+    @pytest.mark.asyncio
+    async def test_async_preserves_existing_headers(
+        self,
+        existing_headers: dict[str, str],
+        configured_headers: dict[str, str],
+        expected: dict[str, str],
+    ) -> None:
+        policy = RequestIDPolicy()
+        middleware = AsyncHeaderMiddleware(
+            dict(configured_headers), request_id_policy=policy
+        )
+        request = Request("GET", "https://example.com", headers=dict(existing_headers))
+
+        with policy.scope("active"):
+            result = await middleware.handle(request, _async_noop)
+
+        assert result is _RESPONSE
+        assert request.headers == expected
+
+
+class TestRequestIDPropagationScope:
+    @pytest.mark.parametrize("enabled", [False, True])
+    def test_sync_without_context_does_not_generate_id(self, enabled: bool) -> None:
+        middleware = HeaderMiddleware(
+            {}, request_id_policy=RequestIDPolicy() if enabled else None
+        )
+        request = Request("GET", "https://example.com")
+
+        middleware.handle(request, _noop)
+
+        assert request.headers == {}
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("enabled", [False, True])
+    async def test_async_without_context_does_not_generate_id(
+        self, enabled: bool
+    ) -> None:
+        middleware = AsyncHeaderMiddleware(
+            {}, request_id_policy=RequestIDPolicy() if enabled else None
+        )
+        request = Request("GET", "https://example.com")
+
+        await middleware.handle(request, _async_noop)
+
+        assert request.headers == {}
+
+    @pytest.mark.parametrize("enabled", [False, True])
+    def test_sync_custom_header_and_opt_in(self, enabled: bool) -> None:
+        policy = RequestIDPolicy(header_name="X-Custom-Request-ID")
+        middleware = HeaderMiddleware({}, request_id_policy=policy if enabled else None)
+        request = Request("GET", "https://example.com")
+
+        with policy.scope("active"):
+            middleware.handle(request, _noop)
+
+        assert request.headers == ({"X-Custom-Request-ID": "active"} if enabled else {})
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("enabled", [False, True])
+    async def test_async_custom_header_and_opt_in(self, enabled: bool) -> None:
+        policy = RequestIDPolicy(header_name="X-Custom-Request-ID")
+        middleware = AsyncHeaderMiddleware(
+            {}, request_id_policy=policy if enabled else None
+        )
+        request = Request("GET", "https://example.com")
+
+        with policy.scope("active"):
+            await middleware.handle(request, _async_noop)
+
+        assert request.headers == ({"X-Custom-Request-ID": "active"} if enabled else {})
 
 
 def _noop(request: Request) -> Response:

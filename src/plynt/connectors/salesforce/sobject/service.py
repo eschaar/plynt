@@ -5,7 +5,7 @@ Salesforce SObject via the Salesforce Platform REST API.
 
 The service targets the SObject REST API under:
 
-    /services/data/v{version}/sobjects/{Object}/
+    /services/data/v{version}/sobjects/{Object}
     /services/data/v{version}/sobjects/{Object}/{id}
     /services/data/v{version}/sobjects/{Object}/{field}/{value}
     /services/data/v{version}/sobjects/{Object}/describe
@@ -193,7 +193,7 @@ class SalesforceObjectService(_SalesforceObjectServiceMixin, APIService):
         return cast(dict[str, Any], json.loads(resp.content))
 
     def _create(self, data: dict[str, Any] | SObjectPayload) -> SObjectCreateResult:
-        """Execute POST /sobjects/{Object}/"""
+        """Execute POST /sobjects/{Object}"""
         payload = self._renderer.render(data)
         resp = self._client.post(
             self._sobject_path(),
@@ -319,7 +319,7 @@ class SalesforceObjectService(_SalesforceObjectServiceMixin, APIService):
     def create(self, data: dict[str, Any] | SObjectPayload) -> SObjectCreateResult:
         """Create a new SObject record.
 
-        Calls ``POST /sobjects/{Object}/``. Returns the Salesforce-assigned
+        Calls ``POST /sobjects/{Object}``. Returns the Salesforce-assigned
         record ID and success status on HTTP 201.
 
         Args:
@@ -536,7 +536,7 @@ class AsyncSalesforceObjectService(_SalesforceObjectServiceMixin, AsyncAPIServic
     async def _create(
         self, data: dict[str, Any] | SObjectPayload
     ) -> SObjectCreateResult:
-        """Execute POST /sobjects/{Object}/"""
+        """Execute POST /sobjects/{Object}"""
         payload = self._renderer.render(data)
         resp = await self._client.post(
             await self._sobject_path_async(),

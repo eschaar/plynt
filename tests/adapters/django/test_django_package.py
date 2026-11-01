@@ -3,6 +3,7 @@
 import importlib
 
 from plynt.adapters.django import (
+    RequestIDMiddleware,
     async_transport_from_django_settings,
     from_django_settings,
 )
@@ -17,6 +18,7 @@ class TestDjangoAdapterPackage:
 
         assert module.__all__ == [
             "DjangoCacheBackend",
+            "RequestIDMiddleware",
             "async_transport_from_django_settings",
             "from_django_settings",
             "transport_from_django_settings",
@@ -27,6 +29,7 @@ class TestDjangoAdapterPackage:
         module = importlib.import_module("plynt.adapters.django")
 
         assert module.from_django_settings is from_django_settings
+        assert module.RequestIDMiddleware is RequestIDMiddleware
         assert (
             module.async_transport_from_django_settings
             is async_transport_from_django_settings
@@ -40,3 +43,4 @@ class TestDjangoAdapterPackage:
         importlib.import_module("plynt.adapters.django.cache")
         importlib.import_module("plynt.adapters.django.settings")
         importlib.import_module("plynt.adapters.django.transport")
+        importlib.import_module("plynt.adapters.django.request_id")
