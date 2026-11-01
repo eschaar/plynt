@@ -4,8 +4,8 @@ Date: 2026-11-01
 Branch: `feature/roadmap-development`
 Reviewed implementation: `7a7b96b33ebccec6ce63b7fca16c156851484843`
 Actual main baseline: `ab2d7da473d7ed0a57d625d54bd12e940e1e8dbb`
-Decision: **Ready for PR creation. All required perspectives explicitly OK;
-merge and publication await current remote gates.**
+Decision: **Documentation/review gate passed. Remote handoff blocked by
+authentication; merge and publication await current remote gates.**
 
 ## Scope
 
@@ -49,13 +49,13 @@ live tracker was contacted. Audits do not cover unpublished Plynt source.
 
 ## Sign-Off Record
 
-| Perspective | Verdict                                      | Scope, freshness, and next action                                                                                |
-| ----------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Tester      | PR handoff OK; merge/publication pending     | Revision-matched local evidence reused; migration reviewed; current remote CI required later                     |
-| Architect   | PR handoff OK after documentation correction | Complete branch plus migration and ADR/overview clarification reviewed; HTTP-specific retry boundary preserved   |
-| Designer    | PR handoff OK                                | Complete branch and current migration reviewed; contracts/defaults/lifecycle consistent; 263 scoped links passed |
-| Product     | Business scope and PR handoff OK             | Final review accepts scope, deferrals and reconciled records; docs must be committed with candidate              |
-| Release     | PR handoff OK                                | Documentation and explicit signoffs complete; no merge/publication approval claimed                              |
+| Perspective | Verdict                                          | Scope, freshness, and next action                                                                                |
+| ----------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Tester      | PR handoff OK; merge/publication pending         | Revision-matched local evidence reused; migration reviewed; current remote CI required later                     |
+| Architect   | PR handoff OK after documentation correction     | Complete branch plus migration and ADR/overview clarification reviewed; HTTP-specific retry boundary preserved   |
+| Designer    | PR handoff OK                                    | Complete branch and current migration reviewed; contracts/defaults/lifecycle consistent; 263 scoped links passed |
+| Product     | Business scope and PR handoff OK                 | Final review accepts scope, deferrals and reconciled records; docs must be committed with candidate              |
+| Release     | Documentation/reviews OK; remote handoff blocked | GitHub refused push authentication; no merge/publication approval claimed                                        |
 
 All reviews cover implementation and base above plus the current documentation
 candidate. No source or package metadata changed after local verification.
@@ -82,9 +82,12 @@ No time-bound gate exception exists. User authorization does not replace reviews
 
 ## Blockers and Owners
 
-1. **Release:** commit all
-   reviewed documentation, push and create PR; obtain current Check, Verify,
-   Distribution (including Sentry), Commit, and Security evidence before merge.
+1. **Repository authentication owner:** provide an available authenticated SSH
+   agent for the configured identity, or authorize GitHub authentication with
+   workflow-write capability. Do not provide credentials in chat or artifacts.
+1. **Release:** resume normal push/PR after authentication is available, then
+   obtain current Check, Verify, Distribution (including Sentry), Commit, and
+   Security evidence before merge. No gate bypass or workflow removal.
 
 User explicitly routed documentation completion, owner reviews, surgical fixes,
 and the protected release flow. No new routing request is needed for these steps.
@@ -120,5 +123,16 @@ versions, releases, or bypass protections.
 - Architecture clarification: ADR-0039 and architecture overview, owner-reviewed.
 - Release notes: `docs/releases/2026-11-01-roadmap-release-notes.md`.
 - Changelog: unversioned preparation in `CHANGELOG.md`; versioned entries intact.
-- Commit, remote PR, final-revision CI, and published release: none created
-  by this release-stage execution.
+- Documentation candidate commit: `3d87a933daa9166301977082c5b9c032d1516256`.
+- Packaging validation: Markdown lint, whitespace checks and all applicable
+  pre-commit hooks passed after formatter normalization; no source change.
+- Push: attempted to verified `eschaar/plynt` destination. SSH failed public-key
+  authentication; no connected SSH agent. Authenticated HTTPS read succeeded,
+  but GitHub rejected push because the existing OAuth App lacks `workflow` scope
+  for the branch's `.github/workflows/check.yml` change. No credentials recorded.
+- Remote branch and PR: absent, confirmed through GitHub API after rejected push.
+- Remote CI/run IDs: none for this candidate; no PR event exists.
+- Merge, release-please release PR, tag, GitHub release and PyPI publication:
+  not performed by this execution. Version manifest remains `0.11.1`.
+- Follow-up registration commit changes this release record only; see branch log
+  for its hash (a commit cannot include its own hash).

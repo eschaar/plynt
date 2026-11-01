@@ -74,5 +74,6 @@ the pre-1.0 policy; release-please selects the version from Conventional Commits
 - Main baseline: `ab2d7da473d7ed0a57d625d54bd12e940e1e8dbb`.
 - Migration: `docs/user/migrations/typed-transport-errors.md`.
 - Verification and sign-off record: linked above.
-- Final candidate commit, PR and remote run IDs: registered in the release gate
-  and PR handoff once created.
+- Documentation candidate: `3d87a933daa9166301977082c5b9c032d1516256`.
+- Remote handoff: authentication blocked; no PR/run/release IDs exist.
+  See the release gate for push attempts and the required authentication action.
