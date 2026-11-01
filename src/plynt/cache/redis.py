@@ -27,8 +27,9 @@ class RedisCache(CacheBackend, SupportsTTL, SupportsStats):
         instance is properly secured (authentication, network isolation)
         and never expose it to untrusted parties.
 
-    Per-key TTL is supported via Redis ``EXPIRE`` (seconds, rounded to
-    the nearest integer).  Pass ``ttl=`` to ``set()`` to activate it.
+    Per-key TTL is supported via Redis ``EXPIRE`` (seconds, truncated with
+    ``int(ttl)`` and clamped to at least 1). Pass ``ttl=`` to ``set()`` to
+    activate it. Positive fractional TTLs are rounded down, not to nearest.
 
     Keys are prefixed with *prefix* to avoid collisions with other
     applications sharing the same Redis instance.
@@ -76,8 +77,9 @@ class RedisCache(CacheBackend, SupportsTTL, SupportsStats):
         Args:
             key: Cache key.
             value: Value to store (serialised with pickle).
-            ttl: Time-to-live in seconds.  Rounded to the nearest integer
-                for Redis ``EXPIRE``.  ``None`` means no expiry.
+            ttl: Time-to-live in seconds. Truncated with ``int(ttl)`` and
+                clamped to at least 1 for Redis ``EXPIRE``.
+                ``None`` means no expiry.
 
         """
         import pickle
