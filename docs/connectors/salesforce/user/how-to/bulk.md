@@ -132,6 +132,15 @@ cannot be interrupted by this budget: configure transport timeouts separately.
 Job creation, uploads, result retrieval, and best-effort cleanup are outside
 the polling budget. Sync and async services use the same rules.
 
+After an ordinary operation exception, high-level helpers try to read the
+job status and abort an abortable job (ADR SF-0005). If either cleanup
+request fails, a fixed warning is logged without job identifiers, response
+bodies, exception text, or traceback. The original operation exception is
+re-raised unchanged. Cleanup remains best-effort: cancellation and
+process-control exceptions propagate without starting cleanup I/O. Callers
+that need cancellation cleanup must manage the job explicitly using the
+low-level status and abort methods.
+
 ______________________________________________________________________
 
 ## Handle failed records
