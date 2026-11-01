@@ -5,6 +5,8 @@ goal. They assume you are already familiar with the basics.
 
 ## Core Plynt
 
+- [Use request ID context](use-request-id-context.md) — validate and scope
+  correlation IDs independently of frameworks
 - [Add authentication](add-authentication.md) — Bearer tokens, Basic auth,
   OAuth2 client credentials, JWT Bearer, and ROPC flows
 - [Use middleware](use-middleware.md) — caching, logging, retry, circuit

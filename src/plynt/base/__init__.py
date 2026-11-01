@@ -8,6 +8,7 @@ frameworks, or optional extras.
 """
 
 from plynt.base.cache import CacheBackend, SupportsSizeInfo, SupportsStats, SupportsTTL
+from plynt.base.context import RequestIDPolicy, get_request_id
 from plynt.base.errors import (
     AuthenticationError,
     BaseError,
@@ -56,6 +57,7 @@ __all__ = [
     "OperationFailedError",
     "RateLimitPolicy",
     "Request",
+    "RequestIDPolicy",
     "Response",
     "ResponseProtocol",
     "RetryPolicy",
@@ -71,4 +73,5 @@ __all__ = [
     "TransportConnectionError",
     "TransportError",
     "TransportTimeoutError",
+    "get_request_id",
 ]

@@ -3,6 +3,7 @@
 import importlib
 
 from plynt.base.cache import CacheBackend
+from plynt.base.context import RequestIDPolicy, get_request_id
 from plynt.base.errors import (
     AuthenticationError,
     BaseError,
@@ -41,6 +42,7 @@ class TestBasePackage:
             "OperationFailedError",
             "RateLimitPolicy",
             "Request",
+            "RequestIDPolicy",
             "Response",
             "ResponseProtocol",
             "RetryPolicy",
@@ -56,6 +58,7 @@ class TestBasePackage:
             "TransportConnectionError",
             "TransportError",
             "TransportTimeoutError",
+            "get_request_id",
         ]
 
     def test_package_reexports_public_objects(self) -> None:
@@ -69,6 +72,8 @@ class TestBasePackage:
         assert module.CacheBackend is CacheBackend
         assert module.ConfigurationError is ConfigurationError
         assert module.Request is Request
+        assert module.RequestIDPolicy is RequestIDPolicy
+        assert module.get_request_id is get_request_id
         assert module.Response is Response
         assert module.Settings is Settings
         assert module.SyncMiddleware is SyncMiddleware
