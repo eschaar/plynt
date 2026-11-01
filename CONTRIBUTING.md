@@ -174,6 +174,10 @@ with new coverage exclusions. This is not a branch-coverage guarantee.
 For a focused test run, use `pytest <test-path> --no-cov`; partial suites
 are not expected to cover the entire package.
 
+Async fixtures use function-scoped event loops, configured explicitly by
+`asyncio_default_fixture_loop_scope = "function"`. Keep async fixtures
+function-scoped unless a wider loop lifetime is explicitly needed and tested.
+
 ### Time-sensitive tests
 
 Follow [ADR-0037](docs/architecture/adr/0037-deterministic-test-time.md).
