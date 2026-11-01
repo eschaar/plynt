@@ -64,11 +64,15 @@ class _CircuitBreakerState:
 
     def after_exception(self, exc: BaseException, *, now: float) -> None:
         """Update breaker state based on an exception."""
-        should_count = self._policy.count_network_errors and (
-            self._policy.failure_exception_classifier(exc)
+        should_count = (
+            isinstance(exc, Exception)
+            and self._policy.count_network_errors
+            and self._policy.failure_exception_classifier(exc)
         )
         if should_count:
             self.record_failure(now=now)
+        elif self._state == "half-open":
+            self._half_open_calls -= 1
 
     def record_success(self) -> None:
         """Record a successful call."""
@@ -117,7 +121,7 @@ class CircuitBreakerMiddleware(SyncMiddleware):
 
         try:
             response = next_handler(request)
-        except Exception as exc:
+        except BaseException as exc:
             with self._lock:
                 self._state.after_exception(exc, now=time.monotonic())
             raise
@@ -149,7 +153,7 @@ class AsyncCircuitBreakerMiddleware(AsyncMiddleware):
 
         try:
             response = await next_handler(request)
-        except Exception as exc:
+        except BaseException as exc:
             async with self._lock:
                 self._state.after_exception(exc, now=time.monotonic())
             raise
