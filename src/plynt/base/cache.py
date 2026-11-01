@@ -49,6 +49,7 @@ Usage::
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 from urllib.parse import urlencode
@@ -62,17 +63,6 @@ __all__ = [
     "SupportsStats",
     "SupportsTTL",
 ]
-
-# Headers that can change the effective response representation and should
-# therefore contribute to cache-key partitioning.
-_CACHE_KEY_VARY_HEADERS: frozenset[str] = frozenset(
-    {
-        "accept",
-        "accept-language",
-        "authorization",
-    }
-)
-
 
 # ---------------------------------------------------------------------------
 # Config marker
@@ -169,31 +159,29 @@ class CacheBackend(Protocol):
     def cache_key(request: Request) -> str:
         """Build a stable, collision-resistant cache key from a request.
 
-        The key is a SHA-256 hex digest of the canonical request
-        representation: ``METHOD URL?param1=val1&param2=val2|h=v...``.
-        Query parameters are sorted alphabetically for stability regardless
-        of insertion order. A small allowlist of representation/auth-related
-        headers is included to avoid cache collisions across different
-        authorization or content-negotiation contexts.
+        The key is a SHA-256 hex digest of a versioned request
+        representation. Query parameters and all request headers are
+        normalized deterministically. Header values are only present in the
+        hash input and are never exposed in the returned key.
 
         Returns:
             A 64-character lowercase SHA-256 hex digest.
 
         """
-        canonical = f"{request.method.upper()} {request.url}"
-        if request.params:
-            qs = urlencode(sorted(request.params.items()))
-            canonical = f"{canonical}?{qs}"
-
-        if request.headers:
-            lower_headers = {k.lower(): v for k, v in request.headers.items()}
-            vary_parts: list[str] = []
-            for name in sorted(_CACHE_KEY_VARY_HEADERS):
-                value = lower_headers.get(name)
-                if value is not None:
-                    vary_parts.append(f"{name}={value}")
-            if vary_parts:
-                canonical = f"{canonical}|{'&'.join(vary_parts)}"
+        query = urlencode(sorted(request.params.items()), doseq=True)
+        headers = sorted(
+            (name.lower(), value) for name, value in request.headers.items()
+        )
+        canonical = json.dumps(
+            [
+                "plynt-response-cache-v2",
+                request.method.upper(),
+                request.url,
+                query,
+                headers,
+            ],
+            separators=(",", ":"),
+        )
         return hashlib.sha256(canonical.encode()).hexdigest()
 
 

@@ -9,6 +9,7 @@ GET responses, and leaving non-GET or error responses uncached.
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 import pytest
@@ -307,6 +308,32 @@ class TestCacheBackendProtocol:
         )
         assert key_a == key_b
 
+    def test_api_key_header_changes_the_key_without_exposing_its_value(self) -> None:
+        """Partition keys by every request header without exposing values."""
+        secret = "secret-api-key"
+        key = CacheBackend.cache_key(_req(headers={"X-API-Key": secret}))
+
+        assert key != CacheBackend.cache_key(_req(headers={"X-API-Key": "other"}))
+        assert secret not in key
+
+    def test_list_query_values_do_not_collide_with_their_string_form(self) -> None:
+        """Encode repeated query values distinctly from scalar text."""
+        list_key = CacheBackend.cache_key(_req(params={"q": ["a", "b"]}))
+        string_key = CacheBackend.cache_key(_req(params={"q": "['a', 'b']"}))
+
+        assert list_key != string_key
+
+    def test_new_key_format_does_not_read_old_entries(self) -> None:
+        """Invalidate response entries created by the previous key format."""
+        request = _req()
+        old_key = hashlib.sha256(f"{request.method} {request.url}".encode()).hexdigest()
+        cache = _RecordingCache(prefill={old_key: _resp()})
+        handler = _CountingNextHandler(_resp())
+
+        CacheMiddleware(cache).handle(request, handler)
+
+        assert handler.calls == 1
+
 
 # ---------------------------------------------------------------------------
 # Capability protocols
@@ -530,6 +557,63 @@ class TestCacheMiddleware:
         assert result is streaming
         assert cache.set_calls == []
 
+    @pytest.mark.parametrize(
+        ("cache_control", "stored"),
+        [
+            ("no-store", False),
+            ("private", False),
+            ("no-cache", False),
+            ("max-age=60", True),
+        ],
+    )
+    def test_response_cache_control(self, cache_control: str, stored: bool) -> None:
+        """Honor unsafe response cache directives."""
+        cache = _RecordingCache()
+        response = Response(status_code=200, headers={"Cache-Control": cache_control})
+
+        CacheMiddleware(cache).handle(_req(), _CountingNextHandler(response))
+
+        assert bool(cache.set_calls) is stored
+
+    def test_vary_star_response_is_not_stored(self) -> None:
+        """Do not store responses whose Vary semantics prohibit reuse."""
+        cache = _RecordingCache()
+        response = Response(status_code=200, headers={"Vary": "*"})
+
+        CacheMiddleware(cache).handle(_req(), _CountingNextHandler(response))
+
+        assert cache.set_calls == []
+
+    def test_malformed_vary_response_is_not_stored(self) -> None:
+        """Do not store responses with malformed Vary field names."""
+        cache = _RecordingCache()
+        response = Response(status_code=200, headers={"Vary": "Accept, bad field"})
+
+        CacheMiddleware(cache).handle(_req(), _CountingNextHandler(response))
+
+        assert cache.set_calls == []
+
+    def test_named_vary_header_is_supported(self) -> None:
+        """Store responses varying on a field included in every cache key."""
+        cache = _RecordingCache()
+        request = _req(headers={"X-API-Key": "secret-api-key"})
+        response = Response(status_code=200, headers={"Vary": "X-API-Key"})
+
+        CacheMiddleware(cache).handle(request, _CountingNextHandler(response))
+
+        assert len(cache.set_calls) == 1
+
+    @pytest.mark.parametrize("directive", ["no-store", "no-cache"])
+    def test_request_cache_directives_bypass_cache(self, directive: str) -> None:
+        """Honor request directives when lookup or storage is unsafe."""
+        cache = _RecordingCache()
+        request = _req(headers={"Cache-Control": directive})
+
+        CacheMiddleware(cache).handle(request, _CountingNextHandler(_resp()))
+
+        assert cache.get_calls == []
+        assert cache.set_calls == []
+
 
 # ---------------------------------------------------------------------------
 # AsyncCacheMiddleware
@@ -650,4 +734,50 @@ class TestAsyncCacheMiddleware:
         result = await mw.handle(_req("GET"), _AsyncCountingNextHandler(streaming))
 
         assert result is streaming
+        assert cache.set_calls == []
+
+    @pytest.mark.parametrize(
+        ("cache_control", "stored"),
+        [
+            ("no-store", False),
+            ("private", False),
+            ("no-cache", False),
+            ("max-age=60", True),
+        ],
+    )
+    async def test_response_cache_control(
+        self, cache_control: str, stored: bool
+    ) -> None:
+        """Honor unsafe response cache directives asynchronously."""
+        cache = _RecordingCache()
+        response = Response(status_code=200, headers={"Cache-Control": cache_control})
+
+        await AsyncCacheMiddleware(cache).handle(
+            _req(), _AsyncCountingNextHandler(response)
+        )
+
+        assert bool(cache.set_calls) is stored
+
+    async def test_vary_star_response_is_not_stored(self) -> None:
+        """Do not store async responses whose Vary semantics prohibit reuse."""
+        cache = _RecordingCache()
+        response = Response(status_code=200, headers={"Vary": "*"})
+
+        await AsyncCacheMiddleware(cache).handle(
+            _req(), _AsyncCountingNextHandler(response)
+        )
+
+        assert cache.set_calls == []
+
+    @pytest.mark.parametrize("directive", ["no-store", "no-cache"])
+    async def test_request_cache_directives_bypass_cache(self, directive: str) -> None:
+        """Honor request cache directives for async middleware."""
+        cache = _RecordingCache()
+        request = _req(headers={"Cache-Control": directive})
+
+        await AsyncCacheMiddleware(cache).handle(
+            request, _AsyncCountingNextHandler(_resp())
+        )
+
+        assert cache.get_calls == []
         assert cache.set_calls == []
