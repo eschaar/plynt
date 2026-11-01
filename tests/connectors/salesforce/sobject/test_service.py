@@ -89,7 +89,9 @@ class TestSalesforceObjectServicePaths:
         svc.create({"Name": "ACME Corp"})
         sent = transport.send.call_args[0][0]
         assert sent.method == "POST"
-        assert sent.url.endswith(f"/sobjects/{OBJECT_NAME}")
+        assert sent.url == (
+            f"{BASE_URL}/services/data/v{DEFAULT_API_VERSION}/sobjects/{OBJECT_NAME}"
+        )
 
     def test_update_path_and_method(self) -> None:
         """Validate update path and method."""
@@ -97,7 +99,10 @@ class TestSalesforceObjectServicePaths:
         svc.update(RECORD_ID, {"Phone": "+31201234567"})
         sent = transport.send.call_args[0][0]
         assert sent.method == "PATCH"
-        assert RECORD_ID in sent.url
+        assert sent.url == (
+            f"{BASE_URL}/services/data/v{DEFAULT_API_VERSION}"
+            f"/sobjects/{OBJECT_NAME}/{RECORD_ID}"
+        )
 
     def test_upsert_path_and_method(self) -> None:
         """Validate upsert path and method."""
@@ -113,7 +118,10 @@ class TestSalesforceObjectServicePaths:
         svc.delete(RECORD_ID)
         sent = transport.send.call_args[0][0]
         assert sent.method == "DELETE"
-        assert RECORD_ID in sent.url
+        assert sent.url == (
+            f"{BASE_URL}/services/data/v{DEFAULT_API_VERSION}"
+            f"/sobjects/{OBJECT_NAME}/{RECORD_ID}"
+        )
 
     def test_describe_path(self) -> None:
         """Validate describe path."""
@@ -491,7 +499,9 @@ class TestAsyncSalesforceObjectServicePaths:
         await svc.create({"Name": "ACME Corp"})
         sent = transport.send.call_args[0][0]
         assert sent.method == "POST"
-        assert sent.url.endswith(f"/sobjects/{OBJECT_NAME}")
+        assert sent.url == (
+            f"{BASE_URL}/services/data/v{DEFAULT_API_VERSION}/sobjects/{OBJECT_NAME}"
+        )
 
     async def test_update_path_and_method(self) -> None:
         """Validate update path and method."""
@@ -499,7 +509,10 @@ class TestAsyncSalesforceObjectServicePaths:
         await svc.update(RECORD_ID, {"Phone": "+31201234567"})
         sent = transport.send.call_args[0][0]
         assert sent.method == "PATCH"
-        assert RECORD_ID in sent.url
+        assert sent.url == (
+            f"{BASE_URL}/services/data/v{DEFAULT_API_VERSION}"
+            f"/sobjects/{OBJECT_NAME}/{RECORD_ID}"
+        )
 
     async def test_upsert_path_and_method(self) -> None:
         """Validate upsert path and method."""
@@ -515,7 +528,10 @@ class TestAsyncSalesforceObjectServicePaths:
         await svc.delete(RECORD_ID)
         sent = transport.send.call_args[0][0]
         assert sent.method == "DELETE"
-        assert RECORD_ID in sent.url
+        assert sent.url == (
+            f"{BASE_URL}/services/data/v{DEFAULT_API_VERSION}"
+            f"/sobjects/{OBJECT_NAME}/{RECORD_ID}"
+        )
 
     async def test_describe_path(self) -> None:
         """Validate describe path."""
