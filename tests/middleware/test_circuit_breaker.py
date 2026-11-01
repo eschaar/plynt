@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import asyncio
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -25,10 +27,59 @@ _REQUEST = Request(method="GET", url="https://example.com")
 class TestCircuitBreakerMiddleware:
     """Tests for the synchronous circuit breaker middleware."""
 
+    def test_older_request_cannot_release_another_probe(
+        self, monotonic_clock: MonotonicClock
+    ) -> None:
+        """Keep the live probe reserved when an older closed-state request fails"""
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
+        mw = CircuitBreakerMiddleware(
+            CircuitBreakerPolicy(
+                failure_threshold=1,
+                recovery_timeout=1,
+                failure_status_codes=frozenset({503}),
+            )
+        )
+        old_entered, probe_entered = threading.Event(), threading.Event()
+        release_old, release_probe = threading.Event(), threading.Event()
+
+        def old_request(request: Request) -> Response:
+            old_entered.set()
+            assert release_old.wait(5)
+            raise ValueError("ignored")
+
+        def probe(request: Request) -> Response:
+            probe_entered.set()
+            assert release_probe.wait(5)
+            return Response(status_code=200)
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            try:
+                old = pool.submit(mw.handle, _REQUEST, old_request)
+                assert old_entered.wait(5)
+                mw.handle(_REQUEST, lambda req: Response(status_code=503))
+                monotonic_clock.advance(1)
+                current = pool.submit(mw.handle, _REQUEST, probe)
+                assert probe_entered.wait(5)
+                release_old.set()
+                with pytest.raises(ValueError):
+                    old.result(timeout=5)
+                with pytest.raises(CircuitBreakerOpenError):
+                    mw.handle(_REQUEST, lambda req: Response(status_code=200))
+            finally:
+                release_old.set()
+                release_probe.set()
+            assert current.result(timeout=5).status_code == 200
+
     @pytest.mark.parametrize(
-        "error", [ValueError("ignored"), KeyboardInterrupt(), SystemExit()]
+        ("error", "count_network_errors"),
+        [
+            (ValueError("ignored"), True),
+            (ValueError("ignored"), False),
+            (TimeoutError("disabled"), False),
+            (KeyboardInterrupt(), True),
+            (SystemExit(), True),
+        ],
     )
-    @pytest.mark.parametrize("count_network_errors", [True, False])
     def test_ignored_exception_releases_probe(
         self,
         monotonic_clock: MonotonicClock,
@@ -151,10 +202,10 @@ class TestCircuitBreakerMiddleware:
         original_before_call = mw._state.before_call
         original_after_response = mw._state.after_response
 
-        def _before_call(*, now: float) -> None:
+        def _before_call(*, now: float) -> float | None:
             calls.append("before")
             assert mw._lock.locked()
-            original_before_call(now=now)
+            return original_before_call(now=now)
 
         def _after_response(response: Response, *, now: float) -> None:
             calls.append("after_response")
@@ -181,10 +232,12 @@ class TestCircuitBreakerMiddleware:
 
         original_after_exception = mw._state.after_exception
 
-        def _after_exception(exc: BaseException, *, now: float) -> None:
+        def _after_exception(
+            exc: BaseException, *, now: float, probe_opened_at: float | None
+        ) -> None:
             calls.append(type(exc).__name__)
             assert mw._lock.locked()
-            original_after_exception(exc, now=now)
+            original_after_exception(exc, now=now, probe_opened_at=probe_opened_at)
 
         monkeypatch.setattr(mw._state, "after_exception", _after_exception)
 
@@ -244,16 +297,70 @@ class TestCircuitBreakerMiddleware:
 class TestAsyncCircuitBreakerMiddleware:
     """Tests for the asynchronous circuit breaker middleware."""
 
+    @pytest.mark.parametrize("old_half_open", [False, True])
+    async def test_older_request_cannot_release_another_probe(
+        self, monotonic_clock: MonotonicClock, old_half_open: bool
+    ) -> None:
+        """Keep a live probe reserved across closed requests and recovery waves"""
+        monotonic_clock.bind("plynt.middleware.circuit_breaker")
+        mw = AsyncCircuitBreakerMiddleware(
+            CircuitBreakerPolicy(
+                failure_threshold=1,
+                recovery_timeout=1,
+                half_open_max_calls=2,
+                failure_status_codes=frozenset({503}),
+            )
+        )
+        old_entered, probe_entered = asyncio.Event(), asyncio.Event()
+        release_old, release_probe = asyncio.Event(), asyncio.Event()
+
+        async def old_request(request: Request) -> Response:
+            old_entered.set()
+            await release_old.wait()
+            raise ValueError("ignored")
+
+        async def unavailable(request: Request) -> Response:
+            return Response(status_code=503)
+
+        async def probe(request: Request) -> Response:
+            probe_entered.set()
+            await release_probe.wait()
+            return Response(status_code=200)
+
+        if old_half_open:
+            await mw.handle(_REQUEST, unavailable)
+            monotonic_clock.advance(1)
+        old = asyncio.create_task(mw.handle(_REQUEST, old_request))
+        current: list[asyncio.Task[Response]] = []
+        try:
+            await old_entered.wait()
+            await mw.handle(_REQUEST, unavailable)
+            monotonic_clock.advance(1)
+            for _ in range(2):
+                probe_entered.clear()
+                current.append(asyncio.create_task(mw.handle(_REQUEST, probe)))
+                await probe_entered.wait()
+            release_old.set()
+            with pytest.raises(ValueError):
+                await old
+            with pytest.raises(CircuitBreakerOpenError):
+                await mw.handle(_REQUEST, unavailable)
+        finally:
+            release_old.set()
+            release_probe.set()
+            await asyncio.gather(old, *current, return_exceptions=True)
+
     @pytest.mark.parametrize(
-        "error",
+        ("error", "count_network_errors"),
         [
-            ValueError("ignored"),
-            KeyboardInterrupt(),
-            SystemExit(),
-            asyncio.CancelledError(),
+            (ValueError("ignored"), True),
+            (ValueError("ignored"), False),
+            (TimeoutError("disabled"), False),
+            (KeyboardInterrupt(), True),
+            (SystemExit(), True),
+            (asyncio.CancelledError(), True),
         ],
     )
-    @pytest.mark.parametrize("count_network_errors", [True, False])
     async def test_ignored_exception_releases_probe(
         self,
         monotonic_clock: MonotonicClock,

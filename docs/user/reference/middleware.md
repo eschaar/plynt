@@ -128,6 +128,8 @@ exception releases its half-open probe slot without closing or reopening the
 circuit or resetting the failure count. Cancellation and process-control
 exceptions also release the slot and are never counted as failures. All are
 re-raised unchanged.
+Only a probe admitted in the current recovery window can release its slot;
+older in-flight requests do not release another probe's reservation.
 
 `CircuitBreakerOpenError(retry_after_seconds: float)` — raised when the
 circuit is open; `retry_after_seconds` is the estimated wait time before
