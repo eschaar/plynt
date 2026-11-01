@@ -1,7 +1,7 @@
 # How-to guides
 
-How-to guides are **task-oriented**. Each guide helps you complete one
-specific goal. They assume you are already familiar with the basics.
+How-to guides are **task-oriented**. Each guide helps you complete one specific
+goal. They assume you are already familiar with the basics.
 
 ## Core Plynt
 
@@ -12,36 +12,13 @@ specific goal. They assume you are already familiar with the basics.
 - [Write custom middleware](write-middleware.md) — implement the
   `SyncMiddleware` or `AsyncMiddleware` protocol
 - [Use caching](use-cache.md) — choose and configure a cache backend
-- [Configure logging](configure-logging.md) — structured JSON logging,
-  log throttling, and exception filters
+- [Configure logging](configure-logging.md) — structured JSON logging, log
+  throttling, and exception filters
 - [Handle errors](handle-errors.md) — catch and inspect typed HTTP exceptions
 - [Use async](use-async.md) — switch to async/await for concurrent workloads
 
-## Django how-to guides
+## Extension documentation
 
-- [Use Django cache backend](django/use-django-cache-backend.md) — reuse Django
-  `CACHES` aliases with `DjangoCacheBackend`
-- [Use Django transport helper](django/use-django-transport-helper.md) — build
-  a typed plynt transport from Django settings and cache aliases
-- [Django middleware interoperability](django/django-middleware-interoperability.md)
-  — contract for tracing, auth context, cache boundaries, exception mapping,
-  and logging alignment
-
-## DRF how-to guides
-
-- [Use DRF service mixin](drf/use-drf-plynt-service-mixin.md) — build plynt
-  services lazily inside APIView and ViewSet classes, with optional request
-  header propagation and exception mapping
-- [DRF serializer and business-layer patterns](drf/drf-serializer-business-patterns.md)
-  — structure serializer-first endpoint contracts with a separate business
-  orchestration layer for backend service calls
-
-## FastAPI how-to guides
-
-- [Build a FastAPI service facade](fastapi/use-fastapi-service-facade.md) —
-  lifecycle and dependency wiring for outbound SaaS and internal backend
-  integrations
-
-## Connector how-to guides
-
-- [Salesforce how-to guides](salesforce/README.md)
+Framework-specific recipes live in the
+[adapter documentation](../../adapters/README.md). Platform-specific recipes
+live with each connector under [connector documentation](../../connectors/).

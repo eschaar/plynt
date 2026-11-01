@@ -1,12 +1,14 @@
 # Plynt
 
-Plynt is a modular, framework-agnostic Python library for building external API clients and services.
+Plynt is a modular, framework-agnostic Python library for building external API
+clients and services.
 
 The name *plynt* is inspired by a **plinth** in architecture:
 
 > the solid base a structure stands on.
 
-Plynt aims to be exactly that - a stable, minimal layer for long-lived, maintainable integrations with external HTTP APIs.
+Plynt aims to be exactly that - a stable, minimal layer for long-lived,
+maintainable integrations with external HTTP APIs.
 
 ______________________________________________________________________
 
@@ -21,7 +23,8 @@ that communicate with external HTTP APIs. It is designed to be:
 - **Minimal core dependencies**
 - **ORM-like developer experience for APIs**
 
-See [docs/architecture/adr/0001-architecture-principles.md](docs/architecture/adr/0001-architecture-principles.md)
+See
+[docs/architecture/adr/0001-architecture-principles.md](docs/architecture/adr/0001-architecture-principles.md)
 for the full architecture principles and
 [docs/architecture/adr/0002-layered-architecture.md](docs/architecture/adr/0002-layered-architecture.md)
 for the conceptual layers.
@@ -30,15 +33,17 @@ ______________________________________________________________________
 
 ## What Plynt Is
 
-Plynt provides core building blocks for API clients and service layers, focusing on:
+Plynt provides core building blocks for API clients and service layers, focusing
+on:
 
 - clear structure
 - predictable behavior
 - minimal magic
 - explicit configuration
 
-Plynt is not a web framework and does not replace tools like FastAPI, Flask,
-or Django. Instead, it complements them as a foundation for external service integration.
+Plynt is not a web framework and does not replace tools like FastAPI, Flask, or
+Django. Instead, it complements them as a foundation for external service
+integration.
 
 ______________________________________________________________________
 
@@ -51,7 +56,8 @@ Plynt intentionally avoids:
 - hidden lifecycle behavior
 - opinionated application structure
 
-If you want a batteries-included framework, Plynt is probably not what you’re looking for.
+If you want a batteries-included framework, Plynt is probably not what you’re
+looking for.
 
 ______________________________________________________________________
 
@@ -65,6 +71,7 @@ ______________________________________________________________________
 - [Product Vision](docs/product/vision.md)
 - [Product Requirements](docs/product/requirements.md)
 - [Product Roadmap](docs/product/roadmap.md)
+- [Framework Adapter Guides](docs/adapters/README.md)
 - [Generic LLM Connector Guide](docs/connectors/llm/README.md)
 - [Salesforce Integration Guide](docs/connectors/salesforce/README.md)
 - [Contributing](CONTRIBUTING.md)
@@ -93,9 +100,8 @@ ______________________________________________________________________
 
 ## Installation
 
-Supports **Python 3.12-3.15 on Linux**, with **3.14 as the development default**.
-Other environments are outside the
-current tested support contract.
+Supports **Python 3.12-3.15 on Linux**, with **3.14 as the development
+default**. Other environments are outside the current tested support contract.
 
 ```bash
 pip install plynt
@@ -123,18 +129,19 @@ pip install "plynt[salesforce]"  # Salesforce REST connector
 pip install "plynt[grpc,salesforce]"  # Experimental Salesforce CDC
 ```
 
-OAuth2 configuration and lifecycle helpers are included in the package.
-There is no separate `oauth` extra. See the
+OAuth2 configuration and lifecycle helpers are included in the package. There is
+no separate `oauth` extra. See the
 [installation reference](docs/user/reference/installation.md) for all profiles.
 
 ### Public API surface
 
-Plynt treats package exports in `plynt.base` and `plynt.http` as the main
-public contract boundaries for core usage.
+Plynt treats package exports in `plynt.base` and `plynt.http` as the main public
+contract boundaries for core usage.
 
 - Prefer importing from these package roots instead of internal submodules.
 - Internal module paths may evolve as long as public exports remain compatible.
-- Compatibility and deprecation policy is defined in [ADR-0027](docs/architecture/adr/0027-public-api-compatibility-and-deprecation-policy.md).
+- Compatibility and deprecation policy is defined in
+  [ADR-0027](docs/architecture/adr/0027-public-api-compatibility-and-deprecation-policy.md).
 
 ______________________________________________________________________
 
@@ -181,15 +188,16 @@ class MySettings(HTTPSettings):
 ```
 
 For Salesforce-specific JWT claim construction and signing guidance, see
-[docs/connectors/salesforce/README.md](docs/connectors/salesforce/README.md)
-and [docs/connectors/salesforce/architecture/adr/sf-0006-jwt-bearer-auth.md](docs/connectors/salesforce/architecture/adr/sf-0006-jwt-bearer-auth.md).
+[docs/connectors/salesforce/README.md](docs/connectors/salesforce/README.md) and
+[docs/connectors/salesforce/architecture/adr/sf-0006-jwt-bearer-auth.md](docs/connectors/salesforce/architecture/adr/sf-0006-jwt-bearer-auth.md).
 
 ______________________________________________________________________
 
 ## Roadmap
 
-See [docs/product/roadmap.md](docs/product/roadmap.md) for the full roadmap, including what
-is implemented, what is planned, and what is explicitly out of scope.
+See [docs/product/roadmap.md](docs/product/roadmap.md) for the full roadmap,
+including what is implemented, what is planned, and what is explicitly out of
+scope.
 
 High-level planned areas:
 
@@ -199,8 +207,8 @@ High-level planned areas:
 Shipped connector highlights:
 
 - Django, DRF, and FastAPI framework adapters are implemented.
-- Async gRPC primitives and experimental Salesforce Pub/Sub CDC are
-  implemented; real-org CDC validation remains open.
+- Async gRPC primitives and experimental Salesforce Pub/Sub CDC are implemented;
+  real-org CDC validation remains open.
 - Generic AI / LLM connector (`plynt.connectors.llm`) with neutral request,
   completion, and streaming chunk contract models.
 

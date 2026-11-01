@@ -1,14 +1,14 @@
 # Cache backends reference
 
-Plynt's `CacheBackend` protocol is defined in `plynt.base.cache`. Any
-class that implements `get`, `set`, and `delete` is a valid backend.
+Plynt's `CacheBackend` protocol is defined in `plynt.base.cache`. Any class that
+implements `get`, `set`, `delete`, and `clear` is a valid backend.
 
 ## LocMemCache
 
 **Module:** `plynt.cache.locmem`
 
-In-process, thread-safe dictionary cache. No external dependencies.
-Suitable for a single process.
+In-process, thread-safe dictionary cache. No external dependencies. Suitable for
+a single process.
 
 ```python
 from plynt.cache import LocMemCache
@@ -33,8 +33,8 @@ ______________________________________________________________________
 
 **Module:** `plynt.cache.redis`
 
-Stores entries in Redis using `pickle` serialisation.
-Suitable for multi-process deployments.
+Stores entries in Redis using `pickle` serialisation. Suitable for multi-process
+deployments.
 
 ```python
 import redis
@@ -59,8 +59,8 @@ ______________________________________________________________________
 
 **Module:** `plynt.cache.cachetools`
 
-Wraps any `cachetools` mapping (e.g. `LRUCache`, `TTLCache`).
-Use this when you need eviction by size or time within a single process.
+Wraps any `cachetools` mapping (e.g. `LRUCache`, `TTLCache`). Use this when you
+need eviction by size or time within a single process.
 
 ```python
 from cachetools import LRUCache, TTLCache
@@ -85,8 +85,8 @@ ______________________________________________________________________
 
 **Module:** `plynt.cache.dummy`
 
-Always misses — `get` always returns `None`, `set` and `delete` are
-no-ops. Use in tests to disable caching without changing application code.
+Always misses — `get` always returns `None`, `set` and `delete` are no-ops. Use
+in tests to disable caching without changing application code.
 
 ```python
 from plynt.cache import DummyCache
@@ -107,8 +107,8 @@ ______________________________________________________________________
 
 ## Using a backend with CacheMiddleware
 
-Pass the backend directly. TTL is configured on `CacheMiddleware` via the
-`ttl` parameter, which is forwarded to `backend.set()` on each write:
+Pass the backend directly. TTL is configured on `CacheMiddleware` via the `ttl`
+parameter, which is forwarded to `backend.set()` on each write:
 
 ```python
 from plynt.middleware.cache import CacheMiddleware
@@ -117,5 +117,5 @@ from plynt.cache import LocMemCache
 CacheMiddleware(LocMemCache(), ttl=300)
 ```
 
-See [How to use caching](../how-to/use-cache.md) for placement in the
-middleware stack.
+See [How to use caching](../how-to/use-cache.md) for placement in the middleware
+stack.
