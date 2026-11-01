@@ -16,6 +16,72 @@ Release-please owns version selection and versioned entries.
   [release preparation](docs/releases/2026-11-01-roadmap-release-notes.md).
 - Live CDC remains Experimental and deferred; performance is unmeasured.
 
+## [0.12.0](https://github.com/eschaar/plynt/compare/0.11.1...0.12.0) (2026-11-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* merge roadmap errors and reporting improvements
+* **http:** Token failure messages no longer include response bodies. Inspect status_code and explicitly access response_body when needed.
+* **http:** Built-in HTTP transports now raise TransportTimeoutError and TransportConnectionError instead of raw httpx2 network exceptions. Update exception handlers and custom retry classifiers accordingly.
+
+### Features
+
+* **base:** add configurable error envelope contract ([a400fbe](https://github.com/eschaar/plynt/commit/a400fbee55d56a48adaa4a38c9a4b82499d485c8))
+* **base:** add request ID policy and scoped context ([f1c2c43](https://github.com/eschaar/plynt/commit/f1c2c431d2160685eba3b0b0d9550eaa122726e4))
+* **base:** add safe authentication error ([83c4d3e](https://github.com/eschaar/plynt/commit/83c4d3e035a4dd402506f1b061a2272acafea803))
+* **base:** add typed transport errors ([21a917d](https://github.com/eschaar/plynt/commit/21a917dad3c40c37749736cd5da2fd9d96ed98df))
+* **base:** add vendor-neutral error reporter protocol ([1ad3698](https://github.com/eschaar/plynt/commit/1ad36985f027563d696a90f71b110bc84d6f164c))
+* **django:** add sync and async request ID middleware ([5d3de25](https://github.com/eschaar/plynt/commit/5d3de257c0f9f0494e8c26613be0c1417823da54))
+* **drf:** support configurable error envelopes ([27eb6f9](https://github.com/eschaar/plynt/commit/27eb6f94fb8cd2fcacadcc291305fc59818f87d2))
+* **fastapi:** add pure ASGI request ID middleware ([29f78d0](https://github.com/eschaar/plynt/commit/29f78d065186de652c946d5d624e507c4086444d))
+* **fastapi:** support configurable error envelopes ([aa77d31](https://github.com/eschaar/plynt/commit/aa77d3190b3822da5b876453e90cb4c9a296bcf6))
+* **http:** add close and aclose to OAuth2 auth middleware ([a9cbc76](https://github.com/eschaar/plynt/commit/a9cbc7676a397a36192a89e42047eecb1d014e7f))
+* **http:** normalize transport network errors ([ad592e7](https://github.com/eschaar/plynt/commit/ad592e7752fde3107296c59f6e0afba7fc8850c1))
+* **http:** raise typed authentication errors for token failures ([2efb2a6](https://github.com/eschaar/plynt/commit/2efb2a6232c52bde7846d3dbcf8928d6b9a9868f))
+* **log:** add scoped request ID filter ([152baa4](https://github.com/eschaar/plynt/commit/152baa4f08e9ddeb8ddd1efd01af9e1884333f29))
+* merge roadmap errors and reporting improvements ([8dda9ba](https://github.com/eschaar/plynt/commit/8dda9baf8b337ff3d7db14a0dbe61e6161313820))
+* **middleware:** propagate scoped request IDs in headers ([fd94cfc](https://github.com/eschaar/plynt/commit/fd94cfcbd059768de98518f3ccc91f99e4261348))
+* **middleware:** report failures with scoped context and event IDs ([82198b2](https://github.com/eschaar/plynt/commit/82198b23fcd3912c786f949c0ecbc7c27a8ca271))
+* **salesforce:** accept JWT bearer auth on Salesforce API clients ([0a5e258](https://github.com/eschaar/plynt/commit/0a5e2585e2be7aeb77d7e39345f0bbfc772ec9c5))
+* **sentry:** add optional sanitized error reporting integration ([ef7a93b](https://github.com/eschaar/plynt/commit/ef7a93beddd97e8d57c2a12a718fc79a2aa80fde))
+* ship py.typed marker in the wheel ([f181199](https://github.com/eschaar/plynt/commit/f181199cfcd6839e1b29377b29a04761ecb9aa88))
+
+
+### Refactoring
+
+* **base:** name request ID module explicitly ([d4f10a2](https://github.com/eschaar/plynt/commit/d4f10a2f00f832c241b04256a75fc79e43bbeaec))
+* **http:** drop closable protocols from OAuth2 middleware ([dedc3b7](https://github.com/eschaar/plynt/commit/dedc3b7c39d276f8faa90b8bb1b2cb8b27244edb))
+
+
+### Documentation
+
+* **adr:** accept ADR-0039 to ADR-0041 ([dffc70d](https://github.com/eschaar/plynt/commit/dffc70d48aa34b184576eb562e5f355cfd1bef38))
+* **adr:** accept error reporting context handoff ([d03a960](https://github.com/eschaar/plynt/commit/d03a96034a06db57714bd8194f3afb313bca3984))
+* **adr:** define reporting state and exception-bound event IDs ([7f16270](https://github.com/eschaar/plynt/commit/7f1627054c9fbd88dcb0d79127a44373c7947756))
+* **adr:** propose ADR-0039 to ADR-0041 ([e1a3328](https://github.com/eschaar/plynt/commit/e1a33289bac7931fd15e151e1e98c1144a98f68b))
+* **release:** clear resolved authentication blocker ([ade65c6](https://github.com/eschaar/plynt/commit/ade65c6a410425825b89478d9bf5f4b612c34c2b))
+* **release:** prepare roadmap migration and signed-off release notes ([3d87a93](https://github.com/eschaar/plynt/commit/3d87a933daa9166301977082c5b9c032d1516256))
+* **release:** register authenticated push blocker and candidate ([5a2dc92](https://github.com/eschaar/plynt/commit/5a2dc9203bb70f1e2e9d954d7314f7d1faa4e73e))
+* **release:** register PR and pending remote checks ([a62ba1b](https://github.com/eschaar/plynt/commit/a62ba1bd2e42c39d8065eaad0ce5c1a848b6f5e1))
+* **roadmap:** add async auth lifecycle and typing gaps from Sales API ([ff891c4](https://github.com/eschaar/plynt/commit/ff891c476e24493cf2634a61ae19af7b60b20533))
+* **roadmap:** add error-tracking item and generalize request-ID helpers ([98099c7](https://github.com/eschaar/plynt/commit/98099c793489fff184feecf60fa776cc72cc6a4a))
+* **roadmap:** add FastAPI inbound request-ID and error envelope idea ([8cc487f](https://github.com/eschaar/plynt/commit/8cc487f4b09ff5dcf85289bd26e77ed7cdb41f27))
+* **roadmap:** add transport error and SObject path doc gaps ([b891c4c](https://github.com/eschaar/plynt/commit/b891c4cca689fdc0a35251a722fc03feb5f49b28))
+* **roadmap:** align delivered capabilities and completion statuses ([10699ef](https://github.com/eschaar/plynt/commit/10699efb837a4135e56718fbcdb4bebdb9d5e55e))
+* **roadmap:** complete async auth lifecycle and typing track ([7a7b96b](https://github.com/eschaar/plynt/commit/7a7b96b33ebccec6ce63b7fca16c156851484843))
+* **roadmap:** mark 2o quick wins done and link proposed ADRs ([2812da4](https://github.com/eschaar/plynt/commit/2812da4037b3437b8edf01931c43e3782019b854))
+* **roadmap:** mark ADR-0039 typed errors implemented ([cc9c208](https://github.com/eschaar/plynt/commit/cc9c2084d4518f7f172c2f4dd3bc3e8c351b0a75))
+* **roadmap:** record composable middleware extension ideas ([e29a6c2](https://github.com/eschaar/plynt/commit/e29a6c28522af8151268c9b2b110f2395b1ed055))
+* **salesforce:** add tested shared-auth FastAPI lifespan recipe ([19344b4](https://github.com/eschaar/plynt/commit/19344b49600ce4119fc5a6150b139adb81b61fdf))
+* **salesforce:** align SObject path docstrings with sent paths ([1f5293a](https://github.com/eschaar/plynt/commit/1f5293afe642b7fd83e0f4dc4ae89f046743a35b))
+* separate core guides from optional extensions ([0270edd](https://github.com/eschaar/plynt/commit/0270edd577d95deca324efdf8e5a27707ba2ddf6))
+
+
+### Maintenance
+
+* bump local pyenv patch versions ([eb0055f](https://github.com/eschaar/plynt/commit/eb0055f9b1bb0171a4b73e22a171b913ab9e9b63))
+
 ## [0.11.1](https://github.com/eschaar/plynt/compare/0.11.0...0.11.1) (2026-10-26)
 
 
