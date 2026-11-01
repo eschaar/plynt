@@ -66,7 +66,7 @@ import threading
 import time
 from collections.abc import Awaitable, Callable
 from http import HTTPStatus
-from typing import Any, Protocol, cast
+from typing import Any
 from urllib.parse import urlencode
 
 from plynt.base.cache import CacheBackend
@@ -93,14 +93,6 @@ __all__ = [
 _CACHE_KEY_PREFIX = "plynt:oauth2:"
 _JWT_BEARER_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:jwt-bearer"
 JWTAssertionFactory = Callable[[], str]
-
-
-class _ClosableSyncTransport(Protocol):
-    def close(self) -> None: ...
-
-
-class _ClosableAsyncTransport(Protocol):
-    async def aclose(self) -> None: ...
 
 
 _logger = logging.getLogger(__name__)
@@ -169,18 +161,19 @@ class OAuth2AuthMiddlewareBase(SyncMiddleware, abc.ABC):
         from plynt.http.transport import HttpxSyncTransport
         from plynt.middleware.logging import LoggingMiddleware
 
-        self._transport: SyncTransport = HttpxSyncTransport(
+        self._owned_transport = HttpxSyncTransport(
             middlewares=[
                 LoggingMiddleware(logger=_logger, level=logging.DEBUG),
                 RetryMiddleware(token_retry_policy or HttpRetryPolicy(max_attempts=2)),
             ],
         )
+        self._transport: SyncTransport = self._owned_transport
         self._transport_closed = False
 
     def close(self) -> None:
         """Close the token transport owned by this middleware."""
         if not self._transport_closed:
-            cast(_ClosableSyncTransport, self._transport).close()
+            self._owned_transport.close()
             self._transport_closed = True
 
     @abc.abstractmethod
@@ -583,7 +576,7 @@ class AsyncOAuth2AuthMiddlewareBase(AsyncMiddleware, abc.ABC):
         from plynt.http.transport import HttpxAsyncTransport
         from plynt.middleware.logging import AsyncLoggingMiddleware
 
-        self._transport: AsyncTransport = HttpxAsyncTransport(
+        self._owned_transport = HttpxAsyncTransport(
             middlewares=[
                 AsyncLoggingMiddleware(logger=_logger, level=logging.DEBUG),
                 AsyncRetryMiddleware(
@@ -591,12 +584,13 @@ class AsyncOAuth2AuthMiddlewareBase(AsyncMiddleware, abc.ABC):
                 ),
             ],
         )
+        self._transport: AsyncTransport = self._owned_transport
         self._transport_closed = False
 
     async def aclose(self) -> None:
         """Close the token transport owned by this middleware."""
         if not self._transport_closed:
-            await cast(_ClosableAsyncTransport, self._transport).aclose()
+            await self._owned_transport.aclose()
             self._transport_closed = True
 
     @abc.abstractmethod
