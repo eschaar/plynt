@@ -1,8 +1,8 @@
 # Use request ID context
 
 `RequestIDPolicy` configures request ID validation, generation, and scoped
-context using `contextvars`. It does not read requests, modify endpoints, or inject headers.
-Framework and outbound middleware integration are subsequent ADR-0040 steps.
+context using `contextvars`. The policy itself does not read requests, modify endpoints,
+or inject headers. Framework integration is a subsequent ADR-0040 step.
 
 ```python
 from plynt.base import RequestIDPolicy, get_request_id
@@ -39,6 +39,33 @@ or idempotency keys.
 A custom `generator` must return a valid ID. Invalid output raises `ValueError`
 rather than silently substituting another generator. Generator exceptions
 propagate unchanged.
+
+## Propagate the ID to upstream calls
+
+Enable propagation explicitly with `request_id_policy` on `HeaderMiddleware`
+or `AsyncHeaderMiddleware`:
+
+```python
+from plynt.base import Request, RequestIDPolicy
+from plynt.middleware.header import HeaderMiddleware
+from plynt.http.transport import HttpxSyncTransport
+
+policy = RequestIDPolicy()
+with HttpxSyncTransport(
+    middlewares=[HeaderMiddleware({}, request_id_policy=policy)]
+) as transport:
+    with policy.scope("incoming-id"):
+        response = transport.send(Request("GET", "https://api.example.com/items"))
+```
+
+The middleware reads the active context for each outgoing request. It never
+generates an ID outside a scope, and it never replaces an existing request ID
+header, comparing names case-insensitively. Explicit configured headers take
+precedence over context propagation. Other header injection behavior remains
+unchanged.
+
+Place the header middleware before retry middleware so the ID stays the same
+throughout retry attempts.
 
 ## Scope and concurrency
 
