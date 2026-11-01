@@ -1540,6 +1540,49 @@ class TestOAuth2JWTBearerMiddleware:
 
         assert auth_a._cache_key != auth_b._cache_key
 
+    def test_scoped_tokens_are_cached_separately_and_reused(self) -> None:
+        """Partition sync token cache entries by scope and reuse matching scope."""
+        tokens: list[str] = []
+        token_cache = LocMemCache()
+
+        class _CountingTransport(SyncTransport):
+            """Return a distinct token for every token request."""
+
+            def send(self, request: Request) -> Response:
+                token = f"token-{len(tokens)}"
+                tokens.append(token)
+                return Response(
+                    status_code=200,
+                    content=json.dumps(
+                        {"access_token": token, "expires_in": 3600}
+                    ).encode(),
+                )
+
+        def make_auth(scope: str) -> OAuth2JWTBearerMiddleware:
+            auth = OAuth2JWTBearerMiddleware(
+                token_url=DUMMY_TOKEN_URL,
+                assertion_factory=lambda: "signed.jwt.assertion",
+                cache_key_material="issuer:user",
+                scope=scope,
+                token_cache=token_cache,
+            )
+            auth._transport = _CountingTransport()
+            return auth
+
+        read_auth = make_auth("read")
+        write_auth = make_auth("write")
+        read_again_auth = make_auth("read")
+        read_token = read_auth._get_token_header()
+        write_token = write_auth._get_token_header()
+        read_again_token = read_again_auth._get_token_header()
+
+        assert read_token != write_token
+        assert read_again_token == read_token
+        assert len(tokens) == 2
+        read_auth.close()
+        write_auth.close()
+        read_again_auth.close()
+
 
 # ---------------------------------------------------------------------------
 # AsyncOAuth2JWTBearerMiddleware
@@ -1604,3 +1647,46 @@ class TestAsyncOAuth2JWTBearerMiddleware:
 
         with pytest.raises(TypeError, match="must return a JWT assertion string"):
             auth._build_token_body()
+
+    async def test_scoped_tokens_are_cached_separately_and_reused(self) -> None:
+        """Partition async token cache entries by scope and reuse matching scope."""
+        tokens: list[str] = []
+        token_cache = LocMemCache()
+
+        class _CountingTransport(AsyncTransport):
+            """Return a distinct token for every token request."""
+
+            async def send(self, request: Request) -> Response:
+                token = f"token-{len(tokens)}"
+                tokens.append(token)
+                return Response(
+                    status_code=200,
+                    content=json.dumps(
+                        {"access_token": token, "expires_in": 3600}
+                    ).encode(),
+                )
+
+        def make_auth(scope: str) -> AsyncOAuth2JWTBearerMiddleware:
+            auth = AsyncOAuth2JWTBearerMiddleware(
+                token_url=DUMMY_TOKEN_URL,
+                assertion_factory=lambda: "signed.jwt.assertion",
+                cache_key_material="issuer:user",
+                scope=scope,
+                token_cache=token_cache,
+            )
+            auth._transport = _CountingTransport()
+            return auth
+
+        read_auth = make_auth("read")
+        write_auth = make_auth("write")
+        read_again_auth = make_auth("read")
+        read_token = await read_auth._get_token_header()
+        write_token = await write_auth._get_token_header()
+        read_again_token = await read_again_auth._get_token_header()
+
+        assert read_token != write_token
+        assert read_again_token == read_token
+        assert len(tokens) == 2
+        await read_auth.aclose()
+        await write_auth.aclose()
+        await read_again_auth.aclose()
