@@ -162,7 +162,8 @@ class CacheBackend(Protocol):
         The key is a SHA-256 hex digest of a versioned request
         representation. Query parameters and all request headers are
         normalized deterministically. Header values are only present in the
-        hash input and are never exposed in the returned key.
+        hash input and are never exposed in the returned key. Duplicate
+        case-insensitive header names retain their original value order.
 
         Returns:
             A 64-character lowercase SHA-256 hex digest.
@@ -170,11 +171,12 @@ class CacheBackend(Protocol):
         """
         query = urlencode(sorted(request.params.items()), doseq=True)
         headers = sorted(
-            (name.lower(), value) for name, value in request.headers.items()
+            ((name.lower(), value) for name, value in request.headers.items()),
+            key=lambda header: header[0],
         )
         canonical = json.dumps(
             [
-                "plynt-response-cache-v2",
+                "plynt-response-cache-v3",
                 request.method.upper(),
                 request.url,
                 query,

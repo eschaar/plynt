@@ -121,6 +121,19 @@ class _AsyncCountingNextHandler:
 class TestCacheBackendProtocol:
     """Test suite for CacheBackendProtocol."""
 
+    @pytest.mark.parametrize("name", ["Authorization", "Accept"])
+    def test_duplicate_header_value_order_partitions_cache_keys(
+        self, name: str
+    ) -> None:
+        first = _req(headers={name: "first", name.lower(): "second"})
+        swapped = _req(headers={name: "second", name.lower(): "first"})
+        assert CacheBackend.cache_key(first) != CacheBackend.cache_key(swapped)
+
+    def test_distinct_header_name_order_does_not_change_cache_key(self) -> None:
+        first = _req(headers={"Accept": "json", "X-API-Key": "example"})
+        reordered = _req(headers={"x-api-key": "example", "accept": "json"})
+        assert CacheBackend.cache_key(first) == CacheBackend.cache_key(reordered)
+
     def test_complete_class_satisfies_protocol(self) -> None:
         """Validate complete class satisfies protocol."""
         assert isinstance(_RecordingCache(), CacheBackend)
