@@ -16,6 +16,47 @@ Release-please owns version selection and versioned entries.
   [release preparation](docs/releases/2026-11-01-roadmap-release-notes.md).
 - Live CDC remains Experimental and deferred; performance is unmeasured.
 
+## [0.12.1](https://github.com/eschaar/plynt/compare/0.12.0...0.12.1) (2026-11-02)
+
+
+### Fixes
+
+* **auth:** include scope in OAuth token cache keys ([1691bb4](https://github.com/eschaar/plynt/commit/1691bb4071fb426a7d13aa3f507ccda2c3abd15c))
+* **cache:** isolate response entries by request identity ([ad0de56](https://github.com/eschaar/plynt/commit/ad0de5606bcdcc233779c7c84173bd1cdab13cc4))
+* **cache:** preserve duplicate header value order ([397000e](https://github.com/eschaar/plynt/commit/397000e2fb0977a19d00da5902105c2a74baaadb))
+* **ci:** audit all runtime extras ([ccb45d1](https://github.com/eschaar/plynt/commit/ccb45d1161d98e7a3d7a26e12b40d63438a60681))
+* **ci:** isolate release metadata from shell ([e3d254e](https://github.com/eschaar/plynt/commit/e3d254e4db0b73b81da31091c1592f8613dd514a))
+* **ci:** propagate tox failures through evidence pipelines ([2c327df](https://github.com/eschaar/plynt/commit/2c327df1da72cef6aa58d512adacaf5928442488))
+* **errors:** restore authentication error from serialized details ([6c15f4d](https://github.com/eschaar/plynt/commit/6c15f4d98ce0b24ed0c19363723090737b27ce99))
+* **middleware:** reject nonfinite rate limit values ([280c064](https://github.com/eschaar/plynt/commit/280c064b46ec8d741a95b80f0225df0f43941374))
+* **middleware:** release ignored circuit breaker probes ([ab730c2](https://github.com/eschaar/plynt/commit/ab730c2ec887f58a6139ac1cf93953a9434c05f0))
+* **middleware:** release only the admitted breaker probe ([d500706](https://github.com/eschaar/plynt/commit/d50070677baa1bbac9e347be300f5dae9a5a62dd))
+* **middleware:** validate retry attempt and backoff budgets ([ad29cca](https://github.com/eschaar/plynt/commit/ad29ccaa236d8abb2b090c4efbdf6aff66343520))
+* **reporting:** isolate OAuth token retry observations ([b2bb4e2](https://github.com/eschaar/plynt/commit/b2bb4e2e5efdedd562123c9e53dd9883adea36ac))
+* **salesforce:** cap Bulk polling before exponentiation ([7f945c8](https://github.com/eschaar/plynt/commit/7f945c85ff66957441107f211a818c01f3766f33))
+* **salesforce:** enforce the Bulk polling budget ([cc98ba7](https://github.com/eschaar/plynt/commit/cc98ba73ca5067afdfa164d517b3f921488cada8))
+* **salesforce:** report Bulk cleanup failures safely ([e08ccb8](https://github.com/eschaar/plynt/commit/e08ccb85dc345781d8fcbe12f326fc46086938c7))
+
+
+### Documentation
+
+* **arch:** add secure cache identity ADR ([55091ca](https://github.com/eschaar/plynt/commit/55091ca1f4d34e0d9884194aed6c040dc244813a))
+* **architecture:** define tested gRPC upgrade policy in ADR-0044 ([dd33d27](https://github.com/eschaar/plynt/commit/dd33d2784688b3e33c1c51f97ec736bb0b502f1c))
+* **cache:** align architecture guidance with accepted contracts ([11c3661](https://github.com/eschaar/plynt/commit/11c3661ec15735f3db49924c69cdca5f77fa9225))
+* **cache:** describe Redis TTL truncation accurately ([63510cb](https://github.com/eschaar/plynt/commit/63510cb366887b2403b46cb22a77dc46db30cd2b))
+* **release:** record ADR-0044 refresh evidence ([3deddb9](https://github.com/eschaar/plynt/commit/3deddb9ab8c42a243a3b69b53efd46dae8576adf))
+
+
+### Maintenance
+
+* **ci:** update TruffleHog action to 3.99.7 ([e9e0bdc](https://github.com/eschaar/plynt/commit/e9e0bdc1f2edb9ee95f9cf4d15a33aec79dd6581))
+* **grpc:** refresh generated toolchain to 1.85.0 ([51a20b5](https://github.com/eschaar/plynt/commit/51a20b57bbf9fbddfd56292e92e111080ad6992e))
+
+
+### Tests
+
+* **asyncio:** make fixture loop scope explicit ([d234bac](https://github.com/eschaar/plynt/commit/d234bac8c915ab20bdb25efb170488e28773518b))
+
 ## [0.12.0](https://github.com/eschaar/plynt/compare/0.11.1...0.12.0) (2026-11-01)
 
 
