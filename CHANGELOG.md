@@ -16,6 +16,13 @@ Release-please owns version selection and versioned entries.
   [release preparation](docs/releases/2026-11-01-roadmap-release-notes.md).
 - Live CDC remains Experimental and deferred; performance is unmeasured.
 
+## [0.12.2](https://github.com/eschaar/plynt/compare/0.12.1...0.12.2) (2026-11-08)
+
+
+### Maintenance
+
+* **ci:** bump trufflesecurity/trufflehog ([20d02c3](https://github.com/eschaar/plynt/commit/20d02c3afa03732b5ddf1bf48601de428677954a))
+
 ## [0.12.1](https://github.com/eschaar/plynt/compare/0.12.0...0.12.1) (2026-11-02)
 
 
