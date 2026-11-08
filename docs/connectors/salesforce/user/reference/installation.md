@@ -16,14 +16,14 @@ runtime floors include `pydantic>=2.14.1`, `cryptography>=50.0.2`,
 pip install "plynt[grpc,salesforce]"
 ```
 
-The vendored Pub/Sub messages require `grpcio>=1.85.0,<2` and
+The vendored Pub/Sub messages require `grpcio>=1.85.1,<2` and
 `protobuf>=7.35.1,<8`. Resolve those versions together and run
 `python -m pip check` after upgrading. Code generation does not run during
 installation or import.
 
 These minima are tested independently of the development generator under
 [ADR-0031](../../../../architecture/adr/0031-experimental-release-installation-contract.md).
-The development generator is pinned to `grpcio-tools==1.85.0`; its routine
+The development generator is pinned to `grpcio-tools==1.85.1`; its routine
 refresh gates are documented in
 [ADR-0044](../../../../architecture/adr/0044-grpc-toolchain-upgrade-policy.md).
 

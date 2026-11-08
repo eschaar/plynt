@@ -124,8 +124,8 @@ Their operational requirements are documented with each connector. See
 installation and acceptance contract. The generator refresh and gRPC runtime
 alignment for the historical 1.84.0 refresh are recorded in
 [ADR-0032](adr/0032-grpc-codegen-version-refresh.md).
-[ADR-0044](adr/0044-grpc-toolchain-upgrade-policy.md) approves the next 1.85.0
-refresh and governs later routine upgrades; implementation and verification
+[ADR-0044](adr/0044-grpc-toolchain-upgrade-policy.md) governs routine
+upgrades without fixing an exact version; implementation and verification
 remain required, and no provider-readiness claim follows from this approval.
 Python support, the 3.14 default, and the local `.venv`/pyenv bootstrap are in
 [ADR-0033](adr/0033-python-315-support-and-local-pyenv.md). Python 3.11 removal

@@ -57,9 +57,9 @@ guides.
 
 ## gRPC runtime compatibility
 
-The gRPC extra requires `grpcio>=1.85.0,<2` and `protobuf>=7.35.1,<8`. Resolve
+The gRPC extra requires `grpcio>=1.85.1,<2` and `protobuf>=7.35.1,<8`. Resolve
 these dependencies together and run `python -m pip check` after upgrading. The
-development generator is pinned to `grpcio-tools==1.85.0`. The generated gRPC
+development generator is pinned to `grpcio-tools==1.85.1`. The generated gRPC
 stub enforces the gRPC runtime floor; regenerated protobuf checks continue to
 require protobuf 7.35.1. Routine refresh policy and validation gates are in
 [ADR-0044](../../architecture/adr/0044-grpc-toolchain-upgrade-policy.md).
