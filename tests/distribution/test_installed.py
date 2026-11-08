@@ -90,7 +90,7 @@ class TestInstalledDistribution:
 
         assert any(
             requirement.startswith("grpcio")
-            and ">=1.85.0" in requirement
+            and ">=1.85.1" in requirement
             and "<2" in requirement
             and 'extra == "grpc"' in requirement
             for requirement in requirements
