@@ -13,7 +13,7 @@ Do not hand-edit the `.proto` or generated `.py` files. `README.md` and
 The schema is copied verbatim from upstream; see `SOURCE.md`. Both Python
 files are generated from that schema.
 
-Install the development extra to use the pinned `grpcio-tools==1.85.0`
+Install the development extra to use the pinned `grpcio-tools==1.85.1`
 generator. Consumers of the installed package do not need that tool.
 The routine refresh policy is recorded in
 [ADR-0044](../../../../../../docs/architecture/adr/0044-grpc-toolchain-upgrade-policy.md).
