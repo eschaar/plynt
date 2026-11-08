@@ -10,11 +10,10 @@ ADR-0032 approved a coordinated refresh to gRPC 1.84.0, recording exact versions
 as a decision for that refresh. Those historical selections must not become
 permanent constraints that require a new ADR for every routine version update.
 
-The maintainer explicitly approved both this policy clarification and a full
-gRPC 1.85.0 generator/runtime refresh. This ADR authorizes that implementation;
-it does not assert that regeneration, compatibility tests, or release gates
-have already passed. At acceptance, the manifest and generated stub still use
-1.84.0.
+The maintainer explicitly approved this policy clarification and routine
+gRPC generator/runtime refreshes within the gRPC 1.x and protobuf 7.x
+boundaries. This ADR does not assert that regeneration, compatibility tests,
+or release gates have passed for any specific version.
 
 ## Decision
 
@@ -23,13 +22,15 @@ have already passed. At acceptance, the manifest and generated stub still use
 1. Exact toolchain pins belong in version-controlled dependency manifests;
    generated artifacts record the generator and enforced runtime requirements.
    ADRs govern compatibility and upgrade gates, not a forever exact version.
-1. Approve `grpcio-tools==1.85.0` as the next development generator and a
-   coordinated gRPC runtime refresh. Derive the consumer minimum from its
-   regenerated stub; use `grpcio>=1.85.0,<2` if the stub requires 1.85.0.
-   Derive the protobuf minimum independently from regenerated message checks.
+1. Keep the exact `grpcio-tools` pin in the manifest; it may be updated under
+   this policy without naming a version here. Derive the consumer `grpcio`
+   minimum from the regenerated stub, so a generator bump that changes the
+   stub's version check also raises the floor. Derive the protobuf minimum
+   independently from regenerated message checks.
 1. Routine subsequent patch/minor upgrades within the existing gRPC 1.x and
    protobuf 7.x boundaries may reference this ADR without a new version-only
-   ADR. Each update requires deliberate maintainer review and all gates below.
+   ADR. This includes minor bumps such as 1.85 to 1.86. Each update requires
+   deliberate maintainer review and all gates below.
    Automated proposals are not approval to merge or release.
 1. Keep finite runtime upper bounds: `grpcio<2` and `protobuf<8`. Do not use
    unbounded dependencies or equate the newest runtime with the required floor.
@@ -106,8 +107,8 @@ long-running reliability, production readiness, or release authorization.
 
 Routine maintenance no longer requires rewriting accepted historical decisions.
 The engineer must deliver a coherent, reproducible, tested upgrade and document
-any raised consumer floor. The named 1.85.0 refresh remains pending engineering
-and verification; architectural acceptance is not test evidence.
+any raised consumer floor. Each refresh still requires engineering
+verification; architectural acceptance is not test evidence.
 
 ## Related ADRs
 
