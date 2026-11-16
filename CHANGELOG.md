@@ -16,6 +16,26 @@ Release-please owns version selection and versioned entries.
   [release preparation](docs/releases/2026-11-01-roadmap-release-notes.md).
 - Live CDC remains Experimental and deferred; performance is unmeasured.
 
+## [0.12.2](https://github.com/eschaar/plynt/compare/0.12.1...0.12.2) (2026-11-16)
+
+
+### Fixes
+
+* **ci:** derive minimum CDC runtimes from wheel metadata ([ed669a7](https://github.com/eschaar/plynt/commit/ed669a70bc04a70b04e19f2b5f2675c890363c1c))
+* **ci:** enforce commit policy and align gRPC acceptance gates ([de6b37f](https://github.com/eschaar/plynt/commit/de6b37fc5bbff1320c7a8ff68a048c4ecc951e06))
+
+
+### Maintenance
+
+* **ci:** bump trufflesecurity/trufflehog ([a53e227](https://github.com/eschaar/plynt/commit/a53e2277bee7344c97240b7950aa9707763080e7))
+* **ci:** bump trufflesecurity/trufflehog ([20d02c3](https://github.com/eschaar/plynt/commit/20d02c3afa03732b5ddf1bf48601de428677954a))
+* **deps:** refresh gRPC toolchain to 1.85.1 ([3368e11](https://github.com/eschaar/plynt/commit/3368e113dec39b38d90705beaadc6df00a69401d))
+
+
+### Tests
+
+* **distribution:** align gRPC expectations with the 1.85.1 toolchain ([9bbf05d](https://github.com/eschaar/plynt/commit/9bbf05d58b9131302b5dd55d8c330123d237eee5))
+
 ## [0.12.1](https://github.com/eschaar/plynt/compare/0.12.0...0.12.1) (2026-11-02)
 
 
