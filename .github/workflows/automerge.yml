@@ -37,6 +37,7 @@ jobs:
         env:
           PACKAGE_ECOSYSTEM: ${{ steps.metadata.outputs.package-ecosystem }}
           UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          DEPENDENCY_NAMES: ${{ steps.metadata.outputs.dependency-names }}
         run: |
           should_automerge=false
 
@@ -51,6 +52,14 @@ jobs:
               should_automerge=true
             fi
           fi
+
+          # ADR-0044 requires deliberate review of coordinated gRPC refreshes.
+          IFS=',' read -ra dependencies <<< "$DEPENDENCY_NAMES"
+          for dependency in "${dependencies[@]}"; do
+            case "${dependency// /}" in
+              grpcio|grpcio-tools|protobuf) should_automerge=false ;;
+            esac
+          done
 
           echo "should_automerge=$should_automerge" >> "$GITHUB_OUTPUT"
           echo "package_ecosystem=$PACKAGE_ECOSYSTEM" >> "$GITHUB_OUTPUT"
@@ -106,12 +115,19 @@ jobs:
           script: |
             try {
               await github.graphql(
-                `mutation($pullRequestId: ID!) {
-                  enablePullRequestAutoMerge(input: {pullRequestId: $pullRequestId, mergeMethod: SQUASH}) {
+                `mutation($pullRequestId: ID!, $commitHeadline: String!) {
+                  enablePullRequestAutoMerge(input: {
+                    pullRequestId: $pullRequestId,
+                    mergeMethod: SQUASH,
+                    commitHeadline: $commitHeadline
+                  }) {
                     pullRequest { number }
                   }
                 }`,
-                { pullRequestId: context.payload.pull_request.node_id }
+                {
+                  pullRequestId: context.payload.pull_request.node_id,
+                  commitHeadline: context.payload.pull_request.title
+                }
               )
             } catch (error) {
               core.setFailed(
