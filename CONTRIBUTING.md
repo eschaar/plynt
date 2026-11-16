@@ -178,6 +178,10 @@ Development bootstrap includes every runtime extra. Run `make install`,
 then `make check` before proposing a release. The Distribution workflow
 builds a wheel from the sdist and checks fresh core and optional installs;
 the Verify workflow runs the complete Linux Python matrix.
+The `cdc-minimum` profile derives exact gRPC, protobuf, fastavro, and PyJWT
+pins from the installed wheel's active runtime requirements. Maintain their
+lower bounds in `pyproject.toml`, not as duplicated workflow version pins.
+Missing or unsupported minimum requirements fail the profile explicitly.
 
 The full suite enforces 100% statement coverage for the configured source
 scope. Keep the existing exclusions unchanged; do not hide missing behavior
