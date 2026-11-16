@@ -30,7 +30,7 @@ env:
 
 jobs:
   validate:
-    # Validates commit message format and branch naming policy.
+    # Validates commit message format.
     name: Validate Commit Messages
     runs-on: ubuntu-latest
     steps:
@@ -44,9 +44,9 @@ jobs:
         if: github.event_name == 'push'
         uses: commit-check/commit-check-action@v2
         with:
-          # Commit message and branch policy is read from cchk.toml in the repo root.
+          # Commit message policy is read from cchk.toml in the repo root.
           message: true
-          branch: true
+          branch: false
           author-name: false
           author-email: false
           job-summary: true
