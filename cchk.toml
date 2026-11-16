@@ -53,4 +53,3 @@ allow_branch_types = [
   "patch",
   "dependabot",
 ]
-allow_branch_names = ["main", "master", "develop", "urban-dollop"]

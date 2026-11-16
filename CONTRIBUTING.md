@@ -93,9 +93,20 @@ feat!: remove timeout_seconds from HTTPSettings
 
 ### Enforcement
 
-A pre-commit hook validates commit messages using
-[commitlint](https://commitlint.js.org/). Messages that do not follow the
-convention are rejected before the commit is created.
+The installed `commit-msg` hook validates messages using
+[gitlint](https://jorisroovers.com/gitlint/). CI uses `commit-check` with
+[`cchk.toml`](cchk.toml) to validate every PR commit and the PR title.
+Keep the complete subject within 100 characters. Title edits rerun validation.
+
+The same rules apply to automation and coding agents: use a Conventional
+Commit subject even for planning commits, rather than `Initial plan`.
+Dependabot uses `chore(deps)` for Python updates and `chore(ci)` for Actions
+updates. Its auto-merge workflow explicitly uses the PR title as the squash
+commit subject. Release-please uses `docs(changelog): <version>` for release
+PR titles; that scope remains reserved for release automation.
+
+Branch naming is not part of the CI commit-message gate, so generated branch
+names do not cause otherwise valid commit messages to fail.
 
 ## Pull Requests
 
@@ -210,6 +221,8 @@ chosen upstream commit, verify its provenance and checksum, update the
 vendored source metadata, and regenerate both Python files together.
 There is no automated `salesforce-cdc-proto-update` target.
 No generator is required by consumers of the installed wheel.
+Dependabot updates involving `grpcio`, `grpcio-tools`, or `protobuf` require
+manual review under ADR-0044 and are not eligible for auto-merge.
 
 ## Releases
 
