@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import os
-import re
 import subprocess
-import tomllib
 from pathlib import Path
 
 import pytest
 import yaml
+
+from tests.distribution.minimum_requirements import minimum_cdc_requirements
 
 ROOT = Path(__file__).parents[2]
 
@@ -100,16 +100,76 @@ class TestAutomergeWorkflow:
 
 
 class TestDistributionWorkflow:
-    def test_minimum_grpc_runtime_matches_the_manifest(self) -> None:
-        manifest = tomllib.loads((ROOT / "pyproject.toml").read_text())
-        grpc = next(
-            requirement
-            for requirement in manifest["project"]["optional-dependencies"]["grpc"]
-            if requirement.startswith("grpcio>=")
-        )
-        floor = grpc.removeprefix("grpcio>=").split(",")[0]
-        workflow = (ROOT / ".github/workflows/distribution.yml").read_text()
-        minimum = re.search(r"'grpcio==([^']+)'", workflow)
+    @pytest.fixture
+    def cdc_requirements(self) -> list[str]:
+        return [
+            'grpcio>=9.1,<10; extra == "grpc"',
+            'protobuf>=20.2,<21; extra == "grpc"',
+            'fastavro>=4.3,<5; extra == "salesforce"',
+            'PyJWT>=6.4,<7; extra == "salesforce"',
+        ]
 
-        assert minimum is not None
-        assert minimum.group(1) == floor
+    def test_minimum_profile_installs_pins_from_wheel_metadata(self) -> None:
+        workflow = (ROOT / ".github/workflows/distribution.yml").read_text()
+
+        assert "python tests/distribution/minimum_requirements.py" in workflow
+        assert "-m pip install -r minimum-requirements.txt" in workflow
+
+    @pytest.mark.parametrize(
+        "grpc_requirement",
+        [
+            'grpcio>=9.1,<10; extra == "grpc"',
+            'grpcio==9.1; extra == "grpc"',
+        ],
+    )
+    def test_all_pins_follow_active_runtime_metadata(
+        self, cdc_requirements: list[str], grpc_requirement: str
+    ) -> None:
+        cdc_requirements[0] = grpc_requirement
+        cdc_requirements += [
+            'grpcio>=99; extra == "dev"',
+            'protobuf>=99; python_version < "0" and extra == "grpc"',
+        ]
+
+        assert minimum_cdc_requirements(cdc_requirements) == [
+            "fastavro==4.3",
+            "grpcio==9.1",
+            "protobuf==20.2",
+            "pyjwt==6.4",
+        ]
+
+    @pytest.mark.parametrize(
+        "requirement",
+        [
+            "grpcio<10",
+            "grpcio>9",
+            "grpcio>=9,!=9",
+            "grpcio>=10,<10",
+            "grpcio>=9,>=9.1",
+        ],
+    )
+    def test_unsupported_minimum_fails_explicitly(
+        self, cdc_requirements: list[str], requirement: str
+    ) -> None:
+        cdc_requirements[0] = requirement
+
+        with pytest.raises(ValueError, match=r"grpcio.*inclusive minimum"):
+            minimum_cdc_requirements(cdc_requirements)
+
+    def test_missing_dependency_fails_explicitly(
+        self, cdc_requirements: list[str]
+    ) -> None:
+        cdc_requirements.pop()
+
+        with pytest.raises(ValueError, match="Missing CDC runtime requirements: pyjwt"):
+            minimum_cdc_requirements(cdc_requirements)
+
+    def test_duplicate_active_requirement_fails_explicitly(
+        self, cdc_requirements: list[str]
+    ) -> None:
+        cdc_requirements.append('grpcio>=9.2; extra == "salesforce"')
+
+        with pytest.raises(
+            ValueError, match="Duplicate active CDC requirement: grpcio"
+        ):
+            minimum_cdc_requirements(cdc_requirements)
